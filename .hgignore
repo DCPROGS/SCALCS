@@ -47,7 +47,7 @@ autom4te.cache/*
 *.la
 *.lai
 *.so*
-Makefile
+# Makefile
 libtool
 stamp-h1
 qmat_wrap.cxx
