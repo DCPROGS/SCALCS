@@ -30,7 +30,7 @@ Plenum Press, New York, pp. 589-633.
 __author__="R.Lape, University College London"
 __date__ ="$11-Oct-2010 10:33:07$"
 
-import math
+from math import*
 import numpy as np
 from numpy import linalg as nplin
 
@@ -58,10 +58,10 @@ def eigs(Q, debug=False):
     k = N.shape[0]
 
     A = []
-    for i in range(0, k):
+    for i in range(k):
         Ai = np.zeros((k, k))
-        for j in range(0, k):
-            for m in range(0, k):
+        for j in range(k):
+            for m in range(k):
                 Ai[j, m] = M[j, i] * N[i, m]
         A.append(Ai)
     if debug: print 'spectral matrices =', A
@@ -101,7 +101,7 @@ def iGs(Q, kA, kB, debug=False):
 
     return GAB, GBA
 
-def eGs(G12, G21, k1, k2, expQ22):
+def eGs(G12, G21, k1, k2, expQ22, debug=False):
     """
     Calculate eGAF (or eGFA) for calculation of initial vectors (HJC92).
         (I - GAF * (I - expQFF) * GFA)^-1 * GAF * expQFF
@@ -125,7 +125,7 @@ def eGs(G12, G21, k1, k2, expQ22):
 
     return eG12
 
-def expQsub(M, t, debug=False):
+def expQsub(t, M, debug=False):
     """
     Calculate exponential of a matrix M.
         expM = exp(M * t)
@@ -134,6 +134,7 @@ def expQsub(M, t, debug=False):
     ----------
     M : array_like, shape (k, k)
     t : float
+        Time.
 
     Returns
     -------
@@ -144,10 +145,10 @@ def expQsub(M, t, debug=False):
     k = M.shape[0]
 
     expM = np.zeros((k, k))
-    for i in range(0, k):
-        for j in range(0, k):
-            for m in range(0, k):
-                temp = A[m][i, j] * math.exp(-eigvals[m] * t)
+    for i in range(k):
+        for j in range(k):
+            for m in range(k):
+                temp = A[m][i, j] * exp(-eigvals[m] * t)
                 expM[i, j] = expM[i, j] + temp
 
     return expM
@@ -182,7 +183,7 @@ def phiHJC(eG12, eG21, k1, k2, debug=False):
 
     return phi
 
-def dARSdS(tres, Q11, Q12, Q22, Q21, G12, G21, expQ22, expQ11, k1, k2):
+def dARSdS(tres, Q11, Q12, Q22, Q21, G12, G21, expQ22, expQ11, k1, k2, debug=False):
     """
     Python implementation of DC's DARSDS subroutine (inside HJCMEAN.FOR).
     Evaluate -dAR(s)/ds at s=0 (HJC92).
@@ -249,7 +250,92 @@ def dARSdS(tres, Q11, Q12, Q22, Q21, G12, G21, expQ22, expQ11, k1, k2):
 
     return DARS
 
-def pinf(Q):
+def hjc_mean_time(tres, Q, kA, debug=False):
+    """
+    Calculate exact mean open or shut time from HJC probability density
+    function. This is Python implementation of DCprogs HJCMEAN.FOR
+    subroutine.
+
+    Parameters
+    ----------
+    tres : float
+        Time resolution (dead time).
+    Q : array_like, shape (k, k)
+    kA : int
+        Number of open states.
+
+    Returns
+    -------
+    hmopen : float
+        Apparent mean open time.
+    hmshut : float
+        Apparent mean shut time.
+    """
+
+    k = Q.shape[0]
+    kF = k - kA
+    GAF, GFA = iGs(Q, kA, kF, debug)
+    QFF = Q[kA:k, kA:k]
+    expQFF = expQsub(tres, QFF, debug)
+    QAA = Q[0:kA, 0:kA]
+    expQAA = expQsub(tres, QAA, debug)
+
+    #Calculate Gs and initial vectors corrected for missed events.
+    eGAF = eGs(GAF, GFA, kA, kF, expQFF, debug)
+    eGFA = eGs(GFA, GAF, kF, kA, expQAA, debug)
+    phiA = phiHJC(eGAF, eGFA, kA, kF, debug)
+    phiF = phiHJC(eGFA, eGAF, kF, kA, debug)
+
+    #Recalculate QexpQA and QexpQF
+    QAF = Q[0:kA, kA:k]
+    QexpQF = np.dot(QAF, expQFF)
+    QFA = Q[kA:k, 0:kA]
+    QexpQA = np.dot(QFA, expQAA)
+
+    DARS = dARSdS(tres, QAA, QAF, QFF, QFA, GAF, GFA, expQFF, expQAA,
+        kA, kF, debug)
+    DFRS = dARSdS(tres, QFF, QFA, QAA, QAF, GFA, GAF, expQAA, expQFF,
+        kF, kA, debug)
+
+    uA = np.ones((kA, 1))
+    uF = np.ones((kF, 1))
+    # meanOpenTime = tres + phiA * DARS * QexpQF * uF
+    # meanShutTime = tres + phiF * DFRS * QexpQA * uA
+    hmopen = tres + np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))
+    hmshut = tres + np.dot(phiF, np.dot(np.dot(DFRS, QexpQA), uA))
+
+    return hmopen, hmshut
+
+def popen(Q, kA, tres=0, debug=False):
+    """
+    Calculate open probability for any temporal resolution, tres.
+
+    Parameters
+    ----------
+    Q : array_like, shape (k, k)
+    kA : int
+        Number of open states.
+    tres : float
+        Time resolution (dead time).
+
+    Returns
+    -------
+    Popen : float
+        Open probability.
+    """
+
+    if tres == 0:
+        p = pinf(Q, debug)
+        Popen = 0
+        for i in range(kA):
+            Popen = Popen + p[i]
+        return Popen
+    else:
+        hmopen, hmshut = hjc_mean_time(tres, Q, kA, debug)
+        Popen = hmopen / (hmopen + hmshut)
+        return Popen[0,0]
+
+def pinf(Q, debug=False):
     """
     Calculate ecquilibrium occupancies by adding a column of ones
     to Q matrix.
@@ -316,7 +402,7 @@ def phiS(Q, kA, kB, kC, debug=False):
 
     kF = kB + kC
     phiOp = phiO(Q, kA)
-    GAF, GFA = iGs(Q, kA, kF)
+    GAF, GFA = iGs(Q, kA, kF, debug)
     phi = np.dot(phiOp, GAF)
 
     if debug: print 'phiS=', phi
