@@ -1,13 +1,13 @@
-#! /usr/bin/python
-"""
-dc_pyps project is pure Python implementations of Q-Matrix formalism
+"""A collection of functions for Q matrix manipulations.
+
+Notes
+-----
+DC_PyPs project are pure Python implementations of Q-Matrix formalisms
 for ion channel research. To learn more about kinetic analysis of ion
 channels see the references below.
 
-qmatlib module is a collection of functions for Q matrix manipulations.
-
-References:
-
+References
+----------
 CH82: Colquhoun D, Hawkes AG (1982)
 On the stochastic properties of bursts of single ion channel openings
 and of clusters of bursts. Phil Trans R Soc Lond B 300, 1-59.
@@ -27,6 +27,7 @@ A Q-Matrix Cookbook.
 In: Single-channel recording. 2nd ed. (Eds: Sakmann B, Neher E)
 Plenum Press, New York, pp. 589-633.
 """
+
 __author__="R.Lape, University College London"
 __date__ ="$11-Oct-2010 10:33:07$"
 
@@ -339,7 +340,8 @@ def pinf(Q, debug=False):
     """
     Calculate ecquilibrium occupancies by adding a column of ones
     to Q matrix.
-        Pinf = uT*invert((S*transpos(S))).
+    
+    Pinf = uT*invert((S*transpos(S))).
 
     Parameters
     ----------
