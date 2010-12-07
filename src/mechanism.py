@@ -30,6 +30,7 @@ class Mechanism:
     global cdr    # numpay array; concentration dependent rates
     global ncyc    # number of cycles
     global dgamma
+    global fastblk
 
     def __init__(self):
 	print "Mechanism initialised"
@@ -94,3 +95,4 @@ class Mechanism:
         self.cdr = np.array([[1,2,1],[4,3,1],[5,4,1]])
         self.ncyc = 1
         self.dgamma = 50e-12
+        self.fastblk = False
