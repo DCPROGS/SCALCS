@@ -13,7 +13,6 @@ __date__ ="$6-Dec-2010 21:23:07$"
 # TODO: impose detailed microscopic reversibility.
 # TODO: impose constrains (e.g. independent binding sites).
 # TODO: fix certain rate constants while fitting.
-# TODO: Automatically evaluate Q whenever self.c changes
 # TODO: Check state numbers for consistency
 
 import numpy as np
@@ -33,7 +32,7 @@ class Mechanism(object):
             raise RuntimeError("Q0 is not 2D")
 
         if Q0.shape[0] != Q0.shape[1]:
-            raise RuntimeError("Q doesn't have square shape")
+            raise RuntimeError("Q0 doesn't have square shape")
 
         self.Q0 = Q0
 
