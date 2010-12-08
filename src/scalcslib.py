@@ -32,7 +32,6 @@ Plenum Press, New York, pp. 589-633.
 __author__="R.Lape, University College London"
 __date__ ="$07-Dec-2010 20:29:14$"
 
-from math import*
 import numpy as np
 import qmatlib as qml
 
@@ -52,7 +51,7 @@ def get_P0(mec, tres, debug=False):
     """
 
     conc = 0
-    mec.init_Q(conc)
+    mec.c = conc
     P0 = 0
     Popen = qml.popen(mec.Q, mec.kA, 0, debug)
     if Popen < 1e-10:
@@ -92,14 +91,14 @@ def get_maxPopen(mec, tres, debug=False):
     monot = True
     xA1 = 0
     xA2 = 0
-    fac = sqrt(10)
+    fac = np.sqrt(10)
 
     while (not flat and xA < 100):
-        mec.init_Q(xA)
+        mec.c = xA
         Popen = qml.popen(mec.Q, mec.kA, tres, debug)
 
         if ncyc > 1:
-            if decline and (fabs(Popen) < 1e-12):
+            if decline and (np.fabs(Popen) < 1e-12):
                 flat = True
             else:
                 rel = (Popen - poplast) / Popen
@@ -112,7 +111,7 @@ def get_maxPopen(mec, tres, debug=False):
                         xA2 = xA    # conc after max
                     #Consider as convergence when Popen at two
                     #successive concentrations < 0.0001
-                    flat = (fabs(rel)<1e-4) and (fabs(rellast) < 1e-4)
+                    flat = (np.fabs(rel)<1e-4) and (np.fabs(rellast) < 1e-4)
 
             if xA < 0.01:
                 flat = False
@@ -123,7 +122,7 @@ def get_maxPopen(mec, tres, debug=False):
         xA = xA * fac
     #end while
 
-    mec.init_Q(xA)
+    mec.c = xA
     maxPopen = qml.popen(mec.Q, mec.kA, tres, debug)
     return maxPopen
 
@@ -135,7 +134,7 @@ def get_decline(mec, tres, debug=False):
 
     # First find Popen at a single high conc (say 1 M)
     conc1 = 1     # concentration 1 M
-    mec.init_Q(conc1)
+    mec.c = conc1
     Popen = qml.popen(mec.Q, mec.kA, tres, debug)
 
     P0 = get_P0(mec, tres)
@@ -179,16 +178,16 @@ def get_EC50(mec, tres, debug=False):
     xout = 0
 
     epsx = 0.1e-9    # accuracy = 0.1 nM
-    nstepmax = int(log10(fabs(x1-x2)/epsx) / log10(2) + 0.5)
+    nstepmax = int(np.log10(np.fabs(x1-x2)/epsx) / np.log10(2) + 0.5)
     nstep = 0
-    while fabs(Perr) > epsy:
+    while np.fabs(Perr) > epsy:
         nstep += 1
         if nstep <= nstepmax:
             xout = 0.5 * (x1 + x2)
             xA = xout
-            mec.init_Q(xA)
+            mec.c = xA
             Popen = qml.popen(mec.Q, mec.kA, tres, debug)
-            pout = fabs((Popen - P0) / (maxPopen - P0))
+            pout = np.fabs((Popen - P0) / (maxPopen - P0))
             Perr = pout - 0.5    # Yout 0.5 for EC50
             if Perr < 0:
                 x1 = xout
@@ -222,12 +221,12 @@ def get_nH(mec, tres, debug=False):
 
     # Calculate Popen curve
     n = 512
-    dx = (log10(EC50*10) - log10(EC50*0.1))/(n-1)
+    dx = (np.log10(EC50*10) - np.log10(EC50*0.1))/(n-1)
     x = np.zeros((1,n))
     y = np.zeros((1,n))
     for i in range(n):
         x[0,i] = (EC50*0.1) * pow(10, i*dx)
-        mec.init_Q(x[0,i])
+        mec.c = x[0,i]
         y[0,i] = qml.popen(mec.Q, mec.kA, tres, debug)
 
     if decline:
@@ -243,12 +242,12 @@ def get_nH(mec, tres, debug=False):
     while i50 ==0 and i < n-1:
         if (x[0,i] <= EC50) and (x[0,i+1] >= EC50):
             i50 = i
-            y1 = log10(fabs((y[0,i]-P0)/(Pmax-y[0,i])))
-            y2 = log10(fabs((y[0,i+1]-P0)/(Pmax-y[0,i+1])))
-            s1 = (y2 - y1) / (log10(x[0,i+1]) - log10(x[0,i]))
-            y3 = log10(fabs((y[0,i+1]-P0)/(Pmax-y[0,i+1])))
-            y4 = log10(fabs((y[0,i+2]-P0)/(Pmax-y[0,i+2])))
-            s2 = (y4 - y3) / (log10(x[0,i+2]) - log10(x[0,i+1]))
+            y1 = np.log10(np.fabs((y[0,i]-P0)/(Pmax-y[0,i])))
+            y2 = np.log10(np.fabs((y[0,i+1]-P0)/(Pmax-y[0,i+1])))
+            s1 = (y2 - y1) / (np.log10(x[0,i+1]) - np.log10(x[0,i]))
+            y3 = np.log10(np.fabs((y[0,i+1]-P0)/(Pmax-y[0,i+1])))
+            y4 = np.log10(np.fabs((y[0,i+2]-P0)/(Pmax-y[0,i+2])))
+            s2 = (y4 - y3) / (np.log10(x[0,i+2]) - np.log10(x[0,i+1]))
         i += 1
 
     b = (s2 - s1) / (x[0,i50+1] - x[0,i50])

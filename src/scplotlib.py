@@ -6,7 +6,6 @@ calculations.
 __author__="R.Lape, University College London"
 __date__ ="$07-Dec-2010 23:01:09$"
 
-from math import*
 import numpy as np
 import qmatlib as qml
 import matplotlib.pyplot as plt
@@ -26,8 +25,8 @@ def plot_Popen_curve(cmin, cmax, mec, tres, text1, text2, debug=False):
         Time resolution (dead time).
     """
 
-    log_start = log10(cmin)
-    log_end = log10(cmax)
+    log_start = np.log10(cmin)
+    log_end = np.log10(cmax)
     decade_numb = int(log_end -log_start)
     if debug: print "number of decades = ", decade_numb
     log_int = 0.01    # increase this if want more points per curve
@@ -38,7 +37,7 @@ def plot_Popen_curve(cmin, cmax, mec, tres, text1, text2, debug=False):
     p = np.zeros((2, point_num))
     for i in range(point_num):
         conc[0,i] = pow(10, log_start + log_int*i)
-        mec.init_Q(conc[0,i])
+        mec.c = conc[0,i]
         p[0,i] = qml.popen(mec.Q, mec.kA, tres, debug)
         p[1,i] = qml.popen(mec.Q, mec.kA, 0, debug)
 
