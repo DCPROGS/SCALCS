@@ -1,0 +1,251 @@
+"""A collection of functions for single channel or macroscopic
+current calculations.
+
+Notes
+-----
+DC_PyPs project are pure Python implementations of Q-Matrix formalisms
+for ion channel research. To learn more about kinetic analysis of ion
+channels see the references below.
+
+References
+----------
+CH82: Colquhoun D, Hawkes AG (1982)
+On the stochastic properties of bursts of single ion channel openings
+and of clusters of bursts. Phil Trans R Soc Lond B 300, 1-59.
+
+HJC92: Hawkes AG, Jalali A, Colquhoun D (1992)
+Asymptotic distributions of apparent open times and shut times in a
+single channel record allowing for the omission of brief events.
+Phil Trans R Soc Lond B 337, 383-404.
+
+CH95a: Colquhoun D, Hawkes AG (1995a)
+The principles of the stochastic interpretation of ion channel
+mechanisms. In: Single-channel recording. 2nd ed. (Eds: Sakmann B,
+Neher E) Plenum Press, New York, pp. 397-482.
+
+CH95b: Colquhoun D, Hawkes AG (1995b)
+A Q-Matrix Cookbook. In: Single-channel recording. 2nd ed. (Eds:
+Sakmann B, Neher E) Plenum Press, New York, pp. 589-633.
+"""
+
+__author__="R.Lape, University College London"
+__date__ ="$07-Dec-2010 20:29:14$"
+
+import numpy as np
+
+import qmatlib as qml
+import qmatrc
+
+def get_P0(mec, tres, eff='c'):
+    """
+    Find Popen at concentration = 0.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution (dead time).
+
+    Returns
+    -------
+    P0 : float
+    """
+
+    conc = 0
+    mec.set_eff(eff, conc)
+    P0 = 0
+    Popen = qml.popen(mec.Q, mec.kA, 0)
+    if Popen < 1e-10:
+        P0 = Popen
+    else:
+        P0 = qml.popen(mec.Q, mec.kA, tres)
+    if qmatrc.debug: print 'Popen(0)=', P0
+    return P0
+
+def get_maxPopen(mec, tres, eff='c'):
+    """
+    Find maximum value of a Popen curve.
+    TODO: doesn't work for not monotonic curve.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution (dead time).
+    decline : logical
+        True if Popen curve monotonicly declining.
+
+    Returns
+    -------
+    maxPopen : float
+    xA : float
+        Concentration at which Popen curve reaches maximal value.
+    """
+
+    decline = get_decline(mec, tres)
+    flat = False
+    monot = True
+
+    conc = 1e-9    # start at 1 nM
+    Poplast = get_Popen(mec, tres, conc)
+    fac = np.sqrt(10)
+
+    c1 = 0
+    c2 = 0
+
+    niter = 0
+    while (not flat and conc < 100 and monot):
+        conc = conc * fac
+        Popen = get_Popen(mec, tres, conc)
+        if decline and (np.fabs(Popen) < 1e-12):
+            flat = np.fabs(Poplast) < 1e-12
+        else:
+            rel = (Popen - Poplast) / Popen
+            if niter > 2 and Popen > 1e-5:
+                if (rel * rellast) < -1e-10: # goes through min/max
+                    monot = False
+                    c1 = conc / fac     # conc before max
+                    c2 = conc    # conc after max
+                flat = ((np.fabs(rel) < 1e-4) and
+                    (np.fabs(rellast) < 1e-4))
+
+            if conc < 0.01:
+                flat = False
+            rellast = rel
+        Poplast = Popen
+        niter += 1
+    #end while
+
+    maxPopen = get_Popen(mec, tres, conc)
+    return maxPopen
+
+def get_Popen(mec, tres, conc, eff='c'):
+    """
+    """
+    mec.set_eff(eff, conc)
+    Popen = qml.popen(mec.Q, mec.kA, tres)
+    if mec.fastblk:    # correct Popen for unresolved block
+        Popen = Popen / (1 + conc / mec.KBlk)
+    return Popen    
+
+def get_decline(mec, tres, eff='c'):
+    """
+    Find whether open probability curve increases or decreases
+    with ligand concentration. Popen may decrease if ligand is inhibitor.
+    """
+
+    # First find Popen at a single high conc (say 1 M)
+    conc = 1
+    Popen = get_Popen(mec, tres, conc)
+    P0 = get_P0(mec, tres)
+    decline = (Popen < P0)
+    return decline
+
+def get_EC50(mec, tres, eff='c'):
+    """
+    Find EC50 value of a Popen curve.
+    If monotonic this is unambiguous. If not monotonic then EC50 is
+    returned as conc to left of peak for 50% of peak response.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    P0 : float
+        Minimal open probability value.
+    maxPopen : float
+        Maximal open probability value.
+    tres : float
+        Time resolution (dead time).
+
+    Returns
+    -------
+    EC50 : float
+        Concentration at which open probability is 50% of its maximal value.
+    """
+
+    P0 = get_P0(mec, tres)
+    maxPopen = get_maxPopen(mec, tres)
+
+    epsy = 0.001    # accuracy in cur/curmax = 0.5
+    Perr = 2 * epsy    # to start
+    c1 = 0
+    c2 = 100
+    conc = 0
+
+    epsc = 0.1e-9    # accuracy = 0.1 nM
+    nstepmax = int(np.log10(np.fabs(c1 - c2) / epsc) / np.log10(2) + 0.5)
+    nstep = 0
+    while np.fabs(Perr) > epsy:
+        nstep += 1
+        if nstep <= nstepmax:
+            conc = 0.5 * (c1 + c2)
+            #Popen = get_Popen(mec, tres, conc)
+            mec.set_eff(eff, conc)
+            Popen = qml.popen(mec.Q, mec.kA, tres)
+            pout = np.fabs((Popen - P0) / (maxPopen - P0))
+            Perr = pout - 0.5    # Yout 0.5 for EC50
+            if Perr < 0:
+                c1 = conc
+            elif Perr > 0:
+                c2 = conc
+    EC50 = conc
+
+    return EC50
+
+def get_nH(mec, tres, eff='c'):
+    """
+    Calculate Hill slope, nH, at EC50 of a calculated Popen curve.
+    This is Python implementation of DCPROGS HJC_HILL.FOR subroutine.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution (dead time).
+
+    Returns
+    -------
+    nH : float
+        Concentration at which open probability is 50% of its maximal value.
+    """
+
+    P0 = get_P0(mec, tres)
+    Pmax = get_maxPopen(mec, tres)
+    EC50 = get_EC50(mec, tres)
+    decline = get_decline(mec, tres)
+
+    # Calculate Popen curve
+    n = 128
+    dc = (np.log10(EC50 * 2) - np.log10(EC50 * 0.5)) / (n - 1)
+    c = np.zeros(n)
+    y = np.zeros(n)
+    for i in range(n):
+        c[i] = (EC50 * 0.1) * pow(10, i * dc)
+        y[i] = get_Popen(mec, tres, c[i])
+        #mec.set_eff(eff, c[i])
+        #y[i] = qml.popen(mec.Q, mec.kA, tres)
+
+    if decline:
+        temp = P0
+        P0 = Pmax
+        Pmax = temp
+
+    i50 = 0
+    s1 = 0
+    s2 = 0
+    i = 0
+
+    while i50 ==0 and i < n-1:
+        if (c[i] <= EC50) and (c[i+1] >= EC50):
+            i50 = i
+            y1 = np.log10(np.fabs((y[i] - P0) / (Pmax - y[i])))
+            y2 = np.log10(np.fabs((y[i+1] - P0) / (Pmax - y[i+1])))
+            s1 = (y2 - y1) / (np.log10(c[i+1]) - np.log10(c[i]))
+            y3 = np.log10(np.fabs((y[i+1] - P0) / (Pmax - y[i+1])))
+            y4 = np.log10(np.fabs((y[i+2] - P0) / (Pmax - y[i+2])))
+            s2 = (y4 - y3) / (np.log10(c[i+2]) - np.log10(c[i+1]))
+        i += 1
+
+    b = (s2 - s1) / (c[i50+1] - c[i50])
+    nH = s1 + b * (EC50 - c[i50])
+    return nH
