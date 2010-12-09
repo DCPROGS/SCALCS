@@ -31,11 +31,12 @@ Plenum Press, New York, pp. 589-633.
 __author__="R.Lape, University College London"
 __date__ ="$11-Oct-2010 10:33:07$"
 
-from math import*
 import numpy as np
 from numpy import linalg as nplin
 
-def eigs(Q, debug=False):
+import qmatrc
+
+def eigs(Q):
     """
     Calculate eigenvalues, eigenvectors and spectral matrices.
     Return eigenvalues and spectral matrices.
@@ -53,8 +54,8 @@ def eigs(Q, debug=False):
     """
 
     eigvals, M = nplin.eig(Q)
-    if debug: print 'eigenvalues=', eigvals
-    if debug: print 'eigenvectors=', M
+    if qmatrc.debug: print 'eigenvalues=', eigvals
+    if qmatrc.debug: print 'eigenvectors=', M
     N = nplin.inv(M)
     k = N.shape[0]
 
@@ -65,11 +66,11 @@ def eigs(Q, debug=False):
             for m in range(k):
                 Ai[j, m] = M[j, i] * N[i, m]
         A.append(Ai)
-    if debug: print 'spectral matrices =', A
+    if qmatrc.debug: print 'spectral matrices =', A
 
     return eigvals, A
 
-def iGs(Q, kA, kB, debug=False):
+def iGs(Q, kA, kB):
     """
     Calculate and return GBA and GAB matrices (Eq. 1.25, CH82).
         GBA=-QBB^(-1)*QBA
@@ -97,12 +98,12 @@ def iGs(Q, kA, kB, debug=False):
 
     GAB = np.dot(nplin.inv(-1 * QAA), QAB)
     GBA = np.dot(nplin.inv(-1 * QBB), QBA)
-    if debug: print 'GAB= ', GAB
-    if debug: print 'GBA= ', GBA
+    if qmatrc.debug: print 'GAB= ', GAB
+    if qmatrc.debug: print 'GBA= ', GBA
 
     return GAB, GBA
 
-def eGs(G12, G21, k1, k2, expQ22, debug=False):
+def eGs(G12, G21, k1, k2, expQ22):
     """
     Calculate eGAF (or eGFA) for calculation of initial vectors (HJC92).
         (I - GAF * (I - expQFF) * GFA)^-1 * GAF * expQFF
@@ -126,7 +127,7 @@ def eGs(G12, G21, k1, k2, expQ22, debug=False):
 
     return eG12
 
-def expQsub(t, M, debug=False):
+def expQsub(t, M):
     """
     Calculate exponential of a matrix M.
         expM = exp(M * t)
@@ -142,19 +143,19 @@ def expQsub(t, M, debug=False):
     expM : array_like, shape (k, k)
     """
 
-    eigvals, A = eigs(-M, debug)
+    eigvals, A = eigs(-M)
     k = M.shape[0]
 
     expM = np.zeros((k, k))
     for i in range(k):
         for j in range(k):
             for m in range(k):
-                temp = A[m][i, j] * exp(-eigvals[m] * t)
+                temp = A[m][i, j] * np.exp(-eigvals[m] * t)
                 expM[i, j] = expM[i, j] + temp
 
     return expM
 
-def phiHJC(eG12, eG21, k1, k2, debug=False):
+def phiHJC(eG12, eG21, k1, k2):
     """
     Calculate equilibrium probability vector phi by solving
         phi*(I-eG12*eG21)=0 (Eq. 10, HJC92)
@@ -184,7 +185,7 @@ def phiHJC(eG12, eG21, k1, k2, debug=False):
 
     return phi
 
-def dARSdS(tres, Q11, Q12, Q22, Q21, G12, G21, expQ22, expQ11, k1, k2, debug=False):
+def dARSdS(tres, Q11, Q12, Q22, Q21, G12, G21, expQ22, expQ11, k1, k2):
     """
     Python implementation of DC's DARSDS subroutine (inside HJCMEAN.FOR).
     Evaluate -dAR(s)/ds at s=0 (HJC92).
@@ -251,7 +252,7 @@ def dARSdS(tres, Q11, Q12, Q22, Q21, G12, G21, expQ22, expQ11, k1, k2, debug=Fal
 
     return DARS
 
-def hjc_mean_time(tres, Q, kA, debug=False):
+def hjc_mean_time(tres, Q, kA):
     """
     Calculate exact mean open or shut time from HJC probability density
     function. This is Python implementation of DCprogs HJCMEAN.FOR
@@ -275,17 +276,17 @@ def hjc_mean_time(tres, Q, kA, debug=False):
 
     k = Q.shape[0]
     kF = k - kA
-    GAF, GFA = iGs(Q, kA, kF, debug)
+    GAF, GFA = iGs(Q, kA, kF)
     QFF = Q[kA:k, kA:k]
-    expQFF = expQsub(tres, QFF, debug)
+    expQFF = expQsub(tres, QFF)
     QAA = Q[0:kA, 0:kA]
-    expQAA = expQsub(tres, QAA, debug)
+    expQAA = expQsub(tres, QAA)
 
     #Calculate Gs and initial vectors corrected for missed events.
-    eGAF = eGs(GAF, GFA, kA, kF, expQFF, debug)
-    eGFA = eGs(GFA, GAF, kF, kA, expQAA, debug)
-    phiA = phiHJC(eGAF, eGFA, kA, kF, debug)
-    phiF = phiHJC(eGFA, eGAF, kF, kA, debug)
+    eGAF = eGs(GAF, GFA, kA, kF, expQFF)
+    eGFA = eGs(GFA, GAF, kF, kA, expQAA)
+    phiA = phiHJC(eGAF, eGFA, kA, kF)
+    phiF = phiHJC(eGFA, eGAF, kF, kA)
 
     #Recalculate QexpQA and QexpQF
     QAF = Q[0:kA, kA:k]
@@ -294,9 +295,9 @@ def hjc_mean_time(tres, Q, kA, debug=False):
     QexpQA = np.dot(QFA, expQAA)
 
     DARS = dARSdS(tres, QAA, QAF, QFF, QFA, GAF, GFA, expQFF, expQAA,
-        kA, kF, debug)
+        kA, kF)
     DFRS = dARSdS(tres, QFF, QFA, QAA, QAF, GFA, GAF, expQAA, expQFF,
-        kF, kA, debug)
+        kF, kA)
 
     uA = np.ones((kA, 1))
     uF = np.ones((kF, 1))
@@ -307,7 +308,7 @@ def hjc_mean_time(tres, Q, kA, debug=False):
 
     return hmopen, hmshut
 
-def popen(Q, kA, tres=0, debug=False):
+def popen(Q, kA, tres=0):
     """
     Calculate open probability for any temporal resolution, tres.
 
@@ -326,17 +327,17 @@ def popen(Q, kA, tres=0, debug=False):
     """
 
     if tres == 0:
-        p = pinf(Q, debug)
+        p = pinf(Q)
         Popen = 0
         for i in range(kA):
             Popen = Popen + p[i]
         return Popen
     else:
-        hmopen, hmshut = hjc_mean_time(tres, Q, kA, debug)
+        hmopen, hmshut = hjc_mean_time(tres, Q, kA)
         Popen = hmopen / (hmopen + hmshut)
         return Popen[0,0]
 
-def pinf(Q, debug=False):
+def pinf(Q):
     """
     Calculate ecquilibrium occupancies by adding a column of ones
     to Q matrix.
@@ -357,7 +358,7 @@ def pinf(Q, debug=False):
     pinf = np.dot(u.transpose(), nplin.inv((np.dot(S,S.transpose()))))[0]
     return pinf
 
-def phiO(Q, kA, debug=False):
+def phiO(Q, kA):
     """
     Calculate initial vector for openings.
 
@@ -380,10 +381,10 @@ def phiO(Q, kA, debug=False):
     nom = np.dot(pF, QFA)
     denom = np.dot(nom,uA)
     phi = nom / denom
-    if debug: print 'phiO=', phi
+    if qmatrc.debug: print 'phiO=', phi
     return phi
 
-def phiS(Q, kA, kB, kC, debug=False):
+def phiS(Q, kA, kB, kC):
     """
     Calculate inital vector for shuttings.
 
@@ -404,8 +405,8 @@ def phiS(Q, kA, kB, kC, debug=False):
 
     kF = kB + kC
     phiOp = phiO(Q, kA)
-    GAF, GFA = iGs(Q, kA, kF, debug)
+    GAF, GFA = iGs(Q, kA, kF)
     phi = np.dot(phiOp, GAF)
 
-    if debug: print 'phiS=', phi
+    if qmatrc.debug: print 'phiS=', phi
     return phi

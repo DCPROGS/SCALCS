@@ -13,35 +13,31 @@ import mechanism as mec
 
 def demoQ():
 
-    beta_1 = 15.0
-    beta_2 = 15000.0
-    alpha_1 = 3000.0
-    alpha_2 = 500.0
-    k_m1 = 2000.0
-    k_m2 = 2 * 2000.0
-    k_p1 = 2 * 5.0e07
-    k_star_p2 = 5.0e08
-    k_p2 = 5.0e08
-    k_star_m2 = 2 * 1.0 / 3.0
-    
-    Q0 = np.array([[         0,  k_star_p2,        0,   alpha_1,     0],
-                   [ k_star_m2,          0,  alpha_2,         0,     0],
-                   [         0,     beta_2,        0,      k_m2,     0],
-                   [    beta_1,          0,     k_p2,         0,  k_m1],
-                   [         0,          0,        0,      k_p1,     0]],
-                  dtype = np.float64)
+    RateList = [
+         mec.Rate(15.0, 4, 1), # beta_1
+         mec.Rate(15000.0, 3, 2), # beta_2
+         mec.Rate(3000.0, 1, 4), # alpha_1
+         mec.Rate(500.0, 2, 3), # alpha_2
+         mec.Rate(2000.0, 4, 5), # k_m1
+         mec.Rate(2 * 2000.0, 3, 4), # k_m2
+         mec.Rate(2 * 5.0e07, 5, 4, 'c'), # k_p1
+         mec.Rate(5.0e08, 1, 2, 'c'), # k_star_p2
+         mec.Rate(5.0e08, 4, 3, 'c'), # k_p2
+         mec.Rate(2 * 1.0 / 3.0, 2, 1), # k_star_m2
+         ]
 
-    kA = 2
-    kB = 2
-    kC = 1
-    kD = 0
-    cdr = np.array([[1,2,1],[4,3,1],[5,4,1]])
+    StateList = [
+        mec.State(1, 'A'),
+        mec.State(2, 'A'),
+        mec.State(3, 'B'),
+        mec.State(4, 'B'),
+        mec.State(5, 'C')
+        ]
+
     ncyc = 1
     dgamma = 50e-12
-    fastblk = False
 
-    return  mec.Mechanism(Q0, kA, kB, kC, kD, cdr, ncyc, dgamma,
-                          fastblk)
+    return  mec.Mechanism(RateList, StateList, ncyc, dgamma)
 
 if __name__ == "__main__":
 

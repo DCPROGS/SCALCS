@@ -34,8 +34,9 @@ __date__ ="$07-Dec-2010 20:29:14$"
 
 import numpy as np
 import qmatlib as qml
+import qmatrc
 
-def get_P0(mec, tres, debug=False):
+def get_P0(mec, tres, eff='c'):
     """
     Find Popen at concentration = 0.
 
@@ -51,17 +52,17 @@ def get_P0(mec, tres, debug=False):
     """
 
     conc = 0
-    mec.c = conc
+    mec.set_eff(eff, conc)
     P0 = 0
-    Popen = qml.popen(mec.Q, mec.kA, 0, debug)
+    Popen = qml.popen(mec.Q, mec.kA, 0)
     if Popen < 1e-10:
         P0 = Popen
     else:
-        P0 = qml.popen(mec.Q, mec.kA, tres, debug)
-    if debug: print 'Popen(0)=', P0
+        P0 = qml.popen(mec.Q, mec.kA, tres)
+    if qmatrc.debug: print 'Popen(0)=', P0
     return P0
 
-def get_maxPopen(mec, tres, debug=False):
+def get_maxPopen(mec, tres, eff='c'):
     """
     Find maximum value of a Popen curve.
     TODO: doesn't work for not monotonic curve.
@@ -94,8 +95,8 @@ def get_maxPopen(mec, tres, debug=False):
     fac = np.sqrt(10)
 
     while (not flat and xA < 100):
-        mec.c = xA
-        Popen = qml.popen(mec.Q, mec.kA, tres, debug)
+        mec.set_eff(eff, xA)
+        Popen = qml.popen(mec.Q, mec.kA, tres)
 
         if ncyc > 1:
             if decline and (np.fabs(Popen) < 1e-12):
@@ -122,11 +123,11 @@ def get_maxPopen(mec, tres, debug=False):
         xA = xA * fac
     #end while
 
-    mec.c = xA
-    maxPopen = qml.popen(mec.Q, mec.kA, tres, debug)
+    mec.set_eff(eff, xA)
+    maxPopen = qml.popen(mec.Q, mec.kA, tres)
     return maxPopen
 
-def get_decline(mec, tres, debug=False):
+def get_decline(mec, tres, eff='c'):
     """
     Find whether open probability curve increases or decreases
     with ligand concentration. Popen may decrease if ligand is inhibitor.
@@ -134,8 +135,8 @@ def get_decline(mec, tres, debug=False):
 
     # First find Popen at a single high conc (say 1 M)
     conc1 = 1     # concentration 1 M
-    mec.c = conc1
-    Popen = qml.popen(mec.Q, mec.kA, tres, debug)
+    mec.set_eff(eff, conc1)
+    Popen = qml.popen(mec.Q, mec.kA, tres)
 
     P0 = get_P0(mec, tres)
     if mec.fastblk:    # correct Popen for unresolved block
@@ -146,7 +147,7 @@ def get_decline(mec, tres, debug=False):
     return decline
 
 
-def get_EC50(mec, tres, debug=False):
+def get_EC50(mec, tres, eff='c'):
     """
     Find EC50 value of a Popen curve.
     If monotonic this is unambiguous. If not monotonic then EC50 is
@@ -185,8 +186,8 @@ def get_EC50(mec, tres, debug=False):
         if nstep <= nstepmax:
             xout = 0.5 * (x1 + x2)
             xA = xout
-            mec.c = xA
-            Popen = qml.popen(mec.Q, mec.kA, tres, debug)
+            mec.set_eff(eff, xA)
+            Popen = qml.popen(mec.Q, mec.kA, tres)
             pout = np.fabs((Popen - P0) / (maxPopen - P0))
             Perr = pout - 0.5    # Yout 0.5 for EC50
             if Perr < 0:
@@ -197,7 +198,7 @@ def get_EC50(mec, tres, debug=False):
 
     return EC50
 
-def get_nH(mec, tres, debug=False):
+def get_nH(mec, tres, eff='c'):
     """
     Calculate Hill slope, nH, at EC50 of a calculated Popen curve.
     This is Python implementation of DCPROGS HJC_HILL.FOR subroutine.
@@ -226,8 +227,8 @@ def get_nH(mec, tres, debug=False):
     y = np.zeros((1,n))
     for i in range(n):
         x[0,i] = (EC50*0.1) * pow(10, i*dx)
-        mec.c = x[0,i]
-        y[0,i] = qml.popen(mec.Q, mec.kA, tres, debug)
+        mec.set_eff(eff, x[0,i])
+        y[0,i] = qml.popen(mec.Q, mec.kA, tres)
 
     if decline:
         temp = P0
