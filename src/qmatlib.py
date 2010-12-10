@@ -410,3 +410,142 @@ def phiS(Q, kA, kB, kC):
 
     if qmatrc.debug: print 'phiS=', phi
     return phi
+
+def phiBurst(Q, kA, kB, kC):
+    """
+    Calculate the start of a burst (Eq. 3.2, CH82).
+
+    """
+
+    kE = kA + kB
+    k = kA + kB + kC
+    p = pinf(Q)
+    pC = p[kE:k]
+    QCB = Q[kE:k, kA:kE]
+    GAB, GBA = iGs(Q, kA, kB)
+    QCA = Q[kE:k, 0:kA]
+    uA = np.ones((kA,1))
+    nom = np.dot(pC,(np.dot(QCB,GBA)+QCA))
+    denom = np.dot(nom,uA)
+    phiB = nom / denom
+    return phiB
+
+def endBurst(Q, kA, kB, kC):
+    """
+    Calculate the end vector for a burst.
+    eB = (GAB * GBC + GAC) * uC  or
+    eB = (I-GAB * GBA) * uA
+    """
+
+    uA = np.ones((kA,1))
+    I = np.eye(kA)
+    GAB, GBA = iGs(Q, kA, kB)
+    eB = np.dot((I - np.dot(GAB, GBA)),uA)
+    return eB
+
+def meanBurstLength(mec, conc):
+    """
+    Calculate the mean burst length (Eq. 3.19, CH82)
+    """
+
+    mec.set_eff('c', conc)
+
+    Q = mec.Q
+    kA = mec.kA
+    kB = mec.kB
+    kC = mec.kC
+    kE = kA + kB
+    phiB = phiBurst(Q, kA, kB, kC)
+    GAB, GBA = iGs(Q, kA, kB)
+    QBB = Q[kA:kE, kA:kE]
+    QAA = Q[0:kA, 0:kA]
+    QAB = Q[0:kA, kA:kE]
+    uA = np.ones((kA,1))
+    I = np.eye(kA)
+    invQAA = -1 * nplin.inv(QAA)
+    invQBB = nplin.inv(QBB)
+    interm1 = nplin.inv(I - np.dot(GAB, GBA))
+    interm2 = I - np.dot(np.dot(QAB, invQBB),GBA)
+    m = np.dot(np.dot(np.dot(np.dot(phiB,interm1),invQAA),interm2),uA)[0]
+
+    #if mec.fastblk:
+    #    m = m * (1 + conc / mec.KBlk)
+
+    return m
+
+def meanBurstOpenings(mec, conc):
+    """
+    Calculate the mean number of openings per burst.
+    mu = phiB * (I - GAB * GBA) ^-1 * uA
+    """
+
+    mec.set_eff('c', conc)
+
+    Q = mec.Q
+    kA = mec.kA
+    kB = mec.kB
+    kC = mec.kC
+    uA = np.ones((kA,1))
+    I = np.eye(kA)
+    phiB = phiBurst(Q, kA, kB, kC)
+    GAB, GBA = iGs(Q, kA, kB)
+    interm = nplin.inv(I - np.dot(GAB, GBA))
+    mu = np.dot(np.dot(phiB, interm), uA)[0]
+
+    if kA > 1:
+        # calculate the mean number of openings per
+        # burst for each component
+        XAA = np.dot(GAB, GBA)
+        eigvals, A = eigs(XAA)
+        muComponents = 1 / (1 - eigvals)
+        print 'means of number of openings per burst for components=', muComponents
+
+    return mu
+
+def distNumOpeningsBurst(r, mec, conc):
+    """
+    """
+
+    mec.set_eff('c', conc)
+
+    Q = mec.Q
+    kA = mec.kA
+    kB = mec.kB
+    kC = mec.kC
+    phiB = phiBurst(Q, kA, kB, kC)
+    GAB, GBA = iGs(Q, kA, kB)
+    eB = endBurst(Q, kA, kB, kC)
+
+    GG = np.dot(GAB, GBA)
+    if r == 1:
+        interm = np.eye(kA)
+    elif r == 2:
+        interm = GG
+    else:
+        interm = GG
+        for i in range(2, r):
+            interm = np.dot(interm, GG)
+    Pr = np.dot(np.dot(phiB, interm), eB)
+    return Pr
+
+def distBurstLength(t, mec, conc):
+    """
+    """
+
+    mec.set_eff('c', conc)
+
+    Q = mec.Q
+    kA = mec.kA
+    kB = mec.kB
+    kC = mec.kC
+
+    phiB = phiBurst(Q, kA, kB, kC)
+    kE = kA + kB
+    QEE = Q[0:kE, 0:kE]
+    QAA = Q[0:kA, 0:kA]
+    eB = endBurst(Q, kA, kB, kC)
+
+
+    expQEEA = expQsub(t, QEE)[0:kA, 0:kA]
+    f = np.dot(np.dot(np.dot(phiB, expQEEA), -QAA),eB)
+    return f
