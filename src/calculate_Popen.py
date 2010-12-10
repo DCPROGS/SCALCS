@@ -4,8 +4,6 @@ This script uses scalcslib module to calculate maxPopen, EC50 and
 nH parameters.
 """
 
-import numpy as np
-
 import scalcslib as scl
 import scplotlib as scpl
 import mechanism as mec
@@ -35,7 +33,7 @@ def demoQ():
 
     ncyc = 1
     dgamma = 50e-12
-    fastblk = True
+    fastblk = False
     KBlk = 0.001
 
     return  mec.Mechanism(RateList, StateList, ncyc, dgamma, fastblk, KBlk)
@@ -49,16 +47,16 @@ if __name__ == "__main__":
 
     demomec = demoQ()
 
-    emaxPopen = scl.get_maxPopen(demomec, tres)
-    imaxPopen = scl.get_maxPopen(demomec, 0)
+    emaxPopen, econc = scl.get_maxPopen(demomec, tres)
+    imaxPopen, iconc = scl.get_maxPopen(demomec, 0)
     eEC50 = scl.get_EC50(demomec, tres)
     iEC50 = scl.get_EC50(demomec, 0)
     enH = scl.get_nH(demomec, tres)
     inH = scl.get_nH(demomec, 0)
 
-    text1 = ('ideal Popen curve:\nmaxPopen={0:.3f}'.format(imaxPopen)) # +
-        #'\nEC50 = {0:.2e} M'.format(iEC50) + '\nnH = {0:.3f}'.format(inH))
-    text2 = ('HJC Popen curve:\nmaxPopen={0:.3f}'.format(emaxPopen)) # +
-        #'\nEC50 = {0:.2e} M'.format(eEC50) + '\nnH = {0:.3f}'.format(enH))
+    text1 = ('ideal Popen curve:\nmaxPopen={0:.3f}'.format(imaxPopen) +
+        '\nEC50 = {0:.2e} M'.format(iEC50) + '\nnH = {0:.3f}'.format(inH))
+    text2 = ('HJC Popen curve:\nmaxPopen={0:.3f}'.format(emaxPopen) +
+        '\nEC50 = {0:.2e} M'.format(eEC50) + '\nnH = {0:.3f}'.format(enH))
 
     scpl.plot_Popen_curve(c_start, c_end, demomec, tres, text1, text2)

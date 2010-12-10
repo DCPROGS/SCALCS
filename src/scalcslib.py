@@ -26,6 +26,10 @@ Neher E) Plenum Press, New York, pp. 397-482.
 CH95b: Colquhoun D, Hawkes AG (1995b)
 A Q-Matrix Cookbook. In: Single-channel recording. 2nd ed. (Eds:
 Sakmann B, Neher E) Plenum Press, New York, pp. 589-633.
+
+TODO
+--------
+Check if it works with declining Popen curve.
 """
 
 __author__="R.Lape, University College London"
@@ -49,6 +53,7 @@ def get_P0(mec, tres, eff='c'):
     Returns
     -------
     P0 : float
+        Open probability in absence of effector.
     """
 
     conc = 0
@@ -64,21 +69,21 @@ def get_P0(mec, tres, eff='c'):
 
 def get_maxPopen(mec, tres, eff='c'):
     """
-    Find maximum value of a Popen curve.
-    TODO: doesn't work for not monotonic curve.
+    Estimate numerically maximum equilibrium open probability.
+    In case Popen curve goes through a maximum, the peak open
+    probability is returned.
 
     Parameters
     ----------
     mec : instance of type Mechanism
     tres : float
         Time resolution (dead time).
-    decline : logical
-        True if Popen curve monotonicly declining.
 
     Returns
     -------
     maxPopen : float
-    xA : float
+        Maximum equilibrium open probability.
+    conc : float
         Concentration at which Popen curve reaches maximal value.
     """
 
@@ -89,7 +94,6 @@ def get_maxPopen(mec, tres, eff='c'):
     conc = 1e-9    # start at 1 nM
     Poplast = get_Popen(mec, tres, conc)
     fac = np.sqrt(10)
-
     c1 = 0
     c2 = 0
 
@@ -101,93 +105,128 @@ def get_maxPopen(mec, tres, eff='c'):
             flat = np.fabs(Poplast) < 1e-12
         else:
             rel = (Popen - Poplast) / Popen
-            if niter > 2 and Popen > 1e-5:
+            if niter > 1 and Popen > 1e-5:
                 if (rel * rellast) < -1e-10: # goes through min/max
                     monot = False
                     c1 = conc / fac     # conc before max
                     c2 = conc    # conc after max
-                flat = ((np.fabs(rel) < 1e-4) and
-                    (np.fabs(rellast) < 1e-4))
-
-            if conc < 0.01:
+                flat = ((np.fabs(rel) < 1e-5) and
+                    (np.fabs(rellast) < 1e-5))
+            if conc < 0.01:    # do not leave before 10 mM ?
                 flat = False
             rellast = rel
         Poplast = Popen
         niter += 1
-    #end while
+
+    if not monot:    # find maxPopen and cmax more accurately
+        epsc =  c1 / 1000    # accuracy in concentration
+        epsy = 0.0001    # accuracy in open probability
+        Perr = 2 * epsy
+        fac = 1.01
+        maxnstep  = int(np.log10(np.fabs(c1 - c2) / epsc) / np.log10(2) + 0.5)
+        nstep = 0
+        while nstep <= maxnstep and np.fabs(Perr) > 0:
+            conc = 0.5 * (c1 + c2)
+            conc1 = conc / fac
+            P1 = get_Popen(mec, tres, conc)
+            conc1 = conc * fac
+            P2 = get_Popen(mec, tres, conc)
+            Perr = P2 - P1
+            if Perr < 0:
+                c1 = conc1
+            else:
+                c2 = conc1
 
     maxPopen = get_Popen(mec, tres, conc)
-    return maxPopen
+    return maxPopen, conc
 
 def get_Popen(mec, tres, conc, eff='c'):
     """
+    Calculate equilibrium open probability, Popen, and correct for
+    unresolved blockages in case of presence of fast pore blocker.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution (dead time).
+    conc : float
+        Concentration.
+
+    Returns
+    -------
+    Popen : float
+        Open probability value at a given concentration.
     """
+
     mec.set_eff(eff, conc)
     Popen = qml.popen(mec.Q, mec.kA, tres)
-    if mec.fastblk:    # correct Popen for unresolved block
+    if mec.fastblk:
         Popen = Popen / (1 + conc / mec.KBlk)
-    return Popen    
+    return Popen
 
 def get_decline(mec, tres, eff='c'):
     """
     Find whether open probability curve increases or decreases
     with ligand concentration. Popen may decrease if ligand is inhibitor.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution (dead time).
+
+    Returns
+    -------
+    decline : bool
+        True if Popen curve dectreases with concentration.
     """
 
-    # First find Popen at a single high conc (say 1 M)
-    conc = 1
-    Popen = get_Popen(mec, tres, conc)
-    P0 = get_P0(mec, tres)
+    Popen = get_Popen(mec, tres, 1)    # Popen at 1 M
+    P0 = get_P0(mec, tres)    # Popen at 0 M
     decline = (Popen < P0)
     return decline
 
 def get_EC50(mec, tres, eff='c'):
     """
-    Find EC50 value of a Popen curve.
-    If monotonic this is unambiguous. If not monotonic then EC50 is
-    returned as conc to left of peak for 50% of peak response.
+    Estimate numerically the equilibrium EC50 for a specified mechanism.
+    If monotonic this is unambiguous. If not monotonic then returned is
+    a concentration for 50% of  the peak response to the left of the peak.
 
     Parameters
     ----------
     mec : instance of type Mechanism
-    P0 : float
-        Minimal open probability value.
-    maxPopen : float
-        Maximal open probability value.
     tres : float
         Time resolution (dead time).
 
     Returns
     -------
     EC50 : float
-        Concentration at which open probability is 50% of its maximal value.
+        Concentration at which Popen is 50% of its maximal value.
     """
 
     P0 = get_P0(mec, tres)
-    maxPopen = get_maxPopen(mec, tres)
+    maxPopen, cmax = get_maxPopen(mec, tres)
 
-    epsy = 0.001    # accuracy in cur/curmax = 0.5
-    Perr = 2 * epsy    # to start
     c1 = 0
-    c2 = 100
+    c2 = cmax
     conc = 0
-
-    epsc = 0.1e-9    # accuracy = 0.1 nM
+    epsy = 0.001    # accuracy in Popen
+    Perr = 2 * epsy
+    epsc = 0.1e-9    # accuracy in concentration 0.1 nM
     nstepmax = int(np.log10(np.fabs(c1 - c2) / epsc) / np.log10(2) + 0.5)
     nstep = 0
-    while np.fabs(Perr) > epsy:
+
+    while np.fabs(Perr) > epsy and nstep <= nstepmax:
         nstep += 1
-        if nstep <= nstepmax:
-            conc = 0.5 * (c1 + c2)
-            #Popen = get_Popen(mec, tres, conc)
-            mec.set_eff(eff, conc)
-            Popen = qml.popen(mec.Q, mec.kA, tres)
-            pout = np.fabs((Popen - P0) / (maxPopen - P0))
-            Perr = pout - 0.5    # Yout 0.5 for EC50
-            if Perr < 0:
-                c1 = conc
-            elif Perr > 0:
-                c2 = conc
+        conc = (c1 + c2) / 2
+        Popen = get_Popen(mec, tres, conc)
+        Popen = np.fabs((Popen - P0) / (maxPopen - P0))
+        Perr = Popen - 0.5
+        if Perr < 0:
+            c1 = conc
+        elif Perr > 0:
+            c2 = conc
     EC50 = conc
 
     return EC50
@@ -206,35 +245,32 @@ def get_nH(mec, tres, eff='c'):
     Returns
     -------
     nH : float
-        Concentration at which open probability is 50% of its maximal value.
+        Hill slope.
     """
 
     P0 = get_P0(mec, tres)
-    Pmax = get_maxPopen(mec, tres)
+    Pmax, cmax = get_maxPopen(mec, tres)
     EC50 = get_EC50(mec, tres)
     decline = get_decline(mec, tres)
-
-    # Calculate Popen curve
-    n = 128
-    dc = (np.log10(EC50 * 2) - np.log10(EC50 * 0.5)) / (n - 1)
-    c = np.zeros(n)
-    y = np.zeros(n)
-    for i in range(n):
-        c[i] = (EC50 * 0.1) * pow(10, i * dc)
-        y[i] = get_Popen(mec, tres, c[i])
-        #mec.set_eff(eff, c[i])
-        #y[i] = qml.popen(mec.Q, mec.kA, tres)
-
     if decline:
         temp = P0
         P0 = Pmax
         Pmax = temp
 
+    # Calculate Popen curve
+    n = 64
+    dc = (np.log10(EC50 * 1.1) - np.log10(EC50 * 0.9)) / (n - 1)
+    c = np.zeros(n)
+    y = np.zeros(n)
+    for i in range(n):
+        c[i] = (EC50 * 0.9) * pow(10, i * dc)
+        y[i] = get_Popen(mec, tres, c[i])
+
+    # Find two point around EC50.
     i50 = 0
     s1 = 0
     s2 = 0
     i = 0
-
     while i50 ==0 and i < n-1:
         if (c[i] <= EC50) and (c[i+1] >= EC50):
             i50 = i
@@ -246,6 +282,7 @@ def get_nH(mec, tres, eff='c'):
             s2 = (y4 - y3) / (np.log10(c[i+2]) - np.log10(c[i+1]))
         i += 1
 
+    # Interpolate linearly for Hill slope at EC50
     b = (s2 - s1) / (c[i50+1] - c[i50])
     nH = s1 + b * (EC50 - c[i50])
     return nH
