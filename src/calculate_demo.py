@@ -77,19 +77,19 @@ if __name__ == "__main__":
     #demomec.set_eff('c', conc)
 
     # Calculate mean burst length.
-    m = qml.meanBurstLength(demomec, conc)
+    m = qml.mean_burst_length(demomec, conc)
     print '\nmean burst length =', m
     # Plot burst length distribution
     plt.subplot(222)
-    scplot.dist_burst_length(demomec, conc)
+    scplot.distr_burst_length(demomec, conc)
 
     # Calculate mean number of openings per burst.
-    mu = qml.meanBurstOpenings(demomec, conc)
+    mu = qml.mean_num_burst_openings(demomec, conc)
     print 'mean number of openings per burst= ', mu
     # Plot distribution of number of openings per burst
     n = 10
     plt.subplot(223)
-    scplot.dist_num_openings_burst(n, demomec, conc)
+    scplot.distr_num_burst_openings(n, demomec, conc)
 
     conc_start = 1e-6    # in M
     conc_end = 1e-2    # in M

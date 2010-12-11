@@ -72,7 +72,7 @@ def eigs(Q):
 
 def iGs(Q, kA, kB):
     """
-    Calculate and return GBA and GAB matrices (Eq. 1.25, CH82).
+    Calculate GBA and GAB matrices (Eq. 1.25, CH82).
         GBA=-QBB^(-1)*QBA
         GAB=-QAA^(-1)*QAB
 
@@ -413,18 +413,33 @@ def phiS(Q, kA, kB, kC):
 
 def phiBurst(Q, kA, kB, kC):
     """
-    Calculate the start of a burst (Eq. 3.2, CH82).
+    Calculate the start probabilities of a burst (Eq. 3.2, CH82).
+    PhiB = (pCinf * (QCB * GBA + QCA)) / (pCinf * (QCB * GBA + QCA) * uA)
 
+    Parameters
+    ----------
+    Q : array_like, shape (k, k)
+    kA : int
+        Number of open states.
+    kB : int
+        Number of short lived shut states.
+    kC : int
+        Number of long lived shut states.
+
+    Returns
+    -------
+    phiB : array_like, shape (1, kA)
     """
 
     kE = kA + kB
     k = kA + kB + kC
-    p = pinf(Q)
-    pC = p[kE:k]
     QCB = Q[kE:k, kA:kE]
-    GAB, GBA = iGs(Q, kA, kB)
     QCA = Q[kE:k, 0:kA]
     uA = np.ones((kA,1))
+
+    p = pinf(Q)
+    pC = p[kE:k]
+    GAB, GBA = iGs(Q, kA, kB)
     nom = np.dot(pC,(np.dot(QCB,GBA)+QCA))
     denom = np.dot(nom,uA)
     phiB = nom / denom
@@ -432,9 +447,22 @@ def phiBurst(Q, kA, kB, kC):
 
 def endBurst(Q, kA, kB, kC):
     """
-    Calculate the end vector for a burst.
-    eB = (GAB * GBC + GAC) * uC  or
+    Calculate the end vector for a burst (Eq. 3.4, CH82).
     eB = (I-GAB * GBA) * uA
+
+    Parameters
+    ----------
+    Q : array_like, shape (k, k)
+    kA : int
+        Number of open states.
+    kB : int
+        Number of short lived shut states.
+    kC : int
+        Number of long lived shut states.
+
+    Returns
+    -------
+    eB : array_like, shape (kA, 1)
     """
 
     uA = np.ones((kA,1))
@@ -443,75 +471,102 @@ def endBurst(Q, kA, kB, kC):
     eB = np.dot((I - np.dot(GAB, GBA)),uA)
     return eB
 
-def meanBurstLength(mec, conc):
+def mean_burst_length(mec, conc):
     """
-    Calculate the mean burst length (Eq. 3.19, CH82)
+    Calculate the mean burst length (Eq. 3.19, CH82).
+    m = PhiB * (I - GAB * GBA)^(-1) * (-QAA^(-1)) *
+        (I - QAB * (QBB^(-1)) * GBA) * uA
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    conc : float
+        Concentration.
+
+    Returns
+    -------
+    m : float
+        The mean burst length.
     """
 
     mec.set_eff('c', conc)
-
     Q = mec.Q
     kA = mec.kA
     kB = mec.kB
     kC = mec.kC
     kE = kA + kB
-    phiB = phiBurst(Q, kA, kB, kC)
-    GAB, GBA = iGs(Q, kA, kB)
     QBB = Q[kA:kE, kA:kE]
     QAA = Q[0:kA, 0:kA]
     QAB = Q[0:kA, kA:kE]
-    uA = np.ones((kA,1))
+    uA = np.ones((kA, 1))
     I = np.eye(kA)
+
+    phiB = phiBurst(Q, kA, kB, kC)
+    GAB, GBA = iGs(Q, kA, kB)
     invQAA = -1 * nplin.inv(QAA)
     invQBB = nplin.inv(QBB)
     interm1 = nplin.inv(I - np.dot(GAB, GBA))
-    interm2 = I - np.dot(np.dot(QAB, invQBB),GBA)
-    m = np.dot(np.dot(np.dot(np.dot(phiB,interm1),invQAA),interm2),uA)[0]
-
-    #if mec.fastblk:
-    #    m = m * (1 + conc / mec.KBlk)
-
+    interm2 = I - np.dot(np.dot(QAB, invQBB), GBA)
+    m = (np.dot(np.dot(np.dot(np.dot(phiB, interm1), invQAA),
+        interm2), uA)[0])
     return m
 
-def meanBurstOpenings(mec, conc):
+def mean_num_burst_openings(mec, conc):
     """
-    Calculate the mean number of openings per burst.
-    mu = phiB * (I - GAB * GBA) ^-1 * uA
+    Calculate the mean number of openings per burst (Eq. 3.7, CH82).
+    mu = phiB * (I - GAB * GBA)^(-1) * uA
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    conc : float
+        Concentration.
+
+    Returns
+    -------
+    mu : float
+        The mean number ofopenings per burst.
     """
 
     mec.set_eff('c', conc)
-
     Q = mec.Q
     kA = mec.kA
     kB = mec.kB
     kC = mec.kC
     uA = np.ones((kA,1))
     I = np.eye(kA)
+
     phiB = phiBurst(Q, kA, kB, kC)
     GAB, GBA = iGs(Q, kA, kB)
     interm = nplin.inv(I - np.dot(GAB, GBA))
     mu = np.dot(np.dot(phiB, interm), uA)[0]
-
-    if kA > 1:
-        # calculate the mean number of openings per
-        # burst for each component
-        XAA = np.dot(GAB, GBA)
-        eigvals, A = eigs(XAA)
-        muComponents = 1 / (1 - eigvals)
-        print 'means of number of openings per burst for components=', muComponents
-
     return mu
 
-def distNumOpeningsBurst(r, mec, conc):
+def distr_num_burst_openings(r, mec, conc):
     """
+    The distribution of openings per burst (Eq. 3.5, CH82).
+    P(r) = phiB * (GAB * GBA)^(r-1) * eB
+
+    Parameters
+    ----------
+    r : int
+        Number of openings per burst.
+    mec : instance of type Mechanism
+    conc : float
+        Concentration.
+
+    Returns
+    -------
+    Pr : float
+        Probability of seeing r openings per burst.
     """
 
     mec.set_eff('c', conc)
-
     Q = mec.Q
     kA = mec.kA
     kB = mec.kB
     kC = mec.kC
+
     phiB = phiBurst(Q, kA, kB, kC)
     GAB, GBA = iGs(Q, kA, kB)
     eB = endBurst(Q, kA, kB, kC)
@@ -528,24 +583,35 @@ def distNumOpeningsBurst(r, mec, conc):
     Pr = np.dot(np.dot(phiB, interm), eB)
     return Pr
 
-def distBurstLength(t, mec, conc):
+def distr_burst_length(t, mec, conc):
     """
+    Probability density function of the burst length (Eq. 3.17, CH82).
+    f(t) = phiB * [PEE(t)]AA * (-QAA) * eB, where PEE(t) = exp(QEE * t)
+
+    Parameters
+    ----------
+    t : float
+        Time.
+    mec : instance of type Mechanism
+    conc : float
+        Concentration.
+
+    Returns
+    -------
+    f : float
     """
 
     mec.set_eff('c', conc)
-
     Q = mec.Q
     kA = mec.kA
     kB = mec.kB
     kC = mec.kC
-
-    phiB = phiBurst(Q, kA, kB, kC)
     kE = kA + kB
     QEE = Q[0:kE, 0:kE]
     QAA = Q[0:kA, 0:kA]
+
+    phiB = phiBurst(Q, kA, kB, kC)
     eB = endBurst(Q, kA, kB, kC)
-
-
     expQEEA = expQsub(t, QEE)[0:kA, 0:kA]
-    f = np.dot(np.dot(np.dot(phiB, expQEEA), -QAA),eB)
+    f = np.dot(np.dot(np.dot(phiB, expQEEA), -QAA), eB)
     return f

@@ -57,41 +57,51 @@ def popen_curve(cmin, cmax, mec, tres, text1, text2, eff='c'):
     plt.title('Apparent and ideal Popen curves')
     #plt.show()
 
-def dist_burst_length(mec, conc):
+def distr_burst_length(mec, conc):
     """
+    Plot the burst length distribution.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    conc : float
+        Concentrtaion.
     """
 
-    #eigenval, A = qml.eigs(-QEE)
-    #tau = 1 / eigenval
-    #print 'tau=', tau
-
-    nPoint = 1000
+    point_num = 1000
     tmin = 0.00001
     tmax = 0.100
-    dt = (np.log10(tmax) - np.log10(tmin)) / (nPoint - 1)
+    dt = (np.log10(tmax) - np.log10(tmin)) / (point_num - 1)
 
-    t = np.zeros(nPoint)
-    fbst = np.zeros(nPoint)
-    #fblk = np.zeros(nPoint)
-    for i in range(nPoint):
+    t = np.zeros(point_num)
+    fbst = np.zeros(point_num)
+    for i in range(point_num):
         t[i] = tmin * pow(10, (i * dt))
-        fbst[i] = np.sqrt(t[i] * qml.distBurstLength(t[i], mec, conc))
-        #fblk[i] = np.sqrt(t[i] * qml.distBurstLength(t[i], mec, conc, fastblk=True))
+        fbst[i] = np.sqrt(t[i] * qml.distr_burst_length(t[i], mec, conc))
     plt.semilogx(t, fbst, 'b-')
     plt.ylabel('fbst(t)')
     plt.xlabel('burst length, s')
     plt.title('The burst length pdf')
     #plt.show()
 
-def dist_num_openings_burst(n, mec, conc):
+def distr_num_burst_openings(n, mec, conc):
     """
+    Plot the distribution of number of openings per burst.
+
+    Parameters
+    ----------
+    n : int
+        Number of openings per burst.
+    mec : instance of type Mechanism
+    conc : float
+        Concentrtaion.
     """
 
     r = np.arange(1, n+1)
     #Pr = qml.distNumOpeningsBurst(r, mec)
     Pr = np.zeros(n)
     for i in range(n):
-        Pr[i] = qml.distNumOpeningsBurst(r[i], mec, conc)
+        Pr[i] = qml.distr_num_burst_openings(r[i], mec, conc)
 
     plt.plot(r, Pr,'ro')
     plt.ylabel('Pr')
@@ -102,18 +112,25 @@ def dist_num_openings_burst(n, mec, conc):
 
 def burst_length_versus_conc(mec, cmin, cmax):
     """
+    Plot of the mean burst length versus concentration.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    cmin : float
+        Concentration to start.
+    cmax : float
+        Concentration to stop.
     """
 
     point_num = 100
     incr = (cmax - cmin)/(point_num - 1)
-
     c = np.zeros(point_num)
     b = np.zeros(point_num)
     blk = np.zeros(point_num)
     for i in range(point_num):
         c[i] = cmin + incr * i
-        #mec.set_eff('c', c[i])
-        b[i] = qml.meanBurstLength(mec, c[i])
+        b[i] = qml.mean_burst_length(mec, c[i])
         if mec.fastblk:
             blk[i] = b[i] * (1 + c[i] / mec.KBlk)
 
