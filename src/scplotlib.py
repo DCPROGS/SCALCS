@@ -57,7 +57,7 @@ def popen_curve(cmin, cmax, mec, tres, text1, text2, eff='c'):
     plt.title('Apparent and ideal Popen curves')
     #plt.show()
 
-def distr_burst_length(mec, conc):
+def distr_burst_length(mec, conc, tmin, tmax):
     """
     Plot the burst length distribution.
 
@@ -69,8 +69,6 @@ def distr_burst_length(mec, conc):
     """
 
     point_num = 1000
-    tmin = 0.00001
-    tmax = 0.100
     dt = (np.log10(tmax) - np.log10(tmin)) / (point_num - 1)
 
     t = np.zeros(point_num)

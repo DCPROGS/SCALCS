@@ -20,8 +20,9 @@ class Rate(object):
     Describes a rate between two states.
     """
 
-    def __init__(self, rate, state1, state2, eff=None, fixed=False):
+    def __init__(self, name, rate, state1, state2, eff=None, fixed=False):
 
+        self.name = name
         self.rate = rate
 
         if not isinstance(state1, int) or not isinstance(state2, int):
@@ -40,7 +41,7 @@ class State(object):
     Describes a state.
     """
     
-    def __init__(self, no, statetype='C'):
+    def __init__(self, no, statetype, name, conductance):
         if not isinstance(no, int):
             raise TypeError("State number has to be of type int")
         self.no = no
@@ -48,6 +49,9 @@ class State(object):
         if statetype not in ['A', 'B', 'C', 'D']:
             raise RuntimeError("State has to be one of 'A', 'B', 'C' or 'D'")
         self.statetype = statetype
+
+        self.name = name
+        self.conductance = conductance
 
 def initQ(Rates, States):
     Q = np.zeros((len(States), len(States)), dtype=np.float64)
@@ -67,10 +71,10 @@ class Mechanism(object):
     Represents a kinetic mechanism / scheme.
     '''
 
-    def __init__(self, Rates, States, ncyc, dgamma, fastblk=False, KBlk=None):
+    def __init__(self, Rates, States, ncyc, fastblk=False, KBlk=None):
 
-        if len(Rates) != len(States)*2:
-            raise RuntimeError("Not enough rates for given number of states")
+        #if len(Rates) != len(States)*2:
+        #    raise RuntimeError("Not enough rates for given number of states")
         
         self.Rates = Rates
         self.States = States
@@ -92,7 +96,6 @@ class Mechanism(object):
                 self.kD += 1
 
         self.ncyc = ncyc   # number of cycles; could be deduced from the rates!
-        self.dgamma = dgamma
         self.fastblk = fastblk
         self.KBlk = KBlk
 

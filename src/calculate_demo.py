@@ -10,41 +10,53 @@ import qmatlib as qml
 import scalcslib as scl
 import scplotlib as scplot
 import mechanism as mec
+import readmecfile as readmec
 
 def demoQ():
 
     RateList = [
-         mec.Rate(15.0, 4, 1), # beta_1
-         mec.Rate(15000.0, 3, 2), # beta_2
-         mec.Rate(3000.0, 1, 4), # alpha_1
-         mec.Rate(500.0, 2, 3), # alpha_2
-         mec.Rate(2000.0, 4, 5), # k_m1
-         mec.Rate(2 * 2000.0, 3, 4), # k_m2
-         mec.Rate(2 * 5.0e07, 5, 4, 'c'), # k_p1
-         mec.Rate(5.0e08, 1, 2, 'c'), # k_star_p2
-         mec.Rate(5.0e08, 4, 3, 'c'), # k_p2
-         mec.Rate(2 * 1.0 / 3.0, 2, 1), # k_star_m2
+         mec.Rate('beta1', 15.0, 4, 1),
+         mec.Rate('beta2', 15000.0, 3, 2),
+         mec.Rate('alpha1', 3000.0, 1, 4),
+         mec.Rate('alpha2', 500.0, 2, 3),
+         mec.Rate('k(-1)', 2000.0, 4, 5),
+         mec.Rate('k(-2)', 2 * 2000.0, 3, 4),
+         mec.Rate('k(+1)', 2 * 5.0e07, 5, 4, 'c'),
+         mec.Rate('k*(+1)', 5.0e08, 1, 2, 'c'),
+         mec.Rate('k(-2)', 5.0e08, 4, 3, 'c'),
+         mec.Rate('k*(-2)', 2 * 1.0 / 3.0, 2, 1),
          ]
 
     StateList = [
-        mec.State(1, 'A'),
-        mec.State(2, 'A'),
-        mec.State(3, 'B'),
-        mec.State(4, 'B'),
-        mec.State(5, 'C')
+        mec.State(1, 'A', 'A2R*', 60e-12),
+        mec.State(2, 'A', 'AR*', 60e-12),
+        mec.State(3, 'B', 'A2R', 0.0),
+        mec.State(4, 'B', 'AR', 0.0),
+        mec.State(5, 'C', 'R', 0.0)
         ]
 
     ncyc = 1
-    dgamma = 50e-12
     fastblk = True
     KBlk = 0.001
 
-    return  mec.Mechanism(RateList, StateList, ncyc, dgamma, fastblk, KBlk)
+    return  mec.Mechanism(RateList, StateList, ncyc, fastblk, KBlk)
 
 if __name__ == "__main__":
 
     tres = 0.00004  # resolution in seconds
-    demomec = demoQ()
+
+    # demo = True to run DC82 numerical example
+    # demo = False to load a mechanism defined in mec file
+    demo = True
+    if demo:
+        demomec = demoQ()
+    else:
+        mecfile, version, meclist, max_mecnum = readmec.choose_mecfile()
+        print 'mecfile:', mecfile
+        print 'version:', version
+        mecnum, ratenum = readmec.choose_mec_from_list(meclist, max_mecnum)
+        print '\nRead rate set #', ratenum + 1, 'of mec #', mecnum
+        demomec = readmec.load_mec(mecfile, meclist[ratenum][0])
 
     #     POPEN CURVE CALCULATIONS
     print '\nCalculating Popen curve parameters:'
@@ -66,8 +78,8 @@ if __name__ == "__main__":
     print text1
 
     # Plot ideal and corrected Popen curves.
-    c_start = 1.e-7      # 1 nM in M
-    c_end = 1.e-4        # 1 mikroM in M
+    c_start = iEC50 * 0.01
+    c_end = iEC50 *100
     plt.subplot(221)
     scplot.popen_curve(c_start, c_end, demomec, tres, text1, text2)
 
@@ -80,8 +92,10 @@ if __name__ == "__main__":
     m = qml.mean_burst_length(demomec, conc)
     print '\nmean burst length =', m
     # Plot burst length distribution
+    tmin = tres
+    tmax = 0.100
     plt.subplot(222)
-    scplot.distr_burst_length(demomec, conc)
+    scplot.distr_burst_length(demomec, conc, tmin, tmax)
 
     # Calculate mean number of openings per burst.
     mu = qml.mean_num_burst_openings(demomec, conc)
