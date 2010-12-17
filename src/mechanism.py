@@ -20,7 +20,7 @@ class Rate(object):
     Describes a rate between two states.
     """
 
-    def __init__(self, name, rate, state1, state2, eff=None, fixed=False):
+    def __init__(self, name, rate, state1, state2, eff=None, fixed=False, mr=False):
 
         self.name = name
         self.rate = rate
@@ -34,7 +34,8 @@ class Rate(object):
                        # We might need to expand this to a list if a rate
                        # depends on more than one effector.
         
-        self.fixed = fixed # for future expansion
+        self.fixed = fixed # for future expansion (fixed while fitting)
+        self.mr = mr # for future expansion (set by microscopic reversibility)
 
 class State(object):
     """
