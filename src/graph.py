@@ -24,7 +24,7 @@ except:
     raise ImportError("matplotlib is missing")
 
 def create_graph(mec):
-    G = nx.DiGraph()
+    G = nx.MultiDiGraph()
 
     # add vertices
     G.add_nodes_from(range(1, len(mec.States)+1))
