@@ -20,7 +20,7 @@ class Rate(object):
     Describes a rate between two states.
     """
 
-    def __init__(self, name, rate, state1, state2, eff=None, fixed=False, mr=False):
+    def __init__(self, rate, state1, state2, name='', eff=None, fixed=False, mr=False):
 
         self.name = name
         self.rate = rate
@@ -42,7 +42,7 @@ class State(object):
     Describes a state.
     """
     
-    def __init__(self, no, statetype, name, conductance):
+    def __init__(self, no, statetype='', name='', conductance=0.0):
         if not isinstance(no, int):
             raise TypeError("State number has to be of type int")
         self.no = no
@@ -72,7 +72,7 @@ class Mechanism(object):
     Represents a kinetic mechanism / scheme.
     '''
 
-    def __init__(self, Rates, States, ncyc, fastblk=False, KBlk=None):
+    def __init__(self, Rates, States, ncyc=0, fastblk=False, KBlk=None):
 
         #if len(Rates) != len(States)*2:
         #    raise RuntimeError("Not enough rates for given number of states")

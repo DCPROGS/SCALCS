@@ -458,13 +458,13 @@ def load_mec(mecfile, start):
     RateList = []
     for i in range(nrateq):
         cdep = False
-        eff = None
+        bound = None
         for j in range(ncdep):
             if ix[j] == irate[i] and jx[j] == jrate[i]:
                 cdep = True
-                eff = 'c'
+                bound = 'c'
         rate = QT[irate[i] - 1, jrate[i] - 1]
-        RateList.append(mec.Rate(ratename[i], rate, irate[i], jrate[i], eff))
+        RateList.append(mec.Rate(rate, irate[i], jrate[i], name=ratename[i], eff=bound))
 
-    return mec.Mechanism(RateList, StateList, ncyc)
+    return mec.Mechanism(RateList, StateList, ncyc=ncyc)
     

@@ -15,16 +15,16 @@ import readmecfile as readmec
 def demoQ():
 
     RateList = [
-         mec.Rate('beta1', 15.0, 4, 1),
-         mec.Rate('beta2', 15000.0, 3, 2),
-         mec.Rate('alpha1', 3000.0, 1, 4),
-         mec.Rate('alpha2', 500.0, 2, 3),
-         mec.Rate('k(-1)', 2000.0, 4, 5),
-         mec.Rate('k(-2)', 2 * 2000.0, 3, 4),
-         mec.Rate('k(+1)', 2 * 5.0e07, 5, 4, 'c'),
-         mec.Rate('k*(+1)', 5.0e08, 1, 2, 'c'),
-         mec.Rate('k(-2)', 5.0e08, 4, 3, 'c'),
-         mec.Rate('k*(-2)', 2 * 1.0 / 3.0, 2, 1),
+         mec.Rate(15.0, 4, 1, name='beta1'),
+         mec.Rate(15000.0, 3, 2, name='beta2'),
+         mec.Rate(3000.0, 1, 4, name='alpha1'),
+         mec.Rate(500.0, 2, 3, name='alpha2'),
+         mec.Rate(2000.0, 4, 5, name='k(-1)'),
+         mec.Rate(2 * 2000.0, 3, 4, name='k(-2)'),
+         mec.Rate(2 * 5.0e07, 5, 4, name='k(+1)', eff='c'),
+         mec.Rate(5.0e08, 1, 2, name='k*(+1)', eff='c'),
+         mec.Rate(5.0e08, 4, 3, name='k(-2)', eff='c'),
+         mec.Rate(2 * 1.0 / 3.0, 2, 1, name='k*(-2)'),
          ]
 
     StateList = [
@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     # demo = True to run DC82 numerical example
     # demo = False to load a mechanism defined in mec file
-    demo = True
+    demo = False
     if demo:
         demomec = demoQ()
     else:
