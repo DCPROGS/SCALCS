@@ -1,6 +1,6 @@
 #! /usr/bin/python
 """
-A simple GUI for dc-pyps project.
+A simple GUI for DC_PyPs project.
 Depends on pyqt and matplotlib modules.
 """
 import time
@@ -75,8 +75,6 @@ class QMatGUI(QMainWindow):
                 spine.set_color('none') # don't draw spine
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
-
-
         self.mplTools = NavigationToolbar(self.canvas, self.mainFrame)
 
         self.textBox = QTextBrowser()
@@ -175,6 +173,9 @@ class QMatGUI(QMainWindow):
         self.setCentralWidget(self.mainFrame)
         
     def on_settings_changed(self):
+        """
+        Get setting values.
+        """
         self.KB = float(self.KBEdit.text()) / 1000.0
         self.tres = float(self.tresEdit.text()) / 1000000.0
         self.tmin = float(self.trangeEdit1.text()) / 1000.0
@@ -187,7 +188,7 @@ class QMatGUI(QMainWindow):
     def createAction(self, text, slot=None, shortcut=None, icon=None,
             tip=None, checkable=False, signal="triggered()"):
         """
-        
+        Create menu actions.
         """
         action = QAction(text, self)
         if icon is not None:
