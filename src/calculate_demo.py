@@ -44,71 +44,74 @@ def demoQ():
 if __name__ == "__main__":
 
     tres = 0.00004  # resolution in seconds
+    fastBlk = False
+    KBlk = 0.01
+
+    conc = 100e-9    # 100 nM
+    cmin = 100e-9
+    cmax = 0.01
+    tmin = tres
+    tmax = 100
 
     # demo = True to run DC82 numerical example
     # demo = False to load a mechanism defined in mec file
-    demo = False
+    demo = True
     if demo:
         demomec = demoQ()
     else:
-        mecfile, version, meclist, max_mecnum = readmec.choose_mecfile()
+        mecfile = readmec.choose_mecfile()
+        version, meclist, max_mecnum = readmec.get_mec_list(mecfile)
         print 'mecfile:', mecfile
         print 'version:', version
         mecnum, ratenum = readmec.choose_mec_from_list(meclist, max_mecnum)
         print '\nRead rate set #', ratenum + 1, 'of mec #', mecnum
         demomec = readmec.load_mec(mecfile, meclist[ratenum][0])
 
+
     #     POPEN CURVE CALCULATIONS
     print '\nCalculating Popen curve parameters:'
-    # Calculate EC50, nH and maxPopen for ideal Popen curve.
-    emaxPopen, econc = scl.get_maxPopen(demomec, tres)
-    eEC50 = scl.get_EC50(demomec, tres)
-    enH = scl.get_nH(demomec, tres)
-    text2 = ('\nHJC Popen curve:\nmaxPopen={0:.3f}'.format(emaxPopen) +
-        '\nEC50 = {0:.2e} M'.format(eEC50) + '\nnH = {0:.3f}'.format(enH))
-    print text2
-
-    # Calculate EC50, nH and maxPopen for Popen curve
-    # corrected for missed events.
-    imaxPopen, iconc = scl.get_maxPopen(demomec, 0)
-    iEC50 = scl.get_EC50(demomec, 0)
-    inH = scl.get_nH(demomec, 0)
-    text1 = ('\nideal Popen curve:\nmaxPopen={0:.3f}'.format(imaxPopen) +
-        '\nEC50 = {0:.2e} M'.format(iEC50) + '\nnH = {0:.3f}'.format(inH))
-    print text1
-
-    # Plot ideal and corrected Popen curves.
-    c_start = iEC50 * 0.01
-    c_end = iEC50 *100
+    text1, text2, c, pe, pi = scl.get_Popen_plot(demomec, tres, cmin, cmax,
+        fastBlk, KBlk)
+    print text1, text2
     plt.subplot(221)
-    scplot.popen_curve(c_start, c_end, demomec, tres, text1, text2)
+    plt.semilogx(c, pe, 'b-', c, pi, 'r--')
+    plt.ylabel('Popen')
+    plt.xlabel('Concentration, M')
+    plt.title('Apparent and ideal Popen curves')
 
     #     BURST CALCULATIONS
     print '\nCalculating burst properties:'
-    conc = 100e-9    # 100 nM
-    #demomec.set_eff('c', conc)
-
-    # Calculate mean burst length.
-    m = qml.mean_burst_length(demomec, conc)
-    print '\nmean burst length =', m
-    # Plot burst length distribution
-    tmin = tres
-    tmax = 0.100
+    print ('Agonist concentration = %e M' %conc)
+    text1, t, fbst = scl.get_burstlen_distr(demomec, conc, tmin, tmax)
+    print text1
     plt.subplot(222)
-    scplot.distr_burst_length(demomec, conc, tmin, tmax)
+    plt.semilogx(t, fbst, 'b-')
+    plt.ylabel('fbst(t)')
+    plt.xlabel('burst length, s')
+    plt.title('The burst length pdf')
 
     # Calculate mean number of openings per burst.
-    mu = qml.mean_num_burst_openings(demomec, conc)
-    print 'mean number of openings per burst= ', mu
+    text1, r, Pr = scl.get_burstopenings_distr(demomec, conc)
+    print text1
     # Plot distribution of number of openings per burst
-    n = 10
     plt.subplot(223)
-    scplot.distr_num_burst_openings(n, demomec, conc)
+    plt.plot(r, Pr,'ro')
+    plt.ylabel('Pr')
+    plt.xlabel('Openings per burst')
+    plt.title('Openings per burst')
+    plt.axis([0, max(r)+1, 0, 1])
 
-    conc_start = 1e-6    # in M
-    conc_end = 1e-2    # in M
+    cmin = 1e-6    # in M
+    cmax = 1e-2    # in M
+    c, b = scl.get_burstlen_conc_plot(demomec, cmin, cmax)
     plt.subplot(224)
-    scplot.burst_length_versus_conc(demomec, conc_start, conc_end)
+    #if mec.fastblk:
+    #    plt.plot(c, b, 'b-', c, blk, 'g-')
+    #else:
+    plt.plot(c, b, 'b-')
+    plt.ylabel('Mean burst length, ms')
+    plt.xlabel('Concentration, mM')
+    plt.title('Mean burst length')
 
     plt.subplots_adjust(left=None, bottom=0.1, right=None, top=None,
         wspace=0.4, hspace=0.5)

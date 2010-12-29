@@ -37,6 +37,32 @@ def choose_mecfile():
             ("all files", "*")])
     root.destroy()
 
+    return mecfile
+
+def get_mec_list(mecfile):
+    """
+    Read list of mechanisms saved in mec file.
+
+    Parameters
+    ----------
+    mecfile : filename
+
+    Returns
+    -------
+    version : int
+        Version of mec file.
+    meclist : list
+        Each element is another list containing:
+        jstart : int
+            Start byte for mechanism in mefile.
+        mecnum : int
+            Mechanism sequence number in mecfile.
+        mectitle : string
+        ratetitle : string
+    max_mecnum : int
+        Number of different mechanisms in mec file.
+    """
+
     f = open(mecfile, 'rb')
     ints = array('i')
 
@@ -82,7 +108,7 @@ def choose_mecfile():
         meclist.append(set)
 
     f.close()
-    return mecfile, version, meclist, max_mecnum
+    return version, meclist, max_mecnum
 
 def choose_mec_from_list(meclist, max_mecnum):
     """
