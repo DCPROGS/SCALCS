@@ -397,7 +397,8 @@ def get_burstlen_distr(mec, conc, tmin, tmax, fastBlk=False, KBlk=0):
     """
 
     # Calculate mean burst length.
-    m = qml.mean_burst_length(mec, conc) * 1000
+    mec.set_eff('c', conc)
+    m = qml.mean_burst_length(mec.Q, mec.kA, mec.kB, mec.kC) * 1000
     text1 = 'Mean burst length = %f millisec' %m
 
     # Plot burst length distribution
@@ -408,7 +409,8 @@ def get_burstlen_distr(mec, conc, tmin, tmax, fastBlk=False, KBlk=0):
     fbst = np.zeros(point_num)
     for i in range(point_num):
         temp = tmin * pow(10, (i * dt))
-        fbst[i] = np.sqrt(temp * qml.distr_burst_length(temp, mec, conc)) * 1000
+        fbst[i] = np.sqrt(temp * qml.distr_burst_length(temp,
+            mec.Q, mec.kA, mec.kB, mec.kC)) * 1000
         t[i] = temp * 1000
 
     return text1, t, fbst
@@ -435,7 +437,8 @@ def get_burstopenings_distr(mec, conc):
     """
 
     # Calculate mean number of openings per burst.
-    mu = qml.mean_num_burst_openings(mec, conc)
+    mec.set_eff('c', conc)
+    mu = qml.mean_num_burst_openings(mec.Q, mec.kA, mec.kB, mec.kC)
     text1 = 'Mean number of openings per burst = %f' %mu
 
     # Plot distribution of number of openings per burst
@@ -443,7 +446,8 @@ def get_burstopenings_distr(mec, conc):
     r = np.arange(1, n+1)
     Pr = np.zeros(n)
     for i in range(n):
-        Pr[i] = qml.distr_num_burst_openings(r[i], mec, conc)
+        Pr[i] = qml.distr_num_burst_openings(r[i],
+            mec.Q, mec.kA, mec.kB, mec.kC)
 
     return text1, r, Pr
 
@@ -470,7 +474,8 @@ def get_burstlen_conc_plot(mec, cmin, cmax):
     br = np.zeros(point_num)
     for i in range(point_num):
         ctemp = cmin + incr * i
-        br[i] = qml.mean_burst_length(mec, ctemp) * 1000
+        mec.set_eff('c', ctemp)
+        br[i] = qml.mean_burst_length(mec.Q, mec.kA, mec.kB, mec.kC) * 1000
         c[i] = ctemp * 1000000
     return c, br
 
@@ -503,7 +508,8 @@ def get_burstlen_conc_fblk_plot(mec, cmin, cmax, fastBlk, KB):
     brblk = np.zeros(point_num)
     for i in range(point_num):
         ctemp = cmin + incr * i
-        br[i] = qml.mean_burst_length(mec, ctemp) * 1000
+        mec.set_eff('c', ctemp)
+        br[i] = qml.mean_burst_length(mec.Q, mec.kA, mec.kB, mec.kC) * 1000
         brblk[i] = br[i] * (1 + ctemp / KB)
         c[i] = ctemp * 1000000
     return c, br, brblk

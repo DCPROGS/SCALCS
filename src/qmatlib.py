@@ -471,7 +471,7 @@ def endBurst(Q, kA, kB, kC):
     eB = np.dot((I - np.dot(GAB, GBA)),uA)
     return eB
 
-def mean_burst_length(mec, conc):
+def mean_burst_length(Q, kA, kB, kC):
     """
     Calculate the mean burst length (Eq. 3.19, CH82).
     m = PhiB * (I - GAB * GBA)^(-1) * (-QAA^(-1)) *
@@ -479,9 +479,13 @@ def mean_burst_length(mec, conc):
 
     Parameters
     ----------
-    mec : instance of type Mechanism
-    conc : float
-        Concentration.
+    Q : array_like, shape (k, k)
+    kA : int
+        Number of open states.
+    kB : int
+        Number of short lived shut states.
+    kC : int
+        Number of long lived shut states.
 
     Returns
     -------
@@ -489,11 +493,6 @@ def mean_burst_length(mec, conc):
         The mean burst length.
     """
 
-    mec.set_eff('c', conc)
-    Q = mec.Q
-    kA = mec.kA
-    kB = mec.kB
-    kC = mec.kC
     kE = kA + kB
     QBB = Q[kA:kE, kA:kE]
     QAA = Q[0:kA, 0:kA]
@@ -511,16 +510,20 @@ def mean_burst_length(mec, conc):
         interm2), uA)[0])
     return m
 
-def mean_num_burst_openings(mec, conc):
+def mean_num_burst_openings(Q, kA, kB, kC):
     """
     Calculate the mean number of openings per burst (Eq. 3.7, CH82).
     mu = phiB * (I - GAB * GBA)^(-1) * uA
 
     Parameters
     ----------
-    mec : instance of type Mechanism
-    conc : float
-        Concentration.
+    Q : array_like, shape (k, k)
+    kA : int
+        Number of open states.
+    kB : int
+        Number of short lived shut states.
+    kC : int
+        Number of long lived shut states.
 
     Returns
     -------
@@ -528,11 +531,6 @@ def mean_num_burst_openings(mec, conc):
         The mean number ofopenings per burst.
     """
 
-    mec.set_eff('c', conc)
-    Q = mec.Q
-    kA = mec.kA
-    kB = mec.kB
-    kC = mec.kC
     uA = np.ones((kA,1))
     I = np.eye(kA)
 
@@ -542,7 +540,7 @@ def mean_num_burst_openings(mec, conc):
     mu = np.dot(np.dot(phiB, interm), uA)[0]
     return mu
 
-def distr_num_burst_openings(r, mec, conc):
+def distr_num_burst_openings(r, Q, kA, kB, kC):
     """
     The distribution of openings per burst (Eq. 3.5, CH82).
     P(r) = phiB * (GAB * GBA)^(r-1) * eB
@@ -551,21 +549,19 @@ def distr_num_burst_openings(r, mec, conc):
     ----------
     r : int
         Number of openings per burst.
-    mec : instance of type Mechanism
-    conc : float
-        Concentration.
+    Q : array_like, shape (k, k)
+    kA : int
+        Number of open states.
+    kB : int
+        Number of short lived shut states.
+    kC : int
+        Number of long lived shut states.
 
     Returns
     -------
     Pr : float
         Probability of seeing r openings per burst.
     """
-
-    mec.set_eff('c', conc)
-    Q = mec.Q
-    kA = mec.kA
-    kB = mec.kB
-    kC = mec.kC
 
     phiB = phiBurst(Q, kA, kB, kC)
     GAB, GBA = iGs(Q, kA, kB)
@@ -583,7 +579,7 @@ def distr_num_burst_openings(r, mec, conc):
     Pr = np.dot(np.dot(phiB, interm), eB)
     return Pr
 
-def distr_burst_length(t, mec, conc):
+def distr_burst_length(t, Q, kA, kB, kC):
     """
     Probability density function of the burst length (Eq. 3.17, CH82).
     f(t) = phiB * [PEE(t)]AA * (-QAA) * eB, where PEE(t) = exp(QEE * t)
@@ -592,20 +588,20 @@ def distr_burst_length(t, mec, conc):
     ----------
     t : float
         Time.
-    mec : instance of type Mechanism
-    conc : float
-        Concentration.
+    Q : array_like, shape (k, k)
+    kA : int
+        Number of open states.
+    kB : int
+        Number of short lived shut states.
+    kC : int
+        Number of long lived shut states.
 
     Returns
     -------
     f : float
     """
 
-    mec.set_eff('c', conc)
-    Q = mec.Q
-    kA = mec.kA
-    kB = mec.kB
-    kC = mec.kC
+    
     kE = kA + kB
     QEE = Q[0:kE, 0:kE]
     QAA = Q[0:kA, 0:kA]
