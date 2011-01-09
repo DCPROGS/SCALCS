@@ -579,7 +579,7 @@ def distr_num_burst_openings(r, Q, kA, kB, kC):
     Pr = np.dot(np.dot(phiB, interm), eB)
     return Pr
 
-def distr_burst_length(t, Q, kA, kB, kC):
+def pdf_burst_length(t, Q, kA, kB, kC):
     """
     Probability density function of the burst length (Eq. 3.17, CH82).
     f(t) = phiB * [PEE(t)]AA * (-QAA) * eB, where PEE(t) = exp(QEE * t)
@@ -601,13 +601,103 @@ def distr_burst_length(t, Q, kA, kB, kC):
     f : float
     """
 
-    
     kE = kA + kB
     QEE = Q[0:kE, 0:kE]
     QAA = Q[0:kA, 0:kA]
-
     phiB = phiBurst(Q, kA, kB, kC)
     eB = endBurst(Q, kA, kB, kC)
     expQEEA = expQsub(t, QEE)[0:kA, 0:kA]
     f = np.dot(np.dot(np.dot(phiB, expQEEA), -QAA), eB)
     return f
+
+def pdf_open_time(t, Q, kA):
+    """
+    Probability density function of the open time (Eq. ..., CH82).
+    f(t) = ...
+
+    Parameters
+    ----------
+    t : float
+        Time.
+    Q : array_like, shape (k, k)
+    kA : int
+        Number of open states.
+
+    Returns
+    -------
+    f : float
+    """
+
+    phiOp = phiO(Q, kA)
+    QAA = Q[0:kA, 0:kA]
+    uA = np.ones((kA, 1))
+    expQAA = expQsub(t, QAA)
+    f = np.dot(np.dot(np.dot(phiOp, expQAA), -QAA), uA)
+    return f
+
+def pdf_shut_time(t, Q, kA, kB, kC):
+    """
+    Probability density function of the shut time (Eq. ..., CH82).
+    f(t) = ...
+
+    Parameters
+    ----------
+    t : float
+        Time.
+    Q : array_like, shape (k, k)
+    kA : int
+        Number of open states.
+    kB : int
+        Number of short lived shut states.
+    kC : int
+        Number of long lived shut states.
+
+    Returns
+    -------
+    f : float
+    """
+
+    kF = kB + kC
+    k = kA + kB + kC
+    phiSht = phiS(Q, kA, kB, kC)
+    QFF = Q[kA:k, kA:k]
+    uF = np.ones((kF, 1))
+    expQFF = expQsub(t, QFF)
+    f = np.dot(np.dot(np.dot(phiSht, expQFF), -QFF), uF)
+    return f
+
+def dW(s, tres, Q12, Q22, Q21, k1, k2):
+    """
+
+    """
+
+    I2 = np.eye(k2)
+    I1 = np.eye(k1)
+    IQ22 = s * I2 - Q22
+    expIQ22 = getExpQsub(tres, -IQ22)
+    S22 = I2 - expIQ22
+    eG21s = np.dot(nplin.inv(s * I2 - Q22), Q21)
+    w1 = np.dot(S22, nplin.inv(s * I2 - Q22)) - tres * (I2 - S22)
+    W = I1 + np.dot(np.dot(Q12, w1), eG21s)
+    return W
+
+def H(s, tres, Q11, Q22, Q21, Q12, k1, k2):
+    """
+
+    """
+
+    I = np.eye(k1)
+    X11 = s * I - Q11
+    invX11 = nplin.inv(X11)
+    expX11 = getExpQsub(tres, -X11)
+    H = Q22 + np.dot(np.dot(np.dot(Q21, invX11), I - expX11), Q12)
+    return H
+
+def W(s, tres, Q11, Q22, Q21, Q12, k1, k2):
+    """
+
+    """
+
+    I = np.eye(k2)
+    W = s * I - H(s, tres, Q11, Q22, Q21, Q12, k1, k2)
+    return W

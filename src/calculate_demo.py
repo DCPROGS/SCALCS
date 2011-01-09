@@ -153,7 +153,7 @@ if __name__ == "__main__":
     #     BURST CALCULATIONS
     print '\nCalculating burst properties:'
     print ('Agonist concentration = %e M' %conc)
-    text1, t, fbst = scl.get_burstlen_distr(demomec, conc, tmin, tmax)
+    text1, t, fbst = scl.get_burstlen_pdf(demomec, conc, tmin, tmax)
     print text1
     plt.subplot(222)
     plt.semilogx(t, fbst, 'b-')

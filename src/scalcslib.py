@@ -370,7 +370,7 @@ def get_Popen_plot(mec, tres, cmin, cmax, fastBlk=False, KBlk=0):
 
     return text1, text2, c, pe, pi
 
-def get_burstlen_distr(mec, conc, tmin, tmax, fastBlk=False, KBlk=0):
+def get_burstlen_pdf(mec, conc, tmin, tmax, fastBlk=False, KBlk=0):
     """
     Calculate the mean burst length and data for burst length distribution.
 
@@ -393,7 +393,7 @@ def get_burstlen_distr(mec, conc, tmin, tmax, fastBlk=False, KBlk=0):
     t : ndarray of floats, shape (num of points,)
         Time in millisec.
     fbst : ndarray of floats, shape (num of points,)
-        Burst length in millisec.
+        Burst length pdf.
     """
 
     # Calculate mean burst length.
@@ -401,7 +401,7 @@ def get_burstlen_distr(mec, conc, tmin, tmax, fastBlk=False, KBlk=0):
     m = qml.mean_burst_length(mec.Q, mec.kA, mec.kB, mec.kC) * 1000
     text1 = 'Mean burst length = %f millisec' %m
 
-    # Plot burst length distribution
+    # Calculate burst length pdf.
     point_num = 1000
     dt = (np.log10(tmax) - np.log10(tmin)) / (point_num - 1)
 
@@ -409,7 +409,7 @@ def get_burstlen_distr(mec, conc, tmin, tmax, fastBlk=False, KBlk=0):
     fbst = np.zeros(point_num)
     for i in range(point_num):
         temp = tmin * pow(10, (i * dt))
-        fbst[i] = np.sqrt(temp * qml.distr_burst_length(temp,
+        fbst[i] = np.sqrt(temp * qml.pdf_burst_length(temp,
             mec.Q, mec.kA, mec.kB, mec.kC)) * 1000
         t[i] = temp * 1000
 
@@ -514,4 +514,81 @@ def get_burstlen_conc_fblk_plot(mec, cmin, cmax, fastBlk, KB):
         c[i] = ctemp * 1000000
     return c, br, brblk
 
+def get_opentime_pdf(mec, conc, tmin, tmax):
+    """
+    Calculate the mean open time and data for open time distribution.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    conc : float
+        Concentration in M.
+    tmin, tmax : floats
+        Time range for burst length ditribution.
+
+    Returns
+    -------
+    text1 : string
+        Mean open time.
+    t : ndarray of floats, shape (num of points,)
+        Time in millisec.
+    fopen : ndarray of floats, shape (num of points,)
+        Open time pdf.
+    """
+
+    # Calculate mean open time.
+    mec.set_eff('c', conc)
+    #mopt = qml.mean_open_time(mec.Q, mec.kA, mec.kB, mec.kC) * 1000
+    #text1 = 'Mean open time = %f millisec' %mopt
+    # Calculate open time pdf.
+    point_num = 1000
+    dt = (np.log10(tmax) - np.log10(tmin)) / (point_num - 1)
+    t = np.zeros(point_num)
+    fopt = np.zeros(point_num)
+    for i in range(point_num):
+        temp = tmin * pow(10, (i * dt))
+        fopt[i] = np.sqrt(temp * qml.pdf_open_time(temp,
+            mec.Q, mec.kA)) * 1000
+        t[i] = temp * 1000
+    #return text1, t, fopt
+    return t, fopt
+
+def get_shuttime_pdf(mec, conc, tmin, tmax):
+    """
+    Calculate the mean shut time and data for shut time distribution.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    conc : float
+        Concentration in M.
+    tmin, tmax : floats
+        Time range for burst length ditribution.
+
+    Returns
+    -------
+    text1 : string
+        Mean shut time.
+    t : ndarray of floats, shape (num of points,)
+        Time in millisec.
+    fbst : ndarray of floats, shape (num of points,)
+        Shut time pdf.
+    """
+
+    # Calculate mean shut time.
+    mec.set_eff('c', conc)
+    #msht = qml.mean_shut_time(mec.Q, mec.kA, mec.kB, mec.kC) * 1000
+    #text1 = 'Mean shut time = %f millisec' %msht
+    # Calculate shut time pdf.
+    point_num = 1000
+    dt = (np.log10(tmax) - np.log10(tmin)) / (point_num - 1)
+    t = np.zeros(point_num)
+    fsht = np.zeros(point_num)
+    for i in range(point_num):
+        temp = tmin * pow(10, (i * dt))
+        fsht[i] = np.sqrt(temp * qml.pdf_shut_time(temp,
+            mec.Q, mec.kA, mec.kB, mec.kC)) * 1000
+        t[i] = temp * 1000
+    #return text1, t, fsht
+    return t, fsht
 

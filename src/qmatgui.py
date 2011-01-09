@@ -52,13 +52,18 @@ class QMatGUI(QMainWindow):
 
         plotMenu = self.menuBar().addMenu('&Plot')
         plotPopenAction = self.createAction("&Popen curve", self.onPlotPopen)
-        plotBurstLenDistrAction = self.createAction(
-            "&Burst length distribution", self.onPlotBrstLenDistr)
+        plotOpenTimePDFAction = self.createAction(
+            "&Open time pdf", self.onPlotOpenTimePDF)
+        plotShutTimePDFAction = self.createAction(
+            "&Shut time pdf", self.onPlotShutTimePDF)
+        plotBurstLenPDFAction = self.createAction(
+            "&Burst length pdf", self.onPlotBrstLenPDF)
         plotBurstOpeningDistrAction = self.createAction(
             "&Burst openings distribution", self.onPlotBrstOpDistr)
         plotBurstLenVConcAction = self.createAction(
             "&Burst length vs concentration", self.onPlotBrstLenConc)
-        self.addActions(plotMenu, (plotPopenAction, plotBurstLenDistrAction,
+        self.addActions(plotMenu, (plotPopenAction, plotOpenTimePDFAction,
+            plotShutTimePDFAction, plotBurstLenPDFAction,
             plotBurstOpeningDistrAction, plotBurstLenVConcAction))
 
         helpMenu = self.menuBar().addMenu('&Help')
@@ -244,13 +249,43 @@ class QMatGUI(QMainWindow):
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
 
-    def onPlotBrstLenDistr(self):
+    def onPlotOpenTimePDF(self):
+        """
+        Display open time probability density function.
+        """
+        self.textBox.append('\nCalculating open time pdf:')
+        self.textBox.append('Agonist concentration = %e M' %self.conc)
+        t, br = scl.get_opentime_pdf(self.mec, self.conc,
+            self.tmin, self.tmax)
+        #self.textBox.append(text1)
+        self.axes.clear()
+        self.axes.semilogx(t, br, 'b-')
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
+
+    def onPlotShutTimePDF(self):
+        """
+        Display shut time probability density function.
+        """
+        self.textBox.append('\nCalculating shut time pdf:')
+        self.textBox.append('Agonist concentration = %e M' %self.conc)
+        t, br = scl.get_shuttime_pdf(self.mec, self.conc,
+            self.tmin, self.tmax)
+        #self.textBox.append(text1)
+        self.axes.clear()
+        self.axes.semilogx(t, br, 'b-')
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
+
+    def onPlotBrstLenPDF(self):
         """
         Display the burst length distribution.
         """
         self.textBox.append('\nCalculating burst parameters:')
         self.textBox.append('Agonist concentration = %e M' %self.conc)
-        text1, t, br = scl.get_burstlen_distr(self.mec, self.conc,
+        text1, t, br = scl.get_burstlen_pdf(self.mec, self.conc,
             self.tmin, self.tmax, self.fastBlk, self.KB)
         self.textBox.append(text1)
         self.axes.clear()
