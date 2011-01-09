@@ -12,15 +12,36 @@ and of clusters of bursts. Phil Trans R Soc Lond B 300, 1-59.
 # TODO: impose constrains (e.g. independent binding sites).
 # TODO: fix certain rate constants while fitting.
 # TODO: Check state numbers for consistency
+# TODO: Update docstrings
 
 import numpy as np
+
+def multiply(rate, value):
+    """
+    Multiply rate and value. Used as default rate function.
+
+    Parameters
+    ----------
+    rate : float
+        Current rate in Q matrix.
+    value : float
+        Effector value (typically, concentration or voltage).
+
+    Returns
+    -------
+    product : float
+        Product of rate and value.
+    """
+    
+    return rate*value
 
 class Rate(object):
     """
     Describes a rate between two states.
     """
 
-    def __init__(self, rate, state1, state2, name='', eff=None, fixed=False, mr=False):
+    def __init__(self, rate, state1, state2, name='', eff=None, fixed=False,
+                 mr=False, func=multiply):
 
         self.name = name
         self.rate = rate
@@ -36,6 +57,7 @@ class Rate(object):
         
         self.fixed = fixed # for future expansion (fixed while fitting)
         self.mr = mr # for future expansion (set by microscopic reversibility)
+        self.func = func # f(rate, effector); "Rate equation" if you wish
 
 class State(object):
     """
@@ -57,13 +79,16 @@ class State(object):
 def initQ(Rates, States):
     Q = np.zeros((len(States), len(States)), dtype=np.float64)
 
-    for i in range(Q.shape[0]):
-        for j in range(Q.shape[1]):
-            # find rate that describes i->j (if any):
-            for Rate in Rates:
-                if Rate.state1-1 == i and Rate.state2-1 == j:
-                    Q[i,j] = Rate.rate
-                    break
+    # find rate that describes i->j (if any):
+    for Rate in Rates:
+        i = Rate.state1-1
+        j = Rate.state2-1
+        # check range:
+        if i<0 or i>=Q.shape[0]:
+            raise IndexError("Rate.state1 is out of range")
+        if j<0 or j>=Q.shape[1]:
+            raise IndexError("Rate.state2 is out of range")
+        Q[i,j] = Rate.rate
 
     return Q
 
@@ -74,9 +99,6 @@ class Mechanism(object):
 
     def __init__(self, Rates, States, ncyc=0, fastblk=False, KBlk=None):
 
-        #if len(Rates) != len(States)*2:
-        #    raise RuntimeError("Not enough rates for given number of states")
-        
         self.Rates = Rates
         self.States = States
 
@@ -112,7 +134,7 @@ class Mechanism(object):
         for Rate in self.Rates:
             if Rate.eff == eff:
                 self.Q[Rate.state1-1, Rate.state2-1] = \
-                    self.__Q0[Rate.state1-1, Rate.state2-1] * val
+                    Rate.func(self.__Q0[Rate.state1-1, Rate.state2-1], val)
 
         # Update diagonal elements
         for d in range(self.Q.shape[0]):
