@@ -63,7 +63,7 @@ def create_parser():
                         default=False,
                         help='mechanism file')
     parser.add_argument('-v', '--version', action='version', 
-                        version='%(prog)s 2.0', 
+                        version='DC_PyPs %d.%d' %(DCMAJOR,DCMINOR), 
                         help='print version information')
     
     return parser
