@@ -26,6 +26,11 @@ CH95b: Colquhoun D, Hawkes AG (1995b)
 A Q-Matrix Cookbook.
 In: Single-channel recording. 2nd ed. (Eds: Sakmann B, Neher E)
 Plenum Press, New York, pp. 589-633.
+
+CHS96: Colquhoun D, Hawkes AG, Srodzinski K (1996)
+Joint distributions of apparent open and shut times of single-ion channels
+and maximum likelihood fitting of mechanisms.
+Phil Trans R Soc Lond A 354, 2555-2590.
 """
 
 __author__="R.Lape, University College London"
@@ -187,17 +192,16 @@ def phiHJC(eG12, eG21, k1, k2):
 
 def dARSdS(tres, Q11, Q12, Q22, Q21, G12, G21, expQ22, expQ11, k1, k2):
     """
-    Python implementation of DC's DARSDS subroutine (inside HJCMEAN.FOR).
-    Evaluate -dAR(s)/ds at s=0 (HJC92).
-    Result used for means etc of HJC distributions.
+    Evaluate the derivative with respect to s of the Laplace transform of the
+    survival function -dAR(s)/ds at s=0 (Eq. 3.6, CHS96).
 
     SFF = I - exp(QFF * tres)
     First evaluate [dVA(s) / ds] * s = 0.
-    Q1 = -inv(QAA) * GAF*SFF*GFA - GAF*SFF* inv(QFF)* GFA +
-    + tres*GAF* expQFF*GFA
+    dVAds = -inv(QAA) * GAF * SFF * GFA - GAF * SFF * inv(QFF) * GFA +
+    + tres * GAF * expQFF * GFA
 
-    Then: DARS = inv(VA)*(QAA^-2) - inv(VA)*Q1*inv(VA)*inv(QAA =
-    = inv(VA) * [inv(QAA) - Q1*inv(VA)] * inv(QAA)
+    Then: DARS = inv(VA) * QAA^(-2) - inv(VA) * dVAds * inv(VA) * inv(QAA) =
+    = inv(VA) * [inv(QAA) - dVAds * inv(VA)] * inv(QAA)
     where VA = I - GAF * SFF * GFA
 
     Parameters
@@ -255,8 +259,7 @@ def dARSdS(tres, Q11, Q12, Q22, Q21, G12, G21, expQ22, expQ11, k1, k2):
 def hjc_mean_time(tres, Q, kA):
     """
     Calculate exact mean open or shut time from HJC probability density
-    function. This is Python implementation of DCprogs HJCMEAN.FOR
-    subroutine.
+    function. 
 
     Parameters
     ----------
@@ -341,8 +344,7 @@ def pinf(Q):
     """
     Calculate ecquilibrium occupancies by adding a column of ones
     to Q matrix.
-    
-    Pinf = uT*invert((S*transpos(S))).
+    Pinf = uT * invert((S * transpos(S))).
 
     Parameters
     ----------
@@ -612,8 +614,8 @@ def pdf_burst_length(t, Q, kA, kB, kC):
 
 def pdf_open_time(t, Q, kA):
     """
-    Probability density function of the open time (Eq. ..., CH82).
-    f(t) = ...
+    Probability density function of the open time.
+    f(t) = phiOp * exp(-QAA * t) * (-QAA) * uA
 
     Parameters
     ----------
@@ -637,8 +639,8 @@ def pdf_open_time(t, Q, kA):
 
 def pdf_shut_time(t, Q, kA, kB, kC):
     """
-    Probability density function of the shut time (Eq. ..., CH82).
-    f(t) = ...
+    Probability density function of the shut time.
+    f(t) = phiShut * exp(QFF * t) * (-QFF) * uF
 
     Parameters
     ----------
@@ -668,7 +670,30 @@ def pdf_shut_time(t, Q, kA, kB, kC):
 
 def dW(s, tres, Q12, Q22, Q21, k1, k2):
     """
+    Evaluate the derivative with respect to s of the matrix W(s) at the root s
+    (Eq. 56, HJC92).
+    W'(s) = I + QAF * [SFF(s) * (s*I - QFF)^(-1) - tau * (I - SFF(s))] * eGFA(s)
+    where SFF(s) = I - exp(-(s*I - QFF) * tau) (Eq. 17, HJC92)
+    and eGFA(s) = (s*I - QFF)^(-1) * QFA (Eq. 4, HJC92).
 
+    Parameters
+    ----------
+    s : float
+        Laplace transform argument.
+    tres : float
+        Time resolution (dead time).
+    Q12 : array_like, shape (k1, k2)
+    Q22 : array_like, shape (k2, k2)
+    Q21 : array_like, shape (k2, k1)
+        Q12, Q22, Q21 - submatrices of Q.
+    k1 : int
+        A number of open/shut states in kinetic scheme.
+    k2 : int
+        A number of shut/open states in kinetic scheme.
+
+    Returns
+    -------
+    dW : array_like, shape (k2, k2)
     """
 
     I2 = np.eye(k2)
@@ -678,12 +703,33 @@ def dW(s, tres, Q12, Q22, Q21, k1, k2):
     S22 = I2 - expIQ22
     eG21s = np.dot(nplin.inv(s * I2 - Q22), Q21)
     w1 = np.dot(S22, nplin.inv(s * I2 - Q22)) - tres * (I2 - S22)
-    W = I1 + np.dot(np.dot(Q12, w1), eG21s)
-    return W
+    dW = I1 + np.dot(np.dot(Q12, w1), eG21s)
+    return dW
 
 def H(s, tres, Q11, Q22, Q21, Q12, k1, k2):
     """
+    Evaluate H(s) funtion (Eq. 54, HJC92).
+    H(s) = QAA + QAF * (s*I - QFF) ^(-1) * (I - exp(-(s*I - QFF) * tau)) * QFA
 
+    Parameters
+    ----------
+    s : float
+        Laplace transform argument.
+    tres : float
+        Time resolution (dead time).
+    Q11 : array_like, shape (k1, k1)
+    Q22 : array_like, shape (k2, k2)
+    Q21 : array_like, shape (k2, k1)
+    Q12 : array_like, shape (k1, k2)
+        Q11, Q12, Q22, Q21 - submatrices of Q.
+    k1 : int
+        A number of open/shut states in kinetic scheme.
+    k2 : int
+        A number of shut/open states in kinetic scheme.
+
+    Returns
+    -------
+    H : array_like, shape (k2, k2)
     """
 
     I = np.eye(k1)
@@ -695,7 +741,28 @@ def H(s, tres, Q11, Q22, Q21, Q12, k1, k2):
 
 def W(s, tres, Q11, Q22, Q21, Q12, k1, k2):
     """
+    Evaluate W(s) function (Eq. 52, HJC92).
+    W(s) = s * I - H(s)
 
+    Parameters
+    ----------
+    s : float
+        Laplace transform argument.
+    tres : float
+        Time resolution (dead time).
+    Q11 : array_like, shape (k1, k1)
+    Q22 : array_like, shape (k2, k2)
+    Q21 : array_like, shape (k2, k1)
+    Q12 : array_like, shape (k1, k2)
+        Q11, Q12, Q22, Q21 - submatrices of Q.
+    k1 : int
+        A number of open/shut states in kinetic scheme.
+    k2 : int
+        A number of shut/open states in kinetic scheme.
+
+    Returns
+    -------
+    W : array_like, shape (k2, k2)
     """
 
     I = np.eye(k2)
