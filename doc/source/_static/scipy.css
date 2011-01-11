@@ -152,6 +152,10 @@ div.plot-output:after {
   clear: both; 
 }
 
+div.body div.math p {
+    text-align: left;
+}
+
 
 /*
 div.admonition-example {

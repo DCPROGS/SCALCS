@@ -186,7 +186,7 @@ htmlhelp_basename = 'DC_PyPsdoc'
 # -- Options for LaTeX output --------------------------------------------------
 
 # The paper size ('letter' or 'a4').
-#latex_paper_size = 'letter'
+latex_paper_size = 'a4'
 
 # The font size ('10pt', '11pt' or '12pt').
 #latex_font_size = '10pt'
@@ -200,7 +200,7 @@ latex_documents = [
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-#latex_logo = None
+latex_logo = 'dca2.png'
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.
