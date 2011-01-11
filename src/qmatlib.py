@@ -476,7 +476,7 @@ def endBurst(Q, kA, kB, kC):
 def mean_burst_length(Q, kA, kB, kC):
     """
     Calculate the mean burst length (Eq. 3.19, CH82).
-    m = PhiB * (I - GAB * GBA)^(-1) * (-QAA^(-1)) *
+    m = PhiB * (I - GAB * GBA)^(-1) * (-QAA^(-1)) * \
         (I - QAB * (QBB^(-1)) * GBA) * uA
 
     Parameters
