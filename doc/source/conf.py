@@ -214,3 +214,6 @@ latex_logo = 'dca2.png'
 
 # If false, no module index is generated.
 #latex_use_modindex = True
+
+pngmath_latex_preamble = '\\newcommand{\\bs}[1]{\\boldsymbol{#1}} \\newcommand{\\cl}[1]{\\mathcal{#1}}'
+pngmath_use_preview = True

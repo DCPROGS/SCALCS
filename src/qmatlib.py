@@ -76,13 +76,13 @@ def eigs(Q):
     return eigvals, A
 
 def iGs(Q, kA, kB):
-    """
+    r"""
     Calculate GBA and GAB matrices (Eq. 1.25, CH82).
 
     .. math::
 
-       \\boldsymbol{G}_\\mathcal{BA} &= -\\boldsymbol{Q}_\\mathcal{BB}^{-1} \\boldsymbol{Q}_\\mathcal{BA} \\\\
-       \\boldsymbol{G}_\\mathcal{AB} &= -\\boldsymbol{Q}_\\mathcal{AA}^{-1} \\boldsymbol{Q}_\\mathcal{AB}
+       \bs{G}_\cl{BA} &= -\bs{Q}_\cl{BB}^{-1} \bs{Q}_\cl{BA} \\
+       \bs{G}_\cl{AB} &= -\bs{Q}_\cl{AA}^{-1} \bs{Q}_\cl{AB}
 
     Parameters
     ----------
@@ -194,13 +194,13 @@ def phiHJC(eG12, eG21, k1, k2):
     return phi
 
 def dARSdS(tres, Q11, Q12, Q22, Q21, G12, G21, expQ22, expQ11, k1, k2):
-    """
+    r"""
     Evaluate the derivative with respect to s of the Laplace transform of the
     survival function (Eq. 3.6, CHS96)
 
     .. math::
 
-       \\left[ -\\frac{\\text{d}}{\\text{d}s} {^\\mathcal{A}\\!\\boldsymbol{R}^*(s)} \\right]_{s=0}
+       \left[ -\frac{\text{d}}{\text{d}s} {^\cl{A}\!\bs{R}^*(s)} \right]_{s=0}
 
     SFF = I - exp(QFF * tres)
     First evaluate [dVA(s) / ds] * s = 0.
@@ -455,12 +455,12 @@ def phiBurst(Q, kA, kB, kC):
     return phiB
 
 def endBurst(Q, kA, kB, kC):
-    """
+    r"""
     Calculate the end vector for a burst (Eq. 3.4, CH82).
 
     .. math::
 
-       \\boldsymbol{e}_\\text{b} = (\\boldsymbol{I}-\\boldsymbol{G}_\\mathcal{AB} \\boldsymbol{G}_\\mathcal{BA}) \\boldsymbol{u}_\\mathcal{A}
+       \bs{e}_\text{b} = (\bs{I}-\bs{G}_\cl{AB} \bs{G}_\cl{BA}) \bs{u}_\cl{A}
 
     Parameters
     ----------
