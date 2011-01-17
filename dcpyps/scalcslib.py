@@ -59,11 +59,11 @@ def get_P0(mec, tres, eff='c'):
     conc = 0
     mec.set_eff(eff, conc)
     P0 = 0
-    Popen = qml.popen(mec.Q, mec.kA, 0)
+    Popen = qml.popen(mec, 0)
     if Popen < 1e-10:
         P0 = Popen
     else:
-        P0 = qml.popen(mec.Q, mec.kA, tres)
+        P0 = qml.popen(mec, tres)
     if dcpypsrc.debug: print 'Popen(0)=', P0
     return P0
 
@@ -160,7 +160,7 @@ def get_Popen(mec, tres, conc, eff='c'):
     """
 
     mec.set_eff(eff, conc)
-    Popen = qml.popen(mec.Q, mec.kA, tres)
+    Popen = qml.popen(mec, tres)
     if mec.fastBlk:
         Popen = Popen / (1 + conc / mec.KBlk)
     return Popen
@@ -370,7 +370,7 @@ def get_burstlen_pdf(mec, conc, tmin, tmax):
 
     # Calculate mean burst length.
     mec.set_eff('c', conc)
-    m = qml.mean_burst_length(mec.Q, mec.kA, mec.kB, mec.kC) * 1000
+    m = qml.mean_burst_length(mec) * 1000
     text1 = 'Mean burst length = %f millisec' %m
 
     # Calculate burst length pdf.
@@ -381,8 +381,7 @@ def get_burstlen_pdf(mec, conc, tmin, tmax):
     fbst = np.zeros(point_num)
     for i in range(point_num):
         temp = tmin * pow(10, (i * dt))
-        fbst[i] = np.sqrt(temp * qml.pdf_burst_length(temp,
-            mec.Q, mec.kA, mec.kB, mec.kC)) * 1000
+        fbst[i] = np.sqrt(temp * qml.pdf_burst_length(mec, temp)) * 1000
         t[i] = temp * 1000
 
     return text1, t, fbst
@@ -410,7 +409,7 @@ def get_burstopenings_distr(mec, conc):
 
     # Calculate mean number of openings per burst.
     mec.set_eff('c', conc)
-    mu = qml.mean_num_burst_openings(mec.Q, mec.kA, mec.kB, mec.kC)
+    mu = qml.mean_num_burst_openings(mec)
     text1 = 'Mean number of openings per burst = %f' %mu
 
     # Plot distribution of number of openings per burst
@@ -418,8 +417,7 @@ def get_burstopenings_distr(mec, conc):
     r = np.arange(1, n+1)
     Pr = np.zeros(n)
     for i in range(n):
-        Pr[i] = qml.distr_num_burst_openings(r[i],
-            mec.Q, mec.kA, mec.kB, mec.kC)
+        Pr[i] = qml.distr_num_burst_openings(mec, r[i])
 
     return text1, r, Pr
 
@@ -447,7 +445,7 @@ def get_burstlen_conc_plot(mec, cmin, cmax):
     for i in range(point_num):
         ctemp = cmin + incr * i
         mec.set_eff('c', ctemp)
-        br[i] = qml.mean_burst_length(mec.Q, mec.kA, mec.kB, mec.kC) * 1000
+        br[i] = qml.mean_burst_length(mec) * 1000
         c[i] = ctemp * 1000000
     return c, br
 
@@ -478,7 +476,7 @@ def get_burstlen_conc_fblk_plot(mec, cmin, cmax):
     for i in range(point_num):
         ctemp = cmin + incr * i
         mec.set_eff('c', ctemp)
-        br[i] = qml.mean_burst_length(mec.Q, mec.kA, mec.kB, mec.kC) * 1000
+        br[i] = qml.mean_burst_length(mec) * 1000
         brblk[i] = br[i] * (1 + ctemp / KB)
         c[i] = ctemp * 1000000
     return c, br, brblk
@@ -516,8 +514,7 @@ def get_opentime_pdf(mec, conc, tmin, tmax):
     fopt = np.zeros(point_num)
     for i in range(point_num):
         temp = tmin * pow(10, (i * dt))
-        fopt[i] = np.sqrt(temp * qml.pdf_open_time(temp,
-            mec.Q, mec.kA)) * 1000
+        fopt[i] = np.sqrt(temp * qml.pdf_open_time(mec, temp)) * 1000
         t[i] = temp * 1000
     #return text1, t, fopt
     return t, fopt
@@ -555,8 +552,7 @@ def get_shuttime_pdf(mec, conc, tmin, tmax):
     fsht = np.zeros(point_num)
     for i in range(point_num):
         temp = tmin * pow(10, (i * dt))
-        fsht[i] = np.sqrt(temp * qml.pdf_shut_time(temp,
-            mec.Q, mec.kA, mec.kB, mec.kC)) * 1000
+        fsht[i] = np.sqrt(temp * qml.pdf_shut_time(mec ,temp)) * 1000
         t[i] = temp * 1000
     #return text1, t, fsht
     return t, fsht

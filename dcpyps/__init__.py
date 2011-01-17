@@ -40,7 +40,9 @@ Phil Trans R Soc Lond A 354, 2555-2590.
 import qmatlib
 import scalcslib
 import scplotlib
-import mechanism
+from mechanism import * # this should really be in the namespace
+                        # so that dcpyps.Mechanism is something like
+                        # numpy.array
 import readmecfile
 import samples
 

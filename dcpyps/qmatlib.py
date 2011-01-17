@@ -136,7 +136,7 @@ def eGs(G12, G21, k1, k2, expQ22):
 
     return eG12
 
-def expQsub(t, M):
+def expQsub(M, t):
     """
     Calculate exponential of a matrix M.
         expM = exp(M * t)
@@ -264,18 +264,17 @@ def dARSdS(tres, Q11, Q12, Q22, Q21, G12, G21, expQ22, expQ11, k1, k2):
 
     return DARS
 
-def hjc_mean_time(tres, Q, kA):
+def hjc_mean_time(mec, tres):
     """
     Calculate exact mean open or shut time from HJC probability density
     function. 
 
     Parameters
     ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
     tres : float
         Time resolution (dead time).
-    Q : array_like, shape (k, k)
-    kA : int
-        Number of open states.
 
     Returns
     -------
@@ -285,32 +284,32 @@ def hjc_mean_time(tres, Q, kA):
         Apparent mean shut time.
     """
 
-    k = Q.shape[0]
-    kF = k - kA
-    GAF, GFA = iGs(Q, kA, kF)
-    QFF = Q[kA:k, kA:k]
-    expQFF = expQsub(tres, QFF)
-    QAA = Q[0:kA, 0:kA]
-    expQAA = expQsub(tres, QAA)
+    k = mec.Q.shape[0]
+    kF = k - mec.kA
+    GAF, GFA = iGs(mec.Q, mec.kA, kF)
+    QFF = mec.Q[mec.kA:k, mec.kA:k]
+    expQFF = expQsub(QFF, tres)
+    QAA = mec.Q[0:mec.kA, 0:mec.kA]
+    expQAA = expQsub(QAA, tres)
 
     #Calculate Gs and initial vectors corrected for missed events.
-    eGAF = eGs(GAF, GFA, kA, kF, expQFF)
-    eGFA = eGs(GFA, GAF, kF, kA, expQAA)
-    phiA = phiHJC(eGAF, eGFA, kA, kF)
-    phiF = phiHJC(eGFA, eGAF, kF, kA)
+    eGAF = eGs(GAF, GFA, mec.kA, kF, expQFF)
+    eGFA = eGs(GFA, GAF, kF, mec.kA, expQAA)
+    phiA = phiHJC(eGAF, eGFA, mec.kA, kF)
+    phiF = phiHJC(eGFA, eGAF, kF, mec.kA)
 
     #Recalculate QexpQA and QexpQF
-    QAF = Q[0:kA, kA:k]
+    QAF = mec.Q[0:mec.kA, mec.kA:k]
     QexpQF = np.dot(QAF, expQFF)
-    QFA = Q[kA:k, 0:kA]
+    QFA = mec.Q[mec.kA:k, 0:mec.kA]
     QexpQA = np.dot(QFA, expQAA)
 
     DARS = dARSdS(tres, QAA, QAF, QFF, QFA, GAF, GFA, expQFF, expQAA,
-        kA, kF)
+        mec.kA, kF)
     DFRS = dARSdS(tres, QFF, QFA, QAA, QAF, GFA, GAF, expQAA, expQFF,
-        kF, kA)
+        kF, mec.kA)
 
-    uA = np.ones((kA, 1))
+    uA = np.ones((mec.kA, 1))
     uF = np.ones((kF, 1))
     # meanOpenTime = tres + phiA * DARS * QexpQF * uF
     # meanShutTime = tres + phiF * DFRS * QexpQA * uA
@@ -319,17 +318,14 @@ def hjc_mean_time(tres, Q, kA):
 
     return hmopen, hmshut
 
-def popen(Q, kA, tres=0):
+def popen(mec, tres=0):
     """
     Calculate open probability for any temporal resolution, tres.
 
     Parameters
     ----------
-    Q : array_like, shape (k, k)
-    kA : int
-        Number of open states.
-    tres : float
-        Time resolution (dead time).
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
 
     Returns
     -------
@@ -338,17 +334,17 @@ def popen(Q, kA, tres=0):
     """
 
     if tres == 0:
-        p = pinf(Q)
+        p = pinf(mec)
         Popen = 0
-        for i in range(kA):
+        for i in range(mec.kA):
             Popen = Popen + p[i]
         return Popen
     else:
-        hmopen, hmshut = hjc_mean_time(tres, Q, kA)
+        hmopen, hmshut = hjc_mean_time(mec, tres)
         Popen = hmopen / (hmopen + hmshut)
         return Popen[0,0]
 
-def pinf(Q):
+def pinf(mec):
     """
     Calculate ecquilibrium occupancies by adding a column of ones
     to Q matrix.
@@ -356,106 +352,95 @@ def pinf(Q):
 
     Parameters
     ----------
-    Q : array_like, shape (k, k)
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
 
     Returns
     -------
     phi : array_like, shape (k1)
     """
 
-    u = np.ones((Q.shape[0],1))
-    S = np.concatenate((Q, u), 1)
+    u = np.ones((mec.Q.shape[0],1))
+    S = np.concatenate((mec.Q, u), 1)
     pinf = np.dot(u.transpose(), nplin.inv((np.dot(S,S.transpose()))))[0]
     return pinf
 
-def phiO(Q, kA):
+def phiO(mec):
     """
     Calculate initial vector for openings.
 
     Parameters
     ----------
-    Q : array_like, shape (k, k)
-    kA : int
-        Number of open states.
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
 
     Returns
     -------
     phi : array_like, shape (kA)
     """
 
-    k = Q.shape[0]
-    uA = np.ones((kA,1))
-    p = pinf(Q)
-    pF = p[kA:k]
-    QFA = Q[kA:k, 0:kA]
+    uA = np.ones((mec.kA,1))
+    p = pinf(mec)
+    pF = p[mec.kA:]
+    QFA = mec.Q[mec.kA:, :mec.kA]
     nom = np.dot(pF, QFA)
     denom = np.dot(nom,uA)
     phi = nom / denom
     if dcpypsrc.debug: print 'phiO=', phi
     return phi
 
-def phiS(Q, kA, kB, kC):
+def phiS(mec):
     """
     Calculate inital vector for shuttings.
 
     Parameters
     ----------
-    Q : array_like, shape (k, k)
-    kA : int
-        Number of open states.
-    kB : int
-        Number of short lived shut states.
-    kC : int
-        Number of long lived shut states.
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
 
     Returns
     -------
     phi : array_like, shape (kB+kC)
     """
 
-    kF = kB + kC
-    phiOp = phiO(Q, kA)
+    kF = mec.kB + mec.kC
+    phiOp = phiO(mec)
     GAF, GFA = iGs(Q, kA, kF)
     phi = np.dot(phiOp, GAF)
 
     if dcpypsrc.debug: print 'phiS=', phi
     return phi
 
-def phiBurst(Q, kA, kB, kC):
+def phiBurst(mec):
     """
     Calculate the start probabilities of a burst (Eq. 3.2, CH82).
     PhiB = (pCinf * (QCB * GBA + QCA)) / (pCinf * (QCB * GBA + QCA) * uA)
 
     Parameters
     ----------
-    Q : array_like, shape (k, k)
-    kA : int
-        Number of open states.
-    kB : int
-        Number of short lived shut states.
-    kC : int
-        Number of long lived shut states.
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
 
     Returns
     -------
     phiB : array_like, shape (1, kA)
     """
 
-    kE = kA + kB
-    k = kA + kB + kC
-    QCB = Q[kE:k, kA:kE]
-    QCA = Q[kE:k, 0:kA]
-    uA = np.ones((kA,1))
+    kE = mec.kA + mec.kB
+    k = mec.kA + mec.kB + mec.kC
+    QCB = mec.Q[kE:k, mec.kA:kE]
+    QCA = mec.Q[kE:k, 0:mec.kA]
+    uA = np.ones((mec.kA,1))
 
-    p = pinf(Q)
+    p = pinf(mec)
     pC = p[kE:k]
-    GAB, GBA = iGs(Q, kA, kB)
+    GAB, GBA = iGs(mec.Q, mec.kA, mec.kB)
     nom = np.dot(pC,(np.dot(QCB,GBA)+QCA))
     denom = np.dot(nom,uA)
     phiB = nom / denom
     return phiB
 
-def endBurst(Q, kA, kB, kC):
+def endBurst(mec):
     r"""
     Calculate the end vector for a burst (Eq. 3.4, CH82).
 
@@ -465,26 +450,21 @@ def endBurst(Q, kA, kB, kC):
 
     Parameters
     ----------
-    Q : array_like, shape (k, k)
-    kA : int
-        Number of open states.
-    kB : int
-        Number of short lived shut states.
-    kC : int
-        Number of long lived shut states.
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
 
     Returns
     -------
     eB : array_like, shape (kA, 1)
     """
 
-    uA = np.ones((kA,1))
-    I = np.eye(kA)
-    GAB, GBA = iGs(Q, kA, kB)
+    uA = np.ones((mec.kA,1))
+    I = np.eye(mec.kA)
+    GAB, GBA = iGs(mec.Q, mec.kA, mec.kB)
     eB = np.dot((I - np.dot(GAB, GBA)),uA)
     return eB
 
-def mean_burst_length(Q, kA, kB, kC):
+def mean_burst_length(mec):
     """
     Calculate the mean burst length (Eq. 3.19, CH82).
     m = PhiB * (I - GAB * GBA)^(-1) * (-QAA^(-1)) * \
@@ -492,13 +472,8 @@ def mean_burst_length(Q, kA, kB, kC):
 
     Parameters
     ----------
-    Q : array_like, shape (k, k)
-    kA : int
-        Number of open states.
-    kB : int
-        Number of short lived shut states.
-    kC : int
-        Number of long lived shut states.
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
 
     Returns
     -------
@@ -506,15 +481,15 @@ def mean_burst_length(Q, kA, kB, kC):
         The mean burst length.
     """
 
-    kE = kA + kB
-    QBB = Q[kA:kE, kA:kE]
-    QAA = Q[0:kA, 0:kA]
-    QAB = Q[0:kA, kA:kE]
-    uA = np.ones((kA, 1))
-    I = np.eye(kA)
+    kE = mec.kA + mec.kB
+    QBB = mec.Q[mec.kA:kE, mec.kA:kE]
+    QAA = mec.Q[0:mec.kA, 0:mec.kA]
+    QAB = mec.Q[0:mec.kA, mec.kA:kE]
+    uA = np.ones((mec.kA, 1))
+    I = np.eye(mec.kA)
 
-    phiB = phiBurst(Q, kA, kB, kC)
-    GAB, GBA = iGs(Q, kA, kB)
+    phiB = phiBurst(mec)
+    GAB, GBA = iGs(mec.Q, mec.kA, mec.kB)
     invQAA = -1 * nplin.inv(QAA)
     invQBB = nplin.inv(QBB)
     interm1 = nplin.inv(I - np.dot(GAB, GBA))
@@ -523,20 +498,15 @@ def mean_burst_length(Q, kA, kB, kC):
         interm2), uA)[0])
     return m
 
-def mean_num_burst_openings(Q, kA, kB, kC):
+def mean_num_burst_openings(mec):
     """
     Calculate the mean number of openings per burst (Eq. 3.7, CH82).
     mu = phiB * (I - GAB * GBA)^(-1) * uA
 
     Parameters
     ----------
-    Q : array_like, shape (k, k)
-    kA : int
-        Number of open states.
-    kB : int
-        Number of short lived shut states.
-    kC : int
-        Number of long lived shut states.
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
 
     Returns
     -------
@@ -544,31 +514,26 @@ def mean_num_burst_openings(Q, kA, kB, kC):
         The mean number ofopenings per burst.
     """
 
-    uA = np.ones((kA,1))
-    I = np.eye(kA)
+    uA = np.ones((mec.kA,1))
+    I = np.eye(mec.kA)
 
-    phiB = phiBurst(Q, kA, kB, kC)
-    GAB, GBA = iGs(Q, kA, kB)
+    phiB = phiBurst(mec)
+    GAB, GBA = iGs(mec.Q, mec.kA, mec.kB)
     interm = nplin.inv(I - np.dot(GAB, GBA))
     mu = np.dot(np.dot(phiB, interm), uA)[0]
     return mu
 
-def distr_num_burst_openings(r, Q, kA, kB, kC):
+def distr_num_burst_openings(mec, r):
     """
     The distribution of openings per burst (Eq. 3.5, CH82).
     P(r) = phiB * (GAB * GBA)^(r-1) * eB
 
     Parameters
     ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
     r : int
         Number of openings per burst.
-    Q : array_like, shape (k, k)
-    kA : int
-        Number of open states.
-    kB : int
-        Number of short lived shut states.
-    kC : int
-        Number of long lived shut states.
 
     Returns
     -------
@@ -576,13 +541,13 @@ def distr_num_burst_openings(r, Q, kA, kB, kC):
         Probability of seeing r openings per burst.
     """
 
-    phiB = phiBurst(Q, kA, kB, kC)
-    GAB, GBA = iGs(Q, kA, kB)
-    eB = endBurst(Q, kA, kB, kC)
+    phiB = phiBurst(mec)
+    GAB, GBA = iGs(mec.Q, mec.kA, mec.kB)
+    eB = endBurst(mec)
 
     GG = np.dot(GAB, GBA)
     if r == 1:
-        interm = np.eye(kA)
+        interm = np.eye(mec.kA)
     elif r == 2:
         interm = GG
     else:
@@ -592,90 +557,75 @@ def distr_num_burst_openings(r, Q, kA, kB, kC):
     Pr = np.dot(np.dot(phiB, interm), eB)
     return Pr
 
-def pdf_burst_length(t, Q, kA, kB, kC):
+def pdf_burst_length(mec, t):
     """
     Probability density function of the burst length (Eq. 3.17, CH82).
     f(t) = phiB * [PEE(t)]AA * (-QAA) * eB, where PEE(t) = exp(QEE * t)
 
     Parameters
     ----------
-    t : float
-        Time.
-    Q : array_like, shape (k, k)
-    kA : int
-        Number of open states.
-    kB : int
-        Number of short lived shut states.
-    kC : int
-        Number of long lived shut states.
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
 
     Returns
     -------
     f : float
     """
 
-    kE = kA + kB
-    QEE = Q[0:kE, 0:kE]
-    QAA = Q[0:kA, 0:kA]
-    phiB = phiBurst(Q, kA, kB, kC)
-    eB = endBurst(Q, kA, kB, kC)
-    expQEEA = expQsub(t, QEE)[0:kA, 0:kA]
+    kE = mec.kA + mec.kB
+    QEE = mec.Q[0:kE, 0:kE]
+    QAA = mec.Q[0:mec.kA, 0:mec.kA]
+    phiB = phiBurst(mec)
+    eB = endBurst(mec)
+    expQEEA = expQsub(QEE, t)[0:mec.kA, 0:mec.kA]
     f = np.dot(np.dot(np.dot(phiB, expQEEA), -QAA), eB)
     return f
 
-def pdf_open_time(t, Q, kA):
+def pdf_open_time(mec, t):
     """
     Probability density function of the open time.
     f(t) = phiOp * exp(-QAA * t) * (-QAA) * uA
 
     Parameters
     ----------
-    t : float
-        Time.
-    Q : array_like, shape (k, k)
-    kA : int
-        Number of open states.
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
 
     Returns
     -------
     f : float
     """
 
-    phiOp = phiO(Q, kA)
-    QAA = Q[0:kA, 0:kA]
-    uA = np.ones((kA, 1))
-    expQAA = expQsub(t, QAA)
+    phiOp = phiO(mec)
+    QAA = mec.Q[0:mec.kA, 0:mec.kA]
+    uA = np.ones((mec.kA, 1))
+    expQAA = expQsub(QAA, t)
     f = np.dot(np.dot(np.dot(phiOp, expQAA), -QAA), uA)
     return f
 
-def pdf_shut_time(t, Q, kA, kB, kC):
+def pdf_shut_time(mec, t):
     """
     Probability density function of the shut time.
     f(t) = phiShut * exp(QFF * t) * (-QFF) * uF
 
     Parameters
     ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
     t : float
         Time.
-    Q : array_like, shape (k, k)
-    kA : int
-        Number of open states.
-    kB : int
-        Number of short lived shut states.
-    kC : int
-        Number of long lived shut states.
 
     Returns
     -------
     f : float
     """
 
-    kF = kB + kC
-    k = kA + kB + kC
-    phiSht = phiS(Q, kA, kB, kC)
-    QFF = Q[kA:k, kA:k]
+    kF = mec.kB + mec.kC
+    k = mec.kA + mec.kB + mec.kC
+    phiSht = phiS(mec)
+    QFF = mec.Q[mec.kA:k, mec.kA:k]
     uF = np.ones((kF, 1))
-    expQFF = expQsub(t, QFF)
+    expQFF = expQsub(QFF, t)
     f = np.dot(np.dot(np.dot(phiSht, expQFF), -QFF), uF)
     return f
 

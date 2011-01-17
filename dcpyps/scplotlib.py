@@ -75,7 +75,7 @@ def distr_burst_length(mec, conc, tmin, tmax):
     fbst = np.zeros(point_num)
     for i in range(point_num):
         t[i] = tmin * pow(10, (i * dt))
-        fbst[i] = np.sqrt(t[i] * qml.distr_burst_length(t[i], mec, conc))
+        fbst[i] = np.sqrt(t[i] * qml.distr_burst_length(t[i], mec, conc)) # TODO: doesn't exist
     plt.semilogx(t, fbst, 'b-')
     plt.ylabel('fbst(t)')
     plt.xlabel('burst length, s')
@@ -99,7 +99,7 @@ def distr_num_burst_openings(n, mec, conc):
     #Pr = qml.distNumOpeningsBurst(r, mec)
     Pr = np.zeros(n)
     for i in range(n):
-        Pr[i] = qml.distr_num_burst_openings(r[i], mec, conc)
+        Pr[i] = qml.distr_num_burst_openings(r[i], mec, conc) # TODO: function has changed
 
     plt.plot(r, Pr,'ro')
     plt.ylabel('Pr')
@@ -128,7 +128,7 @@ def burst_length_versus_conc(mec, cmin, cmax):
     blk = np.zeros(point_num)
     for i in range(point_num):
         c[i] = cmin + incr * i
-        b[i] = qml.mean_burst_length(mec, c[i])
+        b[i] = qml.mean_burst_length(mec, c[i]) # TODO: function has changed
         if mec.fastblk:
             blk[i] = b[i] * (1 + c[i] / mec.KBlk)
 
