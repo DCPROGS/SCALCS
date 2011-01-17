@@ -38,4 +38,9 @@ Phil Trans R Soc Lond A 354, 2555-2590.
 """
 
 import qmatlib
+import scalcslib
+import scplotlib
+import mechanism
+import readmecfile
+import samples
 
