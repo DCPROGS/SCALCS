@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 import qmatlib as qml
 import scalcslib as scl
-import qmatrc
+import dcpypsrc
 
 def popen_curve(cmin, cmax, mec, tres, text1, text2, eff='c'):
     """
@@ -31,10 +31,10 @@ def popen_curve(cmin, cmax, mec, tres, text1, text2, eff='c'):
     log_start = np.log10(cmin)
     log_end = np.log10(cmax)
     decade_num = int(log_end - log_start)
-    if qmatrc.debug: print "number of decades = ", decade_num
+    if dcpypsrc.debug: print "number of decades = ", decade_num
     log_int = 0.01    # increase this if want more points per curve
     point_num = int(decade_num / log_int + 1)
-    if qmatrc.debug: print "number of points = ", point_num
+    if dcpypsrc.debug: print "number of points = ", point_num
 
     c = np.zeros(point_num)
     pe = np.zeros(point_num)

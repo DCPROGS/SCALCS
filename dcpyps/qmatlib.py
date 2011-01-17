@@ -39,7 +39,7 @@ __date__ ="$11-Oct-2010 10:33:07$"
 import numpy as np
 from numpy import linalg as nplin
 
-import qmatrc
+import dcpypsrc
 
 def eigs(Q):
     """
@@ -59,8 +59,8 @@ def eigs(Q):
     """
 
     eigvals, M = nplin.eig(Q)
-    if qmatrc.debug: print 'eigenvalues=', eigvals
-    if qmatrc.debug: print 'eigenvectors=', M
+    if dcpypsrc.debug: print 'eigenvalues=', eigvals
+    if dcpypsrc.debug: print 'eigenvectors=', M
     N = nplin.inv(M)
     k = N.shape[0]
 
@@ -71,7 +71,7 @@ def eigs(Q):
             for m in range(k):
                 Ai[j, m] = M[j, i] * N[i, m]
         A.append(Ai)
-    if qmatrc.debug: print 'spectral matrices =', A
+    if dcpypsrc.debug: print 'spectral matrices =', A
 
     return eigvals, A
 
@@ -106,8 +106,8 @@ def iGs(Q, kA, kB):
 
     GAB = np.dot(nplin.inv(-1 * QAA), QAB)
     GBA = np.dot(nplin.inv(-1 * QBB), QBA)
-    if qmatrc.debug: print 'GAB= ', GAB
-    if qmatrc.debug: print 'GBA= ', GBA
+    if dcpypsrc.debug: print 'GAB= ', GAB
+    if dcpypsrc.debug: print 'GBA= ', GBA
 
     return GAB, GBA
 
@@ -390,7 +390,7 @@ def phiO(Q, kA):
     nom = np.dot(pF, QFA)
     denom = np.dot(nom,uA)
     phi = nom / denom
-    if qmatrc.debug: print 'phiO=', phi
+    if dcpypsrc.debug: print 'phiO=', phi
     return phi
 
 def phiS(Q, kA, kB, kC):
@@ -417,7 +417,7 @@ def phiS(Q, kA, kB, kC):
     GAF, GFA = iGs(Q, kA, kF)
     phi = np.dot(phiOp, GAF)
 
-    if qmatrc.debug: print 'phiS=', phi
+    if dcpypsrc.debug: print 'phiS=', phi
     return phi
 
 def phiBurst(Q, kA, kB, kC):

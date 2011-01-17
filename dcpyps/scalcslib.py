@@ -38,7 +38,7 @@ __date__ ="$07-Dec-2010 20:29:14$"
 import numpy as np
 
 import qmatlib as qml
-import qmatrc
+import dcpypsrc
 
 def get_P0(mec, tres, eff='c'):
     """
@@ -64,7 +64,7 @@ def get_P0(mec, tres, eff='c'):
         P0 = Popen
     else:
         P0 = qml.popen(mec.Q, mec.kA, tres)
-    if qmatrc.debug: print 'Popen(0)=', P0
+    if dcpypsrc.debug: print 'Popen(0)=', P0
     return P0
 
 def get_maxPopen(mec, tres, fastBlk=False, KBlk=None, eff='c'):
