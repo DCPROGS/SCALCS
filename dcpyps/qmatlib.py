@@ -405,7 +405,7 @@ def phiS(mec):
 
     kF = mec.kB + mec.kC
     phiOp = phiO(mec)
-    GAF, GFA = iGs(Q, kA, kF)
+    GAF, GFA = iGs(mec.Q, mec.kA, kF)
     phi = np.dot(phiOp, GAF)
 
     if dcpypsrc.debug: print 'phiS=', phi
