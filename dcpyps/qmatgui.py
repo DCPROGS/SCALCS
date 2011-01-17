@@ -341,7 +341,7 @@ class QMatGUI(QMainWindow):
         Load demo mechanism (C&H82 numerical example).
         Called from menu Load|Demo.
         """
-        self.mec = demo.demoQ()
+        self.mec = samples.CH82()
         self.textBox.append("\nLoaded Demo.")
         
     def onLoadFromFile(self):
