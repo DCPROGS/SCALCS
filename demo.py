@@ -18,10 +18,7 @@ try:
 except:
     HASTK = False
 
-from dcpyps import qmatlib as qml
 from dcpyps import scalcslib as scl
-from dcpyps import scplotlib as scplot
-from dcpyps import mechanism as mec
 from dcpyps import readmecfile as readmec
 from dcpyps import samples
 
@@ -72,7 +69,7 @@ def process_args(args):
         sys.stdout.write('mecfile: %s\n' % mecfn)
         sys.stdout.write('version: %s\n' % version)
         mecnum, ratenum = readmec.choose_mec_from_list(meclist, max_mecnum)
-        sys.stdout.write('\nRead rate set #%d of mec #%d' % (ratenum+1, mecnum))
+        sys.stdout.write('\nRead rate set #%d of mec #%d\n' % (ratenum+1, mecnum))
         demomec = readmec.load_mec(mecfn, meclist[ratenum][0])
 
     return demomec
@@ -102,8 +99,8 @@ if __name__ == "__main__":
     demomec = process_args(args)
 
     tres = 0.00004  # resolution in seconds
-    fastBlk = False
-    KBlk = 0.01
+    demomec.fastBlk = False
+    demomec.KBlk = 0.01
 
     conc = 100e-9    # 100 nM
     cmin = 100e-9
@@ -113,8 +110,8 @@ if __name__ == "__main__":
 
     #     POPEN CURVE CALCULATIONS
     sys.stdout.write('\nCalculating Popen curve parameters:\n')
-    text1, text2, c, pe, pi = scl.get_Popen_plot(demomec, tres, cmin, cmax,
-        fastBlk, KBlk)
+    text1, text2, c, pe, pi = scl.get_Popen_plot(demomec, tres, cmin, cmax)
+
     sys.stdout.write(text1 + text2 + '\n')
     plt.subplot(221)
     plt.semilogx(c, pe, 'b-', c, pi, 'r--')

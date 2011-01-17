@@ -43,7 +43,8 @@ import dcpypsrc
 
 def eigs(Q):
     """
-    Calculate eigenvalues, eigenvectors and spectral matrices.
+    Calculate eigenvalues, eigenvectors and spectral matrices
+    of a matrix Q.
     Return eigenvalues and spectral matrices.
 
     Parameters
@@ -53,8 +54,8 @@ def eigs(Q):
     Returns
     -------
     eigvals : ndarray, shape (k,)
-        Eigenvalues of Q.
-    A : list of ndarrays with shape (k, k); length `k`
+        Eigenvalues of M.
+    A : ndarray of shape (k, k, k); length `k`
         Spectral matrices of Q.
     """
 
@@ -64,13 +65,13 @@ def eigs(Q):
     N = nplin.inv(M)
     k = N.shape[0]
 
-    A = []
+    A = np.zeros((k, k, k))
+    # TODO: make this a one-liner avoiding loops
     for i in range(k):
-        Ai = np.zeros((k, k))
         for j in range(k):
             for m in range(k):
-                Ai[j, m] = M[j, i] * N[i, m]
-        A.append(Ai)
+                A[i, j, m] = M[j, i] * N[i, m]
+
     if dcpypsrc.debug: print 'spectral matrices =', A
 
     return eigvals, A

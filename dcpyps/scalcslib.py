@@ -67,7 +67,7 @@ def get_P0(mec, tres, eff='c'):
     if dcpypsrc.debug: print 'Popen(0)=', P0
     return P0
 
-def get_maxPopen(mec, tres, fastBlk=False, KBlk=None, eff='c'):
+def get_maxPopen(mec, tres, eff='c'):
     """
     Estimate numerically maximum equilibrium open probability.
     In case Popen curve goes through a maximum, the peak open
@@ -78,10 +78,6 @@ def get_maxPopen(mec, tres, fastBlk=False, KBlk=None, eff='c'):
     mec : instance of type Mechanism
     tres : float
         Time resolution (dead time).
-    fastBlk : bool
-        True in presence of short unresolved blockages.
-    KBlk : float
-        Fast block equilibrium constant in M.
 
     Returns
     -------
@@ -91,12 +87,12 @@ def get_maxPopen(mec, tres, fastBlk=False, KBlk=None, eff='c'):
         Concentration at which Popen curve reaches maximal value.
     """
 
-    decline = get_decline(mec, tres, fastBlk, KBlk)
+    decline = get_decline(mec, tres)
     flat = False
     monot = True
 
     conc = 1e-9    # start at 1 nM
-    Poplast = get_Popen(mec, tres, conc, fastBlk, KBlk)
+    Poplast = get_Popen(mec, tres, conc)
     fac = np.sqrt(10)
     c1 = 0
     c2 = 0
@@ -104,7 +100,7 @@ def get_maxPopen(mec, tres, fastBlk=False, KBlk=None, eff='c'):
     niter = 0
     while (not flat and conc < 100 and monot):
         conc = conc * fac
-        Popen = get_Popen(mec, tres, conc, fastBlk, KBlk)
+        Popen = get_Popen(mec, tres, conc)
         if decline and (np.fabs(Popen) < 1e-12):
             flat = np.fabs(Poplast) < 1e-12
         else:
@@ -132,19 +128,19 @@ def get_maxPopen(mec, tres, fastBlk=False, KBlk=None, eff='c'):
         while nstep <= maxnstep and np.fabs(Perr) > 0:
             conc = 0.5 * (c1 + c2)
             conc1 = conc / fac
-            P1 = get_Popen(mec, tres, conc, fastBlk, KBlk)
+            P1 = get_Popen(mec, tres, conc)
             conc1 = conc * fac
-            P2 = get_Popen(mec, tres, conc, fastBlk, KBlk)
+            P2 = get_Popen(mec, tres, conc)
             Perr = P2 - P1
             if Perr < 0:
                 c1 = conc1
             else:
                 c2 = conc1
 
-    maxPopen = get_Popen(mec, tres, conc, fastBlk, KBlk)
+    maxPopen = get_Popen(mec, tres, conc)
     return maxPopen, conc
 
-def get_Popen(mec, tres, conc, fastBlk=False, KBlk=None, eff='c'):
+def get_Popen(mec, tres, conc, eff='c'):
     """
     Calculate equilibrium open probability, Popen, and correct for
     unresolved blockages in case of presence of fast pore blocker.
@@ -156,10 +152,6 @@ def get_Popen(mec, tres, conc, fastBlk=False, KBlk=None, eff='c'):
         Time resolution (dead time).
     conc : float
         Concentration.
-    fastBlk : bool
-        True in presence of short unresolved blockages.
-    KBlk : float
-        Fast block equilibrium constant in M.
 
     Returns
     -------
@@ -169,11 +161,11 @@ def get_Popen(mec, tres, conc, fastBlk=False, KBlk=None, eff='c'):
 
     mec.set_eff(eff, conc)
     Popen = qml.popen(mec.Q, mec.kA, tres)
-    if fastBlk:
-        Popen = Popen / (1 + conc / KBlk)
+    if mec.fastBlk:
+        Popen = Popen / (1 + conc / mec.KBlk)
     return Popen
 
-def get_decline(mec, tres, fastBlk=False, KBlk=None, eff='c'):
+def get_decline(mec, tres, eff='c'):
     """
     Find whether open probability curve increases or decreases
     with ligand concentration. Popen may decrease if ligand is inhibitor.
@@ -183,10 +175,6 @@ def get_decline(mec, tres, fastBlk=False, KBlk=None, eff='c'):
     mec : instance of type Mechanism
     tres : float
         Time resolution (dead time).
-    fastBlk : bool
-        True in presence of short unresolved blockages.
-    KBlk : float
-        Fast block equilibrium constant in M.
 
     Returns
     -------
@@ -194,12 +182,12 @@ def get_decline(mec, tres, fastBlk=False, KBlk=None, eff='c'):
         True if Popen curve dectreases with concentration.
     """
 
-    Popen = get_Popen(mec, tres, 1, fastBlk, KBlk)    # Popen at 1 M
+    Popen = get_Popen(mec, tres, 1)    # Popen at 1 M
     P0 = get_P0(mec, tres)    # Popen at 0 M
     decline = (Popen < P0)
     return decline
 
-def get_EC50(mec, tres, fastBlk=False, KBlk=None, eff='c'):
+def get_EC50(mec, tres, eff='c'):
     """
     Estimate numerically the equilibrium EC50 for a specified mechanism.
     If monotonic this is unambiguous. If not monotonic then returned is
@@ -210,10 +198,6 @@ def get_EC50(mec, tres, fastBlk=False, KBlk=None, eff='c'):
     mec : instance of type Mechanism
     tres : float
         Time resolution (dead time).
-    fastBlk : bool
-        True in presence of short unresolved blockages.
-    KBlk : float
-        Fast block equilibrium constant in M.
 
     Returns
     -------
@@ -222,7 +206,7 @@ def get_EC50(mec, tres, fastBlk=False, KBlk=None, eff='c'):
     """
 
     P0 = get_P0(mec, tres)
-    maxPopen, cmax = get_maxPopen(mec, tres, fastBlk, KBlk)
+    maxPopen, cmax = get_maxPopen(mec, tres)
 
     c1 = 0
     c2 = cmax
@@ -236,7 +220,7 @@ def get_EC50(mec, tres, fastBlk=False, KBlk=None, eff='c'):
     while np.fabs(Perr) > epsy and nstep <= nstepmax:
         nstep += 1
         conc = (c1 + c2) / 2
-        Popen = get_Popen(mec, tres, conc, fastBlk, KBlk)
+        Popen = get_Popen(mec, tres, conc)
         Popen = np.fabs((Popen - P0) / (maxPopen - P0))
         Perr = Popen - 0.5
         if Perr < 0:
@@ -247,7 +231,7 @@ def get_EC50(mec, tres, fastBlk=False, KBlk=None, eff='c'):
 
     return EC50
 
-def get_nH(mec, tres, fastBlk=False, KB=0, eff='c'):
+def get_nH(mec, tres, eff='c'):
     """
     Calculate Hill slope, nH, at EC50 of a calculated Popen curve.
     This is Python implementation of DCPROGS HJC_HILL.FOR subroutine.
@@ -257,10 +241,6 @@ def get_nH(mec, tres, fastBlk=False, KB=0, eff='c'):
     mec : instance of type Mechanism
     tres : float
         Time resolution (dead time).
-    fastBlk : bool
-        True in presence of short unresolved blockages.
-    KBlk : float
-        Fast block equilibrium constant in M.
 
     Returns
     -------
@@ -269,8 +249,8 @@ def get_nH(mec, tres, fastBlk=False, KB=0, eff='c'):
     """
 
     P0 = get_P0(mec, tres)
-    Pmax, cmax = get_maxPopen(mec, tres, fastBlk, KB)
-    EC50 = get_EC50(mec, tres, fastBlk, KB)
+    Pmax, cmax = get_maxPopen(mec, tres)
+    EC50 = get_EC50(mec, tres)
     decline = get_decline(mec, tres)
     if decline:
         temp = P0
@@ -284,7 +264,7 @@ def get_nH(mec, tres, fastBlk=False, KB=0, eff='c'):
     y = np.zeros(n)
     for i in range(n):
         c[i] = (EC50 * 0.9) * pow(10, i * dc)
-        y[i] = get_Popen(mec, tres, c[i], fastBlk, KB)
+        y[i] = get_Popen(mec, tres, c[i])
 
     # Find two point around EC50.
     i50 = 0
@@ -307,7 +287,7 @@ def get_nH(mec, tres, fastBlk=False, KB=0, eff='c'):
     nH = s1 + b * (EC50 - c[i50])
     return nH
 
-def get_Popen_plot(mec, tres, cmin, cmax, fastBlk=False, KBlk=0):
+def get_Popen_plot(mec, tres, cmin, cmax):
     """
     Calculate Popen curve parameters and data for Popen curve plot.
 
@@ -316,10 +296,6 @@ def get_Popen_plot(mec, tres, cmin, cmax, fastBlk=False, KBlk=0):
     mec : instance of type Mechanism
     tres : float
         Time resolution (dead time).
-    fastBlk : bool
-        True in presence of short unresolved blockages.
-    KBlk : float
-        Fast block equilibrium constant in M.
 
     Returns
     -------
@@ -336,18 +312,18 @@ def get_Popen_plot(mec, tres, cmin, cmax, fastBlk=False, KBlk=0):
     """
 
     # Calculate EC50, nH and maxPopen for ideal Popen curve.
-    emaxPopen, econc = get_maxPopen(mec, tres, fastBlk, KBlk)
-    eEC50 = get_EC50(mec, tres, fastBlk, KBlk) * 1000000    # in mikroM
-    enH = get_nH(mec, tres, fastBlk, KBlk)
+    emaxPopen, econc = get_maxPopen(mec, tres)
+    eEC50 = get_EC50(mec, tres) * 1000000    # in mikroM
+    enH = get_nH(mec, tres)
     text1 = ('HJC Popen curve:\nmaxPopen = {0:.3f}; '.format(emaxPopen) +
         ' EC50 = {0:.3f} mikroM; '.format(eEC50) + ' nH = {0:.3f}'.format(enH))
 
     # Calculate EC50, nH and maxPopen for Popen curve
     # corrected for missed events.
-    imaxPopen, iconc = get_maxPopen(mec, 0, fastBlk, KBlk)
-    iEC50 = get_EC50(mec, 0, fastBlk, KBlk) * 1000000   # in mikroM
-    inH = get_nH(mec, 0, fastBlk, KBlk)
-    text2 = ('Ideal Popen curve:\nmaxPopen = {0:.3f}; '.format(imaxPopen)+
+    imaxPopen, iconc = get_maxPopen(mec, 0)
+    iEC50 = get_EC50(mec, 0) * 1000000   # in mikroM
+    inH = get_nH(mec, 0)
+    text2 = ('\nIdeal Popen curve:\nmaxPopen = {0:.3f}; '.format(imaxPopen)+
         ' EC50 = {0:.3f} mikroM; '.format(iEC50) + ' nH = {0:.3f}'.format(inH))
 
     # Plot ideal and corrected Popen curves.
@@ -364,13 +340,13 @@ def get_Popen_plot(mec, tres, cmin, cmax, fastBlk=False, KBlk=0):
     pi = np.zeros(point_num)
     for i in range(point_num):
         ctemp = pow(10, log_start + log_int * i)
-        pe[i] = get_Popen(mec, tres, ctemp, fastBlk, KBlk)
-        pi[i] = get_Popen(mec, 0, ctemp, fastBlk, KBlk)
+        pe[i] = get_Popen(mec, tres, ctemp)
+        pi[i] = get_Popen(mec, 0, ctemp)
         c[i] = ctemp * 1000000
 
     return text1, text2, c, pe, pi
 
-def get_burstlen_pdf(mec, conc, tmin, tmax, fastBlk=False, KBlk=0):
+def get_burstlen_pdf(mec, conc, tmin, tmax):
     """
     Calculate the mean burst length and data for burst length distribution.
 
@@ -381,10 +357,6 @@ def get_burstlen_pdf(mec, conc, tmin, tmax, fastBlk=False, KBlk=0):
         Concentration in M.
     tmin, tmax : floats
         Time range for burst length ditribution.
-    fastBlk : bool
-        True in presence of short unresolved blockages.
-    KBlk : float
-        Fast block equilibrium constant in M.
 
     Returns
     -------
@@ -479,7 +451,7 @@ def get_burstlen_conc_plot(mec, cmin, cmax):
         c[i] = ctemp * 1000000
     return c, br
 
-def get_burstlen_conc_fblk_plot(mec, cmin, cmax, fastBlk, KB):
+def get_burstlen_conc_fblk_plot(mec, cmin, cmax):
     """
     Calculate data for the plot of burst length versus concentration.
     Returns burst length in absence and presence of short unresolved blockages.
@@ -489,10 +461,6 @@ def get_burstlen_conc_fblk_plot(mec, cmin, cmax, fastBlk, KB):
     mec : instance of type Mechanism
     cmin, cmax : float
         Range of concentrations in M.
-    fastBlk : bool
-        True in presence of short unresolved blockages.
-    KBlk : float
-        Fast block equilibrium constant in M.
 
     Returns
     -------
@@ -501,6 +469,7 @@ def get_burstlen_conc_fblk_plot(mec, cmin, cmax, fastBlk, KB):
     br : ndarray of floats, shape (num of points,)
         Mean burst length in millisec.
     """
+
     point_num = 100
     incr = (cmax - cmin)/(point_num - 1)
     c = np.zeros(point_num)

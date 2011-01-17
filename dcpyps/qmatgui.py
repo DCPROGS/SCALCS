@@ -21,9 +21,9 @@ try:
 except:
     raise ImportError("matplotlib module is missing")
 
-import calculate_demo as demo
 import scalcslib as scl
 import readmecfile as readmec
+import samples
 
 class QMatGUI(QMainWindow):
     def __init__(self, parent=None):
@@ -31,11 +31,11 @@ class QMatGUI(QMainWindow):
         self.resize(1000, 700)     # wide, high in px
         self.mainFrame = QWidget()
 
-        self.mec = None
+        self.mec = samples.CH82()
+        self.mec.KB = 0.01
+        self.mec.fastBlk = False
         self.conc = 100e-9    # 100 nM
         self.tres = 0.00004
-        self.KB = 0.01
-        self.fastBlk = False
         self.tmin = 10e-6
         self.tmax = 0.1
         self.cmin = 10e-9
@@ -151,12 +151,12 @@ class QMatGUI(QMainWindow):
 
         fastBlkBox = QHBoxLayout()
         self.fastBlkCheckBox = QCheckBox("&Fast block?")
-        self.fastBlkCheckBox.setChecked(self.fastBlk)
+        self.fastBlkCheckBox.setChecked(self.mec.fastBlk)
         self.connect(self.fastBlkCheckBox, SIGNAL("stateChanged(int)"),
             self.on_settings_changed)
         fastBlkBox.addWidget(self.fastBlkCheckBox)
         fastBlkBox.addWidget(QLabel("KB ="))
-        self.KBEdit = QLineEdit(unicode(self.KB * 1000))
+        self.KBEdit = QLineEdit(unicode(self.mec.KB * 1000))
         self.KBEdit.setMaxLength(8)
         self.connect(self.KBEdit, SIGNAL("editingFinished()"),
             self.on_settings_changed)
@@ -181,14 +181,14 @@ class QMatGUI(QMainWindow):
         """
         Get setting values.
         """
-        self.KB = float(self.KBEdit.text()) / 1000.0
+        self.mec.KB = float(self.KBEdit.text()) / 1000.0
         self.tres = float(self.tresEdit.text()) / 1000000.0
         self.tmin = float(self.trangeEdit1.text()) / 1000.0
         self.tmax = float(self.trangeEdit2.text()) / 1000.0
         self.conc = float(self.concEdit.text()) / 1000000.0
         self.cmin = float(self.crangeEdit1.text()) / 1000000.0
         self.cmax = float(self.crangeEdit2.text()) / 1000000.0
-        self.fastBlk = self.fastBlkCheckBox.isChecked()
+        self.mec.fastBlk = self.fastBlkCheckBox.isChecked()
 
     def createAction(self, text, slot=None, shortcut=None, icon=None,
             tip=None, checkable=False, signal="triggered()"):
@@ -239,7 +239,7 @@ class QMatGUI(QMainWindow):
         self.textBox.append('Temporal resolution = {0:.3f} mikrosec'.
             format(self.tres * 1000000))
         text1, text2, c, pe, pi = scl.get_Popen_plot(self.mec, self.tres,
-            self.cmin, self.cmax, self.fastBlk, self.KB)
+            self.cmin, self.cmax)
         self.textBox.append(text1)
         self.textBox.append(text2)
         self.axes.clear()
@@ -286,7 +286,7 @@ class QMatGUI(QMainWindow):
         self.textBox.append('\nCalculating burst parameters:')
         self.textBox.append('Agonist concentration = %e M' %self.conc)
         text1, t, br = scl.get_burstlen_pdf(self.mec, self.conc,
-            self.tmin, self.tmax, self.fastBlk, self.KB)
+            self.tmin, self.tmax)
         self.textBox.append(text1)
         self.axes.clear()
         self.axes.semilogx(t, br, 'b-')
@@ -314,9 +314,10 @@ class QMatGUI(QMainWindow):
         Display mean burst length versus concentration plot.
         """
         self.axes.clear()
-        if self.fastBlk:
+
+        if self.mec.fastBlk:
             c, br, brblk = scl.get_burstlen_conc_fblk_plot(self.mec, self.cmin,
-                self.cmax, self.fastBlk, self.KB)
+                self.cmax)
             self.axes.plot(c, br,'b-', c, brblk, 'g-')
         else:
             c, br = scl.get_burstlen_conc_plot(self.mec, self.cmin, self.cmax)
