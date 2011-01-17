@@ -69,10 +69,10 @@ def process_args(args):
             sys.exit(1)
 
         version, meclist, max_mecnum = readmec.get_mec_list(mecfn)
-        print 'mecfile:', mecfn
-        print 'version:', version
+        sys.stdout.write('mecfile: %s\n' % mecfn)
+        sys.stdout.write('version: %s\n' % version)
         mecnum, ratenum = readmec.choose_mec_from_list(meclist, max_mecnum)
-        print '\nRead rate set #', ratenum + 1, 'of mec #', mecnum
+        sys.stdout.write('\nRead rate set #%d of mec #%d' % (ratenum+1, mecnum))
         demomec = readmec.load_mec(mecfn, meclist[ratenum][0])
 
     return demomec
@@ -112,10 +112,10 @@ if __name__ == "__main__":
     tmax = 100
 
     #     POPEN CURVE CALCULATIONS
-    print '\nCalculating Popen curve parameters:'
+    sys.stdout.write('\nCalculating Popen curve parameters:\n')
     text1, text2, c, pe, pi = scl.get_Popen_plot(demomec, tres, cmin, cmax,
         fastBlk, KBlk)
-    print text1, text2
+    sys.stdout.write(text1 + text2 + '\n')
     plt.subplot(221)
     plt.semilogx(c, pe, 'b-', c, pi, 'r--')
     plt.ylabel('Popen')
@@ -123,10 +123,10 @@ if __name__ == "__main__":
     plt.title('Apparent and ideal Popen curves')
 
     #     BURST CALCULATIONS
-    print '\nCalculating burst properties:'
-    print ('Agonist concentration = %e M' %conc)
+    sys.stdout.write('\nCalculating burst properties:\n')
+    sys.stdout.write('Agonist concentration = %e M\n' %conc)
     text1, t, fbst = scl.get_burstlen_pdf(demomec, conc, tmin, tmax)
-    print text1
+    sys.stdout.write(text1 + '\n')
     plt.subplot(222)
     plt.semilogx(t, fbst, 'b-')
     plt.ylabel('fbst(t)')
@@ -135,7 +135,7 @@ if __name__ == "__main__":
 
     # Calculate mean number of openings per burst.
     text1, r, Pr = scl.get_burstopenings_distr(demomec, conc)
-    print text1
+    sys.stdout.write(text1 + '\n')
     # Plot distribution of number of openings per burst
     plt.subplot(223)
     plt.plot(r, Pr,'ro')
