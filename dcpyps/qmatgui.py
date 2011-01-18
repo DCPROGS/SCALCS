@@ -474,10 +474,3 @@ class AboutDlg(QDialog):
         movie_screen.setMovie(movie)
         movie.start()
         return movie_screen
-
-if __name__ == "__main__":
-
-    app = QApplication(sys.argv)
-    form = QMatGUI()
-    form.show()
-    app.exec_()
