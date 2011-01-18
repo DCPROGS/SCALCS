@@ -60,6 +60,7 @@ qmat.py
 .libs/
 src/qmatswig/.libs/
 
+MANIFEST
 *Makefile.in
 aclocal.m4
 config.guess
