@@ -26,19 +26,94 @@ Neher E) Plenum Press, New York, pp. 397-482.
 CH95b: Colquhoun D, Hawkes AG (1995b)
 A Q-Matrix Cookbook. In: Single-channel recording. 2nd ed. (Eds:
 Sakmann B, Neher E) Plenum Press, New York, pp. 589-633.
-
-TODO
---------
-Check if it works with declining Popen curve.
 """
 
 __author__="R.Lape, University College London"
 __date__ ="$07-Dec-2010 20:29:14$"
 
 import numpy as np
+from numpy import linalg as nplin
 
 import qmatlib as qml
-import dcpypsrc
+
+def hjc_mean_time(mec, tres, open):
+    """
+    Calculate exact mean open or shut time from HJC probability density
+    function.
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    tres : float
+        Time resolution (dead time).
+    open : bool
+        True to calculate mean open time, False to calculate mean shut time.
+
+    Returns
+    -------
+    mean : float
+        Apparent mean open/shut time.
+    """
+
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+    expQFF = qml.expQ(mec.QFF, tres)
+    expQAA = qml.expQ(mec.QAA, tres)
+    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
+    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
+
+    if open:
+        phiA = qml.phiHJC(eGAF, eGFA, mec.kA, mec.kF)
+        QexpQF = np.dot(mec.QAF, expQFF)
+        DARS = qml.dARSdS(tres, mec.QAA, mec.QAF, mec.QFF, mec.QFA,
+            GAF, GFA, expQFF, expQAA, mec.kA, mec.kF)
+        uF = np.ones((mec.kF, 1))
+        # meanOpenTime = tres + phiA * DARS * QexpQF * uF
+        mean = tres + np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))
+    else:
+        phiF = qml.phiHJC(eGFA, eGAF, mec.kF, mec.kA)
+        QexpQA = np.dot(mec.QFA, expQAA)
+        DFRS = qml.dARSdS(tres, mec.QFF, mec.QFA, mec.QAA, mec.QAF,
+            GFA, GAF, expQAA, expQFF, mec.kF, mec.kA)
+        uA = np.ones((mec.kA, 1))
+        # meanShutTime = tres + phiF * DFRS * QexpQA * uA
+        mean = tres + np.dot(phiF, np.dot(np.dot(DFRS, QexpQA), uA))
+
+    return mean
+
+def popen(mec, tres, conc, eff='c'):
+    """
+    Calculate equilibrium open probability (Popen) and correct for
+    unresolved blockages in case of presence of fast pore blocker.
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    tres : float
+        Time resolution (dead time).
+    conc : float
+        Concentration.
+
+    Returns
+    -------
+    Popen : float
+        Open probability value at a given concentration.
+    """
+
+    mec.set_eff(eff, conc)
+    if tres == 0:
+        p = qml.pinf(mec)
+        Popen = 0
+        for i in range(mec.kA):
+            Popen = Popen + p[i]
+    else:
+        hmopen = hjc_mean_time(mec, tres, True)
+        hmshut = hjc_mean_time(mec, tres, False)
+        Popen = (hmopen / (hmopen + hmshut))[0,0]
+    if mec.fastBlk:
+        Popen = Popen / (1 + conc / mec.KBlk)
+    return Popen
 
 def get_P0(mec, tres, eff='c'):
     """
@@ -57,14 +132,12 @@ def get_P0(mec, tres, eff='c'):
     """
 
     conc = 0
-    mec.set_eff(eff, conc)
     P0 = 0
-    Popen = qml.popen(mec, 0)
+    Popen = popen(mec, 0, conc)
     if Popen < 1e-10:
         P0 = Popen
     else:
-        P0 = qml.popen(mec, tres)
-    if dcpypsrc.debug: print 'Popen(0)=', P0
+        P0 = popen(mec, tres, conc)
     return P0
 
 def get_maxPopen(mec, tres, eff='c'):
@@ -92,7 +165,7 @@ def get_maxPopen(mec, tres, eff='c'):
     monot = True
 
     conc = 1e-9    # start at 1 nM
-    Poplast = get_Popen(mec, tres, conc)
+    Poplast = popen(mec, tres, conc)
     fac = np.sqrt(10)
     c1 = 0
     c2 = 0
@@ -100,7 +173,7 @@ def get_maxPopen(mec, tres, eff='c'):
     niter = 0
     while (not flat and conc < 100 and monot):
         conc = conc * fac
-        Popen = get_Popen(mec, tres, conc)
+        Popen = popen(mec, tres, conc)
         if decline and (np.fabs(Popen) < 1e-12):
             flat = np.fabs(Poplast) < 1e-12
         else:
@@ -128,42 +201,17 @@ def get_maxPopen(mec, tres, eff='c'):
         while nstep <= maxnstep and np.fabs(Perr) > 0:
             conc = 0.5 * (c1 + c2)
             conc1 = conc / fac
-            P1 = get_Popen(mec, tres, conc)
+            P1 = popen(mec, tres, conc)
             conc1 = conc * fac
-            P2 = get_Popen(mec, tres, conc)
+            P2 = popen(mec, tres, conc)
             Perr = P2 - P1
             if Perr < 0:
                 c1 = conc1
             else:
                 c2 = conc1
 
-    maxPopen = get_Popen(mec, tres, conc)
+    maxPopen = popen(mec, tres, conc)
     return maxPopen, conc
-
-def get_Popen(mec, tres, conc, eff='c'):
-    """
-    Calculate equilibrium open probability, Popen, and correct for
-    unresolved blockages in case of presence of fast pore blocker.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    tres : float
-        Time resolution (dead time).
-    conc : float
-        Concentration.
-
-    Returns
-    -------
-    Popen : float
-        Open probability value at a given concentration.
-    """
-
-    mec.set_eff(eff, conc)
-    Popen = qml.popen(mec, tres)
-    if mec.fastBlk:
-        Popen = Popen / (1 + conc / mec.KBlk)
-    return Popen
 
 def get_decline(mec, tres, eff='c'):
     """
@@ -182,7 +230,7 @@ def get_decline(mec, tres, eff='c'):
         True if Popen curve dectreases with concentration.
     """
 
-    Popen = get_Popen(mec, tres, 1)    # Popen at 1 M
+    Popen = popen(mec, tres, 1)    # Popen at 1 M
     P0 = get_P0(mec, tres)    # Popen at 0 M
     decline = (Popen < P0)
     return decline
@@ -220,7 +268,7 @@ def get_EC50(mec, tres, eff='c'):
     while np.fabs(Perr) > epsy and nstep <= nstepmax:
         nstep += 1
         conc = (c1 + c2) / 2
-        Popen = get_Popen(mec, tres, conc)
+        Popen = popen(mec, tres, conc)
         Popen = np.fabs((Popen - P0) / (maxPopen - P0))
         Perr = Popen - 0.5
         if Perr < 0:
@@ -264,9 +312,9 @@ def get_nH(mec, tres, eff='c'):
     y = np.zeros(n)
     for i in range(n):
         c[i] = (EC50 * 0.9) * pow(10, i * dc)
-        y[i] = get_Popen(mec, tres, c[i])
+        y[i] = popen(mec, tres, c[i])
 
-    # Find two point around EC50.
+    # Find two points around EC50.
     i50 = 0
     s1 = 0
     s2 = 0
@@ -287,273 +335,332 @@ def get_nH(mec, tres, eff='c'):
     nH = s1 + b * (EC50 - c[i50])
     return nH
 
-def get_Popen_plot(mec, tres, cmin, cmax):
+def mean_burst_length(mec):
     """
-    Calculate Popen curve parameters and data for Popen curve plot.
+    Calculate the mean burst length (Eq. 3.19, CH82).
+    m = PhiB * (I - GAB * GBA)^(-1) * (-QAA^(-1)) * \
+        (I - QAB * (QBB^(-1)) * GBA) * uA
 
     Parameters
     ----------
-    mec : instance of type Mechanism
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    m : float
+        The mean burst length.
+    """
+
+    uA = np.ones((mec.kA, 1))
+    I = np.eye(mec.kA)
+    invQAA = -1 * nplin.inv(mec.QAA)
+    invQBB = nplin.inv(mec.QBB)
+    interm1 = nplin.inv(I - np.dot(mec.GAB, mec.GBA))
+    interm2 = I - np.dot(np.dot(mec.QAB, invQBB), mec.GBA)
+    m = (np.dot(np.dot(np.dot(np.dot(qml.phiBurst(mec), interm1), invQAA),
+        interm2), uA)[0])
+    return m
+
+def mean_num_burst_openings(mec):
+    """
+    Calculate the mean number of openings per burst (Eq. 3.7, CH82).
+    mu = phiB * (I - GAB * GBA)^(-1) * uA
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    mu : float
+        The mean number ofopenings per burst.
+    """
+
+    uA = np.ones((mec.kA,1))
+    I = np.eye(mec.kA)
+    interm = nplin.inv(I - np.dot(mec.GAB, mec.GBA))
+    mu = np.dot(np.dot(qml.phiBurst(mec), interm), uA)[0]
+    return mu
+
+def distr_num_burst_openings(mec, r):
+    """
+    The distribution of openings per burst (Eq. 3.5, CH82).
+    P(r) = phiB * (GAB * GBA)^(r-1) * eB
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    r : int
+        Number of openings per burst.
+
+    Returns
+    -------
+    Pr : float
+        Probability of seeing r openings per burst.
+    """
+
+    GG = np.dot(mec.GAB, mec.GBA)
+    if r == 1:
+        interm = np.eye(mec.kA)
+    elif r == 2:
+        interm = GG
+    else:
+        interm = GG
+        for i in range(2, r):
+            interm = np.dot(interm, GG)
+    Pr = np.dot(np.dot(qml.phiBurst(mec), interm), qml.endBurst(mec))
+    return Pr
+
+def pdf_burst_length(mec, t):
+    """
+    Probability density function of the burst length (Eq. 3.17, CH82).
+    f(t) = phiB * [PEE(t)]AA * (-QAA) * eB, where PEE(t) = exp(QEE * t)
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    f : float
+    """
+
+    expQEEA = qml.expQ(mec.QEE, t)[:mec.kA, :mec.kA]
+    f = np.dot(np.dot(np.dot(qml.phiBurst(mec), expQEEA), -mec.QAA),
+        qml.endBurst(mec))
+    return f
+
+def pdf_open_time(mec, t):
+    """
+    Probability density function of the open time.
+    f(t) = phiOp * exp(-QAA * t) * (-QAA) * uA
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    f : float
+    """
+
+    uA = np.ones((mec.kA, 1))
+    expQAA = qml.expQ(mec.QAA, t)
+    f = np.dot(np.dot(np.dot(qml.phiO(mec), expQAA), -mec.QAA), uA)
+    return f
+
+def pdf_shut_time(mec, t):
+    """
+    Probability density function of the shut time.
+    f(t) = phiShut * exp(QFF * t) * (-QFF) * uF
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    t : float
+        Time.
+
+    Returns
+    -------
+    f : float
+    """
+
+    uF = np.ones((mec.kF, 1))
+    expQFF = qml.expQ(mec.QFF, t)
+    f = np.dot(np.dot(np.dot(qml.phiS(mec), expQFF), -mec.QFF), uF)
+    return f
+
+def asymptotic_roots(mec, tres, open):
+    """
+    Find roots for the asymptotic probability density function (Eqs. 52-58,
+    HJC92).
+
+    Parameters
+    ----------
     tres : float
         Time resolution (dead time).
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    open : bool
+        True if searching roots for open time pdf; False if searching roots
+        for shut time distribution.
 
     Returns
     -------
-    text1 : string
-        Contains parameters for Popen curve corrected for missed events.
-    text2 : string
-        Contains parameters for ideal Popen curve.
-    c : ndarray of floats, shape (num of points,)
-        Concentration in mikroM.
-    pe : ndarray of floats, shape (num of points,)
-        Open probability corrected for missed events.
-    pi : ndarray of floats, shape (num of points,)
-        Ideal open probability.
+    roots : array_like, shape (k,)
     """
 
-    # Calculate EC50, nH and maxPopen for ideal Popen curve.
-    emaxPopen, econc = get_maxPopen(mec, tres)
-    eEC50 = get_EC50(mec, tres) * 1000000    # in mikroM
-    enH = get_nH(mec, tres)
-    text1 = ('HJC Popen curve:\nmaxPopen = {0:.3f}; '.format(emaxPopen) +
-        ' EC50 = {0:.3f} mikroM; '.format(eEC50) + ' nH = {0:.3f}'.format(enH))
+    sao = -100000
+    sbo = -10
+    sas = -100000
+    sbs = -0.0001
 
-    # Calculate EC50, nH and maxPopen for Popen curve
-    # corrected for missed events.
-    imaxPopen, iconc = get_maxPopen(mec, 0)
-    iEC50 = get_EC50(mec, 0) * 1000000   # in mikroM
-    inH = get_nH(mec, 0)
-    text2 = ('\nIdeal Popen curve:\nmaxPopen = {0:.3f}; '.format(imaxPopen)+
-        ' EC50 = {0:.3f} mikroM; '.format(iEC50) + ' nH = {0:.3f}'.format(inH))
+    if open:
+        sro = qml.bisection_intervals(sao, sbo, tres,
+            mec.QFF, mec.QAA, mec.QAF, mec.QFA, mec.kF, mec.kA)
+        roots = np.zeros(mec.kA)
+        for i in range(mec.kA):
+            roots[i] = qml.bisect(sro[i,0], sro[i,1], tres,
+                mec.QFF, mec.QAA, mec.QAF, mec.QFA, mec.kF, mec.kA)
+        return roots
+    else:
+        sro = qml.bisection_intervals(sas, sbs, tres,
+            mec.QAA, mec.QFF, mec.QFA, mec.QAF, mec.kA, mec.kF)
+        roots = np.zeros(mec.kF)
+        for i in range(mec.kF):
+            roots[i] = qml.bisect(sro[i,0], sro[i,1], tres,
+                mec.QAA, mec.QFF, mec.QFA, mec.QAF, mec.kA, mec.kF)
+        return roots
 
-    # Plot ideal and corrected Popen curves.
-    #cmin = iEC50 * 0.01
-    #cmax = iEC50 * 500
-    log_start = np.log10(cmin)
-    log_end = np.log10(cmax)
-    decade_num = int(log_end - log_start)
-    log_int = 0.01    # increase this if want more points per curve
-    point_num = int(decade_num / log_int + 1)
-
-    c = np.zeros(point_num)
-    pe = np.zeros(point_num)
-    pi = np.zeros(point_num)
-    for i in range(point_num):
-        ctemp = pow(10, log_start + log_int * i)
-        pe[i] = get_Popen(mec, tres, ctemp)
-        pi[i] = get_Popen(mec, 0, ctemp)
-        c[i] = ctemp * 1000000
-
-    return text1, text2, c, pe, pi
-
-def get_burstlen_pdf(mec, conc, tmin, tmax):
+def asymptotic_areas(mec, tres, roots, open):
     """
-    Calculate the mean burst length and data for burst length distribution.
+    Find the areas of the asymptotic pdf (Eq. 58, HJC92).
 
     Parameters
     ----------
-    mec : instance of type Mechanism
-    conc : float
-        Concentration in M.
-    tmin, tmax : floats
-        Time range for burst length ditribution.
+    tres : float
+        Time resolution (dead time).
+    roots : array_like, shape (k,)
+        Roots of the asymptotic pdf.
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    open : bool
+        True if searching roots for open time pdf; False if searching roots
+        for shut time distribution.
 
     Returns
     -------
-    text1 : string
-        Mean burst length.
-    t : ndarray of floats, shape (num of points,)
-        Time in millisec.
-    fbst : ndarray of floats, shape (num of points,)
-        Burst length pdf.
+    areas : array_like, shape (k,)
     """
 
-    # Calculate mean burst length.
-    mec.set_eff('c', conc)
-    m = qml.mean_burst_length(mec) * 1000
-    text1 = 'Mean burst length = %f millisec' %m
+    if open:
+        k1 = mec.kA
+        k2 = mec.kF
+        Q22 = mec.QFF
+        Q11 = mec.QAA
+        Q12 = mec.QAF
+        Q21 = mec.QFA
+        G12, G21 = iGs(mec.Q, mec.kA, mec.kF)
+    else:
+        k1 = mec.kF
+        k2 = mec.kA
+        Q11 = mec.QFF
+        Q22 = mec.QAA
+        Q21 = mec.QAF
+        Q12 = mec.QFA
+        G21, G12 = iGs(mec.Q, mec.kA, mec.kF)
 
-    # Calculate burst length pdf.
-    point_num = 1000
-    dt = (np.log10(tmax) - np.log10(tmin)) / (point_num - 1)
+    expQ22 = qml.expQ(tres, Q22)
+    expQ11 = qml.expQ(tres, Q11)
+    eG12 = qml.eGs(G12, G21, k1, k2, expQ22)
+    eG21 = qml.eGs(G21, G12, k2, k1, expQ11)
+    phi1 = qml.phiHJC(eG12, eG21, k1, k2)[0]
 
-    t = np.zeros(point_num)
-    fbst = np.zeros(point_num)
-    for i in range(point_num):
-        temp = tmin * pow(10, (i * dt))
-        fbst[i] = np.sqrt(temp * qml.pdf_burst_length(mec, temp)) * 1000
-        t[i] = temp * 1000
+    areas = np.zeros(k1)
+    rowA = np.zeros((k1,k1))
+    colA = np.zeros((k1,k1))
+    for i in range(k1):
+        WA = qml.W(roots[i], tres, Q22, Q11, Q12, Q21, k2, k1)
+        rowA[i] = pinf(WA)
+        AW = np.transpose(WA)
+        colA[i] = qml.pinf(AW)
 
-    return text1, t, fbst
+    for i in range(k1):
+        u2 = np.ones((k2,1))
+        nom = np.dot(np.dot(np.dot(np.dot(np.dot(phi1, colA[i]), rowA[i]),
+            Q12), expQ22), u2)
+        W1A = dW(roots[i], tres, Q12, Q22, Q21, k1, k2)
+        denom = -roots[i] * np.dot(np.dot(rowA[i], W1A), colA[i])
+        areas[i] = nom / denom
 
-def get_burstopenings_distr(mec, conc):
+    return areas
+
+def exact_pdf_coef(mec, tres, open):
     """
-    Calculate the mean number of openings per burst and data for the
-    distribution of openings per burst.
+    Calculate gama constants for the exact open/shut time pdf (Eq. 3.22, HJC90).
 
     Parameters
     ----------
-    mec : instance of type Mechanism
-    conc : float
-        Concentration in M.
+    tres : float
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    open : Bool
+        True for open time pdf and False for shut time pdf.
 
     Returns
     -------
-    text1 : string
-        Mean number of openings per burst.
-    r : ndarray of floats, shape (num of points,)
-        Number of openings per burst.
-    Pr : ndarray of floats, shape (num of points,)
-        Fraction of bursts.
+    eigen : array_like, shape (k,)
+        Eigenvalues of -Q matrix.
+    gama00, gama10, gama11 : lists of floats
+        Constants for the exact open/shut time pdf.
     """
 
-    # Calculate mean number of openings per burst.
-    mec.set_eff('c', conc)
-    mu = qml.mean_num_burst_openings(mec)
-    text1 = 'Mean number of openings per burst = %f' %mu
+    k = mec.Q.shape[0]
+    expQFF = qml.expQ(tres, mec.QFF)
+    expQAA = qml.expQ(tres, mec.QAA)
+    uF = np.ones((mec.kF,1))
+    uA = np.ones((mec.kA, 1))
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
+    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
+    phiA = qml.phiHJC(eGAF, eGFA, mec.kA, mec.kF)
+    phiF = qml.phiHJC(eGFA, eGAF, mec.kF, mec.kA)
 
-    # Plot distribution of number of openings per burst
-    n = 10
-    r = np.arange(1, n+1)
-    Pr = np.zeros(n)
-    for i in range(n):
-        Pr[i] = qml.distr_num_burst_openings(mec, r[i])
+    eigen, A = qml.eigs(-mec.Q)
+    # Maybe needs check for equal eigenvalues.
 
-    return text1, r, Pr
+    # Calculate Dj (Eq. 3.16, HJC90) and Cimr (Eq. 3.18, HJC90).
+    D = []
+    C00 = []
+    C11 = []
+    C10 = []
 
-def get_burstlen_conc_plot(mec, cmin, cmax):
-    """
-    Calculate data for the plot of burst length versus concentration.
+    for i in range(k):
+        if open:
+            D.append(np.dot(np.dot(A[i, :mec.kA, mec.kA:], expQFF), mec.QFA))
+            C00.append(A[i, :mec.kA, :mec.kA])
+            C11.append(np.dot(D[i], C00[i]))
+        else:
+            D.append(np.dot(np.dot(A[i, mec.kA:, :mec.kA], expQAA), mec.QAF))
+            C00.append(A[i, mec.kA:, mec.kA:])
+            C11.append(np.dot(D[i], C00[i]))
+    if open:
+        for i in range(k):
+            S = np.zeros((mec.kA, mec.kA))
+            for j in range(k):
+                if j != i:
+                    S = S + ((np.dot(D[i], C00[j]) + np.dot(D[j], C00[i])) /
+                        (eigen[j] - eigen[i]))
+            C10.append(S)
+    else:
+        for i in range(k):
+            S = np.zeros((mec.kF, mec.kF))
+            for j in range(k):
+                if j != i:
+                    S = S + ((np.dot(D[i], C00[j]) + np.dot(D[j], C00[i])) /
+                        (eigen[j] - eigen[i]))
+            C10.append(S)
 
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    cmin, cmax : float
-        Range of concentrations in M.
+    gama00 = []
+    gama10 = []
+    gama11 = []
+    if open:
+        M1 = np.dot(np.dot(mec.QAF, expQFF), uF)
+        for i in range(k):
+            gama00.append(np.dot(np.dot(phiA, C00[i]), M1)[0][0])
+            gama10.append(np.dot(np.dot(phiA, C10[i]), M1)[0][0])
+            gama11.append(np.dot(np.dot(phiA, C11[i]), M1)[0][0])
+    else:
+        M1 = np.dot(np.dot(mec.QFA, expQAA), uA)
+        for i in range(k):
+            gama00.append(np.dot(np.dot(phiF, C00[i]), M1)[0][0])
+            gama10.append(np.dot(np.dot(phiF, C10[i]), M1)[0][0])
+            gama11.append(np.dot(np.dot(phiF, C11[i]), M1)[0][0])
 
-    Returns
-    -------
-    c : ndarray of floats, shape (num of points,)
-        Concentration in mikroM
-    br : ndarray of floats, shape (num of points,)
-        Mean burst length in millisec.
-    """
-    point_num = 100
-    incr = (cmax - cmin)/(point_num - 1)
-    c = np.zeros(point_num)
-    br = np.zeros(point_num)
-    for i in range(point_num):
-        ctemp = cmin + incr * i
-        mec.set_eff('c', ctemp)
-        br[i] = qml.mean_burst_length(mec) * 1000
-        c[i] = ctemp * 1000000
-    return c, br
-
-def get_burstlen_conc_fblk_plot(mec, cmin, cmax):
-    """
-    Calculate data for the plot of burst length versus concentration.
-    Returns burst length in absence and presence of short unresolved blockages.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    cmin, cmax : float
-        Range of concentrations in M.
-
-    Returns
-    -------
-    c : ndarray of floats, shape (num of points,)
-        Concentration in mikroM
-    br : ndarray of floats, shape (num of points,)
-        Mean burst length in millisec.
-    """
-
-    point_num = 100
-    incr = (cmax - cmin)/(point_num - 1)
-    c = np.zeros(point_num)
-    br = np.zeros(point_num)
-    brblk = np.zeros(point_num)
-    for i in range(point_num):
-        ctemp = cmin + incr * i
-        mec.set_eff('c', ctemp)
-        br[i] = qml.mean_burst_length(mec) * 1000
-        brblk[i] = br[i] * (1 + ctemp / mec.KB)
-        c[i] = ctemp * 1000000
-    return c, br, brblk
-
-def get_opentime_pdf(mec, conc, tmin, tmax):
-    """
-    Calculate the mean open time and data for open time distribution.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    conc : float
-        Concentration in M.
-    tmin, tmax : floats
-        Time range for burst length ditribution.
-
-    Returns
-    -------
-    text1 : string
-        Mean open time.
-    t : ndarray of floats, shape (num of points,)
-        Time in millisec.
-    fopen : ndarray of floats, shape (num of points,)
-        Open time pdf.
-    """
-
-    # Calculate mean open time.
-    mec.set_eff('c', conc)
-    #mopt = qml.mean_open_time(mec.Q, mec.kA, mec.kB, mec.kC) * 1000
-    #text1 = 'Mean open time = %f millisec' %mopt
-    # Calculate open time pdf.
-    point_num = 1000
-    dt = (np.log10(tmax) - np.log10(tmin)) / (point_num - 1)
-    t = np.zeros(point_num)
-    fopt = np.zeros(point_num)
-    for i in range(point_num):
-        temp = tmin * pow(10, (i * dt))
-        fopt[i] = np.sqrt(temp * qml.pdf_open_time(mec, temp)) * 1000
-        t[i] = temp * 1000
-    #return text1, t, fopt
-    return t, fopt
-
-def get_shuttime_pdf(mec, conc, tmin, tmax):
-    """
-    Calculate the mean shut time and data for shut time distribution.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    conc : float
-        Concentration in M.
-    tmin, tmax : floats
-        Time range for burst length ditribution.
-
-    Returns
-    -------
-    text1 : string
-        Mean shut time.
-    t : ndarray of floats, shape (num of points,)
-        Time in millisec.
-    fbst : ndarray of floats, shape (num of points,)
-        Shut time pdf.
-    """
-
-    # Calculate mean shut time.
-    mec.set_eff('c', conc)
-    #msht = qml.mean_shut_time(mec.Q, mec.kA, mec.kB, mec.kC) * 1000
-    #text1 = 'Mean shut time = %f millisec' %msht
-    # Calculate shut time pdf.
-    point_num = 1000
-    dt = (np.log10(tmax) - np.log10(tmin)) / (point_num - 1)
-    t = np.zeros(point_num)
-    fsht = np.zeros(point_num)
-    for i in range(point_num):
-        temp = tmin * pow(10, (i * dt))
-        fsht[i] = np.sqrt(temp * qml.pdf_shut_time(mec ,temp)) * 1000
-        t[i] = temp * 1000
-    #return text1, t, fsht
-    return t, fsht
-
+    return eigen, gama00, gama10, gama11

@@ -22,6 +22,7 @@ except:
     raise ImportError("matplotlib module is missing")
 
 import scalcslib as scl
+import scplotlib as scpl
 import readmecfile as readmec
 import samples
 
@@ -238,7 +239,7 @@ class QMatGUI(QMainWindow):
         self.textBox.append('\nCalculating Popen curve parameters:')
         self.textBox.append('Temporal resolution = {0:.3f} mikrosec'.
             format(self.tres * 1000000))
-        text1, text2, c, pe, pi = scl.get_Popen_plot(self.mec, self.tres,
+        text1, text2, c, pe, pi = scpl.get_Popen_plot(self.mec, self.tres,
             self.cmin, self.cmax)
         self.textBox.append(text1)
         self.textBox.append(text2)
@@ -255,7 +256,7 @@ class QMatGUI(QMainWindow):
         """
         self.textBox.append('\nCalculating open time pdf:')
         self.textBox.append('Agonist concentration = %e M' %self.conc)
-        t, br = scl.get_opentime_pdf(self.mec, self.conc,
+        t, br = scpl.get_opentime_pdf(self.mec, self.conc,
             self.tmin, self.tmax)
         #self.textBox.append(text1)
         self.axes.clear()
@@ -270,7 +271,7 @@ class QMatGUI(QMainWindow):
         """
         self.textBox.append('\nCalculating shut time pdf:')
         self.textBox.append('Agonist concentration = %e M' %self.conc)
-        t, br = scl.get_shuttime_pdf(self.mec, self.conc,
+        t, br = scpl.get_shuttime_pdf(self.mec, self.conc,
             self.tmin, self.tmax)
         #self.textBox.append(text1)
         self.axes.clear()
@@ -285,7 +286,7 @@ class QMatGUI(QMainWindow):
         """
         self.textBox.append('\nCalculating burst parameters:')
         self.textBox.append('Agonist concentration = %e M' %self.conc)
-        text1, t, br = scl.get_burstlen_pdf(self.mec, self.conc,
+        text1, t, br = scpl.get_burstlen_pdf(self.mec, self.conc,
             self.tmin, self.tmax)
         self.textBox.append(text1)
         self.axes.clear()
@@ -300,7 +301,7 @@ class QMatGUI(QMainWindow):
         """
         self.textBox.append('\nCalculating burst parameters:')
         self.textBox.append('Agonist concentration = %e M' %self.conc)
-        text1, r, Pr = scl.get_burstopenings_distr(self.mec, self.conc)
+        text1, r, Pr = scpl.get_burstopenings_distr(self.mec, self.conc)
         self.textBox.append(text1)
         self.axes.clear()
         self.axes.plot(r, Pr,'ro')
@@ -316,11 +317,11 @@ class QMatGUI(QMainWindow):
         self.axes.clear()
 
         if self.mec.fastBlk:
-            c, br, brblk = scl.get_burstlen_conc_fblk_plot(self.mec, self.cmin,
+            c, br, brblk = scpl.get_burstlen_conc_fblk_plot(self.mec, self.cmin,
                 self.cmax)
             self.axes.plot(c, br,'b-', c, brblk, 'g-')
         else:
-            c, br = scl.get_burstlen_conc_plot(self.mec, self.cmin, self.cmax)
+            c, br = scpl.get_burstlen_conc_plot(self.mec, self.cmin, self.cmax)
             self.axes.plot(c, br,'b-')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
