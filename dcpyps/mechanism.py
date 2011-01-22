@@ -16,6 +16,8 @@ and of clusters of bursts. Phil Trans R Soc Lond B 300, 1-59.
 
 import numpy as np
 
+import qmatlib as qml
+
 def multiply(rate, value):
     """
     Multiply rate and value. Used as default rate function.
@@ -117,6 +119,8 @@ class Mechanism(object):
                 self.kC += 1
             if State.statetype=='D':
                 self.kD += 1
+        self.kF = self.kB + self.kC
+        self.kE = self.kA + self.kB
 
         self.ncyc = ncyc   # number of cycles; could be deduced from the rates!
         self.fastblk = fastblk
@@ -140,3 +144,17 @@ class Mechanism(object):
         for d in range(self.Q.shape[0]):
             self.Q[d,d] = 0
             self.Q[d,d] = -np.sum(self.Q[d])
+
+        self.eigenvals, self.A = qml.eigs(self.Q)
+        self.GAB, self.GBA = qml.iGs(self.Q, self.kA, self.kB)
+        self.QFF = self.Q[self.kA:, self.kA:]
+        self.QFA = self.Q[self.kA:, :self.kA]
+        self.QAF = self.Q[:self.kA, self.kA:]
+        self.QAA = self.Q[:self.kA, :self.kA]
+        self.QEE = self.Q[:self.kE, :self.kE]
+        self.QBB = self.Q[self.kA:self.kE, self.kA:self.kE]
+        self.QAB = self.Q[:self.kA, self.kA:self.kE]
+        self.QCB = self.Q[self.kE:, self.kA:self.kE]
+        self.QCA = self.Q[self.kE:, :self.kA]
+
+        
