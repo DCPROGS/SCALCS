@@ -39,6 +39,8 @@ __date__ ="$11-Oct-2010 10:33:07$"
 import numpy as np
 from numpy import linalg as nplin
 
+import dcpypsrc
+
 def eigs(Q):
     """
     Calculate eigenvalues and spectral matrices of a matrix Q.
@@ -249,7 +251,7 @@ def dARSdS(tres, Q11, Q12, Q22, Q21, G12, G21, expQ22, expQ11, k1, k2):
 
     return DARS
 
-def pinf(mec):
+def pinf(Q):
     """
     Calculate ecquilibrium occupancies by adding a column of ones
     to Q matrix.
@@ -257,16 +259,15 @@ def pinf(mec):
 
     Parameters
     ----------
-    mec : dcpyps.Mechanism
-        The mechanism to be analysed.
+    Q : array_like, shape (k, k)
 
     Returns
     -------
     pinf : ndarray, shape (k1)
     """
 
-    u = np.ones((mec.Q.shape[0],1))
-    S = np.concatenate((mec.Q, u), 1)
+    u = np.ones((Q.shape[0],1))
+    S = np.concatenate((Q, u), 1)
     pinf = np.dot(u.transpose(), nplin.inv((np.dot(S,S.transpose()))))[0]
     return pinf
 
@@ -285,7 +286,7 @@ def phiO(mec):
     """
 
     uA = np.ones((mec.kA,1))
-    pF = pinf(mec)[mec.kA:]
+    pF = pinf(mec.Q)[mec.kA:]
     nom = np.dot(pF, mec.QFA)
     denom = np.dot(nom,uA)
     phi = nom / denom
@@ -325,7 +326,7 @@ def phiBurst(mec):
     """
 
     uA = np.ones((mec.kA, 1))
-    pC = pinf(mec)[mec.kE:]
+    pC = pinf(mec.Q)[mec.kE:]
     nom = np.dot(pC, (np.dot(mec.QCB, mec.GBA) + mec.QCA))
     denom = np.dot(nom, uA)
     phiB = nom / denom
@@ -385,7 +386,7 @@ def dW(s, tres, Q12, Q22, Q21, k1, k2):
     I2 = np.eye(k2)
     I1 = np.eye(k1)
     IQ22 = s * I2 - Q22
-    expIQ22 = expQ(tres, -IQ22)
+    expIQ22 = expQ(-IQ22, tres)
     S22 = I2 - expIQ22
     eG21s = np.dot(nplin.inv(s * I2 - Q22), Q21)
     w1 = np.dot(S22, nplin.inv(s * I2 - Q22)) - tres * (I2 - S22)
@@ -421,7 +422,7 @@ def H(s, tres, Q11, Q22, Q21, Q12, k1, k2):
     I = np.eye(k1)
     X11 = s * I - Q11
     invX11 = nplin.inv(X11)
-    expX11 = expQ(tres, -X11)
+    expX11 = expQ(-X11, tres)
     H = Q22 + np.dot(np.dot(np.dot(Q21, invX11), I - expX11), Q12)
     return H
 
@@ -486,7 +487,7 @@ def gFB(s, tres, Q11, Q22, Q21, Q12, k1, k2):
     ng = 0
     for i in range(k2):
         if eigval[i] <= s: ng += 1
-    if qmatrc.debug:
+    if dcpypsrc.debug:
         print ('number of eigenvalues that are <= s (=', s, ') =', ng)
     return ng
 

@@ -103,7 +103,7 @@ def popen(mec, tres, conc, eff='c'):
 
     mec.set_eff(eff, conc)
     if tres == 0:
-        p = qml.pinf(mec)
+        p = qml.pinf(mec.Q)
         Popen = 0
         for i in range(mec.kA):
             Popen = Popen + p[i]
@@ -476,6 +476,28 @@ def pdf_shut_time(mec, t):
     f = np.dot(np.dot(np.dot(qml.phiS(mec), expQFF), -mec.QFF), uF)
     return f
 
+def get_ideal_pdf_components(mec, open):
+    """
+    """
+
+    if open:
+        areas = np.zeros(mec.kA)
+        eigs, A = qml.eigs(-mec.QAA)
+        uA = np.ones((mec.kA, 1))
+        for i in range(mec.kA):
+            areas[i] = (np.dot(np.dot(np.dot(qml.phiO(mec), A[i]),
+                (-mec.QAA)), uA) / eigs[i])
+    else:
+        areas = np.zeros(mec.kF)
+        eigs, A = qml.eigs(-mec.QFF)
+        uF = np.ones((mec.kF, 1))
+        for i in range(mec.kF):
+            areas[i] = (np.dot(np.dot(np.dot(qml.phiS(mec), A[i]),
+                (-mec.QFF)), uF) / eigs[i])
+
+    taus = 1 / eigs
+    return taus, areas
+
 def asymptotic_roots(mec, tres, open):
     """
     Find roots for the asymptotic probability density function (Eqs. 52-58,
@@ -546,7 +568,7 @@ def asymptotic_areas(mec, tres, roots, open):
         Q11 = mec.QAA
         Q12 = mec.QAF
         Q21 = mec.QFA
-        G12, G21 = iGs(mec.Q, mec.kA, mec.kF)
+        G12, G21 = qml.iGs(mec.Q, mec.kA, mec.kF)
     else:
         k1 = mec.kF
         k2 = mec.kA
@@ -554,10 +576,10 @@ def asymptotic_areas(mec, tres, roots, open):
         Q22 = mec.QAA
         Q21 = mec.QAF
         Q12 = mec.QFA
-        G21, G12 = iGs(mec.Q, mec.kA, mec.kF)
+        G21, G12 = qml.iGs(mec.Q, mec.kA, mec.kF)
 
-    expQ22 = qml.expQ(tres, Q22)
-    expQ11 = qml.expQ(tres, Q11)
+    expQ22 = qml.expQ(Q22, tres)
+    expQ11 = qml.expQ(Q11, tres)
     eG12 = qml.eGs(G12, G21, k1, k2, expQ22)
     eG21 = qml.eGs(G21, G12, k2, k1, expQ11)
     phi1 = qml.phiHJC(eG12, eG21, k1, k2)[0]
@@ -567,7 +589,7 @@ def asymptotic_areas(mec, tres, roots, open):
     colA = np.zeros((k1,k1))
     for i in range(k1):
         WA = qml.W(roots[i], tres, Q22, Q11, Q12, Q21, k2, k1)
-        rowA[i] = pinf(WA)
+        rowA[i] = qml.pinf(WA)
         AW = np.transpose(WA)
         colA[i] = qml.pinf(AW)
 
@@ -575,11 +597,65 @@ def asymptotic_areas(mec, tres, roots, open):
         u2 = np.ones((k2,1))
         nom = np.dot(np.dot(np.dot(np.dot(np.dot(phi1, colA[i]), rowA[i]),
             Q12), expQ22), u2)
-        W1A = dW(roots[i], tres, Q12, Q22, Q21, k1, k2)
+        W1A = qml.dW(roots[i], tres, Q12, Q22, Q21, k1, k2)
         denom = -roots[i] * np.dot(np.dot(rowA[i], W1A), colA[i])
         areas[i] = nom / denom
 
     return areas
+
+def pdf_exponential(t, roots, areas):
+    """
+    Calculate exponential probabolity density function.
+
+    Parameters
+    ----------
+    t : float
+        Time.
+    roots : array_like, shape (k,)
+    areas : array_like, shape (k,).
+
+    Returns
+    -------
+    f : float
+    """
+    f = 0
+    for j in range(roots.shape[0]):
+        ta = -1 / roots[j]
+        ar = areas[j]
+        f = f + ((ar / ta) * np.exp(-t / ta))
+    return f
+
+def pdf_asymptotic(t, tres, roots, areas):
+    """
+
+    """
+
+
+    if t < tres:
+        f = 0
+    else:
+        f = 0
+        for j in range(roots.shape[0]):
+            ta = -1 / roots[j]
+            ar = areas[j]
+            f = f + ((ar / ta) * np.exp(-(t - tres) / ta))
+    return f
+
+def pdf_exact(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
+    """
+    """
+
+    if t < tres:
+        f = 0
+    elif ((tres < t) and (t < (2 * tres))):
+        f = f0((t - tres), eigvals, gamma00)
+    elif ((tres * 2) < t) and (t < (3 * tres)):
+        ff0 = f0((t - tres), eigvals, gamma00)
+        ff1 = f1((t - 2 * tres), eigvals, gamma10, gamma11)
+        f = ff0 - ff1
+    else:
+        f = pdf_asymptotic(t, tres, roots, areas)
+    return f
 
 def exact_pdf_coef(mec, tres, open):
     """
@@ -602,8 +678,8 @@ def exact_pdf_coef(mec, tres, open):
     """
 
     k = mec.Q.shape[0]
-    expQFF = qml.expQ(tres, mec.QFF)
-    expQAA = qml.expQ(tres, mec.QAA)
+    expQFF = qml.expQ(mec.QFF, tres)
+    expQAA = qml.expQ(mec.QAA, tres)
     uF = np.ones((mec.kF,1))
     uA = np.ones((mec.kA, 1))
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
@@ -664,3 +740,22 @@ def exact_pdf_coef(mec, tres, open):
             gama11.append(np.dot(np.dot(phiF, C11[i]), M1)[0][0])
 
     return eigen, gama00, gama10, gama11
+
+def f0(u, eigvals, gamma00):
+    """
+    A component of exact time pdf (Eq. 22, HJC92
+    """
+
+    f = 0.0
+    for i in range(len(gamma00)):
+        f = f + gamma00[i] * np.exp(-eigvals[i] * u)
+    return f
+
+def f1(u, eigvals, gamma10, gamma11):
+    """
+    """
+    f = 0.0
+    for i in range(len(gamma10)):
+        f = f + (gamma10[i] + gamma11[i] * u) * np.exp(-eigvals[i] * u)
+    return f
+

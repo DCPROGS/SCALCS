@@ -36,7 +36,7 @@ class QMatGUI(QMainWindow):
         self.mec.KB = 0.01
         self.mec.fastBlk = False
         self.conc = 100e-9    # 100 nM
-        self.tres = 0.00004
+        self.tres = 0.0001
         self.tmin = 10e-6
         self.tmax = 0.1
         self.cmin = 10e-9
@@ -256,11 +256,15 @@ class QMatGUI(QMainWindow):
         """
         self.textBox.append('\nCalculating open time pdf:')
         self.textBox.append('Agonist concentration = %e M' %self.conc)
-        t, br = scpl.get_opentime_pdf(self.mec, self.conc,
-            self.tmin, self.tmax)
+        t, pdf = scpl.get_opentime_pdf(self.mec, self.conc, self.tres,
+            self.tmin, self.tmax, True)
+        t1, apdf = scpl.get_asymptotic_pdf(self.mec, self.conc,
+            self.tres, self.tmin, True)
+        t2, epdf = scpl.get_exact_pdf(self.mec, self.conc,
+            self.tres, self.tmin, True)
         #self.textBox.append(text1)
         self.axes.clear()
-        self.axes.semilogx(t, br, 'b-')
+        self.axes.semilogx(t, pdf, 'r--', t2, epdf, 'b-', t1, apdf, 'g-')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
@@ -271,11 +275,15 @@ class QMatGUI(QMainWindow):
         """
         self.textBox.append('\nCalculating shut time pdf:')
         self.textBox.append('Agonist concentration = %e M' %self.conc)
-        t, br = scpl.get_shuttime_pdf(self.mec, self.conc,
-            self.tmin, self.tmax)
+        t, pdf = scpl.get_shuttime_pdf(self.mec, self.conc, self.tres,
+            self.tmin, self.tmax, False)
+        t1, apdf = scpl.get_asymptotic_pdf(self.mec, self.conc,
+            self.tres, self.tmin, False)
+        t2, epdf = scpl.get_exact_pdf(self.mec, self.conc,
+            self.tres, self.tmin, False)
         #self.textBox.append(text1)
         self.axes.clear()
-        self.axes.semilogx(t, br, 'b-')
+        self.axes.semilogx(t, pdf, 'r--', t1, epdf, 'b-', t1, apdf, 'g-')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()

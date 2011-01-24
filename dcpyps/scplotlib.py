@@ -51,10 +51,10 @@ def get_Popen_plot(mec, tres, cmin, cmax):
         ' EC50 = {0:.3f} mikroM; '.format(iEC50) + ' nH = {0:.3f}'.format(inH))
 
     # Plot ideal and corrected Popen curves.
-    #cmin = iEC50 * 0.01
-    #cmax = iEC50 * 500
-    log_start = np.log10(cmin)
-    log_end = np.log10(cmax)
+    cmin = iEC50 / 20000000.0
+    cmax = iEC50 * 500 / 1000000.0
+    log_start = int(np.log10(cmin)) - 1
+    log_end = int(np.log10(cmax)) - 1
     decade_num = int(log_end - log_start)
     log_int = 0.01    # increase this if want more points per curve
     point_num = int(decade_num / log_int + 1)
@@ -205,7 +205,7 @@ def get_burstlen_conc_fblk_plot(mec, cmin, cmax):
         c[i] = ctemp * 1000000
     return c, br, brblk
 
-def get_opentime_pdf(mec, conc, tmin, tmax):
+def get_opentime_pdf(mec, conc, tres, tmin, tmax, open):
     """
     Calculate the mean open time and data for open time distribution.
 
@@ -227,23 +227,26 @@ def get_opentime_pdf(mec, conc, tmin, tmax):
         Open time pdf.
     """
 
-    # Calculate mean open time.
     mec.set_eff('c', conc)
-    #mopt = qml.mean_open_time(mec.Q, mec.kA, mec.kB, mec.kC) * 1000
-    #text1 = 'Mean open time = %f millisec' %mopt
-    # Calculate open time pdf.
-    point_num = 1000
+    tau, area = scl.get_ideal_pdf_components(mec, open)
+    tmax = tau.max() * 20
+
+    # Scale factor.
+    f = 0.0
+    for i in range(mec.kA):
+        f += area[i] * np.exp(-tres / tau[i])
+    fac = 1 / f
+
+    point_num = 512
     dt = (np.log10(tmax) - np.log10(tmin)) / (point_num - 1)
     t = np.zeros(point_num)
-    fopt = np.zeros(point_num)
+    f = np.zeros(point_num)
     for i in range(point_num):
-        temp = tmin * pow(10, (i * dt))
-        fopt[i] = np.sqrt(temp * scl.pdf_open_time(mec, temp)) * 1000
-        t[i] = temp * 1000
-    #return text1, t, fopt
-    return t, fopt
+        t[i] = tmin * pow(10, (i * dt))
+        f[i] = np.sqrt(t[i] * scl.pdf_open_time(mec, t[i]) * fac)
+    return t * 1000, f * 1000
 
-def get_shuttime_pdf(mec, conc, tmin, tmax):
+def get_shuttime_pdf(mec, conc, tres, tmin, tmax, open):
     """
     Calculate the mean shut time and data for shut time distribution.
 
@@ -265,18 +268,68 @@ def get_shuttime_pdf(mec, conc, tmin, tmax):
         Shut time pdf.
     """
 
-    # Calculate mean shut time.
     mec.set_eff('c', conc)
-    #msht = qml.mean_shut_time(mec.Q, mec.kA, mec.kB, mec.kC) * 1000
-    #text1 = 'Mean shut time = %f millisec' %msht
-    # Calculate shut time pdf.
-    point_num = 1000
+    tau, area = scl.get_ideal_pdf_components(mec, open)
+    tmax = tau.max() * 20
+
+    # Scale factor.
+    f = 0.0
+    for i in range(mec.kF):
+        f += area[i] * np.exp(-tres / tau[i])
+    fac = 1 / f
+
+    point_num = 512
     dt = (np.log10(tmax) - np.log10(tmin)) / (point_num - 1)
     t = np.zeros(point_num)
-    fsht = np.zeros(point_num)
+    f = np.zeros(point_num)
     for i in range(point_num):
-        temp = tmin * pow(10, (i * dt))
-        fsht[i] = np.sqrt(temp * scl.pdf_shut_time(mec ,temp)) * 1000
-        t[i] = temp * 1000
+        t[i] = tmin * pow(10, (i * dt))
+        f[i] = np.sqrt(t[i] * scl.pdf_shut_time(mec, t[i]) * fac)
     #return text1, t, fsht
-    return t, fsht
+    return t * 1000, f * 1000
+
+def get_asymptotic_pdf(mec, conc, tres, tmin, open):
+    """
+
+    """
+
+    mec.set_eff('c', conc)
+    roots = scl.asymptotic_roots(mec, tres, open)
+    areas = scl.asymptotic_areas(mec, tres, roots, open)
+
+    tmax = (-1 / roots.max()) * 20
+
+    nPoint = 1000
+    dt = (np.log10(tmax) - np.log10(tmin)) / (nPoint - 1)
+    t = np.zeros(nPoint)
+    f = np.zeros(nPoint)
+    for i in range(nPoint):
+        t[i] = tmin * pow(10, (i * dt))
+        f[i] = np.sqrt(t[i] * scl.pdf_asymptotic(t[i], tres, roots, areas))
+
+    return t * 1000, f * 1000
+
+def get_exact_pdf(mec, conc, tres, tmin, open):
+    """
+
+    """
+
+    mec.set_eff('c', conc)
+    roots = scl.asymptotic_roots(mec, tres, open)
+    areas = scl.asymptotic_areas(mec, tres, roots, open)
+    eigvals, gamma00, gamma10, gamma11 = scl.exact_pdf_coef(mec, tres, open)
+
+
+    tmax = (-1 / roots.max()) * 20
+
+    nPoint = 1000
+    dt = (np.log10(tmax) - np.log10(tmin)) / (nPoint - 1)
+    t = np.zeros(nPoint)
+    f = np.zeros(nPoint)
+    for i in range(nPoint):
+        t[i] = tmin * pow(10, (i * dt))
+        f[i] = np.sqrt(t[i] * scl.pdf_exact(t[i], tres,
+            roots, areas, eigvals, gamma00, gamma10, gamma11))
+
+    return t * 1000, f * 1000
+
