@@ -437,17 +437,17 @@ def load_mec(mecfile, start):
     StateList = []
     j = 0
     for i in range(kA):
-        StateList.append(dcpyps.State(j+1, 'A', statenames[j], dgamma[j]))
-        j +=1
+        StateList.append(dcpyps.State('A', statenames[j], dgamma[j]))
+        j += 1
     for i in range(kB):
-        StateList.append(dcpyps.State(j+1, 'B', statenames[j], 0))
-        j +=1
+        StateList.append(dcpyps.State('B', statenames[j], 0))
+        j += 1
     for i in range(kC):
-        StateList.append(dcpyps.State(j+1, 'C', statenames[j], 0))
-        j +=1
+        StateList.append(dcpyps.State('C', statenames[j], 0))
+        j += 1
     for i in range(kD):
-        StateList.append(dcpyps.State(j+1, 'D', statenames[j], 0))
-        j +=1
+        StateList.append(dcpyps.State('D', statenames[j], 0))
+        j += 1
 
     RateList = []
     for i in range(nrateq):
@@ -458,7 +458,8 @@ def load_mec(mecfile, start):
                 cdep = True
                 bound = 'c'
         rate = QT[irate[i] - 1, jrate[i] - 1]
-        RateList.append(dcpyps.Rate(rate, irate[i], jrate[i], name=ratename[i], eff=bound))
+        # REMIS: please make sure the state indexing is correct
+        RateList.append(dcpyps.Rate(rate, StateList[irate[i]-1], StateList[jrate[i]-1], name=ratename[i], eff=bound))
 
-    return dcpyps.Mechanism(RateList, StateList, ncyc=ncyc)
+    return dcpyps.Mechanism(RateList, ncyc=ncyc)
     

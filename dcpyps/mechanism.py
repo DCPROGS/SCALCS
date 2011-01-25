@@ -35,23 +35,49 @@ def multiply(rate, value):
         Product of rate and value.
     """
     
-    return rate*value
+    return rate[0]*value
+
+class State(object):
+    """
+    Describes a state.
+    """
+    
+    def __init__(self, statetype='', name='', conductance=0.0):
+        if statetype not in ['A', 'B', 'C', 'D']:
+            raise RuntimeError("State has to be one of 'A', 'B', 'C' or 'D'")
+        self.statetype = statetype
+
+        self.name = name
+        self.conductance = conductance
+        self.no = None # will be assigned in Mechanism.__init__
+                       # This is now ZERO-based!
 
 class Rate(object):
     """
     Describes a rate between two states.
     """
 
-    def __init__(self, rate, state1, state2, name='', eff=None, fixed=False,
+    def __init__(self, ratepars, State1, State2, name='', eff=None, fixed=False,
                  mr=False, func=multiply):
 
         self.name = name
-        self.rate = rate
+        try: 
+            # test whether ratepars is a sequence:
+            it = iter(ratepars)
+            # test whether this is a numpy array:
+            if isinstance(ratepars, np.ndarray):
+                self.ratepars = ratepars
+            else:
+                # else, convert:
+                self.ratepars = np.array(ratepars)
+        except TypeError:
+            # if not, convert to single-itemed list:
+            self.ratepars = np.array([ratepars,])
 
-        if not isinstance(state1, int) or not isinstance(state2, int):
-            raise TypeError("States have to be of type int")
-        self.state1 = state1
-        self.state2 = state2
+        if not isinstance(State1, State) or not isinstance(State2, State):
+            raise TypeError("DCPYPS: States have to be of class State")
+        self.State1 = State1
+        self.State2 = State2
 
         self.eff = eff # Effector; e.g. 'c' or 'v'; or even 'Glu', 'ACh', etc.
                        # We might need to expand this to a list if a rate
@@ -59,38 +85,24 @@ class Rate(object):
         
         self.fixed = fixed # for future expansion (fixed while fitting)
         self.mr = mr # for future expansion (set by microscopic reversibility)
-        self.func = func # f(rate, effector); "Rate equation" if you wish
+        self.func = func # f(ratepars, amount of effector); "Rate equation" if you wish
 
-class State(object):
-    """
-    Describes a state.
-    """
-    
-    def __init__(self, no, statetype='', name='', conductance=0.0):
-        if not isinstance(no, int):
-            raise TypeError("State number has to be of type int")
-        self.no = no
-
-        if statetype not in ['A', 'B', 'C', 'D']:
-            raise RuntimeError("State has to be one of 'A', 'B', 'C' or 'D'")
-        self.statetype = statetype
-
-        self.name = name
-        self.conductance = conductance
+    def update(self, val):
+        return self.func(self.ratepars, val)
 
 def initQ(Rates, States):
     Q = np.zeros((len(States), len(States)), dtype=np.float64)
 
     # find rate that describes i->j (if any):
     for Rate in Rates:
-        i = Rate.state1-1
-        j = Rate.state2-1
+        i = Rate.State1.no
+        j = Rate.State2.no
         # check range:
         if i<0 or i>=Q.shape[0]:
-            raise IndexError("Rate.state1 is out of range")
+            raise IndexError("DCPYPS: Rate.state1 is out of range")
         if j<0 or j>=Q.shape[1]:
-            raise IndexError("Rate.state2 is out of range")
-        Q[i,j] = Rate.rate
+            raise IndexError("DCPYPS: Rate.state2 is out of range")
+        Q[i,j] = Rate.update(1.0)
 
     return Q
 
@@ -99,12 +111,26 @@ class Mechanism(object):
     Represents a kinetic mechanism / scheme.
     '''
 
-    def __init__(self, Rates, States, ncyc=0, fastblk=False, KBlk=None):
+    def __init__(self, Rates, ncyc=0, fastblk=False, KBlk=None):
 
         self.Rates = Rates
-        self.States = States
+        # construct States end effectors from Rates:
+        self.States = []
+        self.efflist = []
+        for rate in self.Rates:
+            if rate.State1 not in self.States:
+                self.States.append(rate.State1)
+            if rate.State2 not in self.States:
+                self.States.append(rate.State2)
+            if rate.eff not in self.efflist:
+                self.efflist.append(rate.eff)
 
-        self.__Q0 = initQ(self.Rates, self.States)
+        # REMIS: please check whether this makes sense
+        # sort States according to state type:
+        self.States.sort(key=lambda state: state.statetype.lower())
+        # assign Q matrix indices according to sorted list:
+        for no, state in enumerate(self.States):
+            state.no = no # ZERO-based!
 
         self.kA = 0
         self.kB = 0
@@ -126,24 +152,36 @@ class Mechanism(object):
         self.fastblk = fastblk
         self.KBlk = KBlk
 
-        # Update diagonal elements
-        for d in range(self.__Q0.shape[0]):
-            self.__Q0[d,d] = 0
-            self.__Q0[d,d] = -np.sum(self.__Q0[d])
+        self.Q = np.zeros((len(self.States), len(self.States)), dtype=np.float64)
 
-        self.Q = self.__Q0.copy() # concentration-dependent Q
+        for eff in self.efflist:
+            # find rates that are effector-dependent:
+            for Rate in self.Rates:
+                if Rate.eff == eff:
+                    self.Q[Rate.State1.no, Rate.State2.no] = \
+                        Rate.update(1.0)
+
+            # Update diagonal elements
+            for d in range(self.Q.shape[0]):
+                self.Q[d,d] = 0
+                self.Q[d,d] = -np.sum(self.Q[d])
 
     def set_eff(self, eff, val):
+        if eff not in self.efflist:
+            sys.stderr.write("DCPYPS: None of the rates depends on effector %s\n" % eff)
+ 
         # find rates that are effector-dependent:
         for Rate in self.Rates:
             if Rate.eff == eff:
-                self.Q[Rate.state1-1, Rate.state2-1] = \
-                    Rate.func(self.__Q0[Rate.state1-1, Rate.state2-1], val)
+                self.Q[Rate.State1.no, Rate.State2.no] = \
+                    Rate.update(val)
 
         # Update diagonal elements
         for d in range(self.Q.shape[0]):
             self.Q[d,d] = 0
             self.Q[d,d] = -np.sum(self.Q[d])
+
+        # print self.Q
 
         self.eigenvals, self.A = qml.eigs(self.Q)
         self.GAB, self.GBA = qml.iGs(self.Q, self.kA, self.kB)
