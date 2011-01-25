@@ -19,7 +19,7 @@ except:
     HASTK = False
 
 from dcpyps import scalcslib as scl
-from dcpyps import readmecfile as readmec
+from dcpyps import io
 from dcpyps import samples
 
 def create_parser():
@@ -65,12 +65,12 @@ def process_args(args):
             sys.stderr.write("Couldn't find file %s. Exiting now.\n" % mecfn)
             sys.exit(1)
 
-        version, meclist, max_mecnum = readmec.get_mec_list(mecfn)
+        version, meclist, max_mecnum = io.get_mec_list(mecfn)
         sys.stdout.write('mecfile: %s\n' % mecfn)
         sys.stdout.write('version: %s\n' % version)
-        mecnum, ratenum = readmec.choose_mec_from_list(meclist, max_mecnum)
+        mecnum, ratenum = io.choose_mec_from_list(meclist, max_mecnum)
         sys.stdout.write('\nRead rate set #%d of mec #%d\n' % (ratenum+1, mecnum))
-        demomec = readmec.load_mec(mecfn, meclist[ratenum][0])
+        demomec = io.load_mec(mecfn, meclist[ratenum][0])
 
     return demomec
 
