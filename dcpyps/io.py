@@ -566,10 +566,12 @@ def scn_read_header (fname):
     header['navamp'] = ints.pop()
 
     floats.fromfile(f,1)
-    header['avamp'] = floats.pop()
+    avamp = floats.pop()
+    header['avamp'] = avamp
 
     floats.fromfile(f,1)
-    header['rms'] = floats.pop()
+    rms = floats.pop()
+    header['rms'] = rms
 
     # Data will be written to disk at (approx) every nth transition, so
     # analysis can be restarted by using the ''restart'' option when SCAN reentered.
@@ -679,6 +681,7 @@ def scn_read_header (fname):
     # Low pass filter (Hz, -3dB)
     # later needs to be converted to kHz
     floats.fromfile(f, 1)
+    ffilt = floats.pop()
     header['ffilt'] = floats.pop()
 
     # npfilt=number of points to jump forward after a transition, to start
@@ -1029,7 +1032,7 @@ def scn_read_header (fname):
 
     f.close() #    close the file
 
-    return ioffset, nint, calfac2, header
+    return ioffset, nint, calfac2, ffilt, rms, avamp, header
 
 def scn_read_data(fname, ioffset, nint, calfac2):
     """
@@ -1051,32 +1054,21 @@ def scn_read_data(fname, ioffset, nint, calfac2):
     and keep sum of values of more than one property is true.
     """
 
-    # make dummy arrays to read floats, short integers and byte integers
-    floats = array ('f') # 4 byte float
-    shorts = array ('h') # 2 byte integer
-    ops = array('b') # 1 byte integer
-
-    tint = []
-    iampl = []
-    iprops = []
+    tint = array ('f') # 4 byte float
+    iampl = array ('h') # 2 byte integer
+    iprops = array('b') # 1 byte integer
 
     f=open(fname, 'rb')
     f.seek(ioffset-1)
-    for i in range(0, nint):
-        floats.fromfile(f, 1)
-        tint.append(floats.pop())
-    for i in range(0, nint):
-        shorts.fromfile(f, 1)
-        iampl.append(shorts.pop()*calfac2)
-    for i in range(0, nint):
-        ops.fromfile(f, 1)
-        iprops.append(ops.pop())
+    tint.fromfile(f, nint)
+    iampl.fromfile(f, nint)
+    iprops.fromfile(f, nint)
+    f.close()
 
     if tint[-1] == 0:
         if iprops[-1] != 8:
             # Last interval in file is shut an set as unusable.
-            iprops[-1] = 8
-            
+            iprops[-1] = 8        
     else:
         # Last interval in file is open. An unusable shut time is inserted
         # at the end. Total number of intervals increased by one.
@@ -1084,5 +1076,4 @@ def scn_read_data(fname, ioffset, nint, calfac2):
         iampl.append(0.0)
         iprops.append(8)
 
-    f.close()
     return tint, iampl, iprops
