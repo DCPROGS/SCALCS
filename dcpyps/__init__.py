@@ -43,6 +43,6 @@ import scplotlib
 from mechanism import * # this should really be in the namespace
                         # so that dcpyps.Mechanism is something like
                         # numpy.array
-import readmecfile
+import io
 import samples
 

@@ -192,6 +192,9 @@ class Mechanism(object):
         self.QEE = self.Q[:self.kE, :self.kE]
         self.QBB = self.Q[self.kA:self.kE, self.kA:self.kE]
         self.QAB = self.Q[:self.kA, self.kA:self.kE]
+        self.QBA = self.Q[self.kA:self.kE, :self.kA]
+        self.QBC = self.Q[self.kA:self.kE, self.kE:]
+        self.QAC = self.Q[:self.kA, self.kE:]
         self.QCB = self.Q[self.kE:, self.kA:self.kE]
         self.QCA = self.Q[self.kE:, :self.kA]
 

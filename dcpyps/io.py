@@ -459,7 +459,8 @@ def load_mec(mecfile, start):
                 bound = 'c'
         rate = QT[irate[i] - 1, jrate[i] - 1]
         # REMIS: please make sure the state indexing is correct
-        RateList.append(dcpyps.Rate(rate, StateList[irate[i]-1], StateList[jrate[i]-1], name=ratename[i], eff=bound))
+        RateList.append(dcpyps.Rate(rate, StateList[irate[i]-1],
+            StateList[jrate[i]-1], name=ratename[i], eff=bound))
 
     return dcpyps.Mechanism(RateList, ncyc=ncyc)
     

@@ -33,8 +33,8 @@ class QMatGUI(QMainWindow):
         self.mainFrame = QWidget()
 
         self.mec = samples.CH82()
-        self.mec.KB = 0.01
-        self.mec.fastBlk = False
+        self.mec.KBlk = 0.01
+        self.mec.fastblk = False
         self.conc = 100e-9    # 100 nM
         self.tres = 0.0001
         self.tmin = 10e-6
@@ -152,12 +152,12 @@ class QMatGUI(QMainWindow):
 
         fastBlkBox = QHBoxLayout()
         self.fastBlkCheckBox = QCheckBox("&Fast block?")
-        self.fastBlkCheckBox.setChecked(self.mec.fastBlk)
+        self.fastBlkCheckBox.setChecked(self.mec.fastblk)
         self.connect(self.fastBlkCheckBox, SIGNAL("stateChanged(int)"),
             self.on_settings_changed)
         fastBlkBox.addWidget(self.fastBlkCheckBox)
         fastBlkBox.addWidget(QLabel("KB ="))
-        self.KBEdit = QLineEdit(unicode(self.mec.KB * 1000))
+        self.KBEdit = QLineEdit(unicode(self.mec.KBlk * 1000))
         self.KBEdit.setMaxLength(8)
         self.connect(self.KBEdit, SIGNAL("editingFinished()"),
             self.on_settings_changed)
@@ -182,14 +182,14 @@ class QMatGUI(QMainWindow):
         """
         Get setting values.
         """
-        self.mec.KB = float(self.KBEdit.text()) / 1000.0
+        self.mec.KBlk = float(self.KBEdit.text()) / 1000.0
         self.tres = float(self.tresEdit.text()) / 1000000.0
         self.tmin = float(self.trangeEdit1.text()) / 1000.0
         self.tmax = float(self.trangeEdit2.text()) / 1000.0
         self.conc = float(self.concEdit.text()) / 1000000.0
         self.cmin = float(self.crangeEdit1.text()) / 1000000.0
         self.cmax = float(self.crangeEdit2.text()) / 1000000.0
-        self.mec.fastBlk = self.fastBlkCheckBox.isChecked()
+        self.mec.fastblk = self.fastBlkCheckBox.isChecked()
 
     def createAction(self, text, slot=None, shortcut=None, icon=None,
             tip=None, checkable=False, signal="triggered()"):
@@ -324,7 +324,7 @@ class QMatGUI(QMainWindow):
         """
         self.axes.clear()
 
-        if self.mec.fastBlk:
+        if self.mec.fastblk:
             c, br, brblk = scpl.get_burstlen_conc_fblk_plot(self.mec, self.cmin,
                 self.cmax)
             self.axes.plot(c, br,'b-', c, brblk, 'g-')

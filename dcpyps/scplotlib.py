@@ -201,7 +201,7 @@ def get_burstlen_conc_fblk_plot(mec, cmin, cmax):
         ctemp = cmin + incr * i
         mec.set_eff('c', ctemp)
         br[i] = scl.mean_burst_length(mec) * 1000
-        brblk[i] = br[i] * (1 + ctemp / mec.KB)
+        brblk[i] = br[i] * (1 + ctemp / mec.KBlk)
         c[i] = ctemp * 1000000
     return c, br, brblk
 

@@ -111,7 +111,7 @@ def popen(mec, tres, conc, eff='c'):
         hmopen = hjc_mean_time(mec, tres, True)
         hmshut = hjc_mean_time(mec, tres, False)
         Popen = (hmopen / (hmopen + hmshut))[0,0]
-    if mec.fastBlk:
+    if mec.fastblk:
         Popen = Popen / (1 + conc / mec.KBlk)
     return Popen
 
