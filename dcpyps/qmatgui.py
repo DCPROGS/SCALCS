@@ -362,7 +362,7 @@ class QMatGUI(QMainWindow):
             "Open Mec File...", "", "DC Mec Files (*.mec)")
         self.textBox.append("\nFile to read: " + os.path.split(str(filename))[1])
 
-        version, meclist, max_mecnum = io.get_mec_list(filename)
+        version, meclist, max_mecnum = io.mec_get_list(filename)
         self.textBox.append("Mec file version: %d; contains %d mechanisms."
             %(version, max_mecnum))
 
@@ -370,7 +370,7 @@ class QMatGUI(QMainWindow):
         if dialog.exec_():
             nrate = dialog.returnRates()
 
-        self.mec = io.load_mec(filename, meclist[nrate][0])
+        self.mec = io.mec_load(filename, meclist[nrate][0])
 
         self.textBox.append("Loaded mec: " + meclist[nrate][2])
         self.textBox.append("Loaded rates: " + meclist[nrate][3] + "\n")

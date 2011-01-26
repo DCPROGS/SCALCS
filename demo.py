@@ -19,6 +19,7 @@ except:
     HASTK = False
 
 from dcpyps import scalcslib as scl
+from dcpyps import scplotlib as scpl
 from dcpyps import io
 from dcpyps import samples
 
@@ -65,12 +66,12 @@ def process_args(args):
             sys.stderr.write("Couldn't find file %s. Exiting now.\n" % mecfn)
             sys.exit(1)
 
-        version, meclist, max_mecnum = io.get_mec_list(mecfn)
+        version, meclist, max_mecnum = io.mec_get_list(mecfn)
         sys.stdout.write('mecfile: %s\n' % mecfn)
         sys.stdout.write('version: %s\n' % version)
-        mecnum, ratenum = io.choose_mec_from_list(meclist, max_mecnum)
+        mecnum, ratenum = io.mec_choose_from_list(meclist, max_mecnum)
         sys.stdout.write('\nRead rate set #%d of mec #%d\n' % (ratenum+1, mecnum))
-        demomec = io.load_mec(mecfn, meclist[ratenum][0])
+        demomec = io.mec_load(mecfn, meclist[ratenum][0])
 
     return demomec
 
@@ -110,7 +111,7 @@ if __name__ == "__main__":
 
     #     POPEN CURVE CALCULATIONS
     sys.stdout.write('\nCalculating Popen curve parameters:\n')
-    text1, text2, c, pe, pi = scl.get_Popen_plot(demomec, tres, cmin, cmax)
+    text1, text2, c, pe, pi = scpl.get_Popen_plot(demomec, tres, cmin, cmax)
 
     sys.stdout.write(text1 + text2 + '\n')
     plt.subplot(221)
@@ -122,7 +123,7 @@ if __name__ == "__main__":
     #     BURST CALCULATIONS
     sys.stdout.write('\nCalculating burst properties:\n')
     sys.stdout.write('Agonist concentration = %e M\n' %conc)
-    text1, t, fbst = scl.get_burstlen_pdf(demomec, conc, tmin, tmax)
+    text1, t, fbst = scpl.get_burstlen_pdf(demomec, conc, tmin, tmax)
     sys.stdout.write(text1 + '\n')
     plt.subplot(222)
     plt.semilogx(t, fbst, 'b-')
@@ -131,7 +132,7 @@ if __name__ == "__main__":
     plt.title('The burst length pdf')
 
     # Calculate mean number of openings per burst.
-    text1, r, Pr = scl.get_burstopenings_distr(demomec, conc)
+    text1, r, Pr = scpl.get_burstopenings_distr(demomec, conc)
     sys.stdout.write(text1 + '\n')
     # Plot distribution of number of openings per burst
     plt.subplot(223)
@@ -143,7 +144,7 @@ if __name__ == "__main__":
 
     cmin = 1e-6    # in M
     cmax = 1e-2    # in M
-    c, b = scl.get_burstlen_conc_plot(demomec, cmin, cmax)
+    c, b = scpl.get_burstlen_conc_plot(demomec, cmin, cmax)
     plt.subplot(224)
     #if mec.fastblk:
     #    plt.plot(c, b, 'b-', c, blk, 'g-')
