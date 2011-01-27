@@ -57,8 +57,8 @@ def hjc_mean_time(mec, tres, open):
     """
 
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
-    expQFF = qml.expQ(mec.QFF, tres)
-    expQAA = qml.expQ(mec.QAA, tres)
+    expQFF = qml.expQt(mec.QFF, tres)
+    expQAA = qml.expQt(mec.QAA, tres)
     eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
     eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
 
@@ -429,7 +429,7 @@ def pdf_burst_length(mec, t):
     f : float
     """
 
-    expQEEA = qml.expQ(mec.QEE, t)[:mec.kA, :mec.kA]
+    expQEEA = qml.expQt(mec.QEE, t)[:mec.kA, :mec.kA]
     f = np.dot(np.dot(np.dot(qml.phiBurst(mec), expQEEA), -mec.QAA),
         qml.endBurst(mec))
     return f
@@ -450,7 +450,7 @@ def pdf_open_time(mec, t):
     """
 
     uA = np.ones((mec.kA, 1))
-    expQAA = qml.expQ(mec.QAA, t)
+    expQAA = qml.expQt(mec.QAA, t)
     f = np.dot(np.dot(np.dot(qml.phiO(mec), expQAA), -mec.QAA), uA)
     return f
 
@@ -472,12 +472,27 @@ def pdf_shut_time(mec, t):
     """
 
     uF = np.ones((mec.kF, 1))
-    expQFF = qml.expQ(mec.QFF, t)
+    expQFF = qml.expQt(mec.QFF, t)
     f = np.dot(np.dot(np.dot(qml.phiS(mec), expQFF), -mec.QFF), uF)
     return f
 
 def get_ideal_pdf_components(mec, open):
     """
+    Calculate time constants and areas for an ideal (no missed events)
+    exponential open/shut time probability density function.
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    open : bool
+        True to calculate mean open time, False to calculate mean shut time.
+
+    Returns
+    -------
+    taus : ndarray, shape(k, 1)
+        Time constants.
+    areas : ndarray, shape(k, 1)
     """
 
     if open:
@@ -578,8 +593,8 @@ def asymptotic_areas(mec, tres, roots, open):
         Q12 = mec.QFA
         G21, G12 = qml.iGs(mec.Q, mec.kA, mec.kF)
 
-    expQ22 = qml.expQ(Q22, tres)
-    expQ11 = qml.expQ(Q11, tres)
+    expQ22 = qml.expQt(Q22, tres)
+    expQ11 = qml.expQt(Q11, tres)
     eG12 = qml.eGs(G12, G21, k1, k2, expQ22)
     eG21 = qml.eGs(G21, G12, k2, k1, expQ11)
     phi1 = qml.phiHJC(eG12, eG21, k1, k2)[0]
@@ -603,7 +618,7 @@ def asymptotic_areas(mec, tres, roots, open):
 
     return areas
 
-def pdf_exponential(t, roots, areas):
+def pdf_exponential(t, tres, roots, areas):
     """
     Calculate exponential probabolity density function.
 
@@ -611,6 +626,8 @@ def pdf_exponential(t, roots, areas):
     ----------
     t : float
         Time.
+    tres : float
+        Time resolution (dead time).
     roots : array_like, shape (k,)
     areas : array_like, shape (k,).
 
@@ -618,18 +635,6 @@ def pdf_exponential(t, roots, areas):
     -------
     f : float
     """
-    f = 0
-    for j in range(roots.shape[0]):
-        ta = -1 / roots[j]
-        ar = areas[j]
-        f = f + ((ar / ta) * np.exp(-t / ta))
-    return f
-
-def pdf_asymptotic(t, tres, roots, areas):
-    """
-
-    """
-
 
     if t < tres:
         f = 0
@@ -643,6 +648,27 @@ def pdf_asymptotic(t, tres, roots, areas):
 
 def pdf_exact(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
     """
+    Calculate exponential probabolity density function with exact solution for 
+    missed events correction (Eq. 21, HJC92).
+    f(u) = f0(u)                      0 <= t <= tres
+         = f0(u) - f1(u - tres)    tres <= t <= 2 * tres
+
+    Parameters
+    ----------
+    t : float
+        Time.
+    tres : float
+        Time resolution (dead time).
+    roots : array_like, shape (k,)
+    areas : array_like, shape (k,)
+    eigvals : array_like, shape (k,)
+        Eigenvalues of -Q matrix.
+    gama00, gama10, gama11 : lists of floats
+        Constants for the exact open/shut time pdf.
+
+    Returns
+    -------
+    f : float
     """
 
     if t < tres:
@@ -654,7 +680,7 @@ def pdf_exact(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
         ff1 = f1((t - 2 * tres), eigvals, gamma10, gamma11)
         f = ff0 - ff1
     else:
-        f = pdf_asymptotic(t, tres, roots, areas)
+        f = pdf_exponential(t, tres, roots, areas)
     return f
 
 def exact_pdf_coef(mec, tres, open):
@@ -666,7 +692,7 @@ def exact_pdf_coef(mec, tres, open):
     tres : float
     mec : dcpyps.Mechanism
         The mechanism to be analysed.
-    open : Bool
+    open : bool
         True for open time pdf and False for shut time pdf.
 
     Returns
@@ -678,8 +704,8 @@ def exact_pdf_coef(mec, tres, open):
     """
 
     k = mec.Q.shape[0]
-    expQFF = qml.expQ(mec.QFF, tres)
-    expQAA = qml.expQ(mec.QAA, tres)
+    expQFF = qml.expQt(mec.QFF, tres)
+    expQAA = qml.expQt(mec.QAA, tres)
     uF = np.ones((mec.kF,1))
     uA = np.ones((mec.kA, 1))
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
@@ -743,7 +769,20 @@ def exact_pdf_coef(mec, tres, open):
 
 def f0(u, eigvals, gamma00):
     """
-    A component of exact time pdf (Eq. 22, HJC92
+    A component of exact time pdf (Eq. 22, HJC92).
+
+    Parameters
+    ----------
+    u : float
+        u = t - tres
+    eigvals : array_like, shape (k,)
+        Eigenvalues of -Q matrix.
+    gama00 : list of floats
+        Constants for the exact open/shut time pdf.
+
+    Returns
+    -------
+    f : float
     """
 
     f = 0.0
@@ -753,6 +792,20 @@ def f0(u, eigvals, gamma00):
 
 def f1(u, eigvals, gamma10, gamma11):
     """
+    A component of exact time pdf (Eq. 22, HJC92).
+
+    Parameters
+    ----------
+    u : float
+        u = t - tres
+    eigvals : array_like, shape (k,)
+        Eigenvalues of -Q matrix.
+    gama10, gama11 : lists of floats
+        Constants for the exact open/shut time pdf.
+
+    Returns
+    -------
+    f : float
     """
     f = 0.0
     for i in range(len(gamma10)):

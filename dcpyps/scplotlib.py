@@ -305,7 +305,7 @@ def get_asymptotic_pdf(mec, conc, tres, tmin, open):
     f = np.zeros(nPoint)
     for i in range(nPoint):
         t[i] = tmin * pow(10, (i * dt))
-        f[i] = np.sqrt(t[i] * scl.pdf_asymptotic(t[i], tres, roots, areas))
+        f[i] = np.sqrt(t[i] * scl.pdf_exponential(t[i], tres, roots, areas))
 
     return t * 1000, f * 1000
 
@@ -318,8 +318,6 @@ def get_exact_pdf(mec, conc, tres, tmin, open):
     roots = scl.asymptotic_roots(mec, tres, open)
     areas = scl.asymptotic_areas(mec, tres, roots, open)
     eigvals, gamma00, gamma10, gamma11 = scl.exact_pdf_coef(mec, tres, open)
-
-
     tmax = (-1 / roots.max()) * 20
 
     nPoint = 1000

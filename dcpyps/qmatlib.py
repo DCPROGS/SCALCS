@@ -126,7 +126,7 @@ def eGs(G12, G21, k1, k2, expQ22):
     eG12 = np.dot(np.dot(nplin.inv(temp), G12), expQ22)
     return eG12
 
-def expQ(M, t):
+def expQt(M, t):
     """
     Calculate exponential of a matrix M.
         expM = exp(M * t)
@@ -386,7 +386,7 @@ def dW(s, tres, Q12, Q22, Q21, k1, k2):
     I2 = np.eye(k2)
     I1 = np.eye(k1)
     IQ22 = s * I2 - Q22
-    expIQ22 = expQ(-IQ22, tres)
+    expIQ22 = expQt(-IQ22, tres)
     S22 = I2 - expIQ22
     eG21s = np.dot(nplin.inv(s * I2 - Q22), Q21)
     w1 = np.dot(S22, nplin.inv(s * I2 - Q22)) - tres * (I2 - S22)
@@ -422,7 +422,7 @@ def H(s, tres, Q11, Q22, Q21, Q12, k1, k2):
     I = np.eye(k1)
     X11 = s * I - Q11
     invX11 = nplin.inv(X11)
-    expX11 = expQ(-X11, tres)
+    expX11 = expQt(-X11, tres)
     H = Q22 + np.dot(np.dot(np.dot(Q21, invX11), I - expX11), Q12)
     return H
 
