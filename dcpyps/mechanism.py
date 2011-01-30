@@ -14,6 +14,8 @@ and of clusters of bursts. Phil Trans R Soc Lond B 300, 1-59.
 # TODO: Check state numbers for consistency
 # TODO: Update docstrings
 
+import sys
+
 import numpy as np
 
 import qmatlib as qml
@@ -147,6 +149,7 @@ class Mechanism(object):
                 self.kD += 1
         self.kF = self.kB + self.kC
         self.kE = self.kA + self.kB
+        self.k = self.kA + self.kB + self.kC + self.kD
 
         self.ncyc = ncyc   # number of cycles; could be deduced from the rates!
         self.fastblk = fastblk

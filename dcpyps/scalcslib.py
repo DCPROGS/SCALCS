@@ -79,7 +79,7 @@ def hjc_mean_time(mec, tres, open):
         # meanShutTime = tres + phiF * DFRS * QexpQA * uA
         mean = tres + np.dot(phiF, np.dot(np.dot(DFRS, QexpQA), uA))
 
-    return mean
+    return mean[0,0]
 
 def popen(mec, tres, conc, eff='c'):
     """
@@ -110,7 +110,7 @@ def popen(mec, tres, conc, eff='c'):
     else:
         hmopen = hjc_mean_time(mec, tres, True)
         hmshut = hjc_mean_time(mec, tres, False)
-        Popen = (hmopen / (hmopen + hmshut))[0,0]
+        Popen = (hmopen / (hmopen + hmshut))
     if mec.fastblk:
         Popen = Popen / (1 + conc / mec.KBlk)
     return Popen

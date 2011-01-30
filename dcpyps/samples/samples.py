@@ -22,7 +22,7 @@ def CH82():
          ]
 
     ncyc = 1
-    fastblk = True
+    fastblk = False
     KBlk = 0.001
 
-    return  dcpyps.Mechanism(RateList, ncyc, fastblk, KBlk)
+    return  dcpyps.Mechanism(RateList, ncyc) #, fastblk, KBlk)
