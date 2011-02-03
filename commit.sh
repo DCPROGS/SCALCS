@@ -1,6 +1,6 @@
 #! /bin/bash
 
-REMOTE=https://christoph.schmidthieber@dc-pyps.googlecode.com/hg
+REMOTE=https://a.plested@dc-pyps.googlecode.com/hg
 
 # make sure we have the latest revision before commiting:
 echo hg -v pull -u $REMOTE
