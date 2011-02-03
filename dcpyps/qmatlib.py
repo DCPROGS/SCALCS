@@ -142,13 +142,14 @@ def expQt(M, t):
     expM : ndarray, shape (k, k)
     """
 
-    eigvals, A = eigs(-M)
+    eigvals, A = eigs(M)
     k = M.shape[0]
     expM = np.zeros((k, k))
+    #TODO: avoid loops
     for i in range(k):
         for j in range(k):
             for m in range(k):
-                expM[i, j] += A[m, i, j] * np.exp(-eigvals[m] * t)
+                expM[i, j] += A[m, i, j] * np.exp(eigvals[m] * t)
     return expM
 
 def phiHJC(eG12, eG21, k1, k2):

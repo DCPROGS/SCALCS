@@ -12,8 +12,13 @@ def erf(x):
     Accurate, fast approximation of the error function from
     http://www.johndcook.com/blog/2009/01/19/stand-alone-error-function-erf/
 
-    arguments -- x - a scalar
-    returns -- a scalar
+    Parameters
+    ----------
+    x : float
+
+    Returns
+    -------
+    float
     """
 
     # constants
@@ -41,13 +46,24 @@ def erf_pulse(pulse_width, pulse_conc, rise_t, pulse_centre, t_step):
     """
     Construct a "top-hat" pulse with rise and fall from error function.
 
-    arguments --    pulse_width - approximate FWHM in microseconds
-                    pulse_conc - ligand concentration during jump in Molar
-                    rise_t - desired 10 - 90% rise time (can use 0. for square pulse)
-                    centre - position of pulse in simulation trace
-                    time_step - sampling interval in microseconds
+    Parameters
+    ----------
+    pulse_width : float
+        Approximate FWHM in microseconds.
+    pulse_conc : float
+        Ligand concentration during jump in Molar.
+    rise_t : float
+        Desired 10 - 90% rise time (can use 0. for square pulse).
+    centre : float
+        Position of pulse in simulation trace.
+    time_step : float 
+        Sampling interval in microseconds.
 
-    returns -- dictionary of microsecond time point,concentration pairs
+    Returns
+    -------
+    z : dictionary (key- float, value- float)
+        Dictionary keys- time points in microseconds.
+        Dictionary values- concentration in moles.
     """
 
     erf_rise = 1.8  #10-90% of erf(x)
@@ -99,19 +115,35 @@ def erf_pulse(pulse_width, pulse_conc, rise_t, pulse_centre, t_step):
     return z
 
 def rcj_single(mec, parameters):
+    """
+    Calculate a single concentration jump and a single relaxation.
 
-    jump = make_jump(parameters)
-    relax = rcj_calc (jump, mec, parameters)
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    parameters : dictionary
+        Dictioanry contains parameters describing the concentration jump.
 
-    return jump, relax
+    Returns
+    -------
+    cjump : dictionary
+        Contains time sample point (microsec) - concentration (M) pairs.
+    relax : dictionary
+    """
+
+    cjump = make_jump(parameters)
+    relax = rcj_calc (cjump, mec, parameters)
+
+    return cjump, relax
 
 def make_family():
-    '''
+    """
     testing - make a family of pulses to examine properties
     alternate main()
     no arguments
     returns nothing
-    '''
+    """
 
     center = 10000
     width = 2500. #desired 10-90% in microseconds
@@ -130,16 +162,21 @@ def make_family():
     rcj_fileops.family_write(family,max_length)
 
 def make_jump(pa):
-    '''
-    argument --
-    pa : the parameter dictionary
-    returns --
-    ju : dictionary of sample point - concentration pairs
-    '''
+    """
+    Generate a dictionary containing concentration jump profile.
 
-    #Make blank concentration jump profile as dictionary
-    #again, t in microseconds
-    ju = {}
+    Parameters
+    ----------
+    pa : dictionary
+        Parameters describing concentration pulse.
+
+    Returns
+    -------
+    cjump : dictionary
+        Time sample point (microsec)- concentration (Molar) pairs.
+    """
+
+    cjump = {}
 
     pw = pa['pulse_width']
     pc = pa['peak_conc']
@@ -149,39 +186,45 @@ def make_jump(pa):
     rl = pa['record_length']
 
     for t in range(0,rl,ss):
-        ju [float(t)] = 0.     # fill dictionary with blanks
+        cjump [float(t)] = 0.     # fill dictionary with blanks
 
     profile = erf_pulse(pw, pc, rt, pce, ss )
+    cjump.update(profile)        # overwrite blank dictionary keys with pulse values
+    return cjump
 
-    ju.update(profile)        # overwrite blank dictionary keys with pulse values
-
-    return ju
-
-def rcj_calc (jux, mec, paras, eff='c'):
+def rcj_calc (cjump, mec, paras, eff='c'):
     """
-    arguments --
-    jux         : concentration jump profile dictionary
-    mec :
-    mech_rates  : dictionary of rate name - constant pairs
-    paras       : dictionary of parameters that defines pulse
-    returns - relaxation and jump
+    Parameters
+    ----------
+    cjump : dictionary
+        Time sample point (microsec)- concentration (Molar) pairs.
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    paras : dictionary
+        Parameters describing concentration pulse.
+
+    Returns
+    -------
+    relax : dictionary
+        Time sample point (microsec)- P pairs. P is numpy array (k, 1) which
+        elements are state occupancies.
     """
 
-    rlx = {}
+    relax = {}
     dt = paras['step_size'] * 1.e-6  # Convert from microseconds to seconds.
     firststep = True
 
     # Sort the dictionary to get time elements in order.
-    for t_point in sorted(jux):
+    for t_point in sorted(cjump):
         # Extract concentration.
-        c = jux [t_point]
+        c = cjump [t_point]
         mec.set_eff(eff, c)
 
         if not firststep:
             # Not the first step, so use P from last step to calculate
             # new occupancy. Note that P is not used again in the calculation,
             # so can be updated safely.
-            w = coefficient_calc(mec, P)
+            w = coefficient_calc(mec.k, mec.A, P)
 
             #loop over states to get occupancy of each
             for s in range(mec.k):
@@ -197,58 +240,99 @@ def rcj_calc (jux, mec, paras, eff='c'):
 
         # Must copy P, otherwise every value in dictionary = P (entire
         # output has last value!)
-        rlx [t_point] = P.copy()
-    return rlx
+        relax [t_point] = P.copy()
+    return relax
 
-def coefficient_calc(mec, p_occup):
+def coefficient_calc(k, A, p_occup):
     """
-    Calculate weighted components for relaxation for each state p * An
+    Calculate weighted components for relaxation for each state p * An.
+
+    Parameters
+    ----------
+    k : int
+        Number of states in mechanism.
+    A : array-like, shape (k, k, k)
+        Spectral matrices of Q matrix.
+    p_occup : array-like, shape (k, 1)
+        Occupancies of mechanism states.
+
+    Returns
+    -------
+    w : ndarray, shape (k, k)
     """
 
-    w = np.zeros([mec.k, mec.k])
-    for n in range (mec.k):
-        w[n, :] = np.dot(p_occup, mec.A[n, :, :])
+    w = np.zeros((k, k))
+    for n in range (k):
+        w[n, :] = np.dot(p_occup, A[n, :, :])
     return w
 
-def compose_rcj_out (cjump,relax_dict,o_states,offset=1.2,output_option=2):
-    '''
-    write output to text file as lines of t,j,p0,p1,p2....pn,pOpen with option to omit
-    arguments --
-        cjump           : dictionary of agonist profile values against time
-        relax_dict      : dictionary of state occupancies against time
-        o_states        : list of open states for P-open calculation
-        offset          : float by which to offset the jump from the response
-        output_option   : By default, 2: give occupancies and P_O; 1 : P_O Only; 0: Occupancies only
-    returns --
-        lines           : A list of strings
+def compose_rcj_out (cjump, relax, kA, offset=1.2, output_option=2):
+    """
+    Write output to text file as lines of t,j,p0,p1,p2....pn,pOpen with
+    option to omit arguments.
 
-    '''
+    Parameters
+    ----------
+    cjump : dictionary
+        Time sample point (microsec)- concentration (Molar) pairs.
+    relax : dictionary
+        Time sample point (microsec)- P pairs. P is numpy array (k, 1) which
+        elements are state occupancies.
+    kA : int
+        Number of open states in mechanism.
+    offset : float
+        Offset the jump from the response.
+    output_option : int
+        2 : give occupancies and Popen;
+        1 : Popen only;
+        0 : occupancies only.
+
+    Returns
+    -------
+        lines : a list of strings
+    """
+
     lines = []
-
-    for time_key in sorted(relax_dict):
-        line = str(time_key)+'\t'+str(cjump[time_key]+offset)       #positive offset = 1.2 for jump
-        isochrone = relax_dict[time_key]
+    for time_key in sorted(relax):
+        line = str(time_key)+'\t'+str(cjump[time_key]+offset)
+        isochrone = relax[time_key]
 
         if output_option != 1:
             #Full occupancy
             for elem in isochrone:
                 line += '\t'+str(elem)
-
         if output_option != 0:
-            #Open Probability
+            #Open probability
             Popen = 0.
-            for o in range(o_states):
+            for o in range(kA):
                 Popen = Popen + isochrone[o]
-
             line += '\t'+str(Popen)
 
         lines.append(line)
-
     return lines
 
-def convert_to_arrays(cjump, relax_dict, kA):
+def convert_to_arrays(cjump, relax, kA):
     """
+    Convert concentration profile and relaxation dictionaries into arrays.
 
+    Parameters
+    ----------
+    cjump : dictionary
+        Time sample point (microsec)- concentration (Molar) pairs.
+    relax : dictionary
+        Time sample point (microsec)- P pairs. P is numpy array (k, 1) which
+        elements are state occupancies.
+    kA : int
+        Number of open states in mechanism.
+
+    Returns
+    -------
+    t : ndarray, shape(dict length, 1)
+        Time points in microsec.
+    cj : ndarray, shape(dict length, 1)
+        Concentration profile in Molar.
+    rl : ndarray, shape(dict length, 1)
+        Open probaility relaxation.
     """
 
     t = np.zeros(len(cjump))
@@ -256,13 +340,13 @@ def convert_to_arrays(cjump, relax_dict, kA):
     rl = np.zeros(len(cjump))
     index = 0
 
-    for time_key in sorted(relax_dict):
+    for time_key in sorted(relax):
         t[index] = time_key
         cj[index] = cjump[time_key] * 1.01
 
         #Open Probability
         for o in range(kA):
-            rl[index] += relax_dict[time_key][o]
+            rl[index] += relax[time_key][o]
         index +=1
 
     return t, cj, rl
