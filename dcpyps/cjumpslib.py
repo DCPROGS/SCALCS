@@ -48,15 +48,15 @@ def erf_pulse(pulse_width, pulse_conc, rise_t, pulse_centre, t_step):
 
     Parameters
     ----------
-    pulse_width : float
+    pulse_width : int
         Approximate FWHM in microseconds.
     pulse_conc : float
         Ligand concentration during jump in Molar.
     rise_t : float
         Desired 10 - 90% rise time (can use 0. for square pulse).
-    centre : float
+    centre : int
         Position of pulse in simulation trace.
-    time_step : float 
+    time_step : int
         Sampling interval in microseconds.
 
     Returns

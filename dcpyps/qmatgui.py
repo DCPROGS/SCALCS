@@ -23,6 +23,7 @@ except:
     raise ImportError("matplotlib module is missing")
 
 import scalcslib as scl
+import cjumpslib as cjl
 import io
 import samples
 
@@ -63,9 +64,12 @@ class QMatGUI(QMainWindow):
             "&Burst openings distribution", self.onPlotBrstOpDistr)
         plotBurstLenVConcAction = self.createAction(
             "&Burst length vs concentration", self.onPlotBrstLenConc)
+        plotJumpAction = self.createAction(
+            "&Realistic concentration jump", self.onPlotCJump)
         self.addActions(plotMenu, (plotPopenAction, plotOpenTimePDFAction,
             plotShutTimePDFAction, plotBurstLenPDFAction,
-            plotBurstOpeningDistrAction, plotBurstLenVConcAction))
+            plotBurstOpeningDistrAction, plotBurstLenVConcAction,
+            plotJumpAction))
 
         helpMenu = self.menuBar().addMenu('&Help')
         helpAboutAction = self.createAction("&About", self.onHelpAbout)
@@ -231,6 +235,46 @@ class QMatGUI(QMainWindow):
         system = sys.platform
         str3 = "Machine: %s; System: %s" %(machine, system)
         return str1, str2, str3
+
+    def onPlotCJump(self):
+        """
+        Display realistic concentration jump.
+        """
+
+        self.textBox.append('\n\n\t===== REALISTIC CONCENTRATION JUMP =====')
+        self.textBox.append('Concentration profile- green solid line.')
+        self.textBox.append('Relaxation- blue solid line.')
+
+        dialog = CJumpParDlg(self)
+        if dialog.exec_():
+            jpar = dialog.return_par()
+
+        self.textBox.append('\nConcentration pulse profile:')
+        self.textBox.append('Concentration = {0:.3f} mM'
+            .format(jpar['peak_conc'] * 1000))
+        self.textBox.append('10- 90% rise time = {0:.0f} microsec'
+            .format(jpar['rise_time']))
+        self.textBox.append('Pulse width = {0:.1f} millisec'
+            .format(jpar['pulse_width'] * 0.001))
+            
+        # TODO: get slowest relaxation tau and automaticly calculate
+        # record length.
+        jumpd, relaxd = cjl.rcj_single(self.mec, jpar)
+
+        # TODO: relaxed contains Popen trace only. Need to plot occupancies too.
+        t, cjump, relax = cjl.convert_to_arrays(jumpd, relaxd, self.mec.kA)
+        maxR = max(relax)
+        maxJ = max(cjump)
+        cjump1 = (cjump / maxJ) * 0.2 * maxR + 1.02* maxR
+
+        self.axes.clear()
+        self.axes.plot(t * 0.001, relax,'b-', t * 0.001, cjump1, 'g-')
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
+
+
+
 
     def onPlotPopen(self):
         """
@@ -612,6 +656,110 @@ class QMatGUI(QMainWindow):
 
         self.textBox.append("Loaded mec: " + meclist[nrate][2])
         self.textBox.append("Loaded rates: " + meclist[nrate][3] + "\n")
+
+class CJumpParDlg(QDialog):
+    """
+    Dialog to input realistic concentration pulse parameters.
+    """
+    def __init__(self, parent=None):
+        super(CJumpParDlg, self).__init__(parent)
+
+        self.step = 8 # The sample step. All time params in microseconds.
+        self.centre = 10000
+        self.rise = 250 # list of 10-90% rise times for error functions
+        self.width = 10000
+        self.reclength = 50000
+        self.conc = 10e-6 # in molar
+
+        layoutMain = QVBoxLayout()
+        layoutMain.addWidget(QLabel("Concentration pulse profile:"))
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Sampling interval (microsec):"))
+        self.stepEdit = QLineEdit(unicode(8))
+        self.stepEdit.setMaxLength(6)
+        self.connect(self.stepEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.stepEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Pulse centre position (microsec):"))
+        self.centreEdit = QLineEdit(unicode(10000))
+        self.centreEdit.setMaxLength(6)
+        self.connect(self.centreEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.centreEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Pulse 10-90% rise time (microsec):"))
+        self.riseEdit = QLineEdit(unicode(250))
+        self.riseEdit.setMaxLength(6)
+        self.connect(self.riseEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.riseEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Concentration pulse width (microsec):"))
+        self.widthEdit = QLineEdit(unicode(10000))
+        self.widthEdit.setMaxLength(6)
+        self.connect(self.widthEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.widthEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Record length (microsec):"))
+        self.reclengthEdit = QLineEdit(unicode(50000))
+        self.reclengthEdit.setMaxLength(6)
+        self.connect(self.reclengthEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.reclengthEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Pulse concentration (mM):"))
+        self.concEdit = QLineEdit(unicode(0.01))
+        self.concEdit.setMaxLength(6)
+        self.connect(self.concEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.concEdit)
+        layoutMain.addLayout(layout)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+
+        self.setLayout(layoutMain)
+        #self.resize(1000, 500)
+        self.setWindowTitle("Design realistic concentration pulse...")
+
+    def on_par_changed(self):
+        """
+        """
+
+        self.par = {}
+        self.par['step_size'] = int(self.stepEdit.text())
+        self.par['pulse_centre'] = int(self.centreEdit.text())
+        self.par['rise_time'] = float(self.riseEdit.text())
+        self.par['pulse_width'] = int(self.widthEdit.text())
+        self.par['record_length'] = int(self.reclengthEdit.text())
+        # Concentration convert from mM to M
+        self.par['peak_conc'] = float(self.concEdit.text()) * 0.001
+
+    def return_par(self):
+        """
+        Return parameter dictionary on exit.
+        """
+        return self.par
+
+
 
 class MecListDlg(QDialog):
     """
