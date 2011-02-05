@@ -92,13 +92,8 @@ def file_dialog():
     root.destroy()
     
     return mecfile
-    
-if __name__ == "__main__":
 
-    parser = create_parser()
-    args = parser.parse_args()
-    demomec = process_args(args)
-
+def console_demo(demomec):
     tres = 0.00004  # resolution in seconds
     demomec.fastBlk = False
     demomec.KBlk = 0.01
@@ -157,3 +152,11 @@ if __name__ == "__main__":
     plt.subplots_adjust(left=None, bottom=0.1, right=None, top=None,
         wspace=0.4, hspace=0.5)
     plt.show()
+    
+if __name__ == "__main__":
+
+    parser = create_parser()
+    args = parser.parse_args()
+    demomec = process_args(args)
+
+    console_demo(demomec)

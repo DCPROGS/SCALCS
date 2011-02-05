@@ -1,2 +1,4 @@
 include demo.py
+include guidemo.py
+include rcjdemo.py
 include dcpyps/samples/*.mec

@@ -45,4 +45,4 @@ from mechanism import * # this should really be in the namespace
                         # numpy.array
 import io
 import samples
-
+import cjumpslib
