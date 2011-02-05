@@ -647,11 +647,20 @@ def pdf_exponential(t, tres, roots, areas):
     return f
 
 def pdf_exact(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
-    """
+    r"""
     Calculate exponential probabolity density function with exact solution for 
     missed events correction (Eq. 21, HJC92).
-    f(u) = f0(u)                      0 <= t <= tres
-         = f0(u) - f1(u - tres)    tres <= t <= 2 * tres
+
+    .. math::
+       :nowrap:
+
+       \begin{align*}
+       f(t) =
+       \begin{cases} 
+       f_0(t)                          & \text{for}\; 0 \leq t \leq t_\text{res} \\
+       f_0(t) - f_1(t - t_\text{res})  & \text{for}\; t_\text{res} \leq t \leq 2 t_\text{res}
+       \end{cases}
+       \end{align*}
 
     Parameters
     ----------

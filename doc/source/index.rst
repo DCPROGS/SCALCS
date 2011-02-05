@@ -11,7 +11,8 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   qmat.rst
+   qmatlib.rst
+   scalcslib.rst
 
 Indices and tables
 ==================

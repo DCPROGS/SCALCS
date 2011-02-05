@@ -650,7 +650,7 @@ def bisect(s1, s2, tres, Q11, Q22, Q21, Q12, k1, k2):
     Returns
     -------
     sout : float
-        Asymptotic root at wich |W|=0.
+        Asymptotic root at wich \|W\|=0.
     """
 
     f = nplin.det(W(s1, tres, Q11, Q22, Q21, Q12, k1, k2))
