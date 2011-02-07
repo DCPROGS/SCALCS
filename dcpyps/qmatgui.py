@@ -36,8 +36,8 @@ class QMatGUI(QMainWindow):
         self.mec = samples.CH82()
         self.mec.KBlk = 0.01
         self.mec.fastblk = False
-        self.conc = 300e-6    # 100 nM
-        self.tres = 0.00004
+        self.conc = 100e-9    # 100 nM
+        self.tres = 0.0001
 #        self.tmin = 10e-6
 #        self.tmax = 0.1
 #        self.cmin = 10e-9
@@ -109,23 +109,6 @@ class QMatGUI(QMainWindow):
         tresBox.addStretch()
         plotSetLayout.addLayout(tresBox)
 
-#        trangeBox = QHBoxLayout()
-#        trangeBox.addWidget(QLabel("Time range: min "))
-#        self.trangeEdit1 = QLineEdit(unicode(self.tmin * 1000))
-#        self.trangeEdit1.setMaxLength(8)
-#        self.connect(self.trangeEdit1, SIGNAL("editingFinished()"),
-#            self.on_settings_changed)
-#        trangeBox.addWidget(self.trangeEdit1)
-#        trangeBox.addWidget(QLabel("millisec,  max "))
-#        self.trangeEdit2 = QLineEdit(unicode(self.tmax * 1000))
-#        self.trangeEdit2.setMaxLength(8)
-#        self.connect(self.trangeEdit2, SIGNAL("editingFinished()"),
-#            self.on_settings_changed)
-#        trangeBox.addWidget(self.trangeEdit2)
-#        trangeBox.addWidget(QLabel("millisec"))
-#        trangeBox.addStretch()
-#        plotSetLayout.addLayout(trangeBox)
-
         concBox = QHBoxLayout()
         concBox.addWidget(QLabel("Concentration = "))
         self.concEdit = QLineEdit(unicode(self.conc * 1000000))
@@ -136,23 +119,6 @@ class QMatGUI(QMainWindow):
         concBox.addWidget(QLabel("mikroM"))
         concBox.addStretch()
         plotSetLayout.addLayout(concBox)
-
-#        crangeBox = QHBoxLayout()
-#        crangeBox.addWidget(QLabel("Concentration range: min "))
-#        self.crangeEdit1 = QLineEdit(unicode(self.cmin * 1000000))
-#        self.crangeEdit1.setMaxLength(8)
-#        self.connect(self.crangeEdit1, SIGNAL("editingFinished()"),
-#            self.on_settings_changed)
-#        crangeBox.addWidget(self.crangeEdit1)
-#        crangeBox.addWidget(QLabel("mikroM,  max "))
-#        self.crangeEdit2 = QLineEdit(unicode(self.cmax * 1000000))
-#        self.crangeEdit2.setMaxLength(8)
-#        self.connect(self.crangeEdit2, SIGNAL("editingFinished()"),
-#            self.on_settings_changed)
-#        crangeBox.addWidget(self.crangeEdit2)
-#        crangeBox.addWidget(QLabel("mikroM"))
-#        crangeBox.addStretch()
-#        plotSetLayout.addLayout(crangeBox)
 
         fastBlkBox = QHBoxLayout()
         self.fastBlkCheckBox = QCheckBox("&Fast block?")
@@ -188,11 +154,7 @@ class QMatGUI(QMainWindow):
         """
         self.mec.KBlk = float(self.KBEdit.text()) / 1000.0
         self.tres = float(self.tresEdit.text()) / 1000000.0
-#        self.tmin = float(self.trangeEdit1.text()) / 1000.0
-#        self.tmax = float(self.trangeEdit2.text()) / 1000.0
         self.conc = float(self.concEdit.text()) / 1000000.0
-#        self.cmin = float(self.crangeEdit1.text()) / 1000000.0
-#        self.cmax = float(self.crangeEdit2.text()) / 1000000.0
         self.mec.fastblk = self.fastBlkCheckBox.isChecked()
 
     def createAction(self, text, slot=None, shortcut=None, icon=None,
@@ -272,9 +234,6 @@ class QMatGUI(QMainWindow):
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
-
-
-
 
     def onPlotPopen(self):
         """
@@ -390,7 +349,7 @@ class QMatGUI(QMainWindow):
             '\t{0:.3f}'.format(gamma11[i]))
 
         tmax = (-1 / roots.max()) * 20
-        tmin = 0.00001 # 1 mikrosec
+        tmin = 0.00001 # 10 mikrosec
         points = 512
         step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
         t = np.zeros(points)
@@ -486,7 +445,7 @@ class QMatGUI(QMainWindow):
 
 
         tmax = (-1 / roots.max()) * 20
-        tmin = 0.00001 # 1 mikrosec
+        tmin = 0.00001 # 10 mikrosec
         points = 512
         step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
         t = np.zeros(points)
@@ -553,12 +512,11 @@ class QMatGUI(QMainWindow):
             format(mop * 1000) + 'millisec')
         bpop = mop / m
         self.textBox.append('Popen WITHIN BURST = (open time/bst)/(bst length)\
-        = {0:.3f} '.format(bpop))
+            = {0:.3f} '.format(bpop))
 
         points = 512
         tmin = 0.00001
-        tmax = 1
-        #tmax = max(tau) * 20
+        tmax = max(tau) * 20
         step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
 
         t = np.zeros(points)
