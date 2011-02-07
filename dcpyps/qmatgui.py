@@ -36,8 +36,8 @@ class QMatGUI(QMainWindow):
         self.mec = samples.CH82()
         self.mec.KBlk = 0.01
         self.mec.fastblk = False
-        self.conc = 100e-9    # 100 nM
-        self.tres = 0.0001
+        self.conc = 300e-6    # 100 nM
+        self.tres = 0.00004
 #        self.tmin = 10e-6
 #        self.tmax = 0.1
 #        self.cmin = 10e-9
@@ -334,7 +334,7 @@ class QMatGUI(QMainWindow):
         Display open time probability density function.
         """
 
-        self.textBox.append('\n\n\t===== OPEN TIME PDF =====')
+        self.textBox.append('\n\t===== OPEN TIME PDF =====')
         self.textBox.append('Agonist concentration = {0:.6f} mikroM'.
             format(self.conc * 1000000))
         self.textBox.append('Resolution = {0:.2f} mikrosec'.
@@ -390,7 +390,7 @@ class QMatGUI(QMainWindow):
             '\t{0:.3f}'.format(gamma11[i]))
 
         tmax = (-1 / roots.max()) * 20
-        tmin = 0.000001 # 1 mikrosec
+        tmin = 0.00001 # 1 mikrosec
         points = 512
         step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
         t = np.zeros(points)
@@ -430,7 +430,7 @@ class QMatGUI(QMainWindow):
         Display shut time probability density function.
         """
 
-        self.textBox.append('\n\n\t===== SHUT TIME PDF =====')
+        self.textBox.append('\n\t===== SHUT TIME PDF =====')
         self.textBox.append('Agonist concentration = {0:.6f} mikroM'.
             format(self.conc * 1000000))
         self.textBox.append('Resolution = {0:.2f} mikrosec'.
@@ -486,7 +486,7 @@ class QMatGUI(QMainWindow):
 
 
         tmax = (-1 / roots.max()) * 20
-        tmin = 0.000001 # 1 mikrosec
+        tmin = 0.00001 # 1 mikrosec
         points = 512
         step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
         t = np.zeros(points)
@@ -525,7 +525,7 @@ class QMatGUI(QMainWindow):
         """
         Display the burst length distribution.
         """
-        self.textBox.append('\n\n\t===== BURST LENGTH PDF =====')
+        self.textBox.append('\n\t===== BURST LENGTH PDF =====')
         self.textBox.append('Agonist concentration = {0:.6f} mikroM'.
             format(self.conc * 1000000))
         self.textBox.append('Resolution = {0:.2f} mikrosec'.
@@ -533,16 +533,32 @@ class QMatGUI(QMainWindow):
         self.textBox.append('Ideal pdf- blue solid line.')
 
         self.mec.set_eff('c', self.conc)
+
+        tau, area = scl.get_burst_ideal_pdf_components(self.mec)
+        self.textBox.append('\nBURST LENGTH DISTRIBUTION')
+        self.textBox.append('term\ttau (ms)\tarea (%)')
+        for i in range(self.mec.kE):
+            self.textBox.append('{0:d}'.format(i+1) +
+            '\t{0:.3f}'.format(tau[i] * 1000) +
+            '\t{0:.3f}'.format(area[i] * 100))
+
         m = scl.mean_burst_length(self.mec)
-        self.textBox.append('Mean burst length = {0:.3f} millisec'.
+        self.textBox.append('\nMean burst length = {0:.3f} millisec'.
             format(m * 1000))
         mu = scl.mean_num_burst_openings(self.mec)
         self.textBox.append('Mean number of openings per burst = {0:.3f}'.
             format(mu))
+        mop = scl.mean_open_time_burst(self.mec)
+        self.textBox.append('The mean total open time per burst = {0:.3f} '.
+            format(mop * 1000) + 'millisec')
+        bpop = mop / m
+        self.textBox.append('Popen WITHIN BURST = (open time/bst)/(bst length)\
+        = {0:.3f} '.format(bpop))
 
         points = 512
-        tmin = 0.000001
-        tmax = 0.1
+        tmin = 0.00001
+        tmax = 1
+        #tmax = max(tau) * 20
         step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
 
         t = np.zeros(points)

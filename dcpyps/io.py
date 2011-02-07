@@ -667,10 +667,7 @@ def scn_read_header (fname):
 
     # ndev='C:'; disk partition for Windows
     header['ndev'] = f.read(2)
-
     header['cdate'] = f.read(11)
-    print header['cdate']
-
     header['adctime'] = f.read(8)
 
     ints.fromfile(f, 1)
@@ -682,7 +679,7 @@ def scn_read_header (fname):
     # later needs to be converted to kHz
     floats.fromfile(f, 1)
     ffilt = floats.pop()
-    header['ffilt'] = floats.pop()
+    header['ffilt'] = ffilt
 
     # npfilt=number of points to jump forward after a transition, to start
     # search for next transition
@@ -1032,7 +1029,8 @@ def scn_read_header (fname):
 
     f.close() #    close the file
 
-    return ioffset, nint, calfac2, ffilt, rms, avamp, header
+    #return ioffset, nint, calfac2, ffilt, rms, avamp, header
+    return ioffset, nint, calfac2, header
 
 def scn_read_data(fname, ioffset, nint, calfac2):
     """
@@ -1073,7 +1071,7 @@ def scn_read_data(fname, ioffset, nint, calfac2):
         # Last interval in file is open. An unusable shut time is inserted
         # at the end. Total number of intervals increased by one.
         tint.append(-1.0)
-        iampl.append(0.0)
+        iampl.append(0)
         iprops.append(8)
 
     return tint, iampl, iprops

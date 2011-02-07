@@ -362,6 +362,17 @@ def mean_burst_length(mec):
         interm2), uA)[0])
     return m
 
+def mean_open_time_burst(mec):
+    """
+    Calculate the mean total open time per burst (Eq. 3.26, CH82).
+
+    """
+
+    uA = np.ones((mec.kA, 1))
+    VAA = mec.QAA + np.dot(mec.QAB, mec.GBA)
+    m = np.dot(np.dot(qml.phiBurst(mec), -nplin.inv(VAA)), uA)[0]
+    return m
+
 def mean_num_burst_openings(mec):
     """
     Calculate the mean number of openings per burst (Eq. 3.7, CH82).
@@ -512,6 +523,34 @@ def get_ideal_pdf_components(mec, open):
 
     taus = 1 / eigs
     return taus, areas
+
+def get_burst_ideal_pdf_components(mec):
+    """
+    Calculate time constants and areas for an ideal (no missed events)
+    exponential burst lngth probability density function.
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    taus : ndarray, shape(k, 1)
+        Time constants.
+    areas : ndarray, shape(k, 1)
+    """
+
+    areas = np.zeros(mec.kE)
+    eigs, A = qml.eigs(-mec.QEE)
+    for i in range(mec.kE):
+        areas[i] = (np.dot(np.dot(np.dot(qml.phiBurst(mec),
+            A[i][:mec.kA, :mec.kA]), (-mec.QAA)), qml.endBurst(mec)) / eigs[i])
+
+
+    taus = 1 / eigs
+    return taus, areas
+
 
 def asymptotic_roots(mec, tres, open):
     """
