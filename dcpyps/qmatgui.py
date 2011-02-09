@@ -24,6 +24,7 @@ except:
 
 import scalcslib as scl
 import cjumpslib as cjl
+import dataset
 import io
 import samples
 
@@ -38,16 +39,13 @@ class QMatGUI(QMainWindow):
         self.mec.fastblk = False
         self.conc = 100e-9    # 100 nM
         self.tres = 0.0001
-#        self.tmin = 10e-6
-#        self.tmax = 0.1
-#        self.cmin = 10e-9
-#        self.cmax = 0.1
+        self.rec1 = None
 
         loadMenu = self.menuBar().addMenu('&Load')
         loadDemoAction = self.createAction("&Demo", self.onLoadDemo,
             None, "loaddemo", "Load Demo mec")
         loadFromMecFileAction = self.createAction("&From Mec File...",
-            self.onLoadFromFile,
+            self.onLoadMecFile,
             None, "loadfrommecfile", "Load from Mec file")
         self.addActions(loadMenu, (loadDemoAction,
             loadFromMecFileAction))
@@ -70,6 +68,17 @@ class QMatGUI(QMainWindow):
             plotShutTimePDFAction, plotBurstLenPDFAction,
             plotBurstOpeningDistrAction, plotBurstLenVConcAction,
             plotJumpAction))
+
+        dataMenu = self.menuBar().addMenu('&Data')
+        openScanAction = self.createAction("&Load SC record", self.onLoadData)
+        imposeResolutionAction = self.createAction("&Impose resolution",
+            self.onImposeResolution)
+        plotDataOpenAction = self.createAction("&Plot open period distribution",
+            self.onPlotDataOpen)
+        plotDataShutAction = self.createAction("&Plot shut period distribution",
+            self.onPlotDataShut)
+        self.addActions(dataMenu, (openScanAction, imposeResolutionAction,
+            plotDataOpenAction, plotDataShutAction))
 
         helpMenu = self.menuBar().addMenu('&Help')
         helpAboutAction = self.createAction("&About", self.onHelpAbout)
@@ -197,6 +206,76 @@ class QMatGUI(QMainWindow):
         system = sys.platform
         str3 = "Machine: %s; System: %s" %(machine, system)
         return str1, str2, str3
+
+    def onLoadData(self):
+        """
+        """
+
+        self.textBox.append('\n\n\t===== LOADING DATA FILE =====')
+        filename = QFileDialog.getOpenFileName(self,
+            "Open SCN File...", "", "DC SCN Files (*.scn)")
+        ioffset, nint, calfac, header = io.scn_read_header(filename)
+        tint, iampl, iprops = io.scn_read_data(filename, ioffset, nint, calfac)
+        self.rec1 = dataset.TimeSeries(filename, header, tint, iampl, iprops)
+        self.textBox.append("\nLoaded record from file: " +
+            os.path.split(str(filename))[1])
+
+    def onImposeResolution(self):
+
+        self.rec1.impose_resolution(self.tres)
+        falsrate = dataset.false_events(self.tres,
+            self.rec1.header['ffilt'] * 1000, self.rec1.header['rms'],
+            self.rec1.header['avamp'] * self.rec1.calfac)
+        trise = 0.3321 / (self.rec1.header['ffilt'] * 1000)
+        zo = self.tres / trise
+        aamaxo = dataset.erf(0.88604 * zo)
+        self.textBox.append('\nAt resolution {0:.0f} microsec false event rate '.
+            format(self.tres * 1000000) +
+            '(per sec) for openings and shuttings is {0:.3e}'.format(falsrate)+
+            ' ( {0:.2f} risetimes, A/Amax = {1:.2f})'.format(zo, aamaxo))
+        self.textBox.append('After imposing the resolution of original {0:d}'.
+            format(len(self.rec1.itint)) + ' intervals were left {0:d}'.
+            format(len(self.rec1.rampl)))
+        self.rec1.separate_open_shut_periods()
+
+    def onPlotDataOpen(self):
+        """
+        """
+        self.textBox.append('\n\n\t===== PLOTTING DATA: OPEN PERIODS =====')
+
+        self.textBox.append('\nNumber of open periods = {0:d}'.
+            format(len(self.rec1.opint)))
+        self.textBox.append('Average = {0:.3f} millisec'.
+            format(np.average(self.rec1.opint)))
+        self.textBox.append('Range: {0:.3f}'.format(min(self.rec1.opint)) +
+            ' to {0:.3f} millisec'.format(max(self.rec1.opint)))
+
+        x, y = dataset.prepare_hist(self.rec1.opint, self.tres)
+
+        self.axes.clear()
+        self.axes.semilogx(x, y, 'b-')
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
+
+    def onPlotDataShut(self):
+        """
+        """
+        self.textBox.append('\n\n\t===== PLOTTING DATA: OPEN PERIODS =====')
+        self.textBox.append('\nNumber of shut periods = {0:d}'.
+            format(len(self.rec1.shint)))
+        self.textBox.append('Average = {0:.3f} millisec'.
+            format(np.average(self.rec1.shint)))
+        self.textBox.append('Range: {0:.3f}'.format(min(self.rec1.shint)) +
+            ' to {0:.3f} millisec'.format(max(self.rec1.shint)))
+
+        x, y = dataset.prepare_hist(self.rec1.shint, self.tres)
+
+        self.axes.clear()
+        self.axes.semilogx(x, y, 'b-')
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
 
     def onPlotCJump(self):
         """
@@ -609,7 +688,7 @@ class QMatGUI(QMainWindow):
         self.mec = samples.CH82()
         self.textBox.append("\nLoaded Demo.")
         
-    def onLoadFromFile(self):
+    def onLoadMecFile(self):
         """
         Load a mechanism and rates from DC's mec file.
         Called from menu Load|From Mec File...
