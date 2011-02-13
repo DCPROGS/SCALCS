@@ -80,8 +80,10 @@ class QMatGUI(QMainWindow):
             self.onPlotDataOpen)
         plotDataShutAction = self.createAction("&Plot shut period distribution",
             self.onPlotDataShut)
+        plotDataBurstAction = self.createAction("&Plot burst length distribution",
+            self.onPlotDataBurst)
         self.addActions(dataMenu, (openScanAction, imposeResolutionAction,
-            plotDataOpenAction, plotDataShutAction))
+            plotDataOpenAction, plotDataShutAction, plotDataBurstAction))
 
         helpMenu = self.menuBar().addMenu('&Help')
         helpAboutAction = self.createAction("&About", self.onHelpAbout)
@@ -240,7 +242,34 @@ class QMatGUI(QMainWindow):
         self.textBox.append('After imposing the resolution of original {0:d}'.
             format(len(self.rec1.itint)) + ' intervals were left {0:d}'.
             format(len(self.rec1.rampl)))
-        self.rec1.separate_open_shut_periods()
+        self.rec1.get_open_shut_periods()
+
+    def onPlotDataBurst(self):
+        """
+        """
+        self.textBox.append('\n\n\t===== PLOTTING DATA: BURST LENGTH =====')
+        self.textBox.append("\nFirst burst starts only after gap > tcrit is found.")
+        self.textBox.append("Unusable shut time treated as a valid end of burst.")
+        self.tcrit = 0.004
+        self.textBox.append('\nCritical gap length = {0:.3f} millisec'.
+            format(self.tcrit * 1000))
+        self.rec1.get_bursts(self.tcrit)
+        self.textBox.append('\nNumber of bursts = {0:d}'.
+            format(len(self.rec1.bursts)))
+        blength = self.rec1.get_burst_length_list()
+        self.textBox.append('Average = {0:.3f} millisec'.
+            format(np.average(blength)))
+        self.textBox.append('Range: {0:.3f}'.format(min(blength)) +
+            ' to {0:.3f} millisec'.format(max(blength)))
+
+        x, y = dataset.prepare_hist(blength, self.tres)
+
+        self.axes.clear()
+        self.axes.semilogx(x, y, 'b-')
+        self.axes.set_yscale('sqrtscale')
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
 
     def onPlotDataOpen(self):
         """

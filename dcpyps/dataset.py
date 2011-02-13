@@ -246,9 +246,9 @@ class TimeSeries(object):
         tcrit = tcrit * 1000
 
         #defaultdef = True # True if default burst definition accepted.
-        badend = True # True if unusable shut time is valid end of burst.
+        #badend = True # True if unusable shut time is valid end of burst.
         firstgapfound = False
-        gap1 = 0
+        #gap1 = 0
         bursts = {}
         burstsopts = {}
 
