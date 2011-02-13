@@ -19,6 +19,9 @@ try:
     from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
     from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
     from matplotlib.figure import Figure
+    from matplotlib import scale as mscale
+    from matplotlib import transforms as mtransforms
+    from matplotlib import ticker
 except:
     raise ImportError("matplotlib module is missing")
 
@@ -95,6 +98,7 @@ class QMatGUI(QMainWindow):
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.mplTools = NavigationToolbar(self.canvas, self.mainFrame)
+        mscale.register_scale(SquareRootScale)
 
         self.textBox = QTextBrowser()
         str1, str2, str3 = self.startInfo()
@@ -254,6 +258,7 @@ class QMatGUI(QMainWindow):
 
         self.axes.clear()
         self.axes.semilogx(x, y, 'b-')
+        self.axes.set_yscale('sqrtscale')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
@@ -273,6 +278,7 @@ class QMatGUI(QMainWindow):
 
         self.axes.clear()
         self.axes.semilogx(x, y, 'b-')
+        self.axes.set_yscale('sqrtscale')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
@@ -922,3 +928,57 @@ class AboutDlg(QDialog):
         movie_screen.setMovie(movie)
         movie.start()
         return movie_screen
+
+class SquareRootScale(mscale.ScaleBase):
+    """
+    Class for generating sqare root scaled axis for probability density
+    function plots.
+    """
+
+    name = 'sqrtscale'
+    def __init__(self, axis, **kwargs):
+        mscale.ScaleBase.__init__(self)
+    def get_transform(self):
+        """
+        Set the actual transform for the axis coordinates.
+        """
+        return self.SqrTransform()
+    def set_default_locators_and_formatters(self, axis):
+        """
+        Set the locators and formatters to reasonable defaults.
+        """
+        axis.set_major_formatter(ticker.ScalarFormatter())
+
+    class SqrTransform(mtransforms.Transform):
+        """
+        """
+        input_dims = 1
+        output_dims = 1
+        is_separable = True
+
+        def __init__(self):
+            mtransforms.Transform.__init__(self)
+        def transform(self, a):
+            """
+            Take numpy array and return transformed copy.
+            """
+            return np.sqrt(a)
+        def inverted(self):
+            """
+            Get inverse transform.
+            """
+            return SquareRootScale.InvertedSqrTransform()
+
+    class InvertedSqrTransform(mtransforms.Transform):
+        """
+        """
+        input_dims = 1
+        output_dims = 1
+        is_separable = True
+
+        def __init__(self):
+            mtransforms.Transform.__init__(self)
+        def transform(self, a):
+            return np.power(a, 2)
+        def inverted(self):
+            return SquareRootScale.SqrTransform()
