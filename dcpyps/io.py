@@ -481,6 +481,8 @@ def scn_read_header (fname):
     ints.fromfile(f,1)
     header['iscanver'] = ints.pop()
     # new scan files- version 104, 103 (simulated) and -103
+    version = header['iscanver']
+    #print 'version', version
 
     ints.fromfile(f,1)
     ioffset = ints.pop()
@@ -492,6 +494,32 @@ def scn_read_header (fname):
 
     header['title'] = f.read(70)
     header['date'] = f.read(11)
+
+    if version == -103:
+        header['tapeID'] = f.read(24)
+        ints.fromfile(f,1)
+        header['ipatch'] = ints.pop()
+        floats.fromfile(f,1)
+        header['Emem'] = floats.pop()
+        ints.fromfile(f,1)
+        header['unknown1'] = ints.pop()
+        floats.fromfile(f,1)
+        header['avamp'] = floats.pop()
+        floats.fromfile(f,1)
+        header['rms'] = floats.pop()
+        floats.fromfile(f,1)
+        header['ffilt'] = floats.pop()
+        floats.fromfile(f,1)
+        calfac2 = floats.pop()
+        header['calfac2'] = calfac2
+        floats.fromfile(f,1)
+        header['treso'] = floats.pop()
+        floats.fromfile(f,1)
+        header['tresg'] = floats.pop()
+
+        f.close()
+        return ioffset, nint, calfac2, header
+
     header['defname'] = f.read(6)
     header['tapeID'] = f.read(24)
     ints.fromfile(f,1)
