@@ -54,13 +54,11 @@ class TimeSeries(object):
 
         while not firstResolved:
             n += 1
-            if ((self.itint[n] > tres) and (self.iprops[n] != 8) and
-                (self.itint[n-1] > tres) and (self.iprops[n-1] != 8)):
+            if ((self.itint[n] > tres) and (self.iprops[n] != 8)): # and
+                #(self.itint[n-1] > tres) and (self.iprops[n-1] != 8)):
                 firstResolved = True    # first interval is usable and resolvable
                 #print 'first usable interval is ', n
-            else: n += 1
-        
-        n += 1
+            #else: n += 1
 
         # NOW START TO LOOK FOR UNRESOLVABLE INTERVALS
 
@@ -92,6 +90,8 @@ class TimeSeries(object):
         ttemp = rtint[-1]
         aavtemp = rampl[-1] * rtint[-1]
 
+        n += 1
+
         while n < len(self.itint):
 
             if self.itint[n] < tres:
@@ -102,6 +102,14 @@ class TimeSeries(object):
                     rampl[-1] = aavtemp / ttemp
                 if self.iprops[n] == 8:
                     rprops[-1] = 8
+                if (n < (len(self.itint)-1) and self.iampl[n+1] != 0 and
+                    self.iampl[n] == 0 and self.itint[n+1] > tres):
+                    aavtemp = aavtemp + self.iampl[n+1] * self.itint[n+1]
+                    ttemp = ttemp + self.itint[n+1]
+                    rampl[-1] = aavtemp / ttemp
+                    rtint[-1] = rtint[-1] + self.itint[n+1]
+                    n += 1
+
                 n += 1
             else:
                 if (self.iprops[n] == 4 and rampl[-1] != 0 and
