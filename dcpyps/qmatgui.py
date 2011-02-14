@@ -250,7 +250,11 @@ class QMatGUI(QMainWindow):
         self.textBox.append('\n\n\t===== PLOTTING DATA: BURST LENGTH =====')
         self.textBox.append("\nFirst burst starts only after gap > tcrit is found.")
         self.textBox.append("Unusable shut time treated as a valid end of burst.")
-        self.tcrit = 0.004
+
+        dialog = BurstPlotDlg(self)
+        if dialog.exec_():
+            self.tcrit = dialog.return_par()
+
         self.textBox.append('\nCritical gap length = {0:.3f} millisec'.
             format(self.tcrit * 1000))
         self.rec1.get_bursts(self.tcrit)
@@ -847,7 +851,43 @@ class CJumpParDlg(QDialog):
         """
         return self.par
 
+class BurstPlotDlg(QDialog):
+    """
+    Dialog to input burst separation and plotting parameters.
+    """
+    def __init__(self, parent=None):
+        super(BurstPlotDlg, self).__init__(parent)
 
+        self.tcrit = 4 # Critical time interval.
+
+        layoutMain = QVBoxLayout()
+        layoutMain.addWidget(QLabel("Define burst:"))
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Critical time interval (millisec):"))
+        self.tcritEdit = QLineEdit(unicode(4))
+        self.tcritEdit.setMaxLength(10)
+        self.connect(self.tcritEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.tcritEdit)
+        layoutMain.addLayout(layout)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+
+        self.setLayout(layoutMain)
+        self.setWindowTitle("Define burst...")
+
+    def on_par_changed(self):
+        self.tcrit = int(self.tcritEdit.text())
+
+    def return_par(self):
+        return self.tcrit * 0.001 # Return tcrit in sec
 
 class MecListDlg(QDialog):
     """
