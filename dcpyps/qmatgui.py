@@ -480,24 +480,24 @@ class QMatGUI(QMainWindow):
         ipdf = np.zeros(points)
         for i in range(points):
             t[i] = tmin * pow(10, (i * step))
-            ipdf[i] = np.sqrt(t[i] * scl.pdf_open_time(self.mec, t[i]) * fac)
+            ipdf[i] = t[i] * scl.pdf_open_time(self.mec, t[i]) * fac
 
         # Asymptotic pdf
         apdf = np.zeros(points)
         for i in range(points):
-            apdf[i] = np.sqrt(t[i] *
-                scl.pdf_exponential(t[i], self.tres, roots, areas))
+            apdf[i] = t[i] * scl.pdf_exponential(t[i], self.tres, roots, areas)
 
         # Exact pdf
         epdf = np.zeros(points)
         for i in range(points):
-            epdf[i] = np.sqrt(t[i] * scl.pdf_exact(t[i], self.tres,
+            epdf[i] = (t[i] * scl.pdf_exact(t[i], self.tres,
                 roots, areas, eigvals, gamma00, gamma10, gamma11))
 
         t = t * 1000 # x scale in millisec
         #self.textBox.append(text1)
         self.axes.clear()
         self.axes.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
+        self.axes.set_yscale('sqrtscale')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
@@ -576,24 +576,24 @@ class QMatGUI(QMainWindow):
         ipdf = np.zeros(points)
         for i in range(points):
             t[i] = tmin * pow(10, (i * step))
-            ipdf[i] = np.sqrt(t[i] * scl.pdf_shut_time(self.mec, t[i]) * fac)
+            ipdf[i] = t[i] * scl.pdf_shut_time(self.mec, t[i]) * fac
 
         # Asymptotic pdf
         apdf = np.zeros(points)
         for i in range(points):
-            apdf[i] = np.sqrt(t[i] *
-                scl.pdf_exponential(t[i], self.tres, roots, areas))
+            apdf[i] = t[i] * scl.pdf_exponential(t[i], self.tres, roots, areas)
 
         # Exact pdf
         epdf = np.zeros(points)
         for i in range(points):
-            epdf[i] = np.sqrt(t[i] * scl.pdf_exact(t[i], self.tres,
+            epdf[i] = (t[i] * scl.pdf_exact(t[i], self.tres,
                 roots, areas, eigvals, gamma00, gamma10, gamma11))
 
         t = t * 1000 # x scale in millisec
         #self.textBox.append(text1)
         self.axes.clear()
         self.axes.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
+        self.axes.set_yscale('sqrtscale')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
@@ -641,12 +641,13 @@ class QMatGUI(QMainWindow):
         fbst = np.zeros(points)
         for i in range(points):
             t[i] = tmin * pow(10, (i * step))
-            fbst[i] = np.sqrt(t[i] * scl.pdf_burst_length(self.mec, t[i]))
+            fbst[i] = t[i] * scl.pdf_burst_length(self.mec, t[i])
         t = t * 1000 # x axis in millisec
         fbrst = fbst
         
         self.axes.clear()
         self.axes.semilogx(t, fbrst, 'b-')
+        self.axes.set_yscale('sqrtscale')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
