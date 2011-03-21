@@ -676,3 +676,45 @@ def bisect(s1, s2, tres, Q11, Q22, Q21, Q12, k1, k2):
 
     #if verbose: print 'function solved in', ns, 'itterations'
     return sout
+
+
+def f0(u, eigvals, gamma00):
+    """
+    A component of exact time pdf (Eq. 22, HJC92).
+
+    Parameters
+    ----------
+    u : float
+        u = t - tres
+    eigvals : array_like, shape (k,)
+        Eigenvalues of -Q matrix.
+    gama00 : list of floats
+        Constants for the exact open/shut time pdf.
+
+    Returns
+    -------
+    f : float
+    """
+
+    f = np.sum(gamma00 * np.exp(-eigvals * u))
+    return f
+
+def f1(u, eigvals, gamma10, gamma11):
+    """
+    A component of exact time pdf (Eq. 22, HJC92).
+
+    Parameters
+    ----------
+    u : float
+        u = t - tres
+    eigvals : array_like, shape (k,)
+        Eigenvalues of -Q matrix.
+    gama10, gama11 : lists of floats
+        Constants for the exact open/shut time pdf.
+
+    Returns
+    -------
+    f : float
+    """
+    f = np.sum((gamma10 + gamma11 * u) * np.exp(-eigvals * u))
+    return f

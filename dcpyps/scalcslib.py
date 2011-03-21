@@ -729,10 +729,10 @@ def pdf_exact(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
     if t < tres:
         f = 0
     elif ((tres < t) and (t < (2 * tres))):
-        f = f0((t - tres), eigvals, gamma00)
+        f = qml.f0((t - tres), eigvals, gamma00)
     elif ((tres * 2) < t) and (t < (3 * tres)):
-        ff0 = f0((t - tres), eigvals, gamma00)
-        ff1 = f1((t - 2 * tres), eigvals, gamma10, gamma11)
+        ff0 = qml.f0((t - tres), eigvals, gamma00)
+        ff1 = qml.f1((t - 2 * tres), eigvals, gamma10, gamma11)
         f = ff0 - ff1
     else:
         f = pdf_exponential(t, tres, roots, areas)
@@ -821,49 +821,4 @@ def exact_pdf_coef(mec, tres, open):
             gama11.append(np.dot(np.dot(phiF, C11[i]), M1)[0][0])
 
     return eigen, gama00, gama10, gama11
-
-def f0(u, eigvals, gamma00):
-    """
-    A component of exact time pdf (Eq. 22, HJC92).
-
-    Parameters
-    ----------
-    u : float
-        u = t - tres
-    eigvals : array_like, shape (k,)
-        Eigenvalues of -Q matrix.
-    gama00 : list of floats
-        Constants for the exact open/shut time pdf.
-
-    Returns
-    -------
-    f : float
-    """
-
-    f = 0.0
-    for i in range(len(gamma00)):
-        f = f + gamma00[i] * np.exp(-eigvals[i] * u)
-    return f
-
-def f1(u, eigvals, gamma10, gamma11):
-    """
-    A component of exact time pdf (Eq. 22, HJC92).
-
-    Parameters
-    ----------
-    u : float
-        u = t - tres
-    eigvals : array_like, shape (k,)
-        Eigenvalues of -Q matrix.
-    gama10, gama11 : lists of floats
-        Constants for the exact open/shut time pdf.
-
-    Returns
-    -------
-    f : float
-    """
-    f = 0.0
-    for i in range(len(gamma10)):
-        f = f + (gamma10[i] + gamma11[i] * u) * np.exp(-eigvals[i] * u)
-    return f
 
