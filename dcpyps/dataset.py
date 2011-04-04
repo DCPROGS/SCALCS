@@ -331,6 +331,7 @@ class TimeSeries(object):
                     meanamp = 0 # mean amplitude of burst
                     openburst = 0 # open time per burst
                     burstlen = 0 # burst len
+                    burst.append(openinglength)
                     openinglength = 0
                     # TODO: bad/unusable gap
                     bursts[burstid] = burst
@@ -340,6 +341,7 @@ class TimeSeries(object):
 
         self.bursts = bursts
         self.burstsopts = burstsopts
+        self.tcrit = tcrit * 0.001 # convert to sec
 
     def get_burst_length_list(self):
         n = len(self.bursts)
