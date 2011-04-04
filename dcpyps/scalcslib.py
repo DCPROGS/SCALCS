@@ -63,7 +63,7 @@ def hjc_mean_time(mec, tres, open):
     eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
 
     if open:
-        phiA = qml.phiHJC(eGAF, eGFA, mec.kA, mec.kF)
+        phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
         QexpQF = np.dot(mec.QAF, expQFF)
         DARS = qml.dARSdS(tres, mec.QAA, mec.QAF, mec.QFF, mec.QFA,
             GAF, GFA, expQFF, expQAA, mec.kA, mec.kF)
@@ -71,7 +71,7 @@ def hjc_mean_time(mec, tres, open):
         # meanOpenTime = tres + phiA * DARS * QexpQF * uF
         mean = tres + np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))
     else:
-        phiF = qml.phiHJC(eGFA, eGAF, mec.kF, mec.kA)
+        phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
         QexpQA = np.dot(mec.QFA, expQAA)
         DFRS = qml.dARSdS(tres, mec.QFF, mec.QFA, mec.QAA, mec.QAF,
             GFA, GAF, expQAA, expQFF, mec.kF, mec.kA)
@@ -79,7 +79,7 @@ def hjc_mean_time(mec, tres, open):
         # meanShutTime = tres + phiF * DFRS * QexpQA * uA
         mean = tres + np.dot(phiF, np.dot(np.dot(DFRS, QexpQA), uA))
 
-    return mean[0,0]
+    return mean[0]
 
 def popen(mec, tres, conc, eff='c'):
     """
@@ -643,7 +643,7 @@ def asymptotic_areas(mec, tres, roots, open):
     expQ11 = qml.expQt(Q11, tres)
     eG12 = qml.eGs(G12, G21, k1, k2, expQ22)
     eG21 = qml.eGs(G21, G12, k2, k1, expQ11)
-    phi1 = qml.phiHJC(eG12, eG21, k1, k2)[0]
+    phi1 = qml.phiHJC(eG12, eG21, k1)
 
     areas = np.zeros(k1)
     rowA = np.zeros((k1,k1))
@@ -766,8 +766,8 @@ def exact_pdf_coef(mec, tres, open):
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
     eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
     eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
-    phiA = qml.phiHJC(eGAF, eGFA, mec.kA, mec.kF)
-    phiF = qml.phiHJC(eGFA, eGAF, mec.kF, mec.kA)
+    phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
+    phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
 
     eigen, A = qml.eigs(-mec.Q)
     # Maybe needs check for equal eigenvalues.
@@ -810,15 +810,15 @@ def exact_pdf_coef(mec, tres, open):
     if open:
         M1 = np.dot(np.dot(mec.QAF, expQFF), uF)
         for i in range(k):
-            gama00.append(np.dot(np.dot(phiA, C00[i]), M1)[0][0])
-            gama10.append(np.dot(np.dot(phiA, C10[i]), M1)[0][0])
-            gama11.append(np.dot(np.dot(phiA, C11[i]), M1)[0][0])
+            gama00.append(np.dot(np.dot(phiA, C00[i]), M1)[0])
+            gama10.append(np.dot(np.dot(phiA, C10[i]), M1)[0])
+            gama11.append(np.dot(np.dot(phiA, C11[i]), M1)[0])
     else:
         M1 = np.dot(np.dot(mec.QFA, expQAA), uA)
         for i in range(k):
-            gama00.append(np.dot(np.dot(phiF, C00[i]), M1)[0][0])
-            gama10.append(np.dot(np.dot(phiF, C10[i]), M1)[0][0])
-            gama11.append(np.dot(np.dot(phiF, C11[i]), M1)[0][0])
+            gama00.append(np.dot(np.dot(phiF, C00[i]), M1)[0])
+            gama10.append(np.dot(np.dot(phiF, C10[i]), M1)[0])
+            gama11.append(np.dot(np.dot(phiF, C11[i]), M1)[0])
 
     return eigen, gama00, gama10, gama11
 

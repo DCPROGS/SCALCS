@@ -152,35 +152,35 @@ def expQt(M, t):
                 expM[i, j] += A[m, i, j] * np.exp(eigvals[m] * t)
     return expM
 
-def phiHJC(eG12, eG21, k1, k2):
+def phiHJC(eGAF, eGFA, kA):
     """
     Calculate equilibrium probability vector phi by solving
         phi*(I-eG12*eG21)=0 (Eq. 10, HJC92)
 
     Parameters
     ----------
-    eG12 : array_like, shape (k1, k2)
-    eG21 : array_like, shape (k2, k1)
-    k1 : int
+    eGAF : array_like, shape (kA, kF)
+    eGFA : array_like, shape (kF, kA)
+    kA : int
         A number of open/shut states in kinetic scheme.
-    k2 : int
+    kF : int
         A number of shut/open states in kinetic scheme.
 
     Returns
     -------
-    phi : array_like, shape (k1)
+    phi : array_like, shape (kA)
     """
 
-    if k1 == 1:
+    if kA == 1:
         phi = 1
         return phi
 
-    Qsub = np.eye(k1) - np.dot(eG12, eG21)
-    u = np.ones((k1,1))
+    Qsub = np.eye(kA) - np.dot(eGAF, eGFA)
+    u = np.ones((kA, 1))
     S = np.concatenate((Qsub, u), 1)
     phi = np.dot(u.transpose(), nplin.inv(np.dot(S, S.transpose())))
 
-    return phi
+    return phi[0]
 
 def dARSdS(tres, Q11, Q12, Q22, Q21, G12, G21, expQ22, expQ11, k1, k2):
     r"""
