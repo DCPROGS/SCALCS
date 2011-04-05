@@ -718,3 +718,161 @@ def f1(u, eigvals, gamma10, gamma11):
     """
     f = np.sum((gamma10 + gamma11 * u) * np.exp(-eigvals * u))
     return f
+
+def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):
+    """
+
+    Parameters
+    ----------
+    t : float
+        Time interval.
+    tres : float
+        Time resolution (dead time).
+    roots : array_like, shape (1, kA)
+        Roots of the asymptotic pdf.
+    XAF : array_like, shape(kA, kA, kF)
+    eigvals : array_like, shape (1, k)
+        Eigenvalues of -Q matrix.
+    Z00, Z10, Z11 : array_like, shape (k, kA, kF)
+        Z constants for the exact open time pdf.
+
+    Returns
+    -------
+    eGAFt : array_like, shape(kA, kA, kF)
+    """
+
+    eGAFt = np.zeros(XAF.shape)
+
+    if t < tres * 3: # exact
+        if t < tres * 2:
+            eGAFt = qml.f0((t - tres), eigvals, Z00)
+        else:
+            ff0 = qml.f0((t - tres), eigvals, Z00)
+            ff1 = qml.f1((t - 2 * tres), eigvals, Z10, Z11)
+            eGAFt = ff0 - ff1
+    else: # asymptotic
+        for i in range(len(Aroots)):
+            eGAFt += XAF[i] * math.exp(-roots[i] * (t - tres))
+
+    return eGAFt
+
+
+def XAF(tres, roots, QAA, QFF, QAF, QFA):
+    """
+
+    Parameters
+    ----------
+    tres : float
+        Time resolution (dead time).
+    roots : array_like, shape (1, kA)
+        Roots of the asymptotic open time pdf.
+    QAA, QFF, QAF, QFA : array_like
+        Submatrices of Q.
+
+    Returns
+    -------
+    X : array_like, shape(kA, kA, kF)
+    """
+
+    kA = QAA.shape[0]
+    kF = QFF.shape[0]
+    expQFF = qml.expQt(QFF, tres)
+    X = np.zeros((kA, kA, kF))
+    rowA = np.zeros((kA, kA))
+    colA = np.zeros((kA, kA))
+    for i in range(kA):
+        WAA = qml.W(roots[i], tres, QFF, QAA, QAF, QFA, kF, kA)
+        rowA[i] = qml.pinf(WAA)
+    colA = np.transpose(nplin.inv(rowA))
+
+    for i in range(kA):
+        nom = np.dot(np.dot((colA[i].reshape((kA, 1)) * rowA[i]), QAF), expQFF)
+        W1A = qml.dW(roots[i], tres, QAF, QFF, QFA, kA, kF)
+        denom = np.dot(np.dot(rowA[i], W1A), colA[i])
+        X[i] = nom / denom
+    return X
+
+def Zxx(t, Q, kopen, QFF, QAF, QFA):
+    """
+    Calculate Z constants for the exact open time pdf (Eq. 3.22, HJC90).
+    Exchange A and F for shut time pdf.
+
+    Parameters
+    ----------
+    t : float
+        Time.
+    Q : array_like, shape (k, k)
+    kopen : int
+        Number of open states.
+    QFF, QAF, QFA : array_like
+        Submatrices of Q. 
+
+    Returns
+    -------
+    eigen : array_like, shape (k,)
+        Eigenvalues of -Q matrix.
+    Z00, Z10, Z11 : array_like, shape (k, kA, kF)
+        Z constants for the exact open time pdf.
+    """
+
+    k = Q.shape[0]
+    kA = k - QFF.shape[0]
+    expQFF = expQt(QFF, t)
+    eigen, A = eigs(-Q)
+    # Maybe needs check for equal eigenvalues.
+
+    # Calculate Dj (Eq. 3.16, HJC90) and Cimr (Eq. 3.18, HJC90).
+    D = []
+    C00 = []
+    C11 = []
+    C10 = []
+    for i in range(k):
+        D.append(np.dot(np.dot(A[i, :kopen, kopen:], expQFF), QFA))
+        C00.append(A[i, :kopen, :kopen])
+        C11.append(np.dot(D[i], C00[i]))
+    for i in range(k):
+        S = np.zeros((kA, kA))
+        for j in range(k):
+            if j != i:
+                S += ((np.dot(D[i], C00[j]) + np.dot(D[j], C00[i])) /
+                    (eigen[j] - eigen[i]))
+        C10.append(S)
+
+    Z00 = []
+    Z10 = []
+    Z11 = []
+    M = np.dot(QAF, expQFF)
+    for i in range(k):
+        Z00.append(np.dot(C00[i], M))
+        Z10.append(np.dot(C10[i], M))
+        Z11.append(np.dot(C11[i], M))
+
+    return eigen, Z00, Z10, Z11
+
+def GAMAxx(Z00, Z10, Z11, phiA):
+    """
+    Calculate gama constants for the exact open time pdf (Eq. 3.22, HJC90).
+    Exchange A and F for shut time pdf.
+
+    Parameters
+    ----------
+    Z00, Z10, Z11 : array_like, shape (k, kA, kF)
+        Z constants for the exact open/shut time pdf.
+    phiA : array_like, shape (1, kA)
+        Initial vector for openings.
+
+    Returns
+    -------
+    gama00, gama10, gama11 : array_like, shape (1, k)
+        Gama constants.
+    """
+    
+    uA = np.ones((phiA.shape[0], 1))
+    gama00 = []
+    gama10 = []
+    gama11 = []
+    for i in range(len(Z00)):
+        gama00.append(np.dot(np.dot(phiA, Z00[i]), uA))
+        gama10.append(np.dot(np.dot(phiA, Z10[i]), uA))
+        gama11.append(np.dot(np.dot(phiA, Z11[i]), uA))
+    return gama00, gama10, gama11

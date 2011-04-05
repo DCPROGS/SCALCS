@@ -822,3 +822,116 @@ def exact_pdf_coef(mec, tres, open):
 
     return eigen, gama00, gama10, gama11
 
+def ini_vectors(mec, tres, tcrit, is_chsvec=False):
+    """
+    Get initial and final vectors, startB and endB, for HJC likelihood
+    calculation (Eqs. 5.5 or 5.7, CHS96).
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution (dead time).
+    tcrit : float
+        Critical gap length (critical shut time).
+    is_chsvec : bool
+        True if CHS vectors should be used (Eq. 5.7, CHS96).
+
+    Returns
+    -------
+    startB : ndarray, shape (1, kA)
+        Initial vector for openings or initial CHS vector (Eq. 5.11, CHS96).
+    endB : ndarray, shape (kF, 1)
+        Column of 1's or final CHS vector (Eq. 5.8, CHS96).
+    """
+
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+    expQFF = qml.expQt(mec.QFF, tres)
+    expQAA = qml.expQt(mec.QAA, tres)
+    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
+    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
+    uA = np.ones((mec.kA, 1))
+
+    if is_chsvec:
+        roots = scl.asymptotic_roots(mec, tres, False)
+        HFA = np.zeros((mec.kF, mec.kA))
+        XFA = XAF(tres, roots, mec.QFF, mec.QAA, mec.QFA,
+            mec.QAF)
+        for i in range(mec.kF):
+            coeff = -math.exp(roots[i] * (tcrit - tres)) / roots[i]
+            HFA += coeff * XFA[i]
+        phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
+
+        startB = np.dot(phiF, HFA) / np.dot(np.dot(phiF, HFA), uA)
+        endB = np.dot(HFA, uA)
+    else:
+        startB = qml.phiHJC(eGAF, eGFA, mec.kA)
+        endB = np.ones((mec.kF, 1))
+
+    return startB, endB
+
+def HJClik(bursts, mec, tres, is_chsvec=False):
+    """
+    Calculate likelihood for a series of open and shut times using HJC missed
+    events probability density functions (first two dead time intervals- exact
+    solution, then- asymptotic).
+
+    Lik = phi * eGAF(t1) * eGFA(t2) * eGAF(t3) * ... * eGAF(tn) * uF
+    where t1, t3,..., tn are open times; t2, t4,..., t(n-1) are shut times.
+
+    Gaps > tcrit are treated as unusable (e.g. contain double or bad bit of
+    record, or desens gaps that are not in the model, or gaps so long that
+    next opening may not be from the same channel). However this calculation
+    DOES assume that all the shut times predicted by the model are present
+    within each group. The series of multiplied likelihoods is terminated at
+    the end of the opening before an unusable gap. A new series is then
+    started, using appropriate initial vector to give Lik(2), ... At end
+    these are multiplied to give final likelihood.
+
+    Parameters
+    ----------
+    bursts : dictionary
+        A dictionary containing lists of open and shut intervals.
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution (dead time).
+    is_chsvec : bool
+        True if CHS vectors should be used (Eq. 5.7, CHS96).
+
+
+    Returns
+    -------
+    loglik : float
+        Log-likelihood.
+    """
+
+    # TODO: Here reset rates which reached limit or are negative.
+    # TODO: Make new Q from theta.
+    # TODO: Errors.
+
+    startB, endB = ini_vectors(mec, tres, tcrit, is_chsvec)
+    Aeigvals, AZ00, AZ10, AZ11 = Zxx(tres, mec.Q, mec.kA, mec.QFF,
+        mec.QAF, mec.QFA)
+    Aroots = scl.asymptotic_roots(mec, tres, True)
+    Axaf = XAF(tres, Aroots, mec.QAA, mec.QFF, mec.QAF, mec.QFA)
+    Feigvals, FZ00, FZ10, FZ11 = Zxx(tres, mec.Q, mec.kA, mec.QAA,
+        mec.QFA, mec.QAF)
+    Froots = scl.asymptotic_roots(mec, tres, False)
+    Fxaf = XAF(tres, Froots, mec.QFF, mec.QAA, mec.QFA, mec.QAF)
+
+    loglik = 0
+    for ind in bursts:
+        burst = bursts[ind]
+        grouplik = startB
+        for i in range(len(burst)):
+            t = burst[i] * 0.001
+            if i % 2 == 0: # open time
+                eGAFt = eGAF(t, tres, Aroots, Axaf, Aeigvals, AZ00, AZ10, AZ11)
+            else: # shut
+                eGAFt = eGAF(t, tres, Froots, Fxaf, Feigvals, FZ00, FZ10, FZ11)
+            grouplik = np.dot(grouplik, eGAFt)
+        grouplik = np.dot(grouplik, endB)
+        loglik += math.log10(grouplik[0])
+
+    return loglik
+
