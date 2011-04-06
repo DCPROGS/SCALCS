@@ -36,6 +36,8 @@ Phil Trans R Soc Lond A 354, 2555-2590.
 __author__="R.Lape, University College London"
 __date__ ="$11-Oct-2010 10:33:07$"
 
+import math
+
 import numpy as np
 from numpy import linalg as nplin
 
@@ -696,6 +698,8 @@ def f0(u, eigvals, gamma00):
     f : float
     """
 
+    print 'gamma00=', gamma00
+    print 'eigvals=', eigvals
     f = np.sum(gamma00 * np.exp(-eigvals * u))
     return f
 
@@ -717,6 +721,52 @@ def f1(u, eigvals, gamma10, gamma11):
     f : float
     """
     f = np.sum((gamma10 + gamma11 * u) * np.exp(-eigvals * u))
+    return f
+
+def lf0(u, eigvals, Z00):
+    """
+    A component of exact time pdf (Eq. 22, HJC92).
+
+    Parameters
+    ----------
+    u : float
+        u = t - tres
+    eigvals : array_like, shape (k,)
+        Eigenvalues of -Q matrix.
+    Z00 :
+        Constants for the exact open/shut time pdf.
+
+    Returns
+    -------
+    f : float
+    """
+
+    f = np.zeros(Z00[0].shape)
+    for i in range(len(eigvals)):
+        f += np.sum(Z00[i] *  np.exp(-eigvals[i] * u))
+    return f
+
+def lf1(u, eigvals, Z10, Z11):
+    """
+    A component of exact time pdf (Eq. 22, HJC92).
+
+    Parameters
+    ----------
+    u : float
+        u = t - tres
+    eigvals : array_like, shape (k,)
+        Eigenvalues of -Q matrix.
+    Z10, Z11 : lists of floats
+        Constants for the exact open/shut time pdf.
+
+    Returns
+    -------
+    f : float
+    """
+
+    f = np.zeros(Z10[0].shape)
+    for i in range(len(eigvals)):
+        f += np.sum((Z10[i] + Z11[i] * u) *  np.exp(-eigvals[i] * u))
     return f
 
 def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):
@@ -741,17 +791,17 @@ def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):
     eGAFt : array_like, shape(kA, kA, kF)
     """
 
-    eGAFt = np.zeros(XAF.shape)
+    eGAFt = np.zeros(XAF[0].shape)
 
     if t < tres * 3: # exact
         if t < tres * 2:
-            eGAFt = qml.f0((t - tres), eigvals, Z00)
+            eGAFt = lf0((t - tres), eigvals, Z00)
         else:
-            ff0 = qml.f0((t - tres), eigvals, Z00)
-            ff1 = qml.f1((t - 2 * tres), eigvals, Z10, Z11)
+            ff0 = lf0((t - tres), eigvals, Z00)
+            ff1 = lf1((t - 2 * tres), eigvals, Z10, Z11)
             eGAFt = ff0 - ff1
     else: # asymptotic
-        for i in range(len(Aroots)):
+        for i in range(len(roots)):
             eGAFt += XAF[i] * math.exp(-roots[i] * (t - tres))
 
     return eGAFt
@@ -776,18 +826,18 @@ def XAF(tres, roots, QAA, QFF, QAF, QFA):
 
     kA = QAA.shape[0]
     kF = QFF.shape[0]
-    expQFF = qml.expQt(QFF, tres)
+    expQFF = expQt(QFF, tres)
     X = np.zeros((kA, kA, kF))
     rowA = np.zeros((kA, kA))
     colA = np.zeros((kA, kA))
     for i in range(kA):
-        WAA = qml.W(roots[i], tres, QFF, QAA, QAF, QFA, kF, kA)
-        rowA[i] = qml.pinf(WAA)
+        WAA = W(roots[i], tres, QFF, QAA, QAF, QFA, kF, kA)
+        rowA[i] = pinf(WAA)
     colA = np.transpose(nplin.inv(rowA))
 
     for i in range(kA):
         nom = np.dot(np.dot((colA[i].reshape((kA, 1)) * rowA[i]), QAF), expQFF)
-        W1A = qml.dW(roots[i], tres, QAF, QFF, QFA, kA, kF)
+        W1A = dW(roots[i], tres, QAF, QFF, QFA, kA, kF)
         denom = np.dot(np.dot(rowA[i], W1A), colA[i])
         X[i] = nom / denom
     return X
@@ -815,8 +865,11 @@ def Zxx(t, Q, kopen, QFF, QAF, QFA):
         Z constants for the exact open time pdf.
     """
 
+    open = True
     k = Q.shape[0]
     kA = k - QFF.shape[0]
+    if kA != kopen:
+        open = False
     expQFF = expQt(QFF, t)
     eigen, A = eigs(-Q)
     # Maybe needs check for equal eigenvalues.
@@ -826,10 +879,16 @@ def Zxx(t, Q, kopen, QFF, QAF, QFA):
     C00 = []
     C11 = []
     C10 = []
+
     for i in range(k):
-        D.append(np.dot(np.dot(A[i, :kopen, kopen:], expQFF), QFA))
-        C00.append(A[i, :kopen, :kopen])
+        if open:
+            D.append(np.dot(np.dot(A[i, :kopen, kopen:], expQFF), QFA))
+            C00.append(A[i, :kopen, :kopen])
+        else:
+            D.append(np.dot(np.dot(A[i, kopen:, :kopen], expQFF), QFA))
+            C00.append(A[i, kopen:, kopen:])
         C11.append(np.dot(D[i], C00[i]))
+
     for i in range(k):
         S = np.zeros((kA, kA))
         for j in range(k):

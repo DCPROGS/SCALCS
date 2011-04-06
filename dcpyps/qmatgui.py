@@ -82,8 +82,12 @@ class QMatGUI(QMainWindow):
             self.onPlotDataShut)
         plotDataBurstAction = self.createAction("&Plot burst length distribution",
             self.onPlotDataBurst)
+        likelihoodAction = self.createAction("&Calculate likelihood",
+            self.onCalculateLikelihood)
+
         self.addActions(dataMenu, (openScanAction, imposeResolutionAction,
-            plotDataOpenAction, plotDataShutAction, plotDataBurstAction))
+            plotDataOpenAction, plotDataShutAction, plotDataBurstAction,
+            likelihoodAction))
 
         helpMenu = self.menuBar().addMenu('&Help')
         helpAboutAction = self.createAction("&About", self.onHelpAbout)
@@ -243,6 +247,18 @@ class QMatGUI(QMainWindow):
             format(len(self.rec1.itint)) + ' intervals were left {0:d}'.
             format(len(self.rec1.rampl)))
         self.rec1.get_open_shut_periods()
+
+    def onCalculateLikelihood(self):
+        """
+        """
+
+        self.mec.set_eff('c', self.conc)
+        loglik = scl.HJClik(self.rec1.bursts, self.mec, self.tres, self.tcrit,
+            True)
+
+        self.textBox.append('\nLog Likelihood = {0:.3f}'.
+            format(loglik))
+
 
     def onPlotDataBurst(self):
         """
