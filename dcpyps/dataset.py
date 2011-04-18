@@ -22,7 +22,7 @@ class TimeSeries(object):
 
     def impose_resolution(self, tres):
         """
-        Impose time resolution.        
+        Impose time resolution.
         """
 
         # Time intervals in SCN files are in millisec, thus, need tres in
@@ -91,65 +91,38 @@ class TimeSeries(object):
         aavtemp = rampl[-1] * rtint[-1]
 
         n += 1
-
         while n < len(self.itint):
 
             if self.itint[n] < tres:
-                rtint[-1] = rtint[-1] + self.itint[n]
+                rtint[-1] += self.itint[n]
                 if (rampl[-1] != 0) and (self.iampl[n] != 0):
-                    aavtemp = aavtemp + self.iampl[n] * self.itint[n]
-                    ttemp = ttemp + self.itint[n]
+                    aavtemp += self.iampl[n] * self.itint[n]
+                    ttemp += self.itint[n]
                     rampl[-1] = aavtemp / ttemp
-                if self.iprops[n] == 8:
-                    rprops[-1] = 8
-                if (n < (len(self.itint)-1) and self.iampl[n+1] != 0 and
-                    self.iampl[n] == 0 and self.itint[n+1] > tres):
-                    aavtemp = aavtemp + self.iampl[n+1] * self.itint[n+1]
-                    ttemp = ttemp + self.itint[n+1]
-                    rampl[-1] = aavtemp / ttemp
-                    rtint[-1] = rtint[-1] + self.itint[n+1]
-                    n += 1
 
-                n += 1
             else:
-                if (self.iprops[n] == 4 and rampl[-1] != 0 and
-                    rampl[-1] == self.iampl[n]):
-                    rtint[-1] = rtint[-1] + self.itint[n]
-                    #aavtemp = aavtemp + iampl[n]*itint[n]
-                    #ttemp = ttemp + itint[n]
-                    n += 1
-                elif (self.iprops[n] == 6 and rampl[-1] != 0 and
-                    rampl[-1] == self.iampl[n]):
-                    rtint[-1] = rtint[-1] + self.itint[n]
-                    #aavtemp = aavtemp + iampl[n]*itint[n]
-                    #ttemp = ttemp + itint[n]
-                    n += 1
-
-                elif self.iampl[n-1] == self.iampl[n]:    # elif
-                    rtint[-1] = rtint[-1] + self.itint[n]
-                    aavtemp = aavtemp + self.iampl[n] * self.itint[n]
-                    ttemp = ttemp + self.itint[n]
+                if ((self.iampl[n] == 0) and (rampl[-1] == 0)):
+                    rtint[-1] += self.itint[n]
+                elif (rampl[-1] == self.iampl[n]) and (rampl[-1] != 0):
+                    rtint[-1] += self.itint[n]
+                    aavtemp += self.iampl[n] * self.itint[n]
+                    ttemp += self.itint[n]
                     rampl[-1] = aavtemp / ttemp
-                    n += 1
-                elif self.iampl[n] == 0 and rampl[-1] == 0:
-                    rtint[-1] = rtint[-1] + self.itint[n]
-                    n += 1
                 else:
                     rtint.append(self.itint[n])
                     rampl.append(self.iampl[n])
                     rprops.append(self.iprops[n])
                     ttemp = rtint[-1]
                     aavtemp = rampl[-1] * rtint[-1]
-                    n += 1
 
-        #print n_sa, 'pairs of same amplitude openings.'
-        #print n_fx, 'removed openings of fixed amplitude '
+            if self.iprops[n] == 8:
+                rprops[-1] = 8
+            n += 1
+        # end of while
 
         self.rtint = rtint
         self.rampl = rampl
         self.rprops = rprops
-
-        #return otint, oampl, oprops
 
     def get_open_shut_periods(self):
         """

@@ -863,7 +863,7 @@ def ini_vectors(mec, tres, tcrit, is_chsvec=False):
             coeff = -math.exp(roots[i] * (tcrit - tres)) / roots[i]
             HFA += coeff * XFA[i]
         phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
-
+        
         startB = np.dot(phiF, HFA) / np.dot(np.dot(phiF, HFA), uA)
         endB = np.dot(HFA, uA)
     else:
@@ -900,6 +900,7 @@ def HJClik(bursts, mec, tres, tcrit, is_chsvec=False):
     is_chsvec : bool
         True if CHS vectors should be used (Eq. 5.7, CHS96).
 
+
     Returns
     -------
     loglik : float
@@ -911,6 +912,8 @@ def HJClik(bursts, mec, tres, tcrit, is_chsvec=False):
     # TODO: Errors.
 
     startB, endB = ini_vectors(mec, tres, tcrit, is_chsvec)
+    #print 'startB=', startB
+    #print 'endB=', endB
     Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(tres, mec.Q, mec.kA, mec.QFF,
         mec.QAF, mec.QFA)
     Aroots = asymptotic_roots(mec, tres, True)
@@ -922,21 +925,27 @@ def HJClik(bursts, mec, tres, tcrit, is_chsvec=False):
 
     loglik = 0
     for ind in bursts:
+        print '\n', ind, 'burst'
         burst = bursts[ind]
         grouplik = startB
         for i in range(len(burst)):
             t = burst[i] * 0.001
             if i % 2 == 0: # open time
+                print '\nOPEN t=', t
                 eGAFt = np.zeros(Axaf[0].shape)
                 eGAFt = qml.eGAF(t, tres, Aroots, Axaf, Aeigvals, AZ00, AZ10, AZ11)
+                print 'eGAFt=', eGAFt
             else: # shut
+                print'\n SHUT t=', t
                 eGAFt = np.zeros(Fxaf[0].shape)
                 eGAFt = qml.eGAF(t, tres, Froots, Fxaf, Feigvals, FZ00, FZ10, FZ11)
+                print 'eGAFt=', eGAFt
             grouplik = np.dot(grouplik, eGAFt)
+            print 'grouplik intermediate=', grouplik
         grouplik = np.dot(grouplik, endB)
-        loglik += math.log(grouplik[0])
+        print 'grouplik=', grouplik[0]
+        loglik += math.log10(grouplik[0])
+        print 'loglik=', loglik
+
     return loglik
 
-#            if grouplik.max() > 1e50:
-#                grouplik = grouplik * 1e-100
-#                print 'grouplik was scaled down'

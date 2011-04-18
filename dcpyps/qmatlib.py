@@ -743,7 +743,7 @@ def lf0(u, eigvals, Z00):
 
     f = np.zeros(Z00[0].shape)
     for i in range(len(eigvals)):
-        f += np.sum(Z00[i] *  np.exp(-eigvals[i] * u))
+        f += Z00[i] *  np.exp(-eigvals[i] * u)
     return f
 
 def lf1(u, eigvals, Z10, Z11):
@@ -766,7 +766,7 @@ def lf1(u, eigvals, Z10, Z11):
 
     f = np.zeros(Z10[0].shape)
     for i in range(len(eigvals)):
-        f += np.sum((Z10[i] + Z11[i] * u) *  np.exp(-eigvals[i] * u))
+        f += (Z10[i] + Z11[i] * u) *  np.exp(-eigvals[i] * u)
     return f
 
 def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):
@@ -792,7 +792,6 @@ def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):
     """
 
     eGAFt = np.zeros(XAF[0].shape)
-
     if t < tres * 3: # exact
         if t < tres * 2:
             eGAFt = lf0((t - tres), eigvals, Z00)
@@ -802,10 +801,8 @@ def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):
             eGAFt = ff0 - ff1
     else: # asymptotic
         for i in range(len(roots)):
-            eGAFt += XAF[i] * math.exp(-roots[i] * (t - tres))
-
+            eGAFt += XAF[i] * math.exp(roots[i] * (t - tres))
     return eGAFt
-
 
 def XAF(tres, roots, QAA, QFF, QAF, QFA):
     """
@@ -833,12 +830,16 @@ def XAF(tres, roots, QAA, QFF, QAF, QFA):
     for i in range(kA):
         WAA = W(roots[i], tres, QFF, QAA, QAF, QFA, kF, kA)
         rowA[i] = pinf(WAA)
-    colA = np.transpose(nplin.inv(rowA))
+        TrWAA = np.transpose(WAA)
+        colA[i] = pinf(TrWAA)
+    colA = np.transpose(colA)
 
     for i in range(kA):
-        nom = np.dot(np.dot((colA[i].reshape((kA, 1)) * rowA[i]), QAF), expQFF)
+        nom = np.dot(np.dot(np.dot(colA[:,i].reshape((kA, 1)),
+            rowA[i,:].reshape((1, kA))), QAF), expQFF)
         W1A = dW(roots[i], tres, QAF, QFF, QFA, kA, kF)
-        denom = np.dot(np.dot(rowA[i], W1A), colA[i])
+        denom = np.dot(np.dot(rowA[i,:].reshape((1, kA)), W1A),
+            colA[:,i].reshape((kA, 1)))
         X[i] = nom / denom
     return X
 
