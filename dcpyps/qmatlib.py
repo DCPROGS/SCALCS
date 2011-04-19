@@ -866,31 +866,3 @@ def Zxx(t, Q, kopen, QFF, QAF, QFA):
         Z11.append(np.dot(C11[i], M))
 
     return eigen, Z00, Z10, Z11
-
-def GAMAxx(Z00, Z10, Z11, phiA):
-    """
-    Calculate gama constants for the exact open time pdf (Eq. 3.22, HJC90).
-    Exchange A and F for shut time pdf.
-
-    Parameters
-    ----------
-    Z00, Z10, Z11 : array_like, shape (k, kA, kF)
-        Z constants for the exact open/shut time pdf.
-    phiA : array_like, shape (1, kA)
-        Initial vector for openings.
-
-    Returns
-    -------
-    gama00, gama10, gama11 : array_like, shape (1, k)
-        Gama constants.
-    """
-    
-    uA = np.ones((phiA.shape[0], 1))
-    gama00 = []
-    gama10 = []
-    gama11 = []
-    for i in range(len(Z00)):
-        gama00.append(np.dot(np.dot(phiA, Z00[i]), uA))
-        gama10.append(np.dot(np.dot(phiA, Z10[i]), uA))
-        gama11.append(np.dot(np.dot(phiA, Z11[i]), uA))
-    return gama00, gama10, gama11

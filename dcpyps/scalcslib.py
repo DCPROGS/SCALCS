@@ -739,7 +739,7 @@ def pdf_exact(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
         f = pdf_exponential(t, tres, roots, areas)
     return f
 
-def exact_pdf_coef(mec, tres, open):
+def GAMAxx(mec, tres, open):
     """
     Calculate gama constants for the exact open/shut time pdf (Eq. 3.22, HJC90).
 

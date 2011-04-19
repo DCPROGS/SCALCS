@@ -472,7 +472,7 @@ class QMatGUI(QMainWindow):
 
 
         # Exact pdf
-        eigvals, gamma00, gamma10, gamma11 = scl.exact_pdf_coef(self.mec,
+        eigvals, gamma00, gamma10, gamma11 = scl.GAMAxx(self.mec,
             self.tres, open)
         self.textBox.append('\nEXACT OPEN TIME DISTRIBUTION')
         self.textBox.append('eigen\tg00(m)\tg10(m)\tg11(m)')
@@ -567,7 +567,7 @@ class QMatGUI(QMainWindow):
         self.textBox.append('Mean shut time (ms) = {0:.6f}'.format(mean * 1000))
 
         # Exact pdf
-        eigvals, gamma00, gamma10, gamma11 = scl.exact_pdf_coef(self.mec,
+        eigvals, gamma00, gamma10, gamma11 = scl.GAMAxx(self.mec,
             self.tres, open)
         self.textBox.append('\nEXACT SHUT TIME DISTRIBUTION')
         self.textBox.append('eigen\tg00(m)\tg10(m)\tg11(m)')
