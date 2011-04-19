@@ -679,8 +679,7 @@ def bisect(s1, s2, tres, Q11, Q22, Q21, Q12, k1, k2):
     #if verbose: print 'function solved in', ns, 'itterations'
     return sout
 
-
-def f0(u, eigvals, gamma00):
+def f0(u, eigvals, Z00):
     """
     A component of exact time pdf (Eq. 22, HJC92).
 
@@ -690,55 +689,13 @@ def f0(u, eigvals, gamma00):
         u = t - tres
     eigvals : array_like, shape (k,)
         Eigenvalues of -Q matrix.
-    gama00 : list of floats
+    Z00 : list of array_likes
         Constants for the exact open/shut time pdf.
+        Z00 for likelihood calculation or gama00 for time distributions.
 
     Returns
     -------
-    f : float
-    """
-
-    print 'gamma00=', gamma00
-    print 'eigvals=', eigvals
-    f = np.sum(gamma00 * np.exp(-eigvals * u))
-    return f
-
-def f1(u, eigvals, gamma10, gamma11):
-    """
-    A component of exact time pdf (Eq. 22, HJC92).
-
-    Parameters
-    ----------
-    u : float
-        u = t - tres
-    eigvals : array_like, shape (k,)
-        Eigenvalues of -Q matrix.
-    gama10, gama11 : lists of floats
-        Constants for the exact open/shut time pdf.
-
-    Returns
-    -------
-    f : float
-    """
-    f = np.sum((gamma10 + gamma11 * u) * np.exp(-eigvals * u))
-    return f
-
-def lf0(u, eigvals, Z00):
-    """
-    A component of exact time pdf (Eq. 22, HJC92).
-
-    Parameters
-    ----------
-    u : float
-        u = t - tres
-    eigvals : array_like, shape (k,)
-        Eigenvalues of -Q matrix.
-    Z00 :
-        Constants for the exact open/shut time pdf.
-
-    Returns
-    -------
-    f : float
+    f : ndarray
     """
 
     f = np.zeros(Z00[0].shape)
@@ -746,7 +703,7 @@ def lf0(u, eigvals, Z00):
         f += Z00[i] *  np.exp(-eigvals[i] * u)
     return f
 
-def lf1(u, eigvals, Z10, Z11):
+def f1(u, eigvals, Z10, Z11):
     """
     A component of exact time pdf (Eq. 22, HJC92).
 
@@ -756,12 +713,13 @@ def lf1(u, eigvals, Z10, Z11):
         u = t - tres
     eigvals : array_like, shape (k,)
         Eigenvalues of -Q matrix.
-    Z10, Z11 : lists of floats
-        Constants for the exact open/shut time pdf.
+    Z10, Z11 (or gama10, gama11) : list of array_likes
+        Constants for the exact open/shut time pdf. Z10, Z11 for likelihood
+        calculation or gama10, gama11 for time distributions.
 
     Returns
     -------
-    f : float
+    f : ndarray
     """
 
     f = np.zeros(Z10[0].shape)

@@ -733,9 +733,8 @@ def pdf_exact(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
     elif ((tres < t) and (t < (2 * tres))):
         f = qml.f0((t - tres), eigvals, gamma00)
     elif ((tres * 2) < t) and (t < (3 * tres)):
-        ff0 = qml.f0((t - tres), eigvals, gamma00)
-        ff1 = qml.f1((t - 2 * tres), eigvals, gamma10, gamma11)
-        f = ff0 - ff1
+        f = (qml.f0((t - tres), eigvals, gamma00) -
+            qml.f1((t - 2 * tres), eigvals, gamma10, gamma11))
     else:
         f = pdf_exponential(t, tres, roots, areas)
     return f
@@ -763,64 +762,33 @@ def exact_pdf_coef(mec, tres, open):
     k = mec.Q.shape[0]
     expQFF = qml.expQt(mec.QFF, tres)
     expQAA = qml.expQt(mec.QAA, tres)
-    uF = np.ones((mec.kF,1))
-    uA = np.ones((mec.kA, 1))
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
     eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
     eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
-    phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
-    phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
-
-    eigen, A = qml.eigs(-mec.Q)
-    # Maybe needs check for equal eigenvalues.
-
-    # Calculate Dj (Eq. 3.16, HJC90) and Cimr (Eq. 3.18, HJC90).
-    D = []
-    C00 = []
-    C11 = []
-    C10 = []
-
-    for i in range(k):
-        if open:
-            D.append(np.dot(np.dot(A[i, :mec.kA, mec.kA:], expQFF), mec.QFA))
-            C00.append(A[i, :mec.kA, :mec.kA])
-            C11.append(np.dot(D[i], C00[i]))
-        else:
-            D.append(np.dot(np.dot(A[i, mec.kA:, :mec.kA], expQAA), mec.QAF))
-            C00.append(A[i, mec.kA:, mec.kA:])
-            C11.append(np.dot(D[i], C00[i]))
-    if open:
-        for i in range(k):
-            S = np.zeros((mec.kA, mec.kA))
-            for j in range(k):
-                if j != i:
-                    S = S + ((np.dot(D[i], C00[j]) + np.dot(D[j], C00[i])) /
-                        (eigen[j] - eigen[i]))
-            C10.append(S)
-    else:
-        for i in range(k):
-            S = np.zeros((mec.kF, mec.kF))
-            for j in range(k):
-                if j != i:
-                    S = S + ((np.dot(D[i], C00[j]) + np.dot(D[j], C00[i])) /
-                        (eigen[j] - eigen[i]))
-            C10.append(S)
 
     gama00 = []
     gama10 = []
     gama11 = []
+
     if open:
-        M1 = np.dot(np.dot(mec.QAF, expQFF), uF)
+        phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
+        eigen, Z00, Z10, Z11 = qml.Zxx(tres, mec.Q, mec.kA,
+            mec.QFF, mec.QAF, mec.QFA)
+        uF = np.ones((mec.kF,1))
         for i in range(k):
-            gama00.append(np.dot(np.dot(phiA, C00[i]), M1)[0])
-            gama10.append(np.dot(np.dot(phiA, C10[i]), M1)[0])
-            gama11.append(np.dot(np.dot(phiA, C11[i]), M1)[0])
+            gama00.append(np.dot(np.dot(phiA, Z00[i]), uF)[0])
+            gama10.append(np.dot(np.dot(phiA, Z10[i]), uF)[0])
+            gama11.append(np.dot(np.dot(phiA, Z11[i]), uF)[0])
+
     else:
-        M1 = np.dot(np.dot(mec.QFA, expQAA), uA)
+        phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
+        eigen, Z00, Z10, Z11 = qml.Zxx(tres, mec.Q, mec.kA,
+            mec.QAA, mec.QFA, mec.QAF)
+        uA = np.ones((mec.kA, 1))
         for i in range(k):
-            gama00.append(np.dot(np.dot(phiF, C00[i]), M1)[0])
-            gama10.append(np.dot(np.dot(phiF, C10[i]), M1)[0])
-            gama11.append(np.dot(np.dot(phiF, C11[i]), M1)[0])
+            gama00.append(np.dot(np.dot(phiF, Z00[i]), uA)[0])
+            gama10.append(np.dot(np.dot(phiF, Z10[i]), uA)[0])
+            gama11.append(np.dot(np.dot(phiF, Z11[i]), uA)[0])
 
     return eigen, gama00, gama10, gama11
 
@@ -933,10 +901,9 @@ def HJClik(bursts, mec, tres, tcrit, is_chsvec=False):
                 eGAFt = np.zeros(Fxaf[0].shape)
                 eGAFt = qml.eGAF(t, tres, Froots, Fxaf, Feigvals, FZ00, FZ10, FZ11)
             grouplik = np.dot(grouplik, eGAFt)
-        grouplik = np.dot(grouplik, endB)
-        loglik += math.log(grouplik[0])
-    return loglik
-
 #            if grouplik.max() > 1e50:
 #                grouplik = grouplik * 1e-100
 #                print 'grouplik was scaled down'
+        grouplik = np.dot(grouplik, endB)
+        loglik += math.log(grouplik[0])
+    return loglik
