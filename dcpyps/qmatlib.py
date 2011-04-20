@@ -752,11 +752,10 @@ def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):
     eGAFt = np.zeros(XAF[0].shape)
     if t < tres * 3: # exact
         if t < tres * 2:
-            eGAFt = lf0((t - tres), eigvals, Z00)
+            eGAFt = f0((t - tres), eigvals, Z00)
         else:
-            ff0 = lf0((t - tres), eigvals, Z00)
-            ff1 = lf1((t - 2 * tres), eigvals, Z10, Z11)
-            eGAFt = ff0 - ff1
+            eGAFt = (f0((t - tres), eigvals, Z00) -
+                f1((t - 2 * tres), eigvals, Z10, Z11))
     else: # asymptotic
         for i in range(len(roots)):
             eGAFt += XAF[i] * math.exp(roots[i] * (t - tres))
