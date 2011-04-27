@@ -169,6 +169,14 @@ class Mechanism(object):
                 self.Q[d,d] = 0
                 self.Q[d,d] = -np.sum(self.Q[d])
 
+    def printout(self, output=sys.stdout):
+        #TODO: need nice table format
+        print >> output, ('Values of rate constants [1/sec or 1/(Mole*sec)]:')
+        for rate in self.Rates:
+            print >> output, ('From ' + rate.State1.name + ' to ' +
+                rate.State2.name + '    ' + rate.name +
+                '     {0:.3f}'.format(rate.update(1.0)))
+
     def set_eff(self, eff, val):
         if eff not in self.efflist:
             sys.stderr.write("DCPYPS: None of the rates depends on effector %s\n" % eff)

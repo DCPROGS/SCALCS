@@ -107,6 +107,8 @@ class QMatGUI(QMainWindow):
         mscale.register_scale(SquareRootScale)
 
         self.textBox = QTextBrowser()
+        # Set here if printout to TextBox only or also to file or console.
+        self.log = PrintLog(self.textBox) #, sys.stdout)
         str1, str2, str3 = self.startInfo()
         self.textBox.append(str1)
         self.textBox.append(str2)
@@ -124,7 +126,7 @@ class QMatGUI(QMainWindow):
         self.connect(self.tresEdit, SIGNAL("editingFinished()"),
             self.on_settings_changed)
         tresBox.addWidget(self.tresEdit)
-        tresBox.addWidget(QLabel("mikrosec"))
+        tresBox.addWidget(QLabel("microsec"))
         tresBox.addStretch()
         plotSetLayout.addLayout(tresBox)
 
@@ -135,7 +137,7 @@ class QMatGUI(QMainWindow):
         self.connect(self.concEdit, SIGNAL("editingFinished()"),
             self.on_settings_changed)
         concBox.addWidget(self.concEdit)
-        concBox.addWidget(QLabel("mikroM"))
+        concBox.addWidget(QLabel("microM"))
         concBox.addStretch()
         plotSetLayout.addLayout(concBox)
 
@@ -742,7 +744,8 @@ class QMatGUI(QMainWindow):
         Called from menu Load|Demo.
         """
         self.mec = samples.CH82()
-        self.textBox.append("\nLoaded Demo.")
+        self.textBox.append("\nLoaded Demo.\n")
+        self.mec.printout(self.log)
         
     def onLoadMecFile(self):
         """
@@ -765,6 +768,20 @@ class QMatGUI(QMainWindow):
 
         self.textBox.append("Loaded mec: " + meclist[nrate][2])
         self.textBox.append("Loaded rates: " + meclist[nrate][3] + "\n")
+
+class PrintLog:
+    """
+    Write stdout to a QTextEdit.
+    out1 = QTextEdit, QTextBrowser, etc.
+    out2 = sys.stdout, file, etc.
+    """
+    def __init__(self, out1, out2=None):
+        self.out1 = out1
+        self.out2 = out2
+    def write(self, text):
+        self.out1.insertPlainText(text)
+        if self.out2:
+            self.out2.write(text)
 
 class CJumpParDlg(QDialog):
     """
