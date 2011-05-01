@@ -840,7 +840,9 @@ def ini_vectors(mec, tres, tcrit, is_chsvec=False):
 
     return startB, endB
 
-def HJClik(bursts, mec, tres, tcrit, is_chsvec=False):
+def HJClik(theta, bursts, opts):
+    #HJClik(bursts, mec, tres, tcrit, is_chsvec=False):
+    
     """
     Calculate likelihood for a series of open and shut times using HJC missed
     events probability density functions (first two dead time intervals- exact
@@ -874,6 +876,15 @@ def HJClik(bursts, mec, tres, tcrit, is_chsvec=False):
         Log-likelihood.
     """
 
+    mec = opts['mec']
+    conc = opts['conc']
+    tres = opts['tres']
+    tcrit = opts['tcrit']
+    is_chsvec = opts['isCHS']
+
+    mec.set_rates(theta)
+    mec.set_eff('c', conc)
+    
     # TODO: Here reset rates which reached limit or are negative.
     # TODO: Make new Q from theta.
     # TODO: Errors.
@@ -906,4 +917,4 @@ def HJClik(bursts, mec, tres, tcrit, is_chsvec=False):
 #                print 'grouplik was scaled down'
         grouplik = np.dot(grouplik, endB)
         loglik += math.log(grouplik[0])
-    return loglik
+    return -loglik

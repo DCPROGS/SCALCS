@@ -63,18 +63,19 @@ class Rate(object):
                  mr=False, func=multiply):
 
         self.name = name
-        try: 
-            # test whether ratepars is a sequence:
-            it = iter(ratepars)
-            # test whether this is a numpy array:
-            if isinstance(ratepars, np.ndarray):
-                self.ratepars = ratepars
-            else:
-                # else, convert:
-                self.ratepars = np.array(ratepars)
-        except TypeError:
-            # if not, convert to single-itemed list:
-            self.ratepars = np.array([ratepars,])
+        self.set_rate(ratepars)
+#        try:
+#            # test whether ratepars is a sequence:
+#            it = iter(ratepars)
+#            # test whether this is a numpy array:
+#            if isinstance(ratepars, np.ndarray):
+#                self.ratepars = ratepars
+#            else:
+#                # else, convert:
+#                self.ratepars = np.array(ratepars)
+#        except TypeError:
+#            # if not, convert to single-itemed list:
+#            self.ratepars = np.array([ratepars,])
 
         if not isinstance(State1, State) or not isinstance(State2, State):
             raise TypeError("DCPYPS: States have to be of class State")
@@ -91,6 +92,20 @@ class Rate(object):
 
     def update(self, val):
         return self.func(self.ratepars, val)
+
+    def set_rate(self, ratepars):
+        try:
+            # test whether ratepars is a sequence:
+            it = iter(ratepars)
+            # test whether this is a numpy array:
+            if isinstance(ratepars, np.ndarray):
+                self.ratepars = ratepars
+            else:
+                # else, convert:
+                self.ratepars = np.array(ratepars)
+        except TypeError:
+            # if not, convert to single-itemed list:
+            self.ratepars = np.array([ratepars,])
 
 def initQ(Rates, States):
     Q = np.zeros((len(States), len(States)), dtype=np.float64)
@@ -176,6 +191,20 @@ class Mechanism(object):
             print >> output, ('From ' + rate.State1.name + ' to ' +
                 rate.State2.name + '    ' + rate.name +
                 '     {0:.3f}'.format(rate.update(1.0)))
+
+    def set_rates(self, newrates):
+        iter = 0
+        for rate in self.Rates:
+            rate.set_rate(newrates[iter])
+            iter += 1
+
+    def get_rates(self):
+        iter = 0
+        rates = np.empty((len(self.Rates)))
+        for rate in self.Rates:
+            rates[iter] = rate.update(1.0)
+            iter += 1
+        return rates
 
     def set_eff(self, eff, val):
         if eff not in self.efflist:

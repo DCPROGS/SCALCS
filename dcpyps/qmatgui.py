@@ -27,6 +27,7 @@ except:
 
 import scalcslib as scl
 import cjumpslib as cjl
+import usefulib as ufl
 import dataset
 import io
 import samples
@@ -254,12 +255,27 @@ class QMatGUI(QMainWindow):
         """
         """
 
-        self.mec.set_eff('c', self.conc)
-        loglik = scl.HJClik(self.rec1.bursts, self.mec, self.tres, self.tcrit,
-            True)
+        #self.mec.set_eff('c', self.conc)
+        opts = {}
+        opts['mec'] = self.mec
+        opts['conc'] = self.conc
+        opts['tres'] = self.tres
+        opts['tcrit'] = self.tcrit
+        opts['isCHS'] = True
+
+        rates = self.mec.get_rates()
+
+        #loglik = scl.HJClik(rates, self.rec1.bursts, opts)
+        #self.rec1.bursts, self.mec, self.tres, self.tcrit,
+        #    True)
+
+        newrates, loglik = ufl.simplex(rates, self.rec1.bursts, scl.HJClik,
+            opts, verbose=0)
+        mec.set_rates(newrates)
 
         self.textBox.append('\nLog Likelihood = {0:.3f}'.
             format(loglik))
+        self.mec.printout(self.log)
 
 
     def onPlotDataBurst(self):
