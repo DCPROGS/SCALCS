@@ -188,17 +188,17 @@ class Mechanism(object):
         output.write('%s' % self)
 
     def set_rates(self, newrates):
-        iter = 0
+        it = 0
         for rate in self.Rates:
-            rate.set_rate(newrates[iter])
-            iter += 1
+            rate.set_rate(newrates[it])
+            it += 1
 
     def get_rates(self):
-        iter = 0
+        it = 0
         rates = np.empty((len(self.Rates)))
         for rate in self.Rates:
-            rates[iter] = rate.update(1.0)
-            iter += 1
+            rates[it] = rate.update(1.0)
+            it += 1
         return rates
 
     def set_eff(self, eff, val):
