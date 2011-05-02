@@ -94,6 +94,9 @@ def file_dialog():
     return mecfile
 
 def console_demo(demomec):
+
+    sys.stdout.write('%s' % demomec)
+
     tres = 0.00004  # resolution in seconds
     demomec.fastBlk = False
     demomec.KBlk = 0.01

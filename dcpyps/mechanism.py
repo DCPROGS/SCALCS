@@ -64,18 +64,6 @@ class Rate(object):
 
         self.name = name
         self.set_rate(ratepars)
-#        try:
-#            # test whether ratepars is a sequence:
-#            it = iter(ratepars)
-#            # test whether this is a numpy array:
-#            if isinstance(ratepars, np.ndarray):
-#                self.ratepars = ratepars
-#            else:
-#                # else, convert:
-#                self.ratepars = np.array(ratepars)
-#        except TypeError:
-#            # if not, convert to single-itemed list:
-#            self.ratepars = np.array([ratepars,])
 
         if not isinstance(State1, State) or not isinstance(State2, State):
             raise TypeError("DCPYPS: States have to be of class State")
@@ -184,13 +172,20 @@ class Mechanism(object):
                 self.Q[d,d] = 0
                 self.Q[d,d] = -np.sum(self.Q[d])
 
+    def __repr__(self):
+        #TODO: need nice table format
+        str_repr = 'Values of rate constants [1/sec or 1/(Mole*sec)]:\n'
+        for rate in self.Rates:
+            str_repr += ('From ' + rate.State1.name + ' to ' +
+                         rate.State2.name + '    ' + rate.name +
+                         '     {0:.3f}'.format(rate.update(1.0)) + 
+                         '\n')
+
+        return str_repr
+
     def printout(self, output=sys.stdout):
         #TODO: need nice table format
-        print >> output, ('Values of rate constants [1/sec or 1/(Mole*sec)]:')
-        for rate in self.Rates:
-            print >> output, ('From ' + rate.State1.name + ' to ' +
-                rate.State2.name + '    ' + rate.name +
-                '     {0:.3f}'.format(rate.update(1.0)))
+        output.write('%s' % self)
 
     def set_rates(self, newrates):
         iter = 0
