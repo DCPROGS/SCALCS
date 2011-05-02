@@ -882,7 +882,7 @@ def HJClik(theta, bursts, opts):
     tcrit = opts['tcrit']
     is_chsvec = opts['isCHS']
 
-    mec.set_rates(theta)
+    mec.rates = theta
     mec.set_eff('c', conc)
     
     # TODO: Here reset rates which reached limit or are negative.

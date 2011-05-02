@@ -63,7 +63,7 @@ class Rate(object):
                  mr=False, func=multiply):
 
         self.name = name
-        self.set_rate(ratepars)
+        self._set_ratepars(ratepars)
 
         if not isinstance(State1, State) or not isinstance(State2, State):
             raise TypeError("DCPYPS: States have to be of class State")
@@ -79,21 +79,26 @@ class Rate(object):
         self.func = func # f(ratepars, amount of effector); "Rate equation" if you wish
 
     def update(self, val):
-        return self.func(self.ratepars, val)
+        return self.func(self._ratepars, val)
 
-    def set_rate(self, ratepars):
+    def _set_ratepars(self, ratepars):
         try:
             # test whether ratepars is a sequence:
             it = iter(ratepars)
             # test whether this is a numpy array:
             if isinstance(ratepars, np.ndarray):
-                self.ratepars = ratepars
+                self._ratepars = ratepars
             else:
                 # else, convert:
-                self.ratepars = np.array(ratepars)
+                self._ratepars = np.array(ratepars)
         except TypeError:
             # if not, convert to single-itemed list:
-            self.ratepars = np.array([ratepars,])
+            self._ratepars = np.array([ratepars,])
+
+    def _get_ratepars(self):
+        return self._ratepars
+
+    ratepars = property(_get_ratepars, _set_ratepars)
 
 def initQ(Rates, States):
     Q = np.zeros((len(States), len(States)), dtype=np.float64)
@@ -187,19 +192,21 @@ class Mechanism(object):
         #TODO: need nice table format
         output.write('%s' % self)
 
-    def set_rates(self, newrates):
+    def _set_rates(self, newrates):
         it = 0
         for rate in self.Rates:
-            rate.set_rate(newrates[it])
+            rate.ratepars = newrates[it]
             it += 1
 
-    def get_rates(self):
+    def _get_rates(self):
         it = 0
-        rates = np.empty((len(self.Rates)))
+        _rates = np.empty((len(self.Rates)))
         for rate in self.Rates:
-            rates[it] = rate.update(1.0)
+            _rates[it] = rate.update(1.0)
             it += 1
-        return rates
+        return _rates
+    
+    rates = property(_get_rates, _set_rates)
 
     def set_eff(self, eff, val):
         if eff not in self.efflist:

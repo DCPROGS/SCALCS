@@ -263,7 +263,7 @@ class QMatGUI(QMainWindow):
         opts['tcrit'] = self.tcrit
         opts['isCHS'] = True
 
-        rates = self.mec.get_rates()
+        rates = self.mec.rates
 
         #loglik = scl.HJClik(rates, self.rec1.bursts, opts)
         #self.rec1.bursts, self.mec, self.tres, self.tcrit,
@@ -271,7 +271,7 @@ class QMatGUI(QMainWindow):
 
         newrates, loglik = ufl.simplex(rates, self.rec1.bursts, scl.HJClik,
             opts, verbose=0)
-        mec.set_rates(newrates)
+        mec.rates = newrates
 
         self.textBox.append('\nLog Likelihood = {0:.3f}'.
             format(loglik))
