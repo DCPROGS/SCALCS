@@ -4,7 +4,7 @@ from distutils.core import setup
 setup(
     name = "DC_PyPs",
     packages = ["dcpyps","dcpyps.samples"],
-    version = "0.1.0",
+    version = "0.1.1",
     description = "A collection of functions for Q matrix manipulations",
     url = "http://code.google.com/p/dc-pyps/",
     long_description = """\

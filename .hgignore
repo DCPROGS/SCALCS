@@ -24,6 +24,8 @@ syntax: glob
 *.xls
 
 .DS_Store
+.AppleDouble
+.AppleDouble/*
 config.status
 .deps/*
 .externalToolBuilders/*
