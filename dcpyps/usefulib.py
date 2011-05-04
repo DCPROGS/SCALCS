@@ -34,10 +34,10 @@ def simplex(theta, data, func, opts, verbose=0):
     print '\n USING FAST VERSION OF SIMPLEX'
 
     #TODO: these might come as parameters
-    errfac = 1.e-4   #1.e-4
-    stpfac= 0.05   #0.1
-    reffac = 1    # reflection coeff => 1
-    confac = 0.1     # contraction coeff 0 < beta < 1
+    errfac = 1.e-3   #1.e-4
+    stpfac= 0.1   #0.1
+    reffac = 2    # reflection coeff => 1
+    confac = 0.5     # contraction coeff 0 < beta < 1
     extfac = 2     # extension factor > 1
     locfac = 5    # 1
 
@@ -51,9 +51,11 @@ def simplex(theta, data, func, opts, verbose=0):
     pnew1 = np.zeros((k))
     thmin = np.zeros((k))
 
-    for j in range(k):
-        step[j] = stpfac * theta[j]
-	crtstp[j] = errfac * theta[j]
+#    for j in range(k):
+#        step[j] = stpfac * theta[j]
+#	crtstp[j] = errfac * theta[j]
+    step = stpfac * theta
+    crtstp = errfac * theta
 
     neval = 0	 # counts function evaluations
     nrestart = 100    # max number of restarts
@@ -76,8 +78,10 @@ def simplex(theta, data, func, opts, verbose=0):
 
         #specify all other vertices of the starting simplex
         for i in range(1, n):
-            for j in range(k):
-                simp[i, j] = simp[0, j] + step[j] * fac
+#            for j in range(k):
+#                simp[i, j] = simp[0, j] + step[j] * fac
+#            simp[i, i-1] = simp[0, i-1] + step[i-1] * (fac + 1. / sqrt(2))
+            simp[i] = simp[0] + step * fac
             simp[i, i-1] = simp[0, i-1] + step[i-1] * (fac + 1. / sqrt(2))
 
             #  and calculate their residuals
@@ -106,9 +110,12 @@ def simplex(theta, data, func, opts, verbose=0):
                     centre[i] = centre[i] + simp[j,i]
 
             # ----- reflect, with next vertex taken as reflection of worst
-            for j in range(k):
-                centre[j] = centre[j] / float(k)
-                pnew[j] = centre[j] - reffac * (simp[-1, j] - centre[j])
+#            for j in range(k):
+#                centre[j] = centre[j] / float(k)
+#                pnew[j] = centre[j] - reffac * (simp[-1, j] - centre[j])
+            centre = centre / float(k)
+            pnew = centre - reffac * (simp[-1] - centre)
+
             fnew = func(pnew, data, opts)
             if fnew < absmin:
                 absmin = fnew
@@ -119,8 +126,10 @@ def simplex(theta, data, func, opts, verbose=0):
 
             if fnew < fval[0]:
                 # ----- new vertex is better than previous best so extend it
-                for j in range(k):
-                    pnew1[j] = centre[j] + extfac * (pnew[j] - centre[j])
+#                for j in range(k):
+#                    pnew1[j] = centre[j] + extfac * (pnew[j] - centre[j])
+                pnew1 = centre + extfac * (pnew - centre)
+
                 fnew1 = func(pnew1, data, opts)
                 if fnew1 < absmin:
                     absmin = fnew1
@@ -148,8 +157,10 @@ def simplex(theta, data, func, opts, verbose=0):
                         simp[-1] = pnew
                         fval[-1] = fnew
                     # Contract on the original fval(IHI) side of the centroid
-                    for j in range(k):
-                        pnew1[j] = centre[j] + confac * (simp[-1, j] - centre[j])
+#                    for j in range(k):
+#                        pnew1[j] = centre[j] + confac * (simp[-1, j] - centre[j])
+                    pnew1 = centre + confac * (simp[-1] - centre)
+
                     fnew1 = func(pnew1, data, opts)
                     if fnew1 < absmin:
                         absmin = fnew1

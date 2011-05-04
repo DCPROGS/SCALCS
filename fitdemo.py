@@ -31,7 +31,7 @@ def main():
     opts['tcrit'] = tcrit
     opts['isCHS'] = True
 
-    # Here should go initial guesses. Nau using rate constants from example.
+    # Here should go initial guesses. Now using rate constants from example.
     rates = mec.rates
 
     # Load data.

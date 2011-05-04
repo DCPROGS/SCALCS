@@ -148,10 +148,14 @@ def expQt(M, t):
     k = M.shape[0]
     expM = np.zeros((k, k))
     #TODO: avoid loops
-    for i in range(k):
-        for j in range(k):
-            for m in range(k):
-                expM[i, j] += A[m, i, j] * np.exp(eigvals[m] * t)
+#    for i in range(k):
+#        for j in range(k):
+#            for m in range(k):
+#                expM[i, j] += A[m, i, j] * math.exp(eigvals[m] * t)
+
+    for m in range(k):
+        expM += A[m] * math.exp(eigvals[m] * t)
+
     return expM
 
 def phiHJC(eGAF, eGFA, kA):
@@ -527,8 +531,8 @@ def bisection_intervals(sa, sb, tres, Q11, Q22, Q21, Q12, k1, k2):
     if ngb < k2:
         sb = sb / 4
 
-    sr = np.zeros((k2,2))
-    sv = np.zeros((100,4))
+    sr = np.zeros((k2, 2))
+    sv = np.empty((100, 4))
     sv[0,0] = sa
     sv[0,1] = sb
     sv[0,2] = nga
@@ -537,7 +541,7 @@ def bisection_intervals(sa, sb, tres, Q11, Q22, Q21, Q12, k1, k2):
     ndone = 0
     nsplit = 0
 
-    while (ndone < k2) and (nsplit < 1000):
+    while (ndone < k2) and (nsplit < 100):
         sa = sv[ntodo, 0]
         sb = sv[ntodo, 1]
         nga = sv[ntodo, 2]
@@ -603,30 +607,31 @@ def split(sa, sb, nga, ngb, tres, Q11, Q22, Q21, Q12, k1, k2):
         Number of eigenvalues below corresponding s values.
     """
 
-    ntrymax = 10000
+    ntrymax = 100
     ntry = 0
     #nerrs = False
     end = False
 
-    while not end:
+    while (not end) and (ntry < ntrymax):
         sc = (sa + sb) / 2.0
         ngc = gFB(sc, tres, Q11, Q22, Q21, Q12, k1, k2)
         if ngc == nga: sa = sc
         elif ngc == ngb: sb = sc
         else:
             end = True
-            sa1 = sa
-            sb1 = sc
-            sa2 = sc
-            sb2 = sb
-            nga1 = nga
-            ngb1 = ngc
-            nga2 = ngc
-            ngb2 = ngb
-        ntry = ntry + 1
-        if ntry > ntrymax:
-            print ('ERROR: unable to split interval in BALL_ROOT')
-            end = True
+        ntry += 1
+#        if ntry > ntrymax:
+#            print ('ERROR: unable to split interval in BALL_ROOT')
+#            end = True
+
+        sa1 = sa
+        sb1 = sc
+        sa2 = sc
+        sb2 = sb
+        nga1 = nga
+        ngb1 = ngc
+        nga2 = ngc
+        ngb2 = ngb
 
     return sa1, sb1, sa2, sb2, nga1, ngb1, nga2, ngb2
 
@@ -700,7 +705,7 @@ def f0(u, eigvals, Z00):
 
     f = np.zeros(Z00[0].shape)
     for i in range(len(eigvals)):
-        f += Z00[i] *  np.exp(-eigvals[i] * u)
+        f += Z00[i] *  math.exp(-eigvals[i] * u)
     return f
 
 def f1(u, eigvals, Z10, Z11):
@@ -724,7 +729,7 @@ def f1(u, eigvals, Z10, Z11):
 
     f = np.zeros(Z10[0].shape)
     for i in range(len(eigvals)):
-        f += (Z10[i] + Z11[i] * u) *  np.exp(-eigvals[i] * u)
+        f += (Z10[i] + Z11[i] * u) *  math.exp(-eigvals[i] * u)
     return f
 
 def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):
