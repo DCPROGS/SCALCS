@@ -22,6 +22,6 @@ Functions
 .. autofunction:: scalcslib.asymptotic_areas
 .. autofunction:: scalcslib.pdf_exponential
 .. autofunction:: scalcslib.pdf_exact
-.. autofunction:: scalcslib.exact_pdf_coef
-.. autofunction:: scalcslib.f0
-.. autofunction:: scalcslib.f1
+.. autofunction:: scalcslib.GAMAxx
+.. autofunction:: scalcslib.ini_vectors
+.. autofunction:: scalcslib.HJClik

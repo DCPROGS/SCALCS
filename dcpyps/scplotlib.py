@@ -1,5 +1,5 @@
 """
-Ploting utilities for single channel and macroscopic current
+Plotting utilities for single channel and macroscopic current
 calculations.
 """
 

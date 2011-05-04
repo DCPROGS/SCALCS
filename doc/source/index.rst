@@ -13,6 +13,7 @@ Contents:
 
    qmatlib.rst
    scalcslib.rst
+   cjumpslib.rst
 
 Indices and tables
 ==================
