@@ -202,6 +202,7 @@ class Mechanism(object):
         it = 0
         for rate in self.Rates:
             rate.ratepars = newrates[it]
+            rate.update(1.0)
             it += 1
 
     def _get_rates(self):
