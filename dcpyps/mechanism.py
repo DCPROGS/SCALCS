@@ -60,7 +60,7 @@ class Rate(object):
     """
 
     def __init__(self, ratepars, State1, State2, name='', eff=None, fixed=False,
-                 mr=False, func=multiply):
+                 mr=False, func=multiply, limits=[None, None]):
 
         self.name = name
         self._set_ratepars(ratepars)
@@ -76,10 +76,16 @@ class Rate(object):
         
         self.fixed = fixed # for future expansion (fixed while fitting)
         self.mr = mr # for future expansion (set by microscopic reversibility)
-        self.func = func # f(ratepars, amount of effector); "Rate equation" if you wish
+        self._func = func # f(ratepars, amount of effector); "Rate equation" if you wish
+        self.limits = limits # rate limits
 
     def update(self, val):
-        return self.func(self._ratepars, val)
+        ret = self._func(self._ratepars, val)
+        if self.limits[0] is not None and ret<self.limits[0]:
+            return self.limits[0]
+        if self.limits[1] is not None and ret>self.limits[1]:
+            return self.limits[1]
+        return ret
 
     def _set_ratepars(self, ratepars):
         try:
