@@ -917,4 +917,4 @@ def HJClik(theta, bursts, opts):
 #                print 'grouplik was scaled down'
         grouplik = np.dot(grouplik, endB)
         loglik += math.log(grouplik[0])
-    return -loglik
+    return -loglik, mec.rates

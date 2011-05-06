@@ -66,8 +66,9 @@ def simplex(theta, data, func, opts, verbose=0):
         irestart += 1
         print 'RESTART#', irestart
 
+        
+        fval[0], theta = func(theta, data, opts)
         simp[0] = theta
-        fval[0] = func(theta, data, opts)
         fsav = fval[0]
         absmin = fval[0]
         thmin = theta
@@ -85,7 +86,7 @@ def simplex(theta, data, func, opts, verbose=0):
             simp[i, i-1] = simp[0, i-1] + step[i-1] * (fac + 1. / sqrt(2))
 
             #  and calculate their residuals
-            fval[i] = func(simp[i], data, opts)
+            fval[i], simp[i] = func(simp[i], data, opts)
         neval += k
 
         if verbose: print '\n simplex at the beginning of restart='
@@ -116,7 +117,7 @@ def simplex(theta, data, func, opts, verbose=0):
             centre = centre / float(k)
             pnew = centre - reffac * (simp[-1] - centre)
 
-            fnew = func(pnew, data, opts)
+            fnew, pnew = func(pnew, data, opts)
             if fnew < absmin:
                 absmin = fnew
                 thmin = pnew
@@ -130,7 +131,7 @@ def simplex(theta, data, func, opts, verbose=0):
 #                    pnew1[j] = centre[j] + extfac * (pnew[j] - centre[j])
                 pnew1 = centre + extfac * (pnew - centre)
 
-                fnew1 = func(pnew1, data, opts)
+                fnew1, pnew1 = func(pnew1, data, opts)
                 if fnew1 < absmin:
                     absmin = fnew1
                     thmin = pnew1
@@ -161,7 +162,7 @@ def simplex(theta, data, func, opts, verbose=0):
 #                        pnew1[j] = centre[j] + confac * (simp[-1, j] - centre[j])
                     pnew1 = centre + confac * (simp[-1] - centre)
 
-                    fnew1 = func(pnew1, data, opts)
+                    fnew1, pnew1 = func(pnew1, data, opts)
                     if fnew1 < absmin:
                         absmin = fnew1
                         thmin = pnew1
@@ -179,7 +180,7 @@ def simplex(theta, data, func, opts, verbose=0):
                             for j in range(k):
                                 if j != i:
                                     simp[i,j] = simp[0,j] + confac * (simp[i,j] - simp[0,j])
-                            fval[i] = func(simp[i], data, opts)
+                            fval[i], simp[i] = func(simp[i], data, opts)
                             neval += 1
                             if verbose:
                                 print 'reduction: e#', neval, 'f=',fval[i], 'theta=', theta
@@ -225,7 +226,7 @@ def simplex(theta, data, func, opts, verbose=0):
                 for i in range(n):
                     pnew[j] = pnew[j] + simp[i,j]
                 pnew[j] = pnew[j] / float(n)
-            fvalav = func(pnew, data, opts)
+            fvalav, pnew = func(pnew, data, opts)
             exvals.append(fvalav)
 
             exvals.append(absmin)
@@ -234,14 +235,14 @@ def simplex(theta, data, func, opts, verbose=0):
             for j in range(k):
                 pnew1[j] = 0.0
                 pnew1[j] = simp[0,j] + locfac * crtstp[j]
-            fval1 = func(pnew1, data, opts)
+            fval1, pnew1 = func(pnew1, data, opts)
             if fval1 < fval[0]:
                 exvals.append(fval1)
             else:
                 for j in range(k):
                     # step in other direction
                     pnew1[j] = simp[0,j] - locfac * crtstp[j] 
-                fval1 = func(pnew1, data, opts)
+                fval1, pnew1 = func(pnew1, data, opts)
                 exvals.append(fval1)
 
             # Test which is best.
