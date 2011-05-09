@@ -59,11 +59,12 @@ class Rate(object):
     Describes a rate between two states.
     """
 
-    def __init__(self, ratepars, State1, State2, name='', eff=None, fixed=False,
-                 mr=False, func=multiply, limits=[None, None]):
+    def __init__(self, rateconstants, State1, State2, name='', eff=None, fixed=False,
+                 mr=False, func=multiply, limits=[]):
 
         self.name = name
-        self._set_ratepars(ratepars)
+
+        self._set_rateconstants(rateconstants, lim_check=False)
 
         if not isinstance(State1, State) or not isinstance(State2, State):
             raise TypeError("DCPYPS: States have to be of class State")
@@ -77,34 +78,64 @@ class Rate(object):
         self.fixed = fixed # for future expansion (fixed while fitting)
         self.mr = mr # for future expansion (set by microscopic reversibility)
         self._func = func # f(ratepars, amount of effector); "Rate equation" if you wish
-        self.limits = limits # rate limits
 
-    def update(self, val):
-        ret = self._func(self._ratepars, val)
-        if self.limits[0] is not None and ret<self.limits[0]:
-            return self.limits[0]
-        if self.limits[1] is not None and ret>self.limits[1]:
-            return self.limits[1]
-        return ret
+        self.limits = limits
+        # sanity check for rate constant limits:
+        if len(self.limits):
+            # There must be as many limits as rate constants, except if there's only
+            # one rate constant:
+            if len(self._rateconstants)==1:
+                err = "DCPYPS: If there's only one rate constant, limits\n"
+                err += "can either be a list with upper and lower bounds\n"
+                err += "(i.e. [lower, upper]) or a list of lists\n"
+                err += "(i.e. [[lower, upper]]).\n"
+                if len(self.limits)==2:
+                    self.limits = [self.limits,]
+                if len(self.limits) > 2:
+                    raise RuntimeError(err)
+                if len(self.limits)==1 and len(self.limits[0]) != 2:
+                    raise RuntimeError(err)
+            elif len(self.limits) != len(self._rateconstants):
+                err = "DCPYPS: limits has to contain as many limit pairs as there are rate constants.\n"
+                raise RuntimeError(err)
+        self._lim_check()
 
-    def _set_ratepars(self, ratepars):
+    def calc(self, val):
+        return self._func(self._rateconstants, val)
+
+    def unit_rate(self):
+        return self._func(self._rateconstants, 1.0)
+
+    def _lim_check(self):
+        if self.limits != []:
+            for nr in range(len(self._rateconstants)):
+                if self._rateconstants[nr] < self.limits[nr][0]:
+                    self.rateconstants[nr] = self.limits[nr][0]
+                    sys.stderr.write("DCPYPS: Warning: Corrected out-of-range rate constant")
+                if self._rateconstants[nr] > self.limits[nr][1]:
+                    self.rateconstants[nr] = self.limits[nr][1]
+                
+    def _set_rateconstants(self, rateconstants, lim_check=True):
         try:
-            # test whether ratepars is a sequence:
-            it = iter(ratepars)
+            # test whether rateconstants is a sequence:
+            it = iter(rateconstants)
             # test whether this is a numpy array:
-            if isinstance(ratepars, np.ndarray):
-                self._ratepars = ratepars
+            if isinstance(rateconstants, np.ndarray):
+                self._rateconstants = rateconstants
             else:
                 # else, convert:
-                self._ratepars = np.array(ratepars)
+                self._rateconstants = np.array(rateconstants)
         except TypeError:
             # if not, convert to single-itemed list:
-            self._ratepars = np.array([ratepars,])
+            self._rateconstants = np.array([rateconstants,])
 
-    def _get_ratepars(self):
-        return self._ratepars
+        if lim_check:
+            self._lim_check()
 
-    ratepars = property(_get_ratepars, _set_ratepars)
+    def _get_rateconstants(self):
+        return self._rateconstants
+
+    rateconstants = property(_get_rateconstants, _set_rateconstants)
 
 def initQ(Rates, States):
     Q = np.zeros((len(States), len(States)), dtype=np.float64)
@@ -118,7 +149,7 @@ def initQ(Rates, States):
             raise IndexError("DCPYPS: Rate.state1 is out of range")
         if j<0 or j>=Q.shape[1]:
             raise IndexError("DCPYPS: Rate.state2 is out of range")
-        Q[i,j] = Rate.update(1.0)
+        Q[i,j] = Rate.unit_rate()
 
     return Q
 
@@ -176,20 +207,21 @@ class Mechanism(object):
             for Rate in self.Rates:
                 if Rate.eff == eff:
                     self.Q[Rate.State1.no, Rate.State2.no] = \
-                        Rate.update(1.0)
+                        Rate.unit_rate()
 
-            # Update diagonal elements
+            # Calc diagonal elements
             for d in range(self.Q.shape[0]):
                 self.Q[d,d] = 0
                 self.Q[d,d] = -np.sum(self.Q[d])
 
     def __repr__(self):
         #TODO: need nice table format
-        str_repr = 'Values of rate constants [1/sec or 1/(Mole*sec)]:\n'
+        str_repr = 'class dcpyps.Mechanism\n'
+        str_repr += 'Values of unit rates [1/sec]:\n'
         for rate in self.Rates:
             str_repr += ('From ' + rate.State1.name + ' to ' +
                          rate.State2.name + '    ' + rate.name +
-                         '     {0:.3f}'.format(rate.update(1.0)) + 
+                         '     {0:.3f}'.format(rate.unit_rate()) + 
                          '\n')
 
         return str_repr
@@ -198,22 +230,17 @@ class Mechanism(object):
         #TODO: need nice table format
         output.write('%s' % self)
 
-    def _set_rates(self, newrates):
-        it = 0
-        for rate in self.Rates:
-            rate.ratepars = newrates[it]
-            rate.update(1.0)
-            it += 1
+    def set_rateconstants(self, newrates):
+        for nr, rate in enumerate(self.Rates):
+            self.Rates[nr].rateconstants = newrates[nr]
 
-    def _get_rates(self):
+    def unit_rates(self):
         it = 0
-        _rates = np.empty((len(self.Rates)))
+        u_rates = np.empty((len(self.Rates)))
         for rate in self.Rates:
-            _rates[it] = rate.update(1.0)
+            u_rates[it] = rate.unit_rate()
             it += 1
-        return _rates
-    
-    rates = property(_get_rates, _set_rates)
+        return u_rates
 
     def set_eff(self, eff, val):
         if eff not in self.efflist:
@@ -223,7 +250,7 @@ class Mechanism(object):
         for Rate in self.Rates:
             if Rate.eff == eff:
                 self.Q[Rate.State1.no, Rate.State2.no] = \
-                    Rate.update(val)
+                    Rate.calc(val)
 
         # Update diagonal elements
         for d in range(self.Q.shape[0]):
@@ -246,5 +273,3 @@ class Mechanism(object):
         self.QAC = self.Q[:self.kA, self.kE:]
         self.QCB = self.Q[self.kE:, self.kA:self.kE]
         self.QCA = self.Q[self.kE:, :self.kA]
-
-        

@@ -882,7 +882,7 @@ def HJClik(theta, bursts, opts):
     tcrit = opts['tcrit']
     is_chsvec = opts['isCHS']
 
-    mec.rates = theta
+    mec.set_rateconstants(theta)
     mec.set_eff('c', conc)
     
     # TODO: Here reset rates which reached limit or are negative.
@@ -917,4 +917,4 @@ def HJClik(theta, bursts, opts):
 #                print 'grouplik was scaled down'
         grouplik = np.dot(grouplik, endB)
         loglik += math.log(grouplik[0])
-    return -loglik, mec.rates
+    return -loglik, mec.unit_rates()

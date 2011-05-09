@@ -31,8 +31,8 @@ def main():
     opts['tcrit'] = tcrit
     opts['isCHS'] = True
 
-    # Here should go initial guesses. Now using rate constants from example.
-    rates = mec.rates
+    # Here should go initial guesses. Nau using rate constants from example.
+    rates = mec.unit_rates()
 
     # Load data.
     filename = "./dcpyps/samples/CH82.scn"
@@ -49,7 +49,7 @@ def main():
 
     newrates, loglik = ufl.simplex(rates, rec1.bursts, scl.HJClik,
         opts, verbose=0)
-    mec.rates = newrates
+    mec.set_rateconstants(newrates)
     print "\n Final rate constants:"
     mec.printout(sys.stdout)
 
