@@ -111,9 +111,10 @@ class Rate(object):
             for nr in range(len(self._rateconstants)):
                 if self._rateconstants[nr] < self.limits[nr][0]:
                     self.rateconstants[nr] = self.limits[nr][0]
-                    sys.stderr.write("DCPYPS: Warning: Corrected out-of-range rate constant")
+                    sys.stderr.write("DCPYPS: Warning: Corrected out-of-range rate constant\n")
                 if self._rateconstants[nr] > self.limits[nr][1]:
                     self.rateconstants[nr] = self.limits[nr][1]
+                    sys.stderr.write("DCPYPS: Warning: Corrected out-of-range rate constant\n")
                 
     def _set_rateconstants(self, rateconstants, lim_check=True):
         try:
