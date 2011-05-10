@@ -5,6 +5,8 @@ Maximum likelihood fit demo.
 
 import sys
 
+import numpy as np
+
 from dcpyps import scalcslib as scl
 from dcpyps import usefulib as ufl
 from dcpyps import dataset
@@ -19,7 +21,7 @@ def main():
     mec = samples.CH82()
     mec.printout(sys.stdout)
 
-    tres = 0.0001
+    tres = 0.00002
     tcrit = 0.004
     conc = 100e-9
 
@@ -44,13 +46,24 @@ def main():
     rec1.impose_resolution(tres)
     rec1.get_open_shut_periods()
     rec1.get_bursts(tcrit)
+    print('\nNumber of bursts = {0:d}'.format(len(rec1.bursts)))
+    blength = rec1.get_burst_length_list()
+    print('Average = {0:.3f} millisec'.format(np.average(blength)))
+    print('Range: {0:.3f}'.format(min(blength)) +
+            ' to {0:.3f} millisec'.format(max(blength)))
 
     # Maximum likelihood fit.
-
-    newrates, loglik = ufl.simplex(rates, rec1.bursts, scl.HJClik,
+    print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"
+            %time.localtime()[0:6])
+    newrates, loglik = ufl.simplexHJC(rates, rec1.bursts, scl.HJClik,
         opts, verbose=0)
+    print ("\nFitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
+            %time.localtime()[0:6])
     mec.set_rateconstants(newrates)
     print "\n Final rate constants:"
     mec.printout(sys.stdout)
 
-cProfile.run('main()')
+try:
+    cProfile.run('main()')
+except KeyboardInterrupt:
+    pass

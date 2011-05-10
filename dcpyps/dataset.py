@@ -19,6 +19,9 @@ class TimeSeries(object):
         self.iprops = iprops
         self.calfac = self.header['calfac2']
 
+    def print_all_record(self):
+        for i in range(len(self.itint)):
+            print i, self.itint[i], self.iampl[i], self.iprops[i]
 
     def impose_resolution(self, tres):
         """
@@ -91,7 +94,7 @@ class TimeSeries(object):
         aavtemp = rampl[-1] * rtint[-1]
 
         n += 1
-        while n < len(self.itint):
+        while n < (len(self.itint)-1):
 
             if self.itint[n] < tres:
                 rtint[-1] += self.itint[n]
@@ -119,6 +122,7 @@ class TimeSeries(object):
                 rprops[-1] = 8
             n += 1
         # end of while
+        # TODO: check if the very last interval is closed or open.
 
         self.rtint = rtint
         self.rampl = rampl
@@ -182,8 +186,8 @@ class TimeSeries(object):
 
     def get_bursts(self, tcrit):
         """
-        Cut entire record into bursts using critical shut time interval
-        (tcrit).
+        Cut entire single channel record into bursts using critical shut time
+        interval (tcrit).
 
         Default definition of bursts:
         (1) 'Burst amplitude' defined as mean current (excluding shut
@@ -192,27 +196,6 @@ class TimeSeries(object):
         (3) Require a gap > tcrit before the 1st burst in each file;
         (4) Unusable shut time NOT a valid end of burst;
         (5) No listing of the individual bursts.
-
-        imode=0: gets the settings (tcrit etc) and returns nbst (number
-        of bursts) to allow arrays to be allocated in calling prog.
-
-        imode=1: repeats burst location and defines
-        ibindex(1,i), ibindex(1,i)=index of first and last opening in ith burst
-        bampl(i) = mean amp of each burst
-
-        BURST DEFINED by gaps (zero amp) < Tcrit
-        NOP includes any openings inc sublevels
-        NSG counts gaps<Tcrit within bursts (so number of sojourns in C&H
-        subset A per burst = NSG+1 =< NOP.
-        NOTE unusable gap counted as resolvable so it ends burst, but
-        an unusable opening causes whole burst to be ignored
-        FIRST LOOK FOR FIRST OPENING (must be usable) in burst.
-        OR, IF FINDGAP=T, LOOK FOR USABLE GAP > TCRIT BEFORE STARTING
-        Also, if onetcrit=false, need to see which file we are in currently
-        and set tcrit accordingly. Also need to ensure gap >tcrit before
-        first burst in each file if findgap=true
-        Set newfile=true while looking for first burst in current file
-        and set it false after a burst has been succesfully found
 
         This function generates two dictionaries- bursts and burstsopts.
         bursts- contains lists of open and shut periods in each bursts. Each
@@ -224,6 +207,7 @@ class TimeSeries(object):
         total open time per burst.
         """
 
+        # Time intervals in SCN files are in ms so convert tcrit in ms too.
         tcrit = tcrit * 1000
 
         #defaultdef = True # True if default burst definition accepted.
@@ -243,16 +227,9 @@ class TimeSeries(object):
         i = 0
 
         while i < len(self.rtint) and not firstgapfound:
-            if self.rampl[i] != 0:
-                i += 1
-            else:
-                if self.rtint[i] < tcrit:
-                    i += 1
-                else:
-        #            gap1 = i
-                    firstgapfound = True
-                    i += 1
-
+            if self.rampl[i] == 0 and self.rtint[i] > tcrit:
+                firstgapfound = True
+            i += 1
         #print ("First long gap found: n={0:d}; ".format(gap1) +
         #    "length = {0:.6f} ms".format(self.rtint[gap1]))
 
@@ -267,7 +244,6 @@ class TimeSeries(object):
         openinglength = 0
 
         while i < len(self.rtint):
-
             if self.rampl[i] != 0:
                 if newburst:
                     burst = []
@@ -281,7 +257,20 @@ class TimeSeries(object):
                 burstlen += self.rtint[i]
                 openinglength += self.rtint[i]
                 #TODO: if bad opening: set burst bad
-                i += 1
+
+                if i == len(self.rtint)-1:
+                    burstopt.append(i) # 2nd position - last interval
+                    burstopt.append(burstlen) # 3rd position- burst len
+                    if self.rprops[i] >= 8:
+                        badburst = True
+                    burstopt.append(badburst) # 4th position- bad burst
+                    burstopt.append(meanamp) # 5th position- mean ampl
+                    burstopt.append(openburst) #6thpos- opentime per burst
+
+                    burst.append(openinglength)
+                    bursts[burstid] = burst
+                    burstsopts[burstid] = burstopt
+                
             else: # found gap
                 if self.rtint[i] < tcrit: # TODO: and unusable gap...
                     burstlen += self.rtint[i]
@@ -290,7 +279,7 @@ class TimeSeries(object):
                     burst.append(openinglength)
                     burst.append(self.rtint[i])
                     openinglength = 0
-                    i += 1
+
                 else: # gap is longer than tcrit
                     burstopt.append(i-1) # 2nd position - last interval
                     burstopt.append(burstlen) # 3rd position- burst len
@@ -309,8 +298,9 @@ class TimeSeries(object):
                     # TODO: bad/unusable gap
                     bursts[burstid] = burst
                     burstsopts[burstid] = burstopt
-                    i += 1
                     burstid += 1
+
+            i += 1
 
         self.bursts = bursts
         self.burstsopts = burstsopts
