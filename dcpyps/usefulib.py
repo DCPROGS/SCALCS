@@ -26,73 +26,72 @@ def sortShell(vals, simp):
          gap //= 2
     return vals, simp
 
-def simplex(theta, data, func, opts, verbose=0):
+def simplexHJC(theta, data, func, opts, verbose=0):
     """
-    Python implementation of DC's SIMPLEXV.FOR subroutine.
-    """
+    Python implementation of DC's SIMPHJC.FOR subroutine used in HJCFIT.
+    Search for a function minimum using modified Nelder-Mead method.
+    Theta contains only free parameters which should be natural logaritms
+    of initial guesses.
 
-    print '\n USING FAST VERSION OF SIMPLEX'
+    Parameters
+    ----------
+    theta :
+    data :
+    func :
+    opts :
+
+    Returns
+    -------
+    loglik :
+    newtheta :
+    """
 
     #TODO: these might come as parameters
-    errfac = 1.e-3   #1.e-4
-    stpfac= 0.1   #0.1
-    reffac = 2    # reflection coeff => 1
+    errfac = 1.e-3
+    stpfac= 2   # 5 for logfit
+    reffac = 1.0    # reflection coeff => 1
     confac = 0.5     # contraction coeff 0 < beta < 1
-    extfac = 2     # extension factor > 1
-    locfac = 5    # 1
+    extfac = 2.0     # extension factor > 1
+    resfac = 10.0
 
     k = np.size(theta)
     n = k + 1    # # of vertices in simplex
     simp = np.zeros((n, k))
     fval = np.zeros((n))
-    step = np.zeros((k))
-    crtstp = np.zeros((k))
     pnew = np.zeros((k))
     pnew1 = np.zeros((k))
     thmin = np.zeros((k))
 
-#    for j in range(k):
-#        step[j] = stpfac * theta[j]
-#	crtstp[j] = errfac * theta[j]
-    step = stpfac * theta
-    crtstp = errfac * theta
+    step = np.ones((k)) * stpfac
+    crtstp = np.ones((k)) * errfac
 
     neval = 0	 # counts function evaluations
-    nrestart = 100    # max number of restarts
-    irestart = 0    # counts restarts
+    niter = 0
+    nrestartmax = 100    # max number of restarts
+    nrestart = 0    # counts restarts
 
-    while irestart < nrestart: 
+    while nrestart < nrestartmax:
 
-        irestart += 1
-        print 'RESTART#', irestart
-
-        
         fval[0], theta = func(theta, data, opts)
+        print "Starting likelihood =", -fval[0]
+        neval += 1
         simp[0] = theta
+        
         fsav = fval[0]
+
         absmin = fval[0]
         thmin = theta
-        neval += 1
-
-        # compute offset of the vertices of the starting simplex
-	fac = (sqrt(n) - 1) / (k * sqrt(2))
-
-        #specify all other vertices of the starting simplex
+     
+        # Compute offset of the vertices of the starting simplex
+	fac = (sqrt(n) - 1.0) / (k * sqrt(2.0))
+        # specify all other vertices of the starting simplex.
         for i in range(1, n):
-#            for j in range(k):
-#                simp[i, j] = simp[0, j] + step[j] * fac
-#            simp[i, i-1] = simp[0, i-1] + step[i-1] * (fac + 1. / sqrt(2))
             simp[i] = simp[0] + step * fac
             simp[i, i-1] = simp[0, i-1] + step[i-1] * (fac + 1. / sqrt(2))
-
-            #  and calculate their residuals
+            #  and calculate their residuals.
             fval[i], simp[i] = func(simp[i], data, opts)
         neval += k
-
-        if verbose: print '\n simplex at the beginning of restart='
-        if verbose: print simp
-        if verbose: print ' fval at the begining', fval
-
+        # Sort simplex according residuals.
         fval, simp = sortShell(fval, simp)
         if fval[0] < absmin:
             absmin = fval[0]
@@ -102,7 +101,7 @@ def simplex(theta, data, func, opts, verbose=0):
         niter	= 0
         while L == 0:
             niter += 1
-            print 'iter#', niter, 'f=', fval[0], 'theta', simp[0]
+            #print 'iter#', niter, 'f=', fval[0], 'theta', simp[0]
 
             # ----- compute centroid of all vertices except the worst
             centre = np.zeros((k))
@@ -111,9 +110,6 @@ def simplex(theta, data, func, opts, verbose=0):
                     centre[i] = centre[i] + simp[j,i]
 
             # ----- reflect, with next vertex taken as reflection of worst
-#            for j in range(k):
-#                centre[j] = centre[j] / float(k)
-#                pnew[j] = centre[j] - reffac * (simp[-1, j] - centre[j])
             centre = centre / float(k)
             pnew = centre - reffac * (simp[-1] - centre)
 
@@ -122,13 +118,12 @@ def simplex(theta, data, func, opts, verbose=0):
                 absmin = fnew
                 thmin = pnew
             neval += 1
+
             if verbose:
                 print 'reflection: e#', neval, 'f=',fnew, 'pnew=', pnew
 
             if fnew < fval[0]:
                 # ----- new vertex is better than previous best so extend it
-#                for j in range(k):
-#                    pnew1[j] = centre[j] + extfac * (pnew[j] - centre[j])
                 pnew1 = centre + extfac * (pnew - centre)
 
                 fnew1, pnew1 = func(pnew1, data, opts)
@@ -136,6 +131,7 @@ def simplex(theta, data, func, opts, verbose=0):
                     absmin = fnew1
                     thmin = pnew1
                 neval += 1
+
                 if verbose:
                     print 'extention: e#', neval, 'f1=',fnew1, 'pnew1=', pnew1
 
@@ -157,9 +153,7 @@ def simplex(theta, data, func, opts, verbose=0):
                     if fnew < fval[-1]:
                         simp[-1] = pnew
                         fval[-1] = fnew
-                    # Contract on the original fval(IHI) side of the centroid
-#                    for j in range(k):
-#                        pnew1[j] = centre[j] + confac * (simp[-1, j] - centre[j])
+                    # Contract on the worst side of the centroid
                     pnew1 = centre + confac * (simp[-1] - centre)
 
                     fnew1, pnew1 = func(pnew1, data, opts)
@@ -167,6 +161,7 @@ def simplex(theta, data, func, opts, verbose=0):
                         absmin = fnew1
                         thmin = pnew1
                     neval += 1
+
                     if verbose:
                         print 'contract: e#', neval, 'f=',fnew1, 'pnew1=', pnew1
 
@@ -191,20 +186,20 @@ def simplex(theta, data, func, opts, verbose=0):
                 thmin = simp[0]
 
 
-            # CHECK CONVERGENCE. IF NOT CONVERGED GOTO 2000.
-            # This version uses diff between highest and lowest value
-            # of parameter of the n values that define a vertex
-            # (as in O'Neill version)
-
-            #  ----- order the vertices for all vertices
-            # Define L=0 for not converged- do next iteration
+            # CHECK CONVERGENCE.
+            # This version uses diff between highest and lowest value of
+            # parameter of the n values that define a vertex.
+            # L=0 for not converged - do next iteration
             # L=1 for converged via crtstp
-            # L=2 for converged via delmin (no restarts)
             # L=3 for abort (no restarts)
 
             L = 1    #  conv via crtstp
-            for j in range(k):     # test each parameter
-                if(simp[-1,j] - simp[0,j]) > fabs(crtstp[j]): L = 0 # not conv
+#            for j in range(k):     # test each parameter
+#                if(simp[-1,j] - simp[0,j]) > fabs(crtstp[j]): L = 0 # not conv
+            diff = simp[-1] - simp[0]
+            if np.any(np.less_equal(diff, np.fabs(crtstp))): L = 0
+
+            print 'iter#', niter, 'f=', -fval[0], 'theta', np.exp(simp[0])
         # end of iteration (while L == 0:)
 
         # ----- convergence attained. Options for ending in this version are:
@@ -215,6 +210,7 @@ def simplex(theta, data, func, opts, verbose=0):
         # 	 version, starting at current best vertex. If none are better
         # 	 input current best vertex. If some better restart at better
         # 	 value with crtstp taken as approptiately small initial step.
+
 
         if L == 1:
             exvals = []
@@ -232,16 +228,13 @@ def simplex(theta, data, func, opts, verbose=0):
             exvals.append(absmin)
 
             # do local search. Put altered values in pnew1
-            for j in range(k):
-                pnew1[j] = 0.0
-                pnew1[j] = simp[0,j] + locfac * crtstp[j]
+            pnew1 = simp[0] + crtstp
             fval1, pnew1 = func(pnew1, data, opts)
             if fval1 < fval[0]:
                 exvals.append(fval1)
             else:
-                for j in range(k):
-                    # step in other direction
-                    pnew1[j] = simp[0,j] - locfac * crtstp[j] 
+                # step in other direction
+                pnew1 = simp[0] - crtstp 
                 fval1, pnew1 = func(pnew1, data, opts)
                 exvals.append(fval1)
 
@@ -250,7 +243,7 @@ def simplex(theta, data, func, opts, verbose=0):
             for i in range(1, 4):
                 if exvals[i] < exvals[il]: il = i
             if il == 0:
-                if irestart == nrestart or fsav == fval[0]:
+                if nrestart == nrestartmax or fsav == fval[0]:
                     print '\n Returned with best vertex'
                     return simp[0], fval[0]
                 else:
@@ -258,7 +251,7 @@ def simplex(theta, data, func, opts, verbose=0):
                     theta = simp[0]
                     print '\n Restarted at best vertex'
             elif il == 1:
-                if irestart == nrestart or fsav == fvalav:
+                if nrestart == nrestartmax or fsav == fvalav:
                     print '\n Returned with averaged vertices'
                     return pnew, fvalav
                 else:
@@ -266,7 +259,7 @@ def simplex(theta, data, func, opts, verbose=0):
                     theta = pnew
                     print '\n Restarted at averaged vertices'
             elif il == 2:
-                if irestart == nrestart or fsav == absmin:
+                if nrestart == nrestartmax or fsav == absmin:
                     print '\n Returned with absolut minimum'
                     return thmin, absmin
                 else:
@@ -274,11 +267,12 @@ def simplex(theta, data, func, opts, verbose=0):
                     theta = thmin
                     print '\n Restarted at absolut minimum'
             else:
-                if irestart == nrestart or fsav == fval1:
+                if nrestart == nrestartmax or fsav == fval1:
                     print '\n Returned with result of local search minimum'
                     return pnew1, fval1
                 else:
                     L = 0
                     theta = pnew1
                     print '\n Restarted at result of local search minimum'
+                    step = resfac * crtstp
 

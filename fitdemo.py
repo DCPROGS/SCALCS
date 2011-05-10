@@ -4,6 +4,7 @@ Maximum likelihood fit demo.
 """
 
 import sys
+import time
 
 import numpy as np
 
@@ -33,8 +34,8 @@ def main():
     opts['tcrit'] = tcrit
     opts['isCHS'] = True
 
-    # Here should go initial guesses. Nau using rate constants from example.
-    rates = mec.unit_rates()
+    # Here should go initial guesses. Now using rate constants from example.
+    rates = np.log(mec.unit_rates())
 
     # Load data.
     filename = "./dcpyps/samples/CH82.scn"
