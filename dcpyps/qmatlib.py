@@ -145,16 +145,30 @@ def expQt(M, t):
     """
 
     eigvals, A = eigs(M)
+
+    # DO NOT DELETE commented explicit loops for future reference
     k = M.shape[0]
     expM = np.zeros((k, k))
-    #TODO: avoid loops
-#    for i in range(k):
-#        for j in range(k):
-#            for m in range(k):
-#                expM[i, j] += A[m, i, j] * math.exp(eigvals[m] * t)
+    # rev. 1
+    # TODO: avoid loops
+    #    for i in range(k):
+    #        for j in range(k):
+    #            for m in range(k):
+    #                expM[i, j] += A[m, i, j] * math.exp(eigvals[m] * t)
+    # 
+    # rev.2:
+    # for m in range(k):
+    #     expM += A[m] * math.exp(eigvals[m] * t)
+    # END DO NOT DELETE
 
-    for m in range(k):
-        expM += A[m] * math.exp(eigvals[m] * t)
+    # rev. 3 - fastest for me
+    expM = np.sum(A * np.exp(eigvals * t).reshape(A.shape[0],1,1), axis=0)
+    
+    # rev. 4 - slower on my system despite math.exp
+    # expM = np.sum(A * np.array([
+    #            math.exp(eigval * t) for eigval in eigvals
+    #            ]).reshape(A.shape[0],1,1), 
+    #               axis=0)
 
     return expM
 
