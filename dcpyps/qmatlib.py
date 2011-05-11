@@ -62,14 +62,29 @@ def eigs(Q):
     eigvals, M = nplin.eig(Q)
     N = nplin.inv(M)
     k = N.shape[0]
-    A = np.zeros((k, k, k))
+    # A = np.zeros((k, k, k))
     # TODO: make this a one-liner avoiding loops
+    # DO NOT DELETE commented explicit loops for future reference
+    # 
+    # rev. 1
+    # for i in range(k):
+    #     X = np.empty((k, 1))
+    #     Y = np.empty((1, k))
+    #     X[:, 0] = M[:, i]
+    #     Y[0] = N[i]
+    #     A[i] = np.dot(X, Y)
+    # END DO NOT DELETE
+    #
+    # rev. 2 - cumulative time fastest on my system
     for i in range(k):
-        X = np.empty((k, 1))
-        Y = np.empty((1, k))
-        X[:, 0] = M[:, i]
-        Y[0] = N[i]
-        A[i] = np.dot(X, Y)
+        A[i] = np.dot(M[:, i].reshape(k, 1), N[i].reshape(1, k))
+    
+    # rev. 3 - cumulative time not faster
+    # A = np.array([
+    #         np.dot(M[:, i].reshape(k, 1), N[i].reshape(1, k)) \
+    #             for i in range(k)
+    #         ])
+
     return eigvals, A
 
 def iGs(Q, kA, kB):
