@@ -65,7 +65,7 @@ def eigs(Q):
     A = np.zeros((k, k, k))
     # TODO: make this a one-liner avoiding loops
     # DO NOT DELETE commented explicit loops for future reference
-    # 
+    #
     # rev. 1
     # for i in range(k):
     #     X = np.empty((k, 1))
@@ -78,7 +78,7 @@ def eigs(Q):
     # rev. 2 - cumulative time fastest on my system
     for i in range(k):
         A[i] = np.dot(M[:, i].reshape(k, 1), N[i].reshape(1, k))
-    
+
     # rev. 3 - cumulative time not faster
     # A = np.array([
     #         np.dot(M[:, i].reshape(k, 1), N[i].reshape(1, k)) \
@@ -732,9 +732,11 @@ def f0(u, eigvals, Z00):
     f : ndarray
     """
 
-    f = np.zeros(Z00[0].shape)
-    for i in range(len(eigvals)):
-        f += Z00[i] *  math.exp(-eigvals[i] * u)
+#    f = np.zeros(Z00[0].shape)
+#    for i in range(len(eigvals)):
+#        f += Z00[i] *  math.exp(-eigvals[i] * u)
+
+    f = np.sum(Z00 *  np.exp(-eigvals * u).reshape(Z00.shape[0],1,1), axis=0)
     return f
 
 def f1(u, eigvals, Z10, Z11):
@@ -756,9 +758,12 @@ def f1(u, eigvals, Z10, Z11):
     f : ndarray
     """
 
-    f = np.zeros(Z10[0].shape)
-    for i in range(len(eigvals)):
-        f += (Z10[i] + Z11[i] * u) *  math.exp(-eigvals[i] * u)
+#    f = np.zeros(Z10[0].shape)
+#    for i in range(len(eigvals)):
+#        f += (Z10[i] + Z11[i] * u) *  math.exp(-eigvals[i] * u)
+
+    f = np.sum((Z10 + Z11 * u) *
+        np.exp(-eigvals * u).reshape(Z10.shape[0],1,1), axis=0)
     return f
 
 def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):
@@ -783,7 +788,7 @@ def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):
     eGAFt : array_like, shape(kA, kA, kF)
     """
 
-    eGAFt = np.zeros(XAF[0].shape)
+    #eGAFt = np.zeros(XAF[0].shape)
     if t < tres * 3: # exact
         if t < tres * 2:
             eGAFt = f0((t - tres), eigvals, Z00)
@@ -791,8 +796,13 @@ def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):
             eGAFt = (f0((t - tres), eigvals, Z00) -
                 f1((t - 2 * tres), eigvals, Z10, Z11))
     else: # asymptotic
-        for i in range(len(roots)):
-            eGAFt += XAF[i] * math.exp(roots[i] * (t - tres))
+#        for i in range(len(roots)):
+#            eGAFt += XAF[i] * math.exp(roots[i] * (t - tres))
+        eGAFt = np.sum(XAF * np.exp(roots *
+            (t - tres)).reshape(XAF.shape[0],1,1), axis=0)
+
+
+
     return eGAFt
 
 def XAF(tres, roots, QAA, QFF, QAF, QFA):
@@ -867,35 +877,52 @@ def Zxx(t, Q, kopen, QFF, QAF, QFA):
     # Maybe needs check for equal eigenvalues.
 
     # Calculate Dj (Eq. 3.16, HJC90) and Cimr (Eq. 3.18, HJC90).
-    D = []
-    C00 = []
-    C11 = []
-    C10 = []
+    #D = []
+    #C00 = []
+    #C11 = []
+    #C10 = []
 
-    for i in range(k):
-        if open:
-            D.append(np.dot(np.dot(A[i, :kopen, kopen:], expQFF), QFA))
-            C00.append(A[i, :kopen, :kopen])
-        else:
-            D.append(np.dot(np.dot(A[i, kopen:, :kopen], expQFF), QFA))
-            C00.append(A[i, kopen:, kopen:])
-        C11.append(np.dot(D[i], C00[i]))
+    D = np.empty((k))
+    if open:
+        C00 = A[:, :kopen, :kopen]
+        A1 = A[:, :kopen, kopen:]
+        D = np.dot(np.dot(A1, expQFF), QFA)
+    else:
+        C00 = A[:, kopen:, kopen:]
+        A1 = A[:, kopen:, :kopen]
+        D = np.dot(np.dot(A1, expQFF), QFA)
 
+    C11 = D * C00
+
+    #for i in range(k):
+        #if open:
+            #D[i] = (np.dot(np.dot(A1[i], expQFF), QFA))
+            #C00.append(A[i, :kopen, :kopen])
+        #else:
+            #D[i] = (np.dot(np.dot(A1[i], expQFF), QFA))
+            #C00.append(A[i, kopen:, kopen:])
+        #C11.append(np.dot(D[i], C00[i]))
+
+    C10 = np.empty((k, kA, kA))
     for i in range(k):
         S = np.zeros((kA, kA))
         for j in range(k):
             if j != i:
                 S += ((np.dot(D[i], C00[j]) + np.dot(D[j], C00[i])) /
                     (eigen[j] - eigen[i]))
-        C10.append(S)
+        C10[i] = S
 
-    Z00 = []
-    Z10 = []
-    Z11 = []
+#    Z00 = []
+#    Z10 = []
+#    Z11 = []
     M = np.dot(QAF, expQFF)
-    for i in range(k):
-        Z00.append(np.dot(C00[i], M))
-        Z10.append(np.dot(C10[i], M))
-        Z11.append(np.dot(C11[i], M))
+#    for i in range(k):
+#        Z00.append(np.dot(C00[i], M))
+#        Z10.append(np.dot(C10[i], M))
+#        Z11.append(np.dot(C11[i], M))
+
+    Z00 = np.array([np.dot(C, M) for C in C00])
+    Z10 = np.array([np.dot(C, M) for C in C10])
+    Z11 = np.array([np.dot(C, M) for C in C11])
 
     return eigen, Z00, Z10, Z11
