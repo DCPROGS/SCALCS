@@ -736,7 +736,11 @@ def f0(u, eigvals, Z00):
 #    for i in range(len(eigvals)):
 #        f += Z00[i] *  math.exp(-eigvals[i] * u)
 
-    f = np.sum(Z00 *  np.exp(-eigvals * u).reshape(Z00.shape[0],1,1), axis=0)
+    if Z00.ndim > 1:
+        f = np.sum(Z00 *  np.exp(-eigvals * u).reshape(Z00.shape[0],1,1),
+            axis=0)
+    else:
+        f = np.sum(Z00 *  np.exp(-eigvals * u))
     return f
 
 def f1(u, eigvals, Z10, Z11):
@@ -762,8 +766,11 @@ def f1(u, eigvals, Z10, Z11):
 #    for i in range(len(eigvals)):
 #        f += (Z10[i] + Z11[i] * u) *  math.exp(-eigvals[i] * u)
 
-    f = np.sum((Z10 + Z11 * u) *
-        np.exp(-eigvals * u).reshape(Z10.shape[0],1,1), axis=0)
+    if Z10.ndim > 1:
+        f = np.sum((Z10 + Z11 * u) *
+            np.exp(-eigvals * u).reshape(Z10.shape[0],1,1), axis=0)
+    else:
+        f = np.sum((Z10 + Z11 * u) * np.exp(-eigvals * u))
     return f
 
 def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):

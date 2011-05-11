@@ -780,6 +780,10 @@ def GAMAxx(mec, tres, open):
             gama10.append(np.dot(np.dot(phiA, Z10[i]), uF)[0])
             gama11.append(np.dot(np.dot(phiA, Z11[i]), uF)[0])
 
+#        gama00 = np.array([np.dot(np.dot(phiA, Z), uF)[0] for Z in Z00])
+#        gama10 = np.array([np.dot(np.dot(phiA, Z), uF)[0] for Z in Z10])
+#        gama11 = np.array([np.dot(np.dot(phiA, Z), uF)[0] for Z in Z11])
+
     else:
         phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
         eigen, Z00, Z10, Z11 = qml.Zxx(tres, mec.Q, mec.kA,
@@ -789,8 +793,11 @@ def GAMAxx(mec, tres, open):
             gama00.append(np.dot(np.dot(phiF, Z00[i]), uA)[0])
             gama10.append(np.dot(np.dot(phiF, Z10[i]), uA)[0])
             gama11.append(np.dot(np.dot(phiF, Z11[i]), uA)[0])
+#        gama00 = np.array([np.dot(np.dot(phiF, Z), uA)[0] for Z in Z00])
+#        gama10 = np.array([np.dot(np.dot(phiF, Z), uA)[0] for Z in Z10])
+#        gama11 = np.array([np.dot(np.dot(phiF, Z), uA)[0] for Z in Z11])
 
-    return eigen, gama00, gama10, gama11
+    return eigen, np.array(gama00), np.array(gama10), np.array(gama11)
 
 def ini_vectors(mec, tres, tcrit, is_chsvec=False):
     """
