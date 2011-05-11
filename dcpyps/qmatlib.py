@@ -147,8 +147,8 @@ def expQt(M, t):
     eigvals, A = eigs(M)
 
     # DO NOT DELETE commented explicit loops for future reference
-    k = M.shape[0]
-    expM = np.zeros((k, k))
+    # k = M.shape[0]
+    # expM = np.zeros((k, k))
     # rev. 1
     # TODO: avoid loops
     #    for i in range(k):
