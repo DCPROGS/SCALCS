@@ -62,7 +62,7 @@ def eigs(Q):
     eigvals, M = nplin.eig(Q)
     N = nplin.inv(M)
     k = N.shape[0]
-    # A = np.zeros((k, k, k))
+    A = np.zeros((k, k, k))
     # TODO: make this a one-liner avoiding loops
     # DO NOT DELETE commented explicit loops for future reference
     # 
