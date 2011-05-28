@@ -689,6 +689,7 @@ def bisect(s1, s2, tres, Q11, Q22, Q21, Q12, k1, k2):
         Asymptotic root at wich \|W\|=0.
     """
 
+    epsy = 1e-10
     f = nplin.det(W(s1, tres, Q11, Q22, Q21, Q12, k1, k2))
     if f > 0:
         temp = s1
@@ -698,6 +699,7 @@ def bisect(s1, s2, tres, Q11, Q22, Q21, Q12, k1, k2):
     solved = False
     itermax = 100
     sout = None
+    flast = 0
 
     while iter < itermax and not solved:
         iter += 1
@@ -709,6 +711,11 @@ def bisect(s1, s2, tres, Q11, Q22, Q21, Q12, k1, k2):
             s2 = sout
         else:    #if f == 0:
             solved = True
+
+        if math.fabs(flast - f) < epsy:
+            solved = True
+        else:
+            flast = f
 
     #if verbose: print 'function solved in', ns, 'itterations'
     return sout

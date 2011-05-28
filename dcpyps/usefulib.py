@@ -76,7 +76,7 @@ def simplexHJC(theta, data, func, opts, verbose=0):
     nrestartmax = 3    # max number of restarts
     nrestart = 0    # counts restarts
     L = 0
-    niter	= 0
+    niter = 0
     nitermax = 1000
 
     while nrestart < nrestartmax:
