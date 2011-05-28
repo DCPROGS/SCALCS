@@ -773,7 +773,7 @@ def GAMAxx(mec, tres, open):
     if open:
         phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
         eigen, Z00, Z10, Z11 = qml.Zxx(tres, mec.Q, mec.kA,
-            mec.QFF, mec.QAF, mec.QFA)
+            mec.QFF, mec.QAF, mec.QFA, expQFF)
         uF = np.ones((mec.kF,1))
         for i in range(k):
             gama00.append(np.dot(np.dot(phiA, Z00[i]), uF)[0])
@@ -787,7 +787,7 @@ def GAMAxx(mec, tres, open):
     else:
         phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
         eigen, Z00, Z10, Z11 = qml.Zxx(tres, mec.Q, mec.kA,
-            mec.QAA, mec.QFA, mec.QAF)
+            mec.QAA, mec.QFA, mec.QAF, expQAA)
         uA = np.ones((mec.kA, 1))
         for i in range(k):
             gama00.append(np.dot(np.dot(phiF, Z00[i]), uA)[0])
@@ -799,7 +799,8 @@ def GAMAxx(mec, tres, open):
 
     return eigen, np.array(gama00), np.array(gama10), np.array(gama11)
 
-def ini_vectors(mec, tres, tcrit, is_chsvec=False):
+def ini_vectors(mec, eGFA, eGAF, expQFF, XFA,
+        roots, tres, tcrit, is_chsvec=False):
     """
     Get initial and final vectors, startB and endB, for HJC likelihood
     calculation (Eqs. 5.5 or 5.7, CHS96).
@@ -822,18 +823,18 @@ def ini_vectors(mec, tres, tcrit, is_chsvec=False):
         Column of 1's or final CHS vector (Eq. 5.8, CHS96).
     """
 
-    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
-    expQFF = qml.expQt(mec.QFF, tres)
-    expQAA = qml.expQt(mec.QAA, tres)
-    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
-    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
+#    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+#    expQFF = qml.expQt(mec.QFF, tres)
+#    expQAA = qml.expQt(mec.QAA, tres)
+#    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
+#    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
     uA = np.ones((mec.kA, 1))
 
     if is_chsvec:
-        roots = asymptotic_roots(mec, tres, False)
+#        roots = asymptotic_roots(mec, tres, False)
         HFA = np.zeros((mec.kF, mec.kA))
-        XFA = qml.XAF(tres, roots, mec.QFF, mec.QAA, mec.QFA,
-            mec.QAF)
+#        XFA = qml.XAF(tres, roots, mec.QFF, mec.QAA, mec.QFA,
+#            mec.QAF, expQFF)
         for i in range(mec.kF):
             coeff = -math.exp(roots[i] * (tcrit - tres)) / roots[i]
             HFA += coeff * XFA[i]
@@ -896,15 +897,25 @@ def HJClik(theta, bursts, opts):
     # TODO: Make new Q from theta.
     # TODO: Errors.
 
-    startB, endB = ini_vectors(mec, tres, tcrit, is_chsvec)
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+    expQFF = qml.expQt(mec.QFF, tres)
+    expQAA = qml.expQt(mec.QAA, tres)
+    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
+    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
+
+
     Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(tres, mec.Q, mec.kA, mec.QFF,
-        mec.QAF, mec.QFA)
+        mec.QAF, mec.QFA, expQFF)
     Aroots = asymptotic_roots(mec, tres, True)
-    Axaf = qml.XAF(tres, Aroots, mec.QAA, mec.QFF, mec.QAF, mec.QFA)
+    Axaf = qml.XAF(tres, Aroots, mec.QAA, mec.QFF, mec.QAF, mec.QFA, expQFF)
     Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(tres, mec.Q, mec.kA, mec.QAA,
-        mec.QFA, mec.QAF)
+        mec.QFA, mec.QAF, expQAA)
     Froots = asymptotic_roots(mec, tres, False)
-    Fxaf = qml.XAF(tres, Froots, mec.QFF, mec.QAA, mec.QFA, mec.QAF)
+    Fxaf = qml.XAF(tres, Froots, mec.QFF, mec.QAA, mec.QFA, mec.QAF, expQAA)
+    startB, endB = ini_vectors(mec, eGFA, eGAF, expQAA, Fxaf, Froots,
+        tres, tcrit, is_chsvec)
+#    print 'startB=', startB
+#    print 'endB=', endB
 
     loglik = 0
     for ind in bursts:
@@ -913,10 +924,10 @@ def HJClik(theta, bursts, opts):
         for i in range(len(burst)):
             t = burst[i] * 0.001
             if i % 2 == 0: # open time
-                eGAFt = np.zeros(Axaf[0].shape)
+                #eGAFt = np.zeros(Axaf[0].shape)
                 eGAFt = qml.eGAF(t, tres, Aroots, Axaf, Aeigvals, AZ00, AZ10, AZ11)
             else: # shut
-                eGAFt = np.zeros(Fxaf[0].shape)
+                #eGAFt = np.zeros(Fxaf[0].shape)
                 eGAFt = qml.eGAF(t, tres, Froots, Fxaf, Feigvals, FZ00, FZ10, FZ11)
             grouplik = np.dot(grouplik, eGAFt)
 #            if grouplik.max() > 1e50:

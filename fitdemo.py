@@ -22,7 +22,7 @@ def main():
     mec = samples.CH82()
     mec.printout(sys.stdout)
 
-    tres = 0.00002
+    tres = 0.0001
     tcrit = 0.004
     conc = 100e-9
 
@@ -52,6 +52,7 @@ def main():
     print('Average = {0:.3f} millisec'.format(np.average(blength)))
     print('Range: {0:.3f}'.format(min(blength)) +
             ' to {0:.3f} millisec'.format(max(blength)))
+    #rec1.print_bursts()
 
     # Maximum likelihood fit.
     print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"

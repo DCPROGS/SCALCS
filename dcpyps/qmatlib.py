@@ -696,7 +696,7 @@ def bisect(s1, s2, tres, Q11, Q22, Q21, Q12, k1, k2):
         s2 = temp
     iter = 0
     solved = False
-    itermax = 1000
+    itermax = 100
     sout = None
 
     while iter < itermax and not solved:
@@ -812,7 +812,7 @@ def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):
 
     return eGAFt
 
-def XAF(tres, roots, QAA, QFF, QAF, QFA):
+def XAF(tres, roots, QAA, QFF, QAF, QFA, expQFF):
     """
 
     Parameters
@@ -831,7 +831,7 @@ def XAF(tres, roots, QAA, QFF, QAF, QFA):
 
     kA = QAA.shape[0]
     kF = QFF.shape[0]
-    expQFF = expQt(QFF, tres)
+#    expQFF = expQt(QFF, tres)
     X = np.zeros((kA, kA, kF))
     rowA = np.zeros((kA, kA))
     colA = np.zeros((kA, kA))
@@ -851,7 +851,7 @@ def XAF(tres, roots, QAA, QFF, QAF, QFA):
         X[i] = nom / denom
     return X
 
-def Zxx(t, Q, kopen, QFF, QAF, QFA):
+def Zxx(t, Q, kopen, QFF, QAF, QFA, expQFF):
     """
     Calculate Z constants for the exact open time pdf (Eq. 3.22, HJC90).
     Exchange A and F for shut time pdf.
@@ -879,7 +879,7 @@ def Zxx(t, Q, kopen, QFF, QAF, QFA):
     kA = k - QFF.shape[0]
     if kA != kopen:
         open = False
-    expQFF = expQt(QFF, t)
+#    expQFF = expQt(QFF, t)
     eigen, A = eigs(-Q)
     # Maybe needs check for equal eigenvalues.
 

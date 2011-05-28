@@ -48,11 +48,13 @@ def simplexHJC(theta, data, func, opts, verbose=0):
 
     #TODO: these might come as parameters
     errfac = 1.e-3
-    stpfac= 2   # 5 for logfit
+    stpfac= 2   # 5 for logfit; initial step size factor; 1.01 < stpfac < 20
     reffac = 1.0    # reflection coeff => 1
     confac = 0.5     # contraction coeff 0 < beta < 1
     extfac = 2.0     # extension factor > 1
     resfac = 10.0
+
+    stpfac = log(stpfac)
 
     k = np.size(theta)
     n = k + 1    # # of vertices in simplex
@@ -65,10 +67,17 @@ def simplexHJC(theta, data, func, opts, verbose=0):
     step = np.ones((k)) * stpfac
     crtstp = np.ones((k)) * errfac
 
+    # Compute offset of the vertices of the starting simplex
+    fac = (sqrt(n) - 1.0) / (k * sqrt(2.0))
+
     neval = 0	 # counts function evaluations
+    nevalmax = 1000
     niter = 0
-    nrestartmax = 100    # max number of restarts
+    nrestartmax = 3    # max number of restarts
     nrestart = 0    # counts restarts
+    L = 0
+    niter	= 0
+    nitermax = 1000
 
     while nrestart < nrestartmax:
 
@@ -82,8 +91,7 @@ def simplexHJC(theta, data, func, opts, verbose=0):
         absmin = fval[0]
         thmin = theta
      
-        # Compute offset of the vertices of the starting simplex
-	fac = (sqrt(n) - 1.0) / (k * sqrt(2.0))
+
         # specify all other vertices of the starting simplex.
         for i in range(1, n):
             simp[i] = simp[0] + step * fac
@@ -97,43 +105,39 @@ def simplexHJC(theta, data, func, opts, verbose=0):
             absmin = fval[0]
             thmin = simp[0]
 
-        L = 0
-        niter	= 0
-        while L == 0:
+        while L == 0 and niter < nitermax:
             niter += 1
-            #print 'iter#', niter, 'f=', fval[0], 'theta', simp[0]
+            if neval > nevalmax:
+                print '\n No convergence after', neval, 'evaluations.'
+                return simp[0], fval[0]
 
             # ----- compute centroid of all vertices except the worst
-            centre = np.zeros((k))
-            for i in range(k):
-                for j in range(n-1):
-                    centre[i] = centre[i] + simp[j,i]
+#            centre = np.zeros((k))
+#            for i in range(k):
+#                for j in range(n-1):
+#                    centre[i] = centre[i] + simp[j,i]
+#            centre = centre / float(k)
+            centre = np.sum(simp[:-1,:], axis=0) / float(k)
 
             # ----- reflect, with next vertex taken as reflection of worst
-            centre = centre / float(k)
-            pnew = centre - reffac * (simp[-1] - centre)
 
+            pnew = centre - reffac * (simp[-1] - centre)
             fnew, pnew = func(pnew, data, opts)
             if fnew < absmin:
                 absmin = fnew
                 thmin = pnew
             neval += 1
-
-            if verbose:
-                print 'reflection: e#', neval, 'f=',fnew, 'pnew=', pnew
+            print 'reflection'
 
             if fnew < fval[0]:
                 # ----- new vertex is better than previous best so extend it
                 pnew1 = centre + extfac * (pnew - centre)
-
                 fnew1, pnew1 = func(pnew1, data, opts)
                 if fnew1 < absmin:
                     absmin = fnew1
                     thmin = pnew1
                 neval += 1
-
-                if verbose:
-                    print 'extention: e#', neval, 'f1=',fnew1, 'pnew1=', pnew1
+                print 'extention'
 
                 if fnew1 < fnew:     # ----- still better
                     simp[-1] = pnew1
@@ -141,7 +145,6 @@ def simplexHJC(theta, data, func, opts, verbose=0):
                 else:
                     simp[-1] = pnew
                     fval[-1] = fnew
-                fval, simp = sortShell(fval, simp)
                 # go for convergence check
 
             else:     # come here if reflected vertex not
@@ -161,9 +164,7 @@ def simplexHJC(theta, data, func, opts, verbose=0):
                         absmin = fnew1
                         thmin = pnew1
                     neval += 1
-
-                    if verbose:
-                        print 'contract: e#', neval, 'f=',fnew1, 'pnew1=', pnew1
+                    print 'contraction'
 
                     # ----- is contracted vertex better than the worst vertex
                     if fnew1 <= fval[-1]:
@@ -177,8 +178,7 @@ def simplexHJC(theta, data, func, opts, verbose=0):
                                     simp[i,j] = simp[0,j] + confac * (simp[i,j] - simp[0,j])
                             fval[i], simp[i] = func(simp[i], data, opts)
                             neval += 1
-                            if verbose:
-                                print 'reduction: e#', neval, 'f=',fval[i], 'theta=', theta
+                            print 'reduction'
 
             fval, simp = sortShell(fval, simp)
             if fval[0] < absmin:
@@ -194,10 +194,10 @@ def simplexHJC(theta, data, func, opts, verbose=0):
             # L=3 for abort (no restarts)
 
             L = 1    #  conv via crtstp
-#            for j in range(k):     # test each parameter
-#                if(simp[-1,j] - simp[0,j]) > fabs(crtstp[j]): L = 0 # not conv
-            diff = simp[-1] - simp[0]
-            if np.any(np.less_equal(diff, np.fabs(crtstp))): L = 0
+            for j in range(k):     # test each parameter
+                if(simp[-1,j] - simp[0,j]) > fabs(crtstp[j]): L = 0 # not conv
+#            diff = simp[-1] - simp[0]
+#            if np.any(np.less_equal(diff, np.fabs(crtstp))): L = 0
 
             print 'iter#', niter, 'f=', -fval[0], 'theta', np.exp(simp[0])
         # end of iteration (while L == 0:)
@@ -217,11 +217,12 @@ def simplexHJC(theta, data, func, opts, verbose=0):
             exvals.append(fval[0])
 
             # next average over vertices-put values in pnew()
-            for j in range(k):
-                pnew[j] = 0.0
-                for i in range(n):
-                    pnew[j] = pnew[j] + simp[i,j]
-                pnew[j] = pnew[j] / float(n)
+            pnew = np.sum(simp, axis=0) / float(k)
+#            for j in range(k):
+#                pnew[j] = 0.0
+#                for i in range(n):
+#                    pnew[j] = pnew[j] + simp[i,j]
+#                pnew[j] = pnew[j] / float(n)
             fvalav, pnew = func(pnew, data, opts)
             exvals.append(fvalav)
 
@@ -275,4 +276,8 @@ def simplexHJC(theta, data, func, opts, verbose=0):
                     theta = pnew1
                     print '\n Restarted at result of local search minimum'
                     step = resfac * crtstp
+
+        nrestart += 1
+
+    return simp[0], fval[0]
 

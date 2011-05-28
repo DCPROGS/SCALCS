@@ -258,18 +258,18 @@ class TimeSeries(object):
                 openinglength += self.rtint[i]
                 #TODO: if bad opening: set burst bad
 
-                if i == len(self.rtint)-1:
-                    burstopt.append(i) # 2nd position - last interval
-                    burstopt.append(burstlen) # 3rd position- burst len
-                    if self.rprops[i] >= 8:
-                        badburst = True
-                    burstopt.append(badburst) # 4th position- bad burst
-                    burstopt.append(meanamp) # 5th position- mean ampl
-                    burstopt.append(openburst) #6thpos- opentime per burst
-
-                    burst.append(openinglength)
-                    bursts[burstid] = burst
-                    burstsopts[burstid] = burstopt
+#                if i == len(self.rtint)-1:
+#                    burstopt.append(i) # 2nd position - last interval
+#                    burstopt.append(burstlen) # 3rd position- burst len
+#                    if self.rprops[i] >= 8:
+#                        badburst = True
+#                    burstopt.append(badburst) # 4th position- bad burst
+#                    burstopt.append(meanamp) # 5th position- mean ampl
+#                    burstopt.append(openburst) #6thpos- opentime per burst
+#
+#                    burst.append(openinglength)
+#                    bursts[burstid] = burst
+#                    burstsopts[burstid] = burstopt
                 
             else: # found gap
                 if self.rtint[i] < tcrit: # TODO: and unusable gap...
@@ -312,6 +312,11 @@ class TimeSeries(object):
         for ind in range(n):
             blength.append(self.burstsopts[ind][2])
         return blength
+
+    def print_bursts(self):
+        n = len(self.bursts)
+        for ind in range(n):
+            print self.bursts[ind]
 
 
 def erf(z):
