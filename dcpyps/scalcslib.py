@@ -930,9 +930,9 @@ def HJClik(theta, bursts, opts):
                 #eGAFt = np.zeros(Fxaf[0].shape)
                 eGAFt = qml.eGAF(t, tres, Froots, Fxaf, Feigvals, FZ00, FZ10, FZ11)
             grouplik = np.dot(grouplik, eGAFt)
-#            if grouplik.max() > 1e50:
-#                grouplik = grouplik * 1e-100
-#                print 'grouplik was scaled down'
+            if grouplik.max() > 1e50:
+                grouplik = grouplik * 1e-100
+                print 'grouplik was scaled down'
         grouplik = np.dot(grouplik, endB)
         loglik += math.log(grouplik[0])
     return -loglik, np.log(mec.unit_rates())

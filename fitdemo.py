@@ -9,7 +9,7 @@ import time
 import numpy as np
 
 from dcpyps import scalcslib as scl
-from dcpyps import usefulib as ufl
+from dcpyps import optimize
 from dcpyps import dataset
 from dcpyps import io
 from dcpyps import samples
@@ -57,13 +57,15 @@ def main():
     # Maximum likelihood fit.
     print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
-    newrates, loglik = ufl.simplexHJC(rates, rec1.bursts, scl.HJClik,
+    newrates, loglik = optimize.simplexHJC(rates, rec1.bursts, scl.HJClik,
         opts, verbose=0)
     print ("\nFitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
+    newrates = np.exp(newrates)
     mec.set_rateconstants(newrates)
     print "\n Final rate constants:"
     mec.printout(sys.stdout)
+    print ('\n Final log-likelihood = {0:.6f}'.format(-loglik))
 
 try:
     cProfile.run('main()')
