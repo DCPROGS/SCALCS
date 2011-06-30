@@ -5,7 +5,7 @@ Example of realistic concentration jump calculation.
 
 import matplotlib.pyplot as plt
 from dcpyps import samples
-from dcpyps import cjumpslib as cjl
+from dcpyps import rcj
 
 if __name__ == "__main__":
 
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     'record_length' : 50000,
     'peak_conc'     : 30e-3          # in molar
     }
-
+    
     for rise in jump_params['rise_time']:
 
         print 'Calculating jump with %s microsec rise...' %(rise)
@@ -28,10 +28,10 @@ if __name__ == "__main__":
         P_copy = jump_params.copy()
         P_copy['rise_time'] = rise
 
-        jump, relax = cjl.rcj_single(mec, P_copy)
+        jump, relax = rcj.rcj_single(mec, P_copy)
         
         # rlx contains Popen trace only
-        t, cjmp, rlx = cjl.convert_to_arrays(jump, relax, mec.kA)
+        t, cjmp, rlx = rcj.convert_to_arrays(jump, relax, mec.kA)
 
         plt.subplot(211)
         plt.plot(t * 0.001, cjmp * 1000, 'b-')
@@ -59,5 +59,3 @@ if __name__ == "__main__":
 #        f.close()
 
     print ('done!')
-
-

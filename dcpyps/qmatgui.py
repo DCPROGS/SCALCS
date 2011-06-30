@@ -26,7 +26,7 @@ except:
     raise ImportError("matplotlib module is missing")
 
 import scalcslib as scl
-import cjumpslib as cjl
+import rcj
 import usefulib as ufl
 import dataset
 import io
@@ -355,28 +355,18 @@ class QMatGUI(QMainWindow):
         Display realistic concentration jump.
         """
 
-        self.textBox.append('\n\n\t===== REALISTIC CONCENTRATION JUMP =====')
-        self.textBox.append('Concentration profile- green solid line.')
-        self.textBox.append('Relaxation- blue solid line.')
-
         dialog = CJumpParDlg(self)
         if dialog.exec_():
             jpar = dialog.return_par()
-
-        self.textBox.append('\nConcentration pulse profile:')
-        self.textBox.append('Concentration = {0:.3f} mM'
-            .format(jpar['peak_conc'] * 1000))
-        self.textBox.append('10- 90% rise time = {0:.0f} microsec'
-            .format(jpar['rise_time']))
-        self.textBox.append('Pulse width = {0:.1f} millisec'
-            .format(jpar['pulse_width'] * 0.001))
             
+        rcj.rcj_printout(self.textBox, jpar)
+
         # TODO: get slowest relaxation tau and automaticly calculate
         # record length.
-        jumpd, relaxd = cjl.rcj_single(self.mec, jpar)
+        jumpd, relaxd = rcj.rcj_single(self.mec, jpar)
 
         # TODO: relaxed contains Popen trace only. Need to plot occupancies too.
-        t, cjump, relax = cjl.convert_to_arrays(jumpd, relaxd, self.mec.kA)
+        t, cjump, relax = rcj.convert_to_arrays(jumpd, relaxd, self.mec.kA)
         maxR = max(relax)
         maxJ = max(cjump)
         cjump1 = (cjump / maxJ) * 0.2 * maxR + 1.02* maxR

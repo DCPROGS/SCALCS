@@ -350,3 +350,19 @@ def convert_to_arrays(cjump, relax, kA):
         index +=1
 
     return t, cj, rl
+
+def rcj_printout(txtout, jpar):
+    """
+    """
+    
+    txtout.append('\n\n\t===== REALISTIC CONCENTRATION JUMP =====')
+    txtout.append('Concentration profile- green solid line.')
+    txtout.append('Relaxation- blue solid line.')
+    txtout.append('\nConcentration pulse profile:')
+    txtout.append('Concentration = {0:.3f} mM'
+        .format(jpar['peak_conc'] * 1000))
+    txtout.append('10- 90% rise time = {0:.0f} microsec'
+        .format(jpar['rise_time']))
+    txtout.append('Pulse width = {0:.1f} millisec'
+        .format(jpar['pulse_width'] * 0.001))
+
