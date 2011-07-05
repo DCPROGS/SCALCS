@@ -84,6 +84,11 @@ def eigs(Q):
     #         np.dot(M[:, i].reshape(k, 1), N[i].reshape(1, k)) \
     #             for i in range(k)
     #         ])
+    
+    # Sort eigenvalues in ascending order. 
+    sorted_indices = eigvals.real.argsort()
+    eigvals = eigvals[sorted_indices]
+    A = A[sorted_indices, : , : ]
 
     return eigvals, A
 

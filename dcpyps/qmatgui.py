@@ -358,8 +358,6 @@ class QMatGUI(QMainWindow):
         dialog = CJumpParDlg(self)
         if dialog.exec_():
             jpar = dialog.return_par()
-            
-        rcj.rcj_printout(self.textBox, jpar)
 
         # TODO: get slowest relaxation tau and automaticly calculate
         # record length.
@@ -376,6 +374,8 @@ class QMatGUI(QMainWindow):
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
+        
+        rcj.rcj_printout(self.mec, jpar, output=self.log)
 
     def onPlotPopen(self):
         """
