@@ -354,7 +354,7 @@ def convert_to_arrays(cjump, relax, kA):
 
     return t, cj, rl
 
-def rcj_printout(mec, jpar, output=sys.stdout, eff='c'):
+def printout(mec, jpar, output=sys.stdout, eff='c'):
     """
     """
     
@@ -369,7 +369,7 @@ def rcj_printout(mec, jpar, output=sys.stdout, eff='c'):
     eigs0 = mec.eigenvals
     A0 = mec.A
 
-    output.write('\nEquilibrium occupancies before t=0, at concentration = 0.0:')
+    output.write('\n\nEquilibrium occupancies before t=0, at concentration = 0.0:')
     for i in range(mec.k):
         output.write('\np00({0:d}) = '.format(i+1) +
             '{0:.3e}'.format(P0[i]))

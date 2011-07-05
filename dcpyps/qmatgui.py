@@ -27,6 +27,7 @@ except:
 
 import scalcslib as scl
 import rcj
+import scburst
 import usefulib as ufl
 import dataset
 import io
@@ -370,7 +371,7 @@ class QMatGUI(QMainWindow):
         self.textBox.append('Pulse width = {0:.1f} millisec'
             .format(jpar['pulse_width'] * 0.001))
         self.textBox.append("---\n")
-
+        
         # TODO: get slowest relaxation tau and automaticaly calculate
         # record length.
         jumpd, relaxd = rcj.rcj_single(self.mec, jpar)
@@ -387,7 +388,7 @@ class QMatGUI(QMainWindow):
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
         
-        rcj.rcj_printout(self.mec, jpar, output=self.log)
+        rcj.printout(self.mec, jpar, output=self.log)
 
     def onPlotPopen(self):
         """
@@ -639,34 +640,17 @@ class QMatGUI(QMainWindow):
         Display the burst length distribution.
         """
         self.textBox.append('\n\t===== BURST LENGTH PDF =====')
-        self.textBox.append('Agonist concentration = {0:.6f} mikroM'.
+        self.textBox.append('Agonist concentration = {0:.6f} microM'.
             format(self.conc * 1000000))
-        self.textBox.append('Resolution = {0:.2f} mikrosec'.
+        self.textBox.append('Resolution = {0:.2f} microsec'.
             format(self.tres * 1000000))
         self.textBox.append('Ideal pdf- blue solid line.')
 
         self.mec.set_eff('c', self.conc)
-
-        tau, area = scl.get_burst_ideal_pdf_components(self.mec)
-        self.textBox.append('\nBURST LENGTH DISTRIBUTION')
-        self.textBox.append('term\ttau (ms)\tarea (%)')
-        for i in range(self.mec.kE):
-            self.textBox.append('{0:d}'.format(i+1) +
-            '\t{0:.3f}'.format(tau[i] * 1000) +
-            '\t{0:.3f}'.format(area[i] * 100))
-
-        m = scl.mean_burst_length(self.mec)
-        self.textBox.append('\nMean burst length = {0:.3f} millisec'.
-            format(m * 1000))
-        mu = scl.mean_num_burst_openings(self.mec)
-        self.textBox.append('Mean number of openings per burst = {0:.3f}'.
-            format(mu))
-        mop = scl.mean_open_time_burst(self.mec)
-        self.textBox.append('The mean total open time per burst = {0:.3f} '.
-            format(mop * 1000) + 'millisec')
-        bpop = mop / m
-        self.textBox.append('Popen WITHIN BURST = (open time/bst)/(bst length)\
-            = {0:.3f} '.format(bpop))
+        
+        scburst.printout(self.mec, output=self.log)
+        
+        tau, area = scburst.get_burst_ideal_pdf_components(self.mec)
 
         points = 512
         tmin = 0.00001
@@ -677,7 +661,7 @@ class QMatGUI(QMainWindow):
         fbst = np.zeros(points)
         for i in range(points):
             t[i] = tmin * pow(10, (i * step))
-            fbst[i] = t[i] * scl.pdf_burst_length(self.mec, t[i])
+            fbst[i] = t[i] * scburst.pdf_burst_length(self.mec, t[i])
         t = t * 1000 # x axis in millisec
         fbrst = fbst
         
@@ -692,17 +676,14 @@ class QMatGUI(QMainWindow):
         """
         Display the distribution of number of openings per burst.
         """
-        self.textBox.append('\nCalculating burst parameters:')
-        self.textBox.append('Agonist concentration = %e M' %self.conc)
+
         self.mec.set_eff('c', self.conc)
-        mu = scl.mean_num_burst_openings(self.mec)
-        self.textBox.append('Mean number of openings per burst = %f' %mu)
 
         n = 10
         r = np.arange(1, n+1)
         Pr = np.zeros(n)
         for i in range(n):
-            Pr[i] = scl.distr_num_burst_openings(self.mec, r[i])
+            Pr[i] = scburst.distr_num_burst_openings(self.mec, r[i])
 
         self.axes.clear()
         self.axes.plot(r, Pr,'ro')
@@ -729,7 +710,7 @@ class QMatGUI(QMainWindow):
             for i in range(points):
                 c[i] = cmin + step * i
                 self.mec.set_eff('c', c[i])
-                br[i] = scl.mean_burst_length(self.mec)
+                br[i] = scburst.mean_burst_length(self.mec)
                 brblk[i] = br[i] * (1 + c[i] / self.mec.KBlk)
             c = c * 1000000 # x axis scale in mikroMoles
             br = br * 1000
@@ -739,7 +720,7 @@ class QMatGUI(QMainWindow):
             for i in range(points):
                 c[i] = cmin + step * i
                 self.mec.set_eff('c', c[i])
-                br[i] = scl.mean_burst_length(self.mec)
+                br[i] = scburst.mean_burst_length(self.mec)
             c = c * 1000000 # x axis scale in mikroMoles
             br = br * 1000
             self.axes.plot(c, br,'b-')

@@ -16,14 +16,16 @@ if __name__ == "__main__":
     'step_size'     : 8 , # The sample step. All time params in microseconds.
     'pulse_centre'  : 10000 ,
     'rise_time'     : [250] , # list of 10-90% rise times for error functions
-    'pulse_width'   : 2500 ,
+    'pulse_width'   : 10000 ,
     'record_length' : 50000,
-    'peak_conc'     : 30e-3          # in molar
+    'peak_conc'     : 10e-6          # in molar
     }
     
     for rise in jump_params['rise_time']:
 
         print 'Calculating jump with %s microsec rise...' %(rise)
+        
+        rcj.printout(mec, jump_params)
 
         P_copy = jump_params.copy()
         P_copy['rise_time'] = rise
@@ -58,4 +60,4 @@ if __name__ == "__main__":
 #            f.write(l+'\n')
 #        f.close()
 
-    print ('done!')
+    print ('\ndone!')
