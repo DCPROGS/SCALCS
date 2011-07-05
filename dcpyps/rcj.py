@@ -358,17 +358,12 @@ def rcj_printout(mec, jpar, output=sys.stdout, eff='c'):
     """
     """
     
-    output.write('\n\n===== REALISTIC CONCENTRATION JUMP =====')
-    output.write('\nConcentration profile- green solid line.')
-    output.write('\nRelaxation- blue solid line.')
-    output.write('\n\nConcentration pulse profile:')
-    output.write('\nConcentration = {0:.3f} mM'
-        .format(jpar['peak_conc'] * 1000))
-    output.write('\n10- 90% rise time = {0:.0f} microsec'
-        .format(jpar['rise_time']))
-    output.write('\nPulse width = {0:.1f} millisec'
-        .format(jpar['pulse_width'] * 0.001))
-        
+    #TODO: on/off binding
+    #TODO: move some of calculations from here to separate functions
+    
+    gamma = 30 # Conductance in pS
+    Vm = -80e-3 # Transmembrane potential in V.
+         
     mec.set_eff(eff, 0)
     P0 = qml.pinf(mec.Q)
     eigs0 = mec.eigenvals
@@ -414,7 +409,7 @@ def rcj_printout(mec, jpar, output=sys.stdout, eff='c'):
     for i in range(mec.k):
         for j in range(mec.kA):
             ampl_on[i] += w_on[i,j]
-    cur_on = ampl_on * 30 * (-80e-3) 
+    cur_on = ampl_on * gamma * Vm 
     max_ampl_on = np.max(np.abs(ampl_on))
     rel_ampl_on = ampl_on / max_ampl_on
     area_on = np.zeros((mec.k-1))
@@ -453,7 +448,7 @@ def rcj_printout(mec, jpar, output=sys.stdout, eff='c'):
     for i in range(mec.k):
         for j in range(mec.kA):
             ampl_off[i] += w_off[i,j]
-    cur_off = ampl_off * 30 * (-80e-3) 
+    cur_off = ampl_off * gamma * Vm
     max_ampl_off = np.max(np.abs(ampl_off))
     rel_ampl_off = ampl_off / max_ampl_off
     area_off = np.zeros((mec.k-1))

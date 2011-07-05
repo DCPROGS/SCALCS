@@ -358,8 +358,20 @@ class QMatGUI(QMainWindow):
         dialog = CJumpParDlg(self)
         if dialog.exec_():
             jpar = dialog.return_par()
+            
+        self.textBox.append('\n===== REALISTIC CONCENTRATION JUMP =====')
+        self.textBox.append('Concentration profile- green solid line.')
+        self.textBox.append('Relaxation- blue solid line.')
+        self.textBox.append('\nConcentration pulse profile:')
+        self.textBox.append('Concentration = {0:.3f} mM'
+            .format(jpar['peak_conc'] * 1000))
+        self.textBox.append('10- 90% rise time = {0:.0f} microsec'
+            .format(jpar['rise_time']))
+        self.textBox.append('Pulse width = {0:.1f} millisec'
+            .format(jpar['pulse_width'] * 0.001))
+        self.textBox.append("---\n")
 
-        # TODO: get slowest relaxation tau and automaticly calculate
+        # TODO: get slowest relaxation tau and automaticaly calculate
         # record length.
         jumpd, relaxd = rcj.rcj_single(self.mec, jpar)
 
