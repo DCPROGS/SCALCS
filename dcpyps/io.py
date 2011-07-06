@@ -475,7 +475,7 @@ def scn_read_header (fname):
     ints = array('i')
     doubles = array('d')
 
-    f=open(fname, 'rb')
+    f = open(fname, 'rb')
     header = {}
 
     ints.fromfile(f,1)
@@ -1103,3 +1103,278 @@ def scn_read_data(fname, ioffset, nint, calfac2):
         iprops.append(8)
 
     return tint, iampl, iprops
+
+def abf_read_header (filename):
+    """
+    Read Axon abf file header. Works only for version < 2.0. Read only 
+    information required for gap-free data reading.
+    """
+    
+    floats = array ('f')
+    ints = array('i')
+    shorts = array ('h')
+    
+    # h- a dictionary containing info from the abf file header
+    h = {}
+
+    fid = open(filename, 'rb')
+
+    # read 'fFileSignature' [i.e. abf version) from header
+    h['IFileSignature'] = fid.read(4)
+    floats.fromfile(fid, 1)
+    h['fFileVersionNumber'] = round(floats.pop() * 10) * 0.1
+#    print 'File signature: ', h['IFileSignature'], h['fFileVersionNumber']
+
+    shorts.fromfile(fid, 1)
+    h['nOperationMode'] = shorts.pop()
+#    if h['nOperationMode'] == 1:
+#        print("Operation mode 1: event-driven, variable length")
+#    elif h['nOperationMode'] == 2:
+#        print("Operation mode 2: oscilloscope, loss free")
+#    elif h['nOperationMode'] == 3:
+#        print("Operation mode 3: gap-free")
+#    elif h['nOperationMode'] == 4:
+#        print("Operation mode 4: oscilloscope, high-speed")
+#    elif h['nOperationMode'] == 5:
+#        print("Operation mode 5: episodic stimulation")
+#    else:
+#        print("Operation mode undefined!")
+
+    ints.fromfile(fid, 1)
+    h['IActualAcqLength'] = ints.pop()
+#    print("Actual number of ADC samples = {0:d}".format(h['IActualAcqLength']))
+
+    fid.seek(20)
+    ints.fromfile(fid, 1)
+    h['IFileStartDate'] = str(ints.pop())
+    ints.fromfile(fid, 1)
+    h['IFileStartTime'] = str(ints.pop())
+#    print("Experiment date: " + h['IFileStartDate'])
+#    print("Experiment time: " + h['IFileStartTime'])
+
+    fid.seek(40)
+    ints.fromfile(fid, 1)
+    h['IDataSectionPtr'] = ints.pop()
+    fid.seek(100)
+    shorts.fromfile(fid, 1)
+    h['nDataFormat'] = shorts.pop()
+#    print("Block number of start of Data section = {0:d}".
+#        format(h['IDataSectionPtr']))
+#    offset = h['IDataSectionPtr'] * 512
+#    print("     offset = {0:d}".format(offset))
+#    print("Data representation (0- short int; 1- float): {0:d}".
+#        format(h['nDataFormat']))
+
+    fid.seek(120)
+    shorts.fromfile(fid, 1)
+    h['nADCNumChannels'] = shorts.pop()
+#    print("Number of analog input channels sampled = {0:d}".
+#        format(h['nADCNumChannels']))
+
+    floats.fromfile(fid, 1)
+    h['fADCSampleInterval'] = floats.pop()
+#    print("Sampling interval = {0:.1f} microsec".
+#        format(h['fADCSampleInterval'] * h['nADCNumChannels']))
+
+    fid.seek(244)
+    floats.fromfile(fid, 1)
+    h['fADCRange'] = floats.pop()
+#    print("ADC voltage range = {0:.1f} V".format(h['fADCRange']))
+    fid.seek(252)
+    ints.fromfile(fid, 1)
+    h['IADCResolution'] = ints.pop()
+#    print("Number of ADC counts = {0:d}".format(h['IADCResolution']))
+
+    fid.seek(260)
+    shorts.fromfile(fid, 1)
+    h['nExperimentType'] = shorts.pop()
+#    print("Experiment type (0- Voltage-clamp; 1- Current-clamp): {0:d}".
+#        format(h['nExperimentType']))
+
+    fid.seek(410)
+    h['nADCSamplingSeq'] = []
+    for i in range(16):
+        shorts.fromfile(fid, 1)
+        h['nADCSamplingSeq'].append(shorts.pop())
+    h['sADCChannelName'] = []
+    for i in range(16):
+        h['sADCChannelName'].append(fid.read(10))
+    h['sADCUnits'] = []
+    for i in range(16):
+        h['sADCUnits'].append(fid.read(8))
+    
+    # gains, offsets
+    h['fADCProgramableGain'] = []
+    for i in range(16):
+        floats.fromfile(fid, 1)
+        h['fADCProgramableGain'].append(floats.pop())
+    h['fADCDisplayAmplification'] = []
+    for i in range(16):
+        floats.fromfile(fid, 1)
+        h['fADCDisplayAmplification'].append(floats.pop())
+    h['fADCDisplayOffset'] = []
+    for i in range(16):
+        floats.fromfile(fid, 1)
+        h['fADCDisplayOffset'].append(floats.pop())
+    h['fInstrumentScaleFactor'] = []
+    for i in range(16):
+        floats.fromfile(fid, 1)
+        h['fInstrumentScaleFactor'].append(floats.pop())
+
+#    print("Sampled ADC channels, names, units, gain:")
+#    for i in range(h['nADCNumChannels']):
+#        print("Channel # {0:d}\t".format(h['nADCSamplingSeq'][i]) +
+#            h['sADCChannelName'][h['nADCSamplingSeq'][i]] + "\t" +
+#            h['sADCUnits'][h['nADCSamplingSeq'][i]] + "\t" +
+#            #"{0:.3f}".format(fADCProgramableGain[nADCSamplingSeq[i]]) + "\t" +
+#            #"{0:.3f}".format(fADCDisplayAmplification[nADCSamplingSeq[i]]) + "\t" +
+#            #"{0:.3f}".format(fADCDisplayOffset[nADCSamplingSeq[i]]) + "\t" +
+#            "{0:.3f}".format(h['fInstrumentScaleFactor'][h['nADCSamplingSeq'][i]]) + " V/" +
+#            h['sADCUnits'][h['nADCSamplingSeq'][i]])
+
+    fid.seek(1178)
+    h['fSignalLowpassFilter'] = []
+    for i in range(16):
+        floats.fromfile(fid, 1)
+        h['fSignalLowpassFilter'].append(floats.pop())
+#    print("Lowpass filter = {0:.1f} Hz".
+#        format(h['fSignalLowpassFilter'][h['nADCSamplingSeq'][0]]))
+
+    fid.close()
+    
+    return h # header
+
+def abf_read_data(filename, h):
+    """
+    Read data from Axon abf file . Works only for version < 2.0.
+    """
+    
+    offset = h['IDataSectionPtr'] * 512
+    samples = IActualAcqLength / nADCNumChannels
+    if h['nDataFormat'] == 0:
+        data_type = 'h'
+    elif h['nDataFormat'] == 1:
+        data_type = 'f'
+    else:
+        print("Can't read data. Data format not defined.")
+
+    fid = open(filename, 'rb')    
+    fid.seek(offset)
+    
+    # Read data block.
+    temp = np.fromfile(fid, data_type)
+    channels = np.reshape(temp, (samples, -1))
+#    print(channels[:, 0])
+
+    fid.close()
+
+    return channels
+
+
+def ssd_read_header (filename):
+    """
+    Read the header of a Consam file.
+    """
+    
+    floats = array ('f')
+    ints = array('i')
+    shorts = array ('h')
+    
+    # h- a dictionary containing info from the abf file header
+    h = {}
+    f = open(filename, 'rb')
+    
+#    if verb: 
+#        print("Full header from CONSAM file %s is as follows:" + filename)
+#    else:
+#        print("Highlights of CONSAM header from %s" + filename)
+        
+    shorts.fromfile(f,1)
+    h['version'] = shorts.pop()
+#    if verb: print "Version:", h['version'] # iver =1002 is new, =1001 is old
+
+    h['title'] = f.read(70)
+#    print "Title:", h['title']
+
+    h['date'] = f.read(11)
+#    if verb: print "Acquisition date:", h['date']
+
+    h['time'] = f.read(8)
+    #if verb: print "Acquisition time:", time
+ 
+    shorts.fromfile(f,1)
+    h['idt'] = shorts.pop()
+#    if verb: print "idt:", idt
+ 
+    ints.fromfile(f,1)
+    h['ioff'] = ints.pop()
+#    if verb: print "ioff:", ioff
+
+    ints.fromfile(f,1)
+    h['ilen'] = ints.pop()
+#    if verb:
+#        print "ilen:", ilen
+#        print 'Attention! ilen gives length in bites, so- number of points is half of ilen'
+
+    shorts.fromfile(f,1)
+    h['inc'] = shorts.pop()
+#    if verb: print "inc:", inc
+
+    shorts.fromfile(f,1)
+    h['id1'] = shorts.pop()
+#    if verb: print "id1:", id1
+
+    shorts.fromfile(f,1)
+    h['id2'] = shorts.pop()
+#    if verb: print "id2:", id2
+
+    h['cs'] = f.read(3)
+#    if verb: print "cs:", cs
+
+    floats.fromfile(f,1)
+    h['calfac'] = floats.pop()
+#    print "calfac:", calfac
+
+    floats.fromfile(f,1)
+    h['srate'] = floats.pop()
+#    print "Sample frequency: %i Hz" %int (srate)
+
+    floats.fromfile(f,1)
+    h['filt'] =floats.pop()
+#    print "Filter frequency: %i Hz" %int (filt)
+
+    floats.fromfile(f,1)
+    h['filt1'] = floats.pop()
+#    if verb: print "filt1:", filt1
+
+    floats.fromfile(f,1)
+    h['calfac1'] = floats.pop()
+#    if verb: print "calfac1:", calfac1
+
+    h['expdate'] = f.read(11)
+#    if verb: print "Experiment date:", expdate
+
+    h['defname'] = f.read(6)
+#    if verb: print "defname:", defname
+
+    h['tapeID'] = f.read(24)
+#    if verb: print "Tape ID:", tapeID
+
+    floats.fromfile(f,1)
+    h['ipatch'] = floats.pop()
+#    if verb: print"ipatch:", ipatch
+
+    floats.fromfile(f,1)
+    h['npatch'] = floats.pop()
+#    if verb: print"npatch:", npatch
+
+    floats.fromfile(f,1)
+    h['Emem'] = floats.pop()
+#    if verb: print "Transmembrane potential: %i mV" %int (Emem)
+
+    floats.fromfile(f,1)
+    h['temp'] = floats.pop()
+#    if verb: print "Recording temperature: %i C" %int (temp)
+
+    f.close()
+    return h
