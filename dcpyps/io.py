@@ -1250,7 +1250,7 @@ def abf_read_data(filename, h):
     """
     
     offset = h['IDataSectionPtr'] * 512
-    samples = IActualAcqLength / nADCNumChannels
+    samples = h['IActualAcqLength'] / h['nADCNumChannels']
     if h['nDataFormat'] == 0:
         data_type = 'h'
     elif h['nDataFormat'] == 1:
@@ -1263,12 +1263,15 @@ def abf_read_data(filename, h):
     
     # Read data block.
     temp = np.fromfile(fid, data_type)
-    channels = np.reshape(temp, (samples, -1))
-#    print(channels[:, 0])
+    if h['nADCNumChannels'] >= 2:
+        temp = np.reshape(temp, (samples, -1))
+        channel = temp[:, 0]
+    else:
+        channel = temp
 
     fid.close()
 
-    return channels
+    return channel
 
 
 def ssd_read_header (filename):
@@ -1378,3 +1381,15 @@ def ssd_read_header (filename):
 
     f.close()
     return h
+
+def ssd_read_data(filename, h):
+    """
+    Read data from Consam ssd or dat file.
+    """
+
+    fid = open(filename, 'rb')
+    fid.seek(h['ioff'])
+    trace = np.fromfile(fid, 'h')
+    fid.close()
+
+    return trace
