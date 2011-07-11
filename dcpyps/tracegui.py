@@ -24,7 +24,7 @@ class TraceGUI(QMainWindow):
         self.loaded = False
 
         self.line_length = 5 # seconds
-        self.page_lines = 10
+        self.page_lines = 5
         self.point_every = 50
         self.line_separ = 10 # pA
         self.pages = 1
@@ -45,8 +45,9 @@ class TraceGUI(QMainWindow):
         plotTraceAction = self.createAction("&Plot trace", self.onPlotTrace)
         nextPageAction = self.createAction("&Next page", self.onNextPage)
         prevPageAction = self.createAction("&Previous page", self.onPrevPage)
+        optionsAction = self.createAction("&Plot options", self.onOptions)
         self.addActions(plotMenu, (plotTraceAction, 
-            nextPageAction, prevPageAction))
+            nextPageAction, prevPageAction, optionsAction))
 
         helpMenu = self.menuBar().addMenu('&Help')
         helpAboutAction = self.createAction("&About", self.onHelpAbout)
@@ -135,10 +136,6 @@ class TraceGUI(QMainWindow):
         """
         """
 
-        dialog = PlotPageDlg(self)
-        if dialog.exec_():
-            self.line_length, self.page_lines, self.point_every, self.line_separ = dialog.return_par()
-
         self.update()
         
     def onNextPage(self):
@@ -156,6 +153,13 @@ class TraceGUI(QMainWindow):
         if self.page > 1:
             self.page -= 1
             self.update()
+            
+    def onOptions(self):
+        """
+        """
+        dialog = PlotPageDlg(self)
+        if dialog.exec_():
+            self.line_length, self.page_lines, self.point_every, self.line_separ = dialog.return_par()
 
     def onHelpAbout(self):
         """
@@ -230,7 +234,7 @@ class PlotPageDlg(QDialog):
         super(PlotPageDlg, self).__init__(parent)
 
         self.line_length = 5 # seconds
-        self.page_lines = 10
+        self.page_lines = 5
         self.point_every = 50
         self.line_separ = 10 # pA
 
