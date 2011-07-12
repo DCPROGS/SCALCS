@@ -21,6 +21,8 @@ class TraceGUI(QMainWindow):
         self.setBackgroundRole(QPalette.Base)
         self.setAutoFillBackground(True)
 
+        self.painter =  QPainter()
+
         self.loaded = False
 
         self.line_length = 5 # seconds
@@ -45,9 +47,9 @@ class TraceGUI(QMainWindow):
         plotTraceAction = self.createAction("&Plot trace", self.onPlotTrace)
         nextPageAction = self.createAction("&Next page", self.onNextPage)
         prevPageAction = self.createAction("&Previous page", self.onPrevPage)
-        optionsAction = self.createAction("&Plot options", self.onOptions)
+        printPageAction = self.createAction("&Print page", self.onPrint)
         self.addActions(plotMenu, (plotTraceAction, 
-            nextPageAction, prevPageAction, optionsAction))
+            nextPageAction, prevPageAction, printPageAction))
 
         helpMenu = self.menuBar().addMenu('&Help')
         helpAboutAction = self.createAction("&About", self.onHelpAbout)
@@ -87,7 +89,7 @@ class TraceGUI(QMainWindow):
         """
 
         self.filename = QFileDialog.getOpenFileName(self,
-            "Open Data File...", "", "All (*.*)")
+            "Open Data File...", "", "Consam files (*.ssd *.SSD *.dat *.DAT)")
         #print("\nFile to read: " + os.path.split(str(filename))[1])
 
         self.h = io.ssd_read_header (self.filename)
@@ -107,7 +109,7 @@ class TraceGUI(QMainWindow):
         """
 
         self.filename = QFileDialog.getOpenFileName(self,
-            "Open Data File...", "", "All (*.*)")
+            "Open Data File...", "", "Axon files (*.abf)")
         #print("\nFile to read: " + os.path.split(str(filename))[1])
 
         self.h = io.abf_read_header(self.filename)
@@ -130,11 +132,19 @@ class TraceGUI(QMainWindow):
         """
         """
 
-        pass
+        self.out_filename = QFileDialog.getSaveFileName(self,
+            "Save File As...", "",
+            "Consam file (*.ssd)")
+
+        io.ssd_save(self.out_filename, self.h, self.trace)
 
     def onPlotTrace(self):
         """
         """
+
+        dialog = PlotPageDlg(self)
+        if dialog.exec_():
+            self.line_length, self.page_lines, self.point_every, self.line_separ = dialog.return_par()
 
         self.update()
         
@@ -153,13 +163,25 @@ class TraceGUI(QMainWindow):
         if self.page > 1:
             self.page -= 1
             self.update()
-            
-    def onOptions(self):
+
+    def onPrint(self):
         """
         """
-        dialog = PlotPageDlg(self)
-        if dialog.exec_():
-            self.line_length, self.page_lines, self.point_every, self.line_separ = dialog.return_par()
+
+        #printer=QPrinter()
+        printer=QPrinter(QPrinter.HighResolution)
+        printer.setOrientation(QPrinter.Landscape)
+        #printer.setResolution(600)
+        printDialog=QPrintDialog(printer)
+        if (printDialog.exec_() == QDialog.Accepted):
+            #painter=QPainter()
+            self.painter.begin(printer)
+            self.drawSCTrace(self.painter)
+            #self.painter.setRenderHint(QPainter.Antialiasing);
+            #self.mdiArea.activeSubWindow().view.render(painter)
+            self.painter.end()
+        #self.statusBar().showMessage("Ready")
+
 
     def onHelpAbout(self):
         """
@@ -173,58 +195,63 @@ class TraceGUI(QMainWindow):
 
         if self.loaded:
 
-            painter =  QPainter()
-            painter.begin(self)
+            #painter =  QPainter()
+            self.painter.begin(self)
+            self.drawSCTrace(self.painter)
+            self.painter.end()
+        
+    def drawSCTrace(self, event):
+        """
+        """
 
-            line_points = int(self.line_length / self.sample + 1)
-            page_points = line_points * self.page_lines
-            line_points_draw = int(line_points / self.point_every)
-            self.pages = self.points_total / page_points
-            
-            page_str = (self.filename + "; Page " + str(self.page) + " of " +
-                str(self.pages))
-            point_str = ("Points " + str(page_points * (self.page - 1) + 1) + 
-                " to " + str(page_points * self.page) + " every " + 
-                str(self.point_every) + " point(s); seconds/line: " + 
-                str(self.line_length) + "; line separation (pA): " + str(self.line_separ))
-            painter.drawText(100, 50, page_str)
-            painter.drawText(100, 650, point_str)
-            
-            xMinPix = int(self.width() * 5 / 100)
-            xMaxPix = int(self.width() * 90 / 100)
-            yMaxPix = int(self.height() * 10 / 100)
-            yMinPix = int(self.height() * 90 / 100)
+        line_points = int(self.line_length / self.sample + 1)
+        page_points = line_points * self.page_lines
+        line_points_draw = int(line_points / self.point_every)
+        self.pages = self.points_total / page_points
 
-            xMinDbl = float(0)
-            xMaxDbl = float(self.line_length)
-            yMinDbl = float(0)
-            yMaxDbl = float(self.page_lines + 1) * self.line_separ
-            yStartDbl = float(self.page_lines * self.line_separ)
+        page_str = (self.filename + "; Page " + str(self.page) + " of " +
+            str(self.pages))
+        point_str = ("Points " + str(page_points * (self.page - 1) + 1) +
+            " to " + str(page_points * self.page) + " every " +
+            str(self.point_every) + " point(s); seconds/line: " +
+            str(self.line_length) + "; line separation (pA): " + str(self.line_separ))
+        self.painter.drawText(100, 50, page_str)
+        self.painter.drawText(100, 650, point_str)
 
-            xScaleDbl = float(xMaxPix - xMinPix) / float(xMaxDbl - xMinDbl)
-            yScaleDbl = float(yMaxPix - yMinPix) / float(yMaxDbl - yMinDbl)
-            
-            xPix1 = xMinPix + int((xMinDbl) * xScaleDbl)
-            yPix1 = yMinPix + int((yMinDbl) * yScaleDbl)
-            xPix2 = xMinPix + int((xMaxDbl) * xScaleDbl)
-            yPix2 = yMinPix + int((yMaxDbl) * yScaleDbl)
-            
-            for j in range(self.page_lines):
-                xDbl1 = 0
-                yDbl1 = self.trace[0 + page_points*(self.page-1) + line_points * j] * self.calfac + yStartDbl - (j+1)*self.line_separ
-                for i in range (line_points_draw):
-                    
-                    xDbl2 = float((i+1) * self.sample * self.point_every)
-                    yDbl2 = float(self.trace[0 + page_points*(self.page-1) + line_points * j + (i+1)*self.point_every] * self.calfac + yStartDbl - (j+1)*self.line_separ)
-                    xPix1 = xMinPix + int((xDbl1 - xMinDbl) * xScaleDbl)
-                    yPix1 = yMinPix + int((yDbl1 - yMinDbl) * yScaleDbl)
-                    xPix2 = xMinPix + int((xDbl2 - xMinDbl) * xScaleDbl)
-                    yPix2 = yMinPix + int((yDbl2 - yMinDbl) * yScaleDbl)
-                    painter.drawLine(xPix1, yPix1, xPix2, yPix2)
-                    xDbl1 = xDbl2
-                    yDbl1 = yDbl2
-                    
-            painter.end()
+        xMinPix = int(self.width() * 5 / 100)
+        xMaxPix = int(self.width() * 90 / 100)
+        yMaxPix = int(self.height() * 10 / 100)
+        yMinPix = int(self.height() * 90 / 100)
+
+        xMinDbl = float(0)
+        xMaxDbl = float(self.line_length)
+        yMinDbl = float(0)
+        yMaxDbl = float(self.page_lines + 1) * self.line_separ
+        yStartDbl = float(self.page_lines * self.line_separ)
+
+        xScaleDbl = float(xMaxPix - xMinPix) / float(xMaxDbl - xMinDbl)
+        yScaleDbl = float(yMaxPix - yMinPix) / float(yMaxDbl - yMinDbl)
+
+        xPix1 = xMinPix + int((xMinDbl) * xScaleDbl)
+        yPix1 = yMinPix + int((yMinDbl) * yScaleDbl)
+        xPix2 = xMinPix + int((xMaxDbl) * xScaleDbl)
+        yPix2 = yMinPix + int((yMaxDbl) * yScaleDbl)
+
+        for j in range(self.page_lines):
+            xDbl1 = 0
+            yDbl1 = self.trace[0 + page_points*(self.page-1) + line_points * j] * self.calfac + yStartDbl - (j+1)*self.line_separ
+            for i in range (line_points_draw):
+
+                xDbl2 = float((i+1) * self.sample * self.point_every)
+                yDbl2 = float(self.trace[0 + page_points*(self.page-1) + line_points * j + (i+1)*self.point_every] * self.calfac + yStartDbl - (j+1)*self.line_separ)
+                xPix1 = xMinPix + int((xDbl1 - xMinDbl) * xScaleDbl)
+                yPix1 = yMinPix + int((yDbl1 - yMinDbl) * yScaleDbl)
+                xPix2 = xMinPix + int((xDbl2 - xMinDbl) * xScaleDbl)
+                yPix2 = yMinPix + int((yDbl2 - yMinDbl) * yScaleDbl)
+                self.painter.drawLine(xPix1, yPix1, xPix2, yPix2)
+                xDbl1 = xDbl2
+                yDbl1 = yDbl2
+
 
 class PlotPageDlg(QDialog):
     """
@@ -252,8 +279,8 @@ class PlotPageDlg(QDialog):
 
         layout = QHBoxLayout()
         layout.addWidget(QLabel("Number of lines per page:"))
-        self.linesEdit = QLineEdit(unicode(10))
-        self.linesEdit.setMaxLength(6)
+        self.linesEdit = QLineEdit(unicode(5))
+        self.linesEdit.setMaxLength(10)
         self.connect(self.linesEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
         layout.addWidget(self.linesEdit)
@@ -262,7 +289,7 @@ class PlotPageDlg(QDialog):
         layout = QHBoxLayout()
         layout.addWidget(QLabel("Draw every nth point:"))
         self.everyEdit = QLineEdit(unicode(50))
-        self.everyEdit.setMaxLength(6)
+        self.everyEdit.setMaxLength(10)
         self.connect(self.everyEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
         layout.addWidget(self.everyEdit)
@@ -271,7 +298,7 @@ class PlotPageDlg(QDialog):
         layout = QHBoxLayout()
         layout.addWidget(QLabel("pA between lines:"))
         self.separEdit = QLineEdit(unicode(10))
-        self.separEdit.setMaxLength(6)
+        self.separEdit.setMaxLength(10)
         self.connect(self.separEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
         layout.addWidget(self.separEdit)
