@@ -44,12 +44,14 @@ class TraceGUI(QMainWindow):
             fileSaveAsAction))
 
         plotMenu = self.menuBar().addMenu('&Plot')
-        plotTraceAction = self.createAction("&Plot trace", self.onPlotTrace)
+        #plotTraceAction = self.createAction("&Plot trace", self.onPlotTrace)
         nextPageAction = self.createAction("&Next page", self.onNextPage)
         prevPageAction = self.createAction("&Previous page", self.onPrevPage)
         printPageAction = self.createAction("&Print page", self.onPrint)
-        self.addActions(plotMenu, (plotTraceAction, 
-            nextPageAction, prevPageAction, printPageAction))
+        plotOptionsAction = self.createAction("&Plot options", self.onPlotOptions)
+        self.addActions(plotMenu, (nextPageAction,
+            prevPageAction, printPageAction, plotOptionsAction))
+            # plotTraceAction,
 
         helpMenu = self.menuBar().addMenu('&Help')
         helpAboutAction = self.createAction("&About", self.onHelpAbout)
@@ -100,8 +102,10 @@ class TraceGUI(QMainWindow):
         self.points_total = self.h['ilen'] / 2
         self.ffilter = self.h['filt']
 
+        self.file_type = 'ssd'
         self.loaded = True
         self.page = 1
+        self.update()
 
 
     def onABFFileOpen(self):
@@ -124,8 +128,10 @@ class TraceGUI(QMainWindow):
             (6553.6 * self.h['fInstrumentScaleFactor'][self.h['nADCSamplingSeq'][0]]))
         #print("calfac = {0:.6f}".format(self.calfac))
 
+        self.file_type = 'abf'
         self.loaded = True
         self.page = 1
+        self.update()
 
 
     def onFileSaveAs(self):
@@ -136,9 +142,23 @@ class TraceGUI(QMainWindow):
             "Save File As...", "",
             "Consam file (*.ssd)")
 
-        io.ssd_save(self.out_filename, self.h, self.trace)
+        if self.file_type == 'ssd':
+            io.ssd_save(self.out_filename, self.h, self.trace)
+        elif self.file_type == 'abf':
+            h_conv = io.abf2ssd(self.h)
+            io.ssd_save(self.out_filename, h_conv, self.trace)
 
-    def onPlotTrace(self):
+#    def onPlotTrace(self):
+#        """
+#        """
+#
+#        dialog = PlotPageDlg(self)
+#        if dialog.exec_():
+#            self.line_length, self.page_lines, self.point_every, self.line_separ = dialog.return_par()
+#
+#        self.update()
+
+    def onPlotOptions(self):
         """
         """
 
@@ -147,6 +167,7 @@ class TraceGUI(QMainWindow):
             self.line_length, self.page_lines, self.point_every, self.line_separ = dialog.return_par()
 
         self.update()
+
         
     def onNextPage(self):
         """
