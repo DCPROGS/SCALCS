@@ -44,14 +44,12 @@ class TraceGUI(QMainWindow):
             fileSaveAsAction))
 
         plotMenu = self.menuBar().addMenu('&Plot')
-        #plotTraceAction = self.createAction("&Plot trace", self.onPlotTrace)
         nextPageAction = self.createAction("&Next page", self.onNextPage)
         prevPageAction = self.createAction("&Previous page", self.onPrevPage)
         printPageAction = self.createAction("&Print page", self.onPrint)
         plotOptionsAction = self.createAction("&Plot options", self.onPlotOptions)
         self.addActions(plotMenu, (nextPageAction,
             prevPageAction, printPageAction, plotOptionsAction))
-            # plotTraceAction,
 
         helpMenu = self.menuBar().addMenu('&Help')
         helpAboutAction = self.createAction("&About", self.onHelpAbout)
@@ -92,8 +90,6 @@ class TraceGUI(QMainWindow):
 
         self.filename = QFileDialog.getOpenFileName(self,
             "Open Data File...", "", "Consam files (*.ssd *.SSD *.dat *.DAT)")
-        #print("\nFile to read: " + os.path.split(str(filename))[1])
-
         self.h = io.ssd_read_header (self.filename)
         self.trace = io.ssd_read_data(self.filename, self.h)
 
@@ -107,32 +103,25 @@ class TraceGUI(QMainWindow):
         self.page = 1
         self.update()
 
-
     def onABFFileOpen(self):
         """
         """
 
         self.filename = QFileDialog.getOpenFileName(self,
             "Open Data File...", "", "Axon files (*.abf)")
-        #print("\nFile to read: " + os.path.split(str(filename))[1])
-
         self.h = io.abf_read_header(self.filename)
-        #print self.h
         self.trace = io.abf_read_data(self.filename, self.h)
 
         self.points_total = self.h['IActualAcqLength'] / self.h['nADCNumChannels']
-        #print("tot points # {0:d}".format(self.points_total))
         self.sample = self.h['fADCSampleInterval'] * self.h['nADCNumChannels'] / 1e6
-        #print("sample interval = {0:.6f}".format(self.sample))
         self.calfac = (1 /
             (6553.6 * self.h['fInstrumentScaleFactor'][self.h['nADCSamplingSeq'][0]]))
-        #print("calfac = {0:.6f}".format(self.calfac))
+        self.ffilter = float(self.h['fSignalLowpassFilter'][self.h['nADCSamplingSeq'][0]])
 
         self.file_type = 'abf'
         self.loaded = True
         self.page = 1
         self.update()
-
 
     def onFileSaveAs(self):
         """
@@ -148,16 +137,6 @@ class TraceGUI(QMainWindow):
             h_conv = io.abf2ssd(self.h)
             io.ssd_save(self.out_filename, h_conv, self.trace)
 
-#    def onPlotTrace(self):
-#        """
-#        """
-#
-#        dialog = PlotPageDlg(self)
-#        if dialog.exec_():
-#            self.line_length, self.page_lines, self.point_every, self.line_separ = dialog.return_par()
-#
-#        self.update()
-
     def onPlotOptions(self):
         """
         """
@@ -165,14 +144,12 @@ class TraceGUI(QMainWindow):
         dialog = PlotPageDlg(self)
         if dialog.exec_():
             self.line_length, self.page_lines, self.point_every, self.line_separ = dialog.return_par()
-
         self.update()
-
         
     def onNextPage(self):
         """
         """
-        
+       
         if self.page < self.pages:
             self.page += 1
             self.update()
@@ -189,20 +166,13 @@ class TraceGUI(QMainWindow):
         """
         """
 
-        #printer=QPrinter()
         printer=QPrinter(QPrinter.HighResolution)
         printer.setOrientation(QPrinter.Landscape)
-        #printer.setResolution(600)
         printDialog=QPrintDialog(printer)
         if (printDialog.exec_() == QDialog.Accepted):
-            #painter=QPainter()
             self.painter.begin(printer)
             self.drawSCTrace(self.painter)
-            #self.painter.setRenderHint(QPainter.Antialiasing);
-            #self.mdiArea.activeSubWindow().view.render(painter)
             self.painter.end()
-        #self.statusBar().showMessage("Ready")
-
 
     def onHelpAbout(self):
         """
@@ -215,8 +185,6 @@ class TraceGUI(QMainWindow):
         """
 
         if self.loaded:
-
-            #painter =  QPainter()
             self.painter.begin(self)
             self.drawSCTrace(self.painter)
             self.painter.end()

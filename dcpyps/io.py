@@ -1517,7 +1517,6 @@ def abf2ssd(abf_h):
     ssd_h['defname'] = "Converted"
     ssd_h['tapeID'] = "Converted"
 
-
     ssd_h['ipatch'] = int(3)
     ssd_h['npatch'] = int(1)
     ssd_h['Emem'] = float(0.0)
