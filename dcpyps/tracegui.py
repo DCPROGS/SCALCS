@@ -259,7 +259,7 @@ class PlotPageDlg(QDialog):
 
         layout = QHBoxLayout()
         layout.addWidget(QLabel("Seconds per line:"))
-        self.lengthEdit = QLineEdit(unicode(5))
+        self.lengthEdit = QLineEdit(unicode(self.line_length))
         self.lengthEdit.setMaxLength(10)
         self.connect(self.lengthEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
@@ -268,7 +268,7 @@ class PlotPageDlg(QDialog):
 
         layout = QHBoxLayout()
         layout.addWidget(QLabel("Number of lines per page:"))
-        self.linesEdit = QLineEdit(unicode(5))
+        self.linesEdit = QLineEdit(unicode(self.page_lines))
         self.linesEdit.setMaxLength(10)
         self.connect(self.linesEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
@@ -277,7 +277,7 @@ class PlotPageDlg(QDialog):
 
         layout = QHBoxLayout()
         layout.addWidget(QLabel("Draw every nth point:"))
-        self.everyEdit = QLineEdit(unicode(50))
+        self.everyEdit = QLineEdit(unicode(self.point_every))
         self.everyEdit.setMaxLength(10)
         self.connect(self.everyEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
@@ -286,7 +286,7 @@ class PlotPageDlg(QDialog):
 
         layout = QHBoxLayout()
         layout.addWidget(QLabel("pA between lines:"))
-        self.separEdit = QLineEdit(unicode(10))
+        self.separEdit = QLineEdit(unicode(self.line_separ))
         self.separEdit.setMaxLength(10)
         self.connect(self.separEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
@@ -302,7 +302,6 @@ class PlotPageDlg(QDialog):
         layoutMain.addWidget(buttonBox)
 
         self.setLayout(layoutMain)
-        #self.resize(1000, 500)
         self.setWindowTitle("Plot layout options...")
 
     def on_par_changed(self):
@@ -316,6 +315,70 @@ class PlotPageDlg(QDialog):
 
     def return_par(self):
         """
-        Return parameter dictionary on exit.
+        Return parameters on exit.
         """
         return self.line_length, self.page_lines, self.point_every, self.line_separ
+    
+class FilterOptsDlg(QDialog):
+    """
+    Dialog to input filter options.
+    """
+    def __init__(self, parent=None):
+        super(FilterOptsDlg, self).__init__(parent)
+
+        self.filter = 1000 # Hz
+        self.factor = 1
+
+        layoutMain = QVBoxLayout()
+        layoutMain.addWidget(QLabel('Filter options:'))
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Filter with Gaussian filter to have final fc (Hz):"))
+        self.filterEdit = QLineEdit(unicode(self.filter))
+        self.filterEdit.setMaxLength(10)
+        self.connect(self.filterEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.filterEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Multiply signal by factor (negative to invert):"))
+        self.factorEdit = QLineEdit(unicode(self.factor))
+        self.factorEdit.setMaxLength(10)
+        self.connect(self.factorEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.factorEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Trace will be resampled to keep ratio filter/sampling ~ 10."))
+#        self.everyEdit = QLineEdit(unicode(50))
+#        self.everyEdit.setMaxLength(10)
+#        self.connect(self.everyEdit, SIGNAL("editingFinished()"),
+#            self.on_par_changed)
+#        layout.addWidget(self.everyEdit)
+        layoutMain.addLayout(layout)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+
+        self.setLayout(layoutMain)
+        self.setWindowTitle("Filter options...")
+
+    def on_par_changed(self):
+        """
+        """
+
+        self.filter = int(self.filterEdit.text())
+        self.factor = int(self.factorEdit.text())
+
+    def return_par(self):
+        """
+        Return parameters on exit.
+        """
+        return self.filter, self.factor
