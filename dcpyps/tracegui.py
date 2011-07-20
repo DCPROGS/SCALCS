@@ -11,6 +11,7 @@ except:
     raise ImportError("pyqt module is missing")
 
 import io
+import filter
 
 class TraceGUI(QMainWindow):
     def __init__(self, parent=None):
@@ -24,6 +25,7 @@ class TraceGUI(QMainWindow):
         self.painter =  QPainter()
 
         self.loaded = False
+        self.filtered = False
 
         self.line_length = 5 # seconds
         self.page_lines = 5
@@ -32,6 +34,7 @@ class TraceGUI(QMainWindow):
         self.pages = 1
         self.page = 1
 
+        self.fc = 1000
 
         fileMenu = self.menuBar().addMenu('&File')
         fileSSDOpenAction = self.createAction("&Open SSD file", self.onSSDFileOpen,
@@ -50,6 +53,10 @@ class TraceGUI(QMainWindow):
         plotOptionsAction = self.createAction("&Plot options", self.onPlotOptions)
         self.addActions(plotMenu, (nextPageAction,
             prevPageAction, printPageAction, plotOptionsAction))
+            
+        signalMenu = self.menuBar().addMenu('&Signal')
+        filterGausAction = self.createAction("&Gaussian filter", self.onFilterGaus)
+        self.addActions(signalMenu, (filterGausAction, None))
 
         helpMenu = self.menuBar().addMenu('&Help')
         helpAboutAction = self.createAction("&About", self.onHelpAbout)
@@ -94,6 +101,7 @@ class TraceGUI(QMainWindow):
         self.trace = io.ssd_read_data(self.filename, self.h)
 
         self.calfac = self.h['calfac']
+        self.srate = self.h['srate']
         self.sample = 1 / self.h['srate']
         self.points_total = self.h['ilen'] / 2
         self.ffilter = self.h['filt']
@@ -113,6 +121,7 @@ class TraceGUI(QMainWindow):
         self.trace = io.abf_read_data(self.filename, self.h)
 
         self.points_total = self.h['IActualAcqLength'] / self.h['nADCNumChannels']
+        self.srate = 1 / (self.h['fADCSampleInterval'] * self.h['nADCNumChannels'])
         self.sample = self.h['fADCSampleInterval'] * self.h['nADCNumChannels'] / 1e6
         self.calfac = (1 /
             (6553.6 * self.h['fInstrumentScaleFactor'][self.h['nADCSamplingSeq'][0]]))
@@ -132,10 +141,42 @@ class TraceGUI(QMainWindow):
             "Consam file (*.ssd)")
 
         if self.file_type == 'ssd':
+            if self.filtered:
+                self.h['ilen'] = self.points_total * 2
+                self.h['srate'] = self.srate
+                self.h['filt'] = self.ffilter
+                self.h['idt'] = self.sample * 1e6
+
             io.ssd_save(self.out_filename, self.h, self.trace)
         elif self.file_type == 'abf':
             h_conv = io.abf2ssd(self.h)
             io.ssd_save(self.out_filename, h_conv, self.trace)
+            
+    def onFilterGaus(self):
+        """
+        """
+        
+        dialog = FilterOptsDlg(self.points_total, self)
+        if dialog.exec_():
+            fc, self.first, self.last = dialog.return_par()
+        
+        self.original_trace = self.trace
+        self.original_ffilter = self.ffilter
+        self.original_srate = self.srate
+        self.original_sample = self.sample
+        self.original_points_total = self.points_total
+
+        trace_new, srate = filter.filter_trace(self.original_trace,
+            fc, self.ffilter, self.srate)
+        self.trace = trace_new.copy()
+        self.srate = srate
+        self.ffilter = fc
+        self.sample = 1 / srate
+        self.points_total = self.trace.shape[0]
+
+        self.filtered = True
+        self.page = 1
+        self.update()
 
     def onPlotOptions(self):
         """
@@ -323,11 +364,12 @@ class FilterOptsDlg(QDialog):
     """
     Dialog to input filter options.
     """
-    def __init__(self, parent=None):
+    def __init__(self, allpoints, parent=None):
         super(FilterOptsDlg, self).__init__(parent)
 
         self.filter = 1000 # Hz
-        self.factor = 1
+        self.first = 1
+        self.last = allpoints
 
         layoutMain = QVBoxLayout()
         layoutMain.addWidget(QLabel('Filter options:'))
@@ -341,22 +383,21 @@ class FilterOptsDlg(QDialog):
         layout.addWidget(self.filterEdit)
         layoutMain.addLayout(layout)
 
+        # First and last data points to be used
         layout = QHBoxLayout()
-        layout.addWidget(QLabel("Multiply signal by factor (negative to invert):"))
-        self.factorEdit = QLineEdit(unicode(self.factor))
-        self.factorEdit.setMaxLength(10)
-        self.connect(self.factorEdit, SIGNAL("editingFinished()"),
+        layout.addWidget(QLabel("First "))
+        self.firstEdit = QLineEdit(unicode(self.first))
+        self.firstEdit.setMaxLength(10)
+        self.connect(self.firstEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
-        layout.addWidget(self.factorEdit)
-        layoutMain.addLayout(layout)
-
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Trace will be resampled to keep ratio filter/sampling ~ 10."))
-#        self.everyEdit = QLineEdit(unicode(50))
-#        self.everyEdit.setMaxLength(10)
-#        self.connect(self.everyEdit, SIGNAL("editingFinished()"),
-#            self.on_par_changed)
-#        layout.addWidget(self.everyEdit)
+        layout.addWidget(self.firstEdit)
+        layout.addWidget(QLabel(" and last "))
+        self.lastEdit = QLineEdit(unicode(self.last))
+        self.lastEdit.setMaxLength(10)
+        self.connect(self.lastEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.lastEdit)
+        layout.addWidget(QLabel(" data points to be used."))
         layoutMain.addLayout(layout)
 
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
@@ -373,12 +414,12 @@ class FilterOptsDlg(QDialog):
     def on_par_changed(self):
         """
         """
-
         self.filter = int(self.filterEdit.text())
-        self.factor = int(self.factorEdit.text())
+        self.first = int(self.firstEdit.text())
+        self.last = int(self.lastEdit.text())
 
     def return_par(self):
         """
         Return parameters on exit.
         """
-        return self.filter, self.factor
+        return self.filter, self.first, self.last

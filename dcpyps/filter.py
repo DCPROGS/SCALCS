@@ -5,113 +5,206 @@ Gaussian filter, as in C & Sigworth (1994) Fig A3.1
 from math import *
 import numpy as np
 
-def gfilter(datin, fc, srate):
+def gfilter(input, coeffs):
     """
     Gaussian filter, as in C & Sigworth (1994) Fig A3.1
 
-    NB maximum of 54/2=27 data points at each end are affected by edge
-    effects, so read in arrays that overlap by at least this number
-    of points, and discard overlaps.
-
     Parameters
     ----------
-    datin : array_like, shape (n, ), short int
-    srate : float
-        Sampling rate in Hz.
-    fc : float
-        -3 dB frequency in Hz.
+    input : array_like, shape (n), short int
+    coeffs : array_like, shape (nc), floats
+        Gaussian filter coefficients.
 
     Returns
     -------
-    datin : array_like, shape (n, 1), short int
+    out : array_like, shape (n), short int
     """
 
-    # finter=microsec between sample points
-    # fc1=fc/sample freq = fc/srate = fc*finter*1.e-6
-    # eg srate=10 kHz, finter=100 microsec:
-    # fc=1150 Hz  fc1=1150*100*1.e-6 =0.115
-    # sample freq (Hz) = srate = 1/(finter*1.e-6) =1.e6/finter
-
-    fc1 = fc / srate
-    if fc1 < 0.01:
-        print ' Error in GFILTER: fc1 is too small !'
-
-    # Calculate the coefficients in a()
-    # nc=number of coefficients, not counting the central one, a(0)
-    sigma = 0.132505 / fc1
-    a = []
-    if sigma < 0.62:
-        # then !narrow impulse -three terms only
-       a.append(sigma * sigma / 2.0)
-       a.append(1.0 - 2.0 * a[0])
-       nc = 1
-    else:
-       nc = int(4.0 * sigma)
-       b = -0.5 / (sigma * sigma)
-       a.append(1.0)
-       sum = 1.0
-       for i in range(1, nc+1):
-           a.append(np.exp(i * i * b))
-           sum = sum + 2 * a[i]
-       # Normalise the coefficients.
-       a = a / sum
-
-    # Now do the filtering.
-    n = datin.shape[0]
-    datout = np.zeros(n, 'h')
-    for i in range(0, nc):
+    n = input.shape[0]
+    out = np.zeros(n, 'h')
+    nc = len(coeffs) - 1 # The central component is the zeroth, therefore reduce
+                         # Actual number of comps in sum is now 2nc +1
+    for i in range(n):
         jl = i - nc
         if jl < 0: jl = 0
-        ju = i + nc
+        ju = i + nc +1
         if ju > n: ju = n
-        sum = 0.0
-        for j in range(jl, ju):
-            k = np.fabs(j - i)
-            sum = sum + float(datin[j]) * a[k]
-        datout[i] = (sum)   # !!!! short int
 
-    return datout
+        arr1 = np.abs(np.arange(jl, ju) - i)
+        arr2 = coeffs[arr1] * input[jl:ju]
+        out[i] = np.sum(arr2)
+        # DO NOT DELETE next 5 commented lines for future reference.
+        #sum = 0
+        #for j in range (jl,ju):
+        #    k = abs(j-i)	#which component
+        #    sum += input[j] * coeffs[k]
+        #out[i] = sum
+    return out
+
+def gaussian_coeff(fc, verbose=0):
+    """
+    Calculate coefficients of gaussian filter.
+
+    Parameters
+    ----------
+    fc : float
+        Frequency in Hz.
+
+    Returns
+    -------
+    a : array_like, shape (nc), floats
+        Gaussian filter coefficients.
+    """
+
+    sigma = 0.13205 / fc
+    # nc -number of coefficients, not counting the central one, a(0).
+    nc = int(4 * sigma) + 1 #python rounds down
+    B = -0.5 / (sigma * sigma)
+    arr = np.arange(nc)
+    a = np.exp(B * arr * arr)
+    norm = 2 * np.sum(a) - 1
+    a = a / norm
+
+    if verbose:
+        print("Normalized coefficients of Gaussian filter:")
+        for x in range(nc):
+            print("{0:d} ".format(x) + "{0:.6f}".format(a[x]))
+
+    return a
+
+def filter_trace(datain, fc, ffilter, srate, verbose=1):
+    """
+    Go through sections of entire trace and filter to have a final cutoff
+    frequency fc.
+
+    Parameters
+    ----------
+    datain : array_like, shape (n), short int
+    fc : float
+        Final cutoff frequency in Hz.
+    ffilter : float
+        Filter alreade applied to datain. In Hz.
+    srate : float
+        Sampling rate in Hz.
+
+    Returns
+    -------
+    dataout : array_like, shape (n), short int
+    """
+
+    ndatain = datain.shape[0]
+    nbuf = 1000000 # size of data arrays
+    novlap = 10000 # size of overlap
+    # Calculate number of sections needed for data.
+    nsec = ndatain / nbuf
+    # Do not filter the last section if it has less points than overlap.
+    if ndatain - (nsec - 1) * nbuf < novlap:
+        nsec = nsec - 1
+    if verbose:
+        print("File will be filtered in {0:d} sections.".format(nsec))
+
+    # Calculate how many points to read in one block for a section to filter.
+    nread = nbuf + 2 * novlap
+    nleft = 0
+
+    dataout = np.zeros(ndatain)
+    # Get a frequency for a filter to apply to get requested final fc.
+    ffc = fci(ffilter, fc)
+    # Get Gaussian filter coefficients.
+    a = gaussian_coeff(ffc / srate, verbose)
+
+    for isec in range(nsec):
+        n = nbuf * isec
+        n1 = n - novlap
+        n2 = n + nbuf + novlap
+        if verbose: print(" Filtering section {0:d} ...".format(isec+1))
+        
+        if isec == 0:
+            temp = np.zeros(nread, 'h')
+            temp[0:novlap] = datain[0:novlap]
+            temp[novlap:nread] = datain[0:nbuf+novlap]
+            ftemp = gfilter(temp, a)
+            dataout[n:n+nbuf] = ftemp[novlap:nbuf+novlap]
+
+        elif isec == (nsec-1):
+            nleft = ndatain - n
+            nread = nleft + 2 * novlap
+            temp = np.zeros(nread, 'h')
+            temp[0:nread-novlap] = datain[n1:ndatain]
+            temp[nread-novlap:nread] = datain[ndatain-novlap:ndatain]
+            ftemp = gfilter(temp, a)
+            dataout[n:n+nleft] = ftemp[novlap:novlap+nleft]
+
+        else:
+            temp = np.zeros(nread, 'h')
+            temp[0:nread] = datain[n1:n2]
+            ftemp = gfilter(temp, a)
+            dataout[n:n+nbuf] = ftemp[novlap:novlap+nbuf]
+
+    if verbose: print("Filtering finished.")
+    srate1, idelt = resample(fc, srate, verbose)
+    if idelt > 1:
+        dataout = np.reshape(dataout, (ndatain/idelt, -1))[:,0]
+
+    return dataout, srate1
 
 def fci(ffilter, fc):
     """
-    Calculate frequency filter by which to filter a previously filtered (with 
-    ffilter) data to get final fc. 
+    Calculate frequency by which to filter a trace which already filtered with
+    ffilter to get final fc. 
+
+    Parameters
+    ----------
+    ffilter : float
+        Filter alreade applied to datain. In Hz.
+    fc : float
+        Final cutoff frequency in Hz.
+
+    Returns
+    -------
+    fci : float
+        Intermediate filter frequency in Hz.
+
     """
     
     fci = 1. / sqrt((1.0 / (fc * fc)) - (1.0 / (ffilter * ffilter)))
     return fci
 
-def resample(fc, srate):
+def resample(fc, srate, verbose=0):
     """
-    Reduce 'sample rate' for output. If srate > 10*fc then recommend largest
+    Calculate how much sampling rate can be reduced for output given the
+    filter fc. Reduce 'sample rate' for output. If srate > 10*fc then recommend largest
     reduction that keeps srate at least 10fc. First reduction possible
     (without interpolation) is by factor of 2, so try only if srate>20fc
+
+    Parameters
+    ----------
+    datain : array_like, shape (n), short int
+    fc : float
+        Final cutoff frequency in Hz.
+    srate : float
+        Sampling rate in Hz.
+
+    Returns
+    -------
+    srate1 : float
+        New sampling ratein Hz.
+    idelt : int
+        Resample each idelt point.
     """
 
-    idelt = 1	#defoult
+    srate1 = srate # value for output
     r = srate / fc
-    srate1 = srate		#value for output
-    r1 = r
-    i = 2
-    while r1 >= 14:
-        srate1 = srate / i
-        r1 = srate1 / fc
-        i += 1
-    idelt = i
-    if r1 < 10:
-        idelt = i - 1
+    idelt = int(r / 10)
+    if idelt >= 2:
         srate1 = srate / idelt
-        r1 = srate1 / fc
-    
-    #print ' Sample rate is ', r, ' times final fc:'
-    #print ' Recommend reduction the sample rate for output file by using'
-    #print ' only every',idelt,'th point to give sample rate of',srate1,'Hz'
-    #print ' which is ', r1,' times fc.', 
-    #print '  Keep every idelt''th point: idelt [', idelt,'] = '
+    r1 = srate1 / fc
 
-    srate1 = srate / idelt
-    
-    return srate, idelt
+    if verbose:
+        print(" Sample rate is {0:.1f} times final fc.".format(r))
+        print(" Recommend reduction the sample rate for output file by using")
+        print(" only every {0:d}th point to give sample rate of ".format(idelt) +
+            "{0:.3f} Hz".format(srate1))
+        print(" which is {0:.1f} times fc.".format(r1))
 
-
-
+    return srate1, idelt

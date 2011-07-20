@@ -1264,7 +1264,7 @@ def abf_read_data(filename, h):
     
     # Read data block.
     temp = np.fromfile(fid, data_type)
-    if h['nADCNumChannels'] >= 2:
+    if h['nADCNumChannels'] > 1:
         temp = np.reshape(temp, (samples, -1))
         channel = temp[:, 0]
     else:
