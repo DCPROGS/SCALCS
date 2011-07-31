@@ -93,8 +93,8 @@ def filter_trace(datain, fc, ffilter, srate, verbose=1):
     """
 
     ndatain = datain.shape[0]
-    nbuf = 1000000 # size of data arrays
-    novlap = 10000 # size of overlap
+    nbuf = 100000 # size of data arrays
+    novlap = 100 # size of overlap
     # Calculate number of sections needed for data.
     nsec = ndatain / nbuf
     # Do not filter the last section if it has less points than overlap.
@@ -107,7 +107,7 @@ def filter_trace(datain, fc, ffilter, srate, verbose=1):
     nread = nbuf + 2 * novlap
     nleft = 0
 
-    dataout = np.zeros(ndatain)
+    dataout = np.zeros(ndatain, 'h')
     # Get a frequency for a filter to apply to get requested final fc.
     ffc = fci(ffilter, fc)
     # Get Gaussian filter coefficients.
@@ -144,9 +144,13 @@ def filter_trace(datain, fc, ffilter, srate, verbose=1):
     if verbose: print("Filtering finished.")
     srate1, idelt = resample(fc, srate, verbose)
     if idelt > 1:
-        dataout = np.reshape(dataout, (ndatain/idelt, -1))[:,0]
+        if (ndatain % idelt) != 0:
+            dataout = np.append(dataout, np.zeros(idelt - (ndatain % idelt)))
+        data_out = np.reshape(dataout, (dataout.shape[0] / idelt, -1))[:,0]
+    else:
+        data_out = dataout
 
-    return dataout, srate1
+    return data_out, srate1
 
 def fci(ffilter, fc):
     """
@@ -173,9 +177,10 @@ def fci(ffilter, fc):
 def resample(fc, srate, verbose=0):
     """
     Calculate how much sampling rate can be reduced for output given the
-    filter fc. Reduce 'sample rate' for output. If srate > 10*fc then recommend largest
-    reduction that keeps srate at least 10fc. First reduction possible
-    (without interpolation) is by factor of 2, so try only if srate>20fc
+    filter fc. Reduce 'sample rate' for output. If srate > 10*fc then
+    recommend largest reduction that keeps srate at least 10fc. First
+    reduction possible (without interpolation) is by factor of 2, so try
+    only if srate > 20fc.
 
     Parameters
     ----------

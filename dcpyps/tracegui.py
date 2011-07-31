@@ -158,7 +158,7 @@ class TraceGUI(QMainWindow):
         
         dialog = FilterOptsDlg(self.points_total, self)
         if dialog.exec_():
-            fc, self.first, self.last = dialog.return_par()
+            fc, first, last = dialog.return_par()
         
         self.original_trace = self.trace
         self.original_ffilter = self.ffilter
@@ -166,7 +166,9 @@ class TraceGUI(QMainWindow):
         self.original_sample = self.sample
         self.original_points_total = self.points_total
 
-        trace_new, srate = filter.filter_trace(self.original_trace,
+        self.trace_to_filter = self.original_trace[first-1 : last]
+
+        trace_new, srate = filter.filter_trace(self.trace_to_filter,
             fc, self.ffilter, self.srate)
         self.trace = trace_new.copy()
         self.srate = srate
