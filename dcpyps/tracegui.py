@@ -10,6 +10,8 @@ try:
 except:
     raise ImportError("pyqt module is missing")
 
+import numpy as np
+
 import io
 import filter
 
@@ -56,7 +58,8 @@ class TraceGUI(QMainWindow):
             
         signalMenu = self.menuBar().addMenu('&Signal')
         filterGausAction = self.createAction("&Gaussian filter", self.onFilterGaus)
-        self.addActions(signalMenu, (filterGausAction, None))
+        sliceTraceAction = self.createAction("&Slice trace", self.onSliceTrace)
+        self.addActions(signalMenu, (filterGausAction, sliceTraceAction))
 
         helpMenu = self.menuBar().addMenu('&Help')
         helpAboutAction = self.createAction("&About", self.onHelpAbout)
@@ -151,14 +154,32 @@ class TraceGUI(QMainWindow):
         elif self.file_type == 'abf':
             h_conv = io.abf2ssd(self.h)
             io.ssd_save(self.out_filename, h_conv, self.trace)
+
+    def onSliceTrace(self):
+        """
+        """
+
+        dialog = SliceTraceDlg(self.points_total, self)
+        if dialog.exec_():
+            first, last = dialog.return_par()
+
+        self.original_trace = self.trace
+        self.original_points_total = self.points_total
+
+        self.points_total = last - (first - 1)
+        self.trace = np.zeros(self.points_total, 'h')
+        self.trace = self.original_trace[first-1 : last]
+
+        self.page = 1
+        self.update()
             
     def onFilterGaus(self):
         """
         """
         
-        dialog = FilterOptsDlg(self.points_total, self)
+        dialog = FilterOptsDlg(self)
         if dialog.exec_():
-            fc, first, last = dialog.return_par()
+            fc = dialog.return_par()
         
         self.original_trace = self.trace
         self.original_ffilter = self.ffilter
@@ -166,9 +187,7 @@ class TraceGUI(QMainWindow):
         self.original_sample = self.sample
         self.original_points_total = self.points_total
 
-        self.trace_to_filter = self.original_trace[first-1 : last]
-
-        trace_new, srate = filter.filter_trace(self.trace_to_filter,
+        trace_new, srate = filter.filter_trace(self.trace,
             fc, self.ffilter, self.srate)
         self.trace = trace_new.copy()
         self.srate = srate
@@ -366,12 +385,10 @@ class FilterOptsDlg(QDialog):
     """
     Dialog to input filter options.
     """
-    def __init__(self, allpoints, parent=None):
+    def __init__(self, parent=None):
         super(FilterOptsDlg, self).__init__(parent)
 
         self.filter = 1000 # Hz
-        self.first = 1
-        self.last = allpoints
 
         layoutMain = QVBoxLayout()
         layoutMain.addWidget(QLabel('Filter options:'))
@@ -384,6 +401,41 @@ class FilterOptsDlg(QDialog):
             self.on_par_changed)
         layout.addWidget(self.filterEdit)
         layoutMain.addLayout(layout)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+
+        self.setLayout(layoutMain)
+        self.setWindowTitle("Filter options...")
+
+    def on_par_changed(self):
+        """
+        """
+        self.filter = int(self.filterEdit.text())
+
+    def return_par(self):
+        """
+        Return parameters on exit.
+        """
+        return self.filter
+
+class SliceTraceDlg(QDialog):
+    """
+    Dialog to input trace slice limits.
+    """
+    def __init__(self, allpoints, parent=None):
+        super(SliceTraceDlg, self).__init__(parent)
+
+        self.first = 1
+        self.last = allpoints
+
+        layoutMain = QVBoxLayout()
+        layoutMain.addWidget(QLabel('Slice trace:'))
 
         # First and last data points to be used
         layout = QHBoxLayout()
@@ -411,12 +463,11 @@ class FilterOptsDlg(QDialog):
         layoutMain.addWidget(buttonBox)
 
         self.setLayout(layoutMain)
-        self.setWindowTitle("Filter options...")
+        self.setWindowTitle("Trace slice...")
 
     def on_par_changed(self):
         """
         """
-        self.filter = int(self.filterEdit.text())
         self.first = int(self.firstEdit.text())
         self.last = int(self.lastEdit.text())
 
@@ -424,4 +475,4 @@ class FilterOptsDlg(QDialog):
         """
         Return parameters on exit.
         """
-        return self.filter, self.first, self.last
+        return self.first, self.last

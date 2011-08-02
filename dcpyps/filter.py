@@ -83,7 +83,7 @@ def filter_trace(datain, fc, ffilter, srate, verbose=1):
     fc : float
         Final cutoff frequency in Hz.
     ffilter : float
-        Filter alreade applied to datain. In Hz.
+        Filter already applied to input data in Hz.
     srate : float
         Sampling rate in Hz.
 
@@ -93,7 +93,7 @@ def filter_trace(datain, fc, ffilter, srate, verbose=1):
     """
 
     ndatain = datain.shape[0]
-    nbuf = 100000 # size of data arrays
+    nbuf = 1000000 # size of data arrays
     novlap = 100 # size of overlap
     # Calculate number of sections needed for data.
     nsec = ndatain / nbuf
@@ -146,11 +146,9 @@ def filter_trace(datain, fc, ffilter, srate, verbose=1):
     if idelt > 1:
         if (ndatain % idelt) != 0:
             dataout = np.append(dataout, np.zeros(idelt - (ndatain % idelt)))
-        data_out = np.reshape(dataout, (dataout.shape[0] / idelt, -1))[:,0]
-    else:
-        data_out = dataout
+        dataout = np.reshape(dataout, (dataout.shape[0] / idelt, -1))[:,0]
 
-    return data_out, srate1
+    return dataout, srate1
 
 def fci(ffilter, fc):
     """
