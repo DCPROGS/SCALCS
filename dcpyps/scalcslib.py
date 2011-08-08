@@ -358,6 +358,17 @@ def pdf_open_time(mec, t):
     f = np.dot(np.dot(np.dot(qml.phiO(mec), expQAA), -mec.QAA), uA)
     return f
 
+def pdf_subset_time(mec, k1, k2, t):
+    """
+    """
+    
+    u = np.ones((k2 - k1 + 1, 1))
+    phi, QAA = qml.phiA(mec, k1, k2)
+    expQAA = qml.expQt(QAA, t)
+    f = np.dot(np.dot(np.dot(phi, expQAA), -QAA), u)
+    return f
+
+
 def pdf_shut_time(mec, t):
     """
     Probability density function of the shut time.

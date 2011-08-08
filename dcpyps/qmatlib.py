@@ -333,6 +333,41 @@ def phiO(mec):
     phi = nom / denom
     return phi
 
+def phiA(mec, k1, k2):
+    """
+    Calculate initial vector for any subset.
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    phi : ndarray, shape (kA)
+    """
+
+    u = np.ones((k2 - k1 + 1, 1))
+    p = pinf(mec.Q)
+    #print "pinf=", p
+    p1, p2, p3 = np.hsplit(p,(k1, k2+1))
+    pF = np.hstack((p1, p3))
+    #print "pF=", pF
+
+    Q = mec.Q.copy()
+    #print "Q=", Q
+    Q1, Q2, Q3 = np.hsplit(Q,(k1, k2+1))
+    Q21, Q22, Q23 = np.hsplit(Q2.transpose(),(k1, k2+1))
+    QAA = Q22.copy()
+    QFA = np.vstack((Q21.transpose(), Q23.transpose()))
+    #print "QFA=", QFA
+
+    nom = np.dot(pF, QFA)
+    denom = np.dot(nom,u)
+    phi = nom / denom
+    #print "phi=", phi
+    return phi, QAA
+
 def phiS(mec):
     """
     Calculate inital vector for shuttings.

@@ -63,6 +63,8 @@ class QMatGUI(QMainWindow):
             "&Open time pdf", self.onPlotOpenTimePDF)
         plotShutTimePDFAction = self.createAction(
             "&Shut time pdf", self.onPlotShutTimePDF)
+#        plotSubsetTimePDFAction = self.createAction(
+#            "&Subset time pdf", self.onPlotSubsetTimePDF)
         plotBurstLenPDFAction = self.createAction(
             "&Burst length pdf", self.onPlotBrstLenPDF)
         plotBurstLenPDFActionCond = self.createAction(
@@ -77,6 +79,7 @@ class QMatGUI(QMainWindow):
             "&Realistic concentration jump", self.onPlotCJump)
         self.addActions(plotMenu, (plotPopenAction,
             plotOpenTimePDFAction, plotShutTimePDFAction,
+#            plotSubsetTimePDFAction,
             plotBurstLenPDFAction, plotBurstLenPDFActionCond,
             plotBurstOpeningDistrAction, plotBurstOpeningDistrActionCond,
             plotBurstLenVConcAction, plotJumpAction))
@@ -546,6 +549,46 @@ class QMatGUI(QMainWindow):
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
 
+    def onPlotSubsetTimePDF(self):
+        """
+        """
+        open = False
+        self.mec.set_eff('c', self.conc)
+
+        tau, area = scl.get_ideal_pdf_components(self.mec, open)
+        # Asymptotic pdf
+        roots = scl.asymptotic_roots(self.mec, self.tres, open)
+
+        tmax = (-1 / roots.max()) * 20
+        tmin = 0.00001 # 10 mikrosec
+        points = 512
+        step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
+        t = np.zeros(points)
+
+        # Ideal pdf.
+        f = 0.0
+        for i in range(self.mec.kF):
+            f += area[i] * np.exp(-self.tres / tau[i])
+        fac = 1 / f # Scale factor.
+        ipdf = np.zeros(points)
+        spdf = np.zeros(points)
+        for i in range(points):
+            t[i] = tmin * pow(10, (i * step))
+            ipdf[i] = t[i] * scl.pdf_shut_time(self.mec, t[i]) * fac
+            spdf[i] = t[i] * scl.pdf_subset_time(self.mec, 6, 7, t[i]) * fac
+
+
+        t = t * 1000 # x scale in millisec
+        #self.textBox.append(text1)
+        self.axes.clear()
+        self.axes.semilogx(t, spdf, 'r--', t, ipdf, 'b--')
+        self.axes.set_yscale('sqrtscale')
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
+
+
+
     def onPlotShutTimePDF(self):
         """
         Display shut time probability density function.
@@ -713,11 +756,11 @@ class QMatGUI(QMainWindow):
 
         self.axes.clear()
 
-        # TODO: only 6 colours are available now.
-        self.axes.semilogx(t, fbst, 'k-', label="Not conditional")
+        # TODO: only 6 colours are available now.        
         for i in range(self.mec.kA):
             self.axes.semilogx(t, cfbrst[i], self.my_colour[i]+'-',
                 label="State {0:d}".format(i+1))
+        self.axes.semilogx(t, fbst, 'k-', label="Not conditional")
         handles, labels = self.axes.get_legend_handles_labels()
         self.axes.legend(handles, labels, frameon=False)
 
@@ -764,11 +807,11 @@ class QMatGUI(QMainWindow):
         cPr = cPr.transpose()
 
         self.axes.clear()
-        self.axes.plot(r, Pr,'ko', label="Not conditional")
-        # TODO: only 7 colours are available now.
+        # TODO: only 6 colours are available now.
         for i in range(self.mec.kA):
             self.axes.plot(r, cPr[i], self.my_colour[i]+'o',
                 label="State {0:d}".format(i+1))
+        self.axes.plot(r, Pr,'ko', label="Not conditional")
         handles, labels = self.axes.get_legend_handles_labels()
         self.axes.legend(handles, labels, frameon=False)
         self.axes.set_xlim(0, n+1)
