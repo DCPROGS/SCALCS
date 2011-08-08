@@ -235,6 +235,7 @@ def mec_load(mecfile, start):
     # Voltage.
     floats.fromfile(f,1)
     vref = floats.pop()
+    print 'vref=', vref
 
     # Number of voltage dependent rates.
     ints.fromfile(f,1)
@@ -331,6 +332,8 @@ def mec_load(mecfile, start):
     for j in range(0, kA):
         doubles.fromfile(f,1)
         dgamma.append(doubles.pop())
+
+    print 'dgamma=', dgamma
 
     # Get number of states in each cycle and connections.
     nsc = np.zeros(50, 'int32')

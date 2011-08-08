@@ -22,13 +22,14 @@ try:
     from matplotlib import scale as mscale
     from matplotlib import transforms as mtransforms
     from matplotlib import ticker
+    from matplotlib.font_manager import FontProperties
 except:
     raise ImportError("matplotlib module is missing")
 
 import scalcslib as scl
 import rcj
 import scburst
-import usefulib as ufl
+import optimize
 import dataset
 import io
 import samples
@@ -45,6 +46,7 @@ class QMatGUI(QMainWindow):
         self.conc = 100e-9    # 100 nM
         self.tres = 0.0001
         self.rec1 = None
+        self.my_colour = ["r", "g", "b", "m", "c", "y"]
 
         loadMenu = self.menuBar().addMenu('&Load')
         loadDemoAction = self.createAction("&Demo", self.onLoadDemo,
@@ -63,16 +65,21 @@ class QMatGUI(QMainWindow):
             "&Shut time pdf", self.onPlotShutTimePDF)
         plotBurstLenPDFAction = self.createAction(
             "&Burst length pdf", self.onPlotBrstLenPDF)
+        plotBurstLenPDFActionCond = self.createAction(
+            "&Conditional burst length pdf", self.onPlotBrstLenPDFCond)
         plotBurstOpeningDistrAction = self.createAction(
             "&Burst openings distribution", self.onPlotBrstOpDistr)
+        plotBurstOpeningDistrActionCond = self.createAction(
+            "&Conditional burst openings distribution", self.onPlotBrstOpDistrCond)
         plotBurstLenVConcAction = self.createAction(
             "&Burst length vs concentration", self.onPlotBrstLenConc)
         plotJumpAction = self.createAction(
             "&Realistic concentration jump", self.onPlotCJump)
-        self.addActions(plotMenu, (plotPopenAction, plotOpenTimePDFAction,
-            plotShutTimePDFAction, plotBurstLenPDFAction,
-            plotBurstOpeningDistrAction, plotBurstLenVConcAction,
-            plotJumpAction))
+        self.addActions(plotMenu, (plotPopenAction,
+            plotOpenTimePDFAction, plotShutTimePDFAction,
+            plotBurstLenPDFAction, plotBurstLenPDFActionCond,
+            plotBurstOpeningDistrAction, plotBurstOpeningDistrActionCond,
+            plotBurstLenVConcAction, plotJumpAction))
 
         dataMenu = self.menuBar().addMenu('&Data')
         openScanAction = self.createAction("&Load SC record", self.onLoadData)
@@ -270,7 +277,7 @@ class QMatGUI(QMainWindow):
         #self.rec1.bursts, self.mec, self.tres, self.tcrit,
         #    True)
 
-        newrates, loglik = ufl.simplex(rates, self.rec1.bursts, scl.HJClik,
+        newrates, loglik = optimize.simplex(rates, self.rec1.bursts, scl.HJClik,
             opts, verbose=0)
         mec.rates = newrates
 
@@ -672,6 +679,53 @@ class QMatGUI(QMainWindow):
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
 
+    def onPlotBrstLenPDFCond(self):
+        """
+        Display the conditional burst length distribution.
+        """
+        self.textBox.append('\n\t===== CONDITIONAL BURST LENGTH PDF =====')
+        self.textBox.append('Agonist concentration = {0:.6f} microM'.
+            format(self.conc * 1000000))
+        self.textBox.append('Resolution = {0:.2f} microsec'.
+            format(self.tres * 1000000))
+        self.textBox.append('Ideal pdf- blue solid line.')
+
+        self.mec.set_eff('c', self.conc)
+
+        scburst.printout(self.mec, output=self.log)
+
+        tau, area = scburst.get_burst_ideal_pdf_components(self.mec)
+
+        points = 512
+        tmin = 0.00001
+        tmax = max(tau) * 20
+        step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
+
+        t = np.zeros(points)
+        fbst = np.zeros(points)
+        cfbst = np.zeros((points, self.mec.kA))
+        for i in range(points):
+            t[i] = tmin * pow(10, (i * step))
+            fbst[i] = t[i] * scburst.pdf_burst_length(self.mec, t[i])
+            cfbst[i] = t[i] * scburst.cond_pdf_burst_length(self.mec, t[i])
+        t = t * 1000 # x axis in millisec
+        cfbrst = cfbst.transpose()
+
+        self.axes.clear()
+
+        # TODO: only 6 colours are available now.
+        self.axes.semilogx(t, fbst, 'k-', label="Not conditional")
+        for i in range(self.mec.kA):
+            self.axes.semilogx(t, cfbrst[i], self.my_colour[i]+'-',
+                label="State {0:d}".format(i+1))
+        handles, labels = self.axes.get_legend_handles_labels()
+        self.axes.legend(handles, labels, frameon=False)
+
+        self.axes.set_yscale('sqrtscale')
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
+
     def onPlotBrstOpDistr(self):
         """
         Display the distribution of number of openings per burst.
@@ -688,6 +742,36 @@ class QMatGUI(QMainWindow):
         self.axes.clear()
         self.axes.plot(r, Pr,'ro')
         self.axes.set_xlim(0, 11)
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
+
+    def onPlotBrstOpDistrCond(self):
+        """
+        Display the conditional distribution of number of openings per burst.
+        """
+
+        self.mec.set_eff('c', self.conc)
+
+        n = 10
+        r = np.arange(1, n+1)
+        Pr = np.zeros(n)
+        for i in range(n):
+            Pr[i] = scburst.distr_num_burst_openings(self.mec, r[i])
+        cPr = np.zeros((n, self.mec.kA))
+        for i in range(n):
+            cPr[i] = scburst.cond_distr_num_burst_openings_on_start_state(self.mec, r[i])
+        cPr = cPr.transpose()
+
+        self.axes.clear()
+        self.axes.plot(r, Pr,'ko', label="Not conditional")
+        # TODO: only 7 colours are available now.
+        for i in range(self.mec.kA):
+            self.axes.plot(r, cPr[i], self.my_colour[i]+'o',
+                label="State {0:d}".format(i+1))
+        handles, labels = self.axes.get_legend_handles_labels()
+        self.axes.legend(handles, labels, frameon=False)
+        self.axes.set_xlim(0, n+1)
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()

@@ -12,6 +12,51 @@ from numpy import linalg as nplin
 
 import qmatlib as qml
 
+def phiBurst(mec):
+    """
+    Calculate the start probabilities of a burst (Eq. 3.2, CH82).
+    PhiB = (pCinf * (QCB * GBA + QCA)) / (pCinf * (QCB * GBA + QCA) * uA)
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    phiB : array_like, shape (1, kA)
+    """
+
+    uA = np.ones((mec.kA, 1))
+    pC = qml.pinf(mec.Q)[mec.kE:]
+    nom = np.dot(pC, (np.dot(mec.QCB, mec.GBA) + mec.QCA))
+    denom = np.dot(nom, uA)
+    phiB = nom / denom
+    return phiB
+
+def endBurst(mec):
+    r"""
+    Calculate the end vector for a burst (Eq. 3.4, CH82).
+
+    .. math::
+
+       \bs{e}_\text{b} = (\bs{I}-\bs{G}_\cl{AB} \bs{G}_\cl{BA}) \bs{u}_\cl{A}
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    eB : array_like, shape (kA, 1)
+    """
+
+    uA = np.ones((mec.kA, 1))
+    I = np.eye(mec.kA)
+    eB = np.dot((I - np.dot(mec.GAB, mec.GBA)), uA)
+    return eB
+
 def mean_burst_length(mec):
     """
     Calculate the mean burst length (Eq. 3.19, CH82).
@@ -35,7 +80,7 @@ def mean_burst_length(mec):
     invQBB = nplin.inv(mec.QBB)
     interm1 = nplin.inv(I - np.dot(mec.GAB, mec.GBA))
     interm2 = I - np.dot(np.dot(mec.QAB, invQBB), mec.GBA)
-    m = (np.dot(np.dot(np.dot(np.dot(qml.phiBurst(mec), interm1), invQAA),
+    m = (np.dot(np.dot(np.dot(np.dot(phiBurst(mec), interm1), invQAA),
         interm2), uA)[0])
     return m
 
@@ -56,7 +101,7 @@ def mean_open_time_burst(mec):
 
     uA = np.ones((mec.kA, 1))
     VAA = mec.QAA + np.dot(mec.QAB, mec.GBA)
-    m = np.dot(np.dot(qml.phiBurst(mec), -nplin.inv(VAA)), uA)[0]
+    m = np.dot(np.dot(phiBurst(mec), -nplin.inv(VAA)), uA)[0]
     return m
 
 def mean_openings_burst(mec):
@@ -78,7 +123,7 @@ def mean_openings_burst(mec):
     uA = np.ones((mec.kA,1))
     I = np.eye(mec.kA)
     interm = nplin.inv(I - np.dot(mec.GAB, mec.GBA))
-    mu = np.dot(np.dot(qml.phiBurst(mec), interm), uA)[0]
+    mu = np.dot(np.dot(phiBurst(mec), interm), uA)[0]
     return mu
 
 def distr_num_burst_openings(mec, r):
@@ -108,8 +153,26 @@ def distr_num_burst_openings(mec, r):
         interm = GG
         for i in range(2, r):
             interm = np.dot(interm, GG)
-    Pr = np.dot(np.dot(qml.phiBurst(mec), interm), qml.endBurst(mec))
+    Pr = np.dot(np.dot(phiBurst(mec), interm), endBurst(mec))
     return Pr
+
+def cond_distr_num_burst_openings_on_start_state(mec, r):
+    # TODO: documentation
+    """
+
+    """
+
+    GG = np.dot(mec.GAB, mec.GBA)
+    if r == 1:
+        interm = np.eye(mec.kA)
+    elif r == 2:
+        interm = GG
+    else:
+        interm = GG
+        for i in range(2, r):
+            interm = np.dot(interm, GG)
+    vecPr = np.dot(interm, endBurst(mec))
+    return vecPr.transpose()
 
 def pdf_burst_length(mec, t):
     """
@@ -127,9 +190,18 @@ def pdf_burst_length(mec, t):
     """
 
     expQEEA = qml.expQt(mec.QEE, t)[:mec.kA, :mec.kA]
-    f = np.dot(np.dot(np.dot(qml.phiBurst(mec), expQEEA), -mec.QAA),
-        qml.endBurst(mec))
+    f = np.dot(np.dot(np.dot(phiBurst(mec), expQEEA), -mec.QAA),
+        endBurst(mec))
     return f
+
+def cond_pdf_burst_length(mec, t):
+    # TODO: documentation
+    """
+    """
+
+    expQEEA = qml.expQt(mec.QEE, t)[:mec.kA, :mec.kA]
+    vect = np.dot(np.dot(expQEEA, -mec.QAA), endBurst(mec))
+    return vect.transpose()
 
 def get_burst_ideal_pdf_components(mec):
     """
@@ -151,8 +223,8 @@ def get_burst_ideal_pdf_components(mec):
     areas = np.zeros(mec.kE)
     eigs, A = qml.eigs(-mec.QEE)
     for i in range(mec.kE):
-        areas[i] = (np.dot(np.dot(np.dot(qml.phiBurst(mec),
-            A[i][:mec.kA, :mec.kA]), (-mec.QAA)), qml.endBurst(mec)) / eigs[i])
+        areas[i] = (np.dot(np.dot(np.dot(phiBurst(mec),
+            A[i][:mec.kA, :mec.kA]), (-mec.QAA)), endBurst(mec)) / eigs[i])
 
     taus = 1 / eigs
     return taus, areas

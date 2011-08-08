@@ -351,50 +351,50 @@ def phiS(mec):
     phi = np.dot(phiO(mec), GAF)
     return phi
 
-def phiBurst(mec):
-    """
-    Calculate the start probabilities of a burst (Eq. 3.2, CH82).
-    PhiB = (pCinf * (QCB * GBA + QCA)) / (pCinf * (QCB * GBA + QCA) * uA)
-
-    Parameters
-    ----------
-    mec : dcpyps.Mechanism
-        The mechanism to be analysed.
-
-    Returns
-    -------
-    phiB : array_like, shape (1, kA)
-    """
-
-    uA = np.ones((mec.kA, 1))
-    pC = pinf(mec.Q)[mec.kE:]
-    nom = np.dot(pC, (np.dot(mec.QCB, mec.GBA) + mec.QCA))
-    denom = np.dot(nom, uA)
-    phiB = nom / denom
-    return phiB
-
-def endBurst(mec):
-    r"""
-    Calculate the end vector for a burst (Eq. 3.4, CH82).
-
-    .. math::
-
-       \bs{e}_\text{b} = (\bs{I}-\bs{G}_\cl{AB} \bs{G}_\cl{BA}) \bs{u}_\cl{A}
-
-    Parameters
-    ----------
-    mec : dcpyps.Mechanism
-        The mechanism to be analysed.
-
-    Returns
-    -------
-    eB : array_like, shape (kA, 1)
-    """
-
-    uA = np.ones((mec.kA, 1))
-    I = np.eye(mec.kA)
-    eB = np.dot((I - np.dot(mec.GAB, mec.GBA)), uA)
-    return eB
+#def phiBurst(mec):
+#    """
+#    Calculate the start probabilities of a burst (Eq. 3.2, CH82).
+#    PhiB = (pCinf * (QCB * GBA + QCA)) / (pCinf * (QCB * GBA + QCA) * uA)
+#
+#    Parameters
+#    ----------
+#    mec : dcpyps.Mechanism
+#        The mechanism to be analysed.
+#
+#    Returns
+#    -------
+#    phiB : array_like, shape (1, kA)
+#    """
+#
+#    uA = np.ones((mec.kA, 1))
+#    pC = pinf(mec.Q)[mec.kE:]
+#    nom = np.dot(pC, (np.dot(mec.QCB, mec.GBA) + mec.QCA))
+#    denom = np.dot(nom, uA)
+#    phiB = nom / denom
+#    return phiB
+#
+#def endBurst(mec):
+#    r"""
+#    Calculate the end vector for a burst (Eq. 3.4, CH82).
+#
+#    .. math::
+#
+#       \bs{e}_\text{b} = (\bs{I}-\bs{G}_\cl{AB} \bs{G}_\cl{BA}) \bs{u}_\cl{A}
+#
+#    Parameters
+#    ----------
+#    mec : dcpyps.Mechanism
+#        The mechanism to be analysed.
+#
+#    Returns
+#    -------
+#    eB : array_like, shape (kA, 1)
+#    """
+#
+#    uA = np.ones((mec.kA, 1))
+#    I = np.eye(mec.kA)
+#    eB = np.dot((I - np.dot(mec.GAB, mec.GBA)), uA)
+#    return eB
 
 def dW(s, tres, Q12, Q22, Q21, k1, k2):
     """
