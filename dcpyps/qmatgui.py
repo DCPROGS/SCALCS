@@ -63,8 +63,8 @@ class QMatGUI(QMainWindow):
             "&Open time pdf", self.onPlotOpenTimePDF)
         plotShutTimePDFAction = self.createAction(
             "&Shut time pdf", self.onPlotShutTimePDF)
-#        plotSubsetTimePDFAction = self.createAction(
-#            "&Subset time pdf", self.onPlotSubsetTimePDF)
+        plotSubsetTimePDFAction = self.createAction(
+            "&Subset time pdf", self.onPlotSubsetTimePDF)
         plotBurstLenPDFAction = self.createAction(
             "&Burst length pdf", self.onPlotBrstLenPDF)
         plotBurstLenPDFActionCond = self.createAction(
@@ -79,7 +79,7 @@ class QMatGUI(QMainWindow):
             "&Realistic concentration jump", self.onPlotCJump)
         self.addActions(plotMenu, (plotPopenAction,
             plotOpenTimePDFAction, plotShutTimePDFAction,
-#            plotSubsetTimePDFAction,
+            plotSubsetTimePDFAction,
             plotBurstLenPDFAction, plotBurstLenPDFActionCond,
             plotBurstOpeningDistrAction, plotBurstOpeningDistrActionCond,
             plotBurstLenVConcAction, plotJumpAction))
@@ -552,14 +552,21 @@ class QMatGUI(QMainWindow):
     def onPlotSubsetTimePDF(self):
         """
         """
+
+        self.textBox.append('\n\t===== SUBSET TIME PDF =====')
+        self.textBox.append('Agonist concentration = {0:.6f} mikroM'.
+            format(self.conc * 1000000))
+        self.textBox.append('Resolution = {0:.2f} mikrosec'.
+            format(self.tres * 1000000))
+        self.textBox.append('Subset life time pdf- blue solid line.')
+        self.textBox.append('Ideal pdf- red dashed line.')
+
         open = False
         self.mec.set_eff('c', self.conc)
 
         tau, area = scl.get_ideal_pdf_components(self.mec, open)
-        # Asymptotic pdf
-        roots = scl.asymptotic_roots(self.mec, self.tres, open)
 
-        tmax = (-1 / roots.max()) * 20
+        tmax = tau.max() * 20
         tmin = 0.00001 # 10 mikrosec
         points = 512
         step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
@@ -575,13 +582,12 @@ class QMatGUI(QMainWindow):
         for i in range(points):
             t[i] = tmin * pow(10, (i * step))
             ipdf[i] = t[i] * scl.pdf_shut_time(self.mec, t[i]) * fac
-            spdf[i] = t[i] * scl.pdf_subset_time(self.mec, 6, 7, t[i]) * fac
+            spdf[i] = t[i] * scl.pdf_subset_time(self.mec, 8, 10, t[i]) * fac
 
 
         t = t * 1000 # x scale in millisec
-        #self.textBox.append(text1)
         self.axes.clear()
-        self.axes.semilogx(t, spdf, 'r--', t, ipdf, 'b--')
+        self.axes.semilogx(t, spdf, 'b-', t, ipdf, 'r--')
         self.axes.set_yscale('sqrtscale')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
