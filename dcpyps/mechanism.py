@@ -217,13 +217,28 @@ class Mechanism(object):
 
     def __repr__(self):
         #TODO: need nice table format
-        str_repr = 'class dcpyps.Mechanism\n'
+        str_repr = '\nclass dcpyps.Mechanism\n'
         str_repr += 'Values of unit rates [1/sec]:\n'
         for rate in self.Rates:
             str_repr += ('From ' + rate.State1.name + ' to ' +
                          rate.State2.name + '    ' + rate.name +
                          '     {0:.3f}'.format(rate.unit_rate()) + 
                          '\n')
+
+        str_repr += '\n'
+        for state in self.States:
+            if state.statetype=='A':
+                str_repr += ('Conductance of state ' + state.name + ' (pS)  = ' +
+                         '     {0:.3f}'.format(state.conductance * 1e12) +
+                         '\n')
+
+        str_repr += ('\nNumber of open states = {0:d}'.format(self.kA))
+        str_repr += ('\nNumber of short-lived shut states (within burst) = {0:d}'
+            .format(self.kB))
+        str_repr += ('\nNumber of long-lived shut states (between bursts) = {0:d}'
+            .format(self.kC))
+        str_repr += ('\nNumber of desensitised states = {0:d}'.format(self.kD) +
+            '\n')
 
         return str_repr
 

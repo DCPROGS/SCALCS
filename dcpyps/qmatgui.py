@@ -79,7 +79,8 @@ class QMatGUI(QMainWindow):
             "&Realistic concentration jump", self.onPlotCJump)
         self.addActions(plotMenu, (plotPopenAction,
             plotOpenTimePDFAction, plotShutTimePDFAction,
-            plotSubsetTimePDFAction,
+            # setDisabled(False) to activate plotting the subset time distributions
+            plotSubsetTimePDFAction.setDisabled(True),
             plotBurstLenPDFAction, plotBurstLenPDFActionCond,
             plotBurstOpeningDistrAction, plotBurstOpeningDistrActionCond,
             plotBurstLenVConcAction, plotJumpAction))
@@ -900,6 +901,7 @@ class QMatGUI(QMainWindow):
 
         self.textBox.append("Loaded mec: " + meclist[nrate][2])
         self.textBox.append("Loaded rates: " + meclist[nrate][3] + "\n")
+        self.mec.printout(self.log)
 
 class PrintLog:
     """

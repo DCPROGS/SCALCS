@@ -332,8 +332,7 @@ def mec_load(mecfile, start):
     for j in range(0, kA):
         doubles.fromfile(f,1)
         dgamma.append(doubles.pop())
-
-    print 'dgamma=', dgamma
+#    print 'dgamma=', dgamma
 
     # Get number of states in each cycle and connections.
     nsc = np.zeros(50, 'int32')
