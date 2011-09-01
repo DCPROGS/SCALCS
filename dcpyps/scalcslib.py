@@ -31,6 +31,7 @@ Sakmann B, Neher E) Plenum Press, New York, pp. 589-633.
 __author__="R.Lape, University College London"
 __date__ ="$07-Dec-2010 20:29:14$"
 
+import sys
 import math
 
 import numpy as np
@@ -804,4 +805,53 @@ def HJClik(theta, bursts, opts):
         grouplik = np.dot(grouplik, endB)
         loglik += math.log(grouplik[0])
     return -loglik, np.log(mec.unit_rates())
+
+def mean_latency_given_start_state(mec, state):
+    """
+    Calculate mean latency to next opening (shutting), given starting in
+    specified shut (open) state.
+
+    mean latency given starting state = pF(0) * inv(-QFF) * uF
+
+    F- all shut states (change to A for mean latency to next shutting
+    calculation), p(0) = [0 0 0 ..1.. 0] - a row vector with 1 for state in
+    question and 0 for all other states.
+    """
+
+    if state <= mec.kA:
+        # for calculating mean latency to next shutting
+        p = np.zeros((mec.kA))
+        p[state-1] = 1
+        uF = np.ones((mec.kA, 1))
+        invQFF = nplin.inv(-mec.QAA)
+    else:
+        # for calculating mean latency to next opening
+        p = np.zeros((mec.kF))
+        p[state-mec.kA-1] = 1
+        uF = np.ones((mec.kF, 1))
+        invQFF = nplin.inv(-mec.QFF)
+
+    mean = np.dot(np.dot(p, invQFF), uF)[0]
+
+    return mean
+
+def printout(mec, output=sys.stdout, eff='c'):
+    """
+    """
+
+    output.write('\n\nOpen                Equilibrium           Mean life            Mean latency (ms)')
+    output.write('\nstate                occupancy                (ms)               to next shutting')
+    output.write('\n                                                                               given start in this state')
+    #output.write('\nterm\ttau (ms)\tarea (%)')
+    pinf = qml.pinf(mec.Q)
+    for i in range(mec.k):
+        if i == mec.kA:
+            output.write('\n\nShut                  Equilibrium           Mean life            Mean latency (ms)')
+            output.write('\nstate                 occupancy                (ms)              to next opening')
+            output.write('\n                                                                               given start in this state')
+        mean = mean_latency_given_start_state(mec, i+1)
+        output.write('\n{0:d}'.format(i+1) +
+            '\t{0:.6f}'.format(pinf[i]) +
+            '\t{0:.6f}'.format(-1 / mec.Q[i,i] * 1000) +
+            '\t{0:.6f}'.format(mean * 1000))
 

@@ -879,6 +879,9 @@ class QMatGUI(QMainWindow):
         self.mec = samples.CH82()
         self.textBox.append("\nLoaded Demo.\n")
         self.mec.printout(self.log)
+
+        self.mec.set_eff('c', self.conc)
+        scl.printout(self.mec, output=self.log)
         
     def onLoadMecFile(self):
         """
@@ -902,6 +905,9 @@ class QMatGUI(QMainWindow):
         self.textBox.append("Loaded mec: " + meclist[nrate][2])
         self.textBox.append("Loaded rates: " + meclist[nrate][3] + "\n")
         self.mec.printout(self.log)
+
+        self.mec.set_eff('c', self.conc)
+        scl.printout(self.mec, output=self.log)
 
 class PrintLog:
     """
