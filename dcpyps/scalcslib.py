@@ -38,6 +38,7 @@ import numpy as np
 from numpy import linalg as nplin
 
 import qmatlib as qml
+import bisectHJC
 
 def hjc_mean_time(mec, tres, open):
     """
@@ -456,19 +457,19 @@ def asymptotic_roots(mec, tres, open):
     sbs = -0.0001
 
     if open:
-        sro = qml.bisection_intervals(sao, sbo, tres,
+        sro = bisectHJC.bisection_intervals(sao, sbo, tres,
             mec.QFF, mec.QAA, mec.QAF, mec.QFA, mec.kF, mec.kA)
         roots = np.zeros(mec.kA)
         for i in range(mec.kA):
-            roots[i] = qml.bisect(sro[i,0], sro[i,1], tres,
+            roots[i] = bisectHJC.bisect(sro[i,0], sro[i,1], tres,
                 mec.QFF, mec.QAA, mec.QAF, mec.QFA, mec.kF, mec.kA)
         return roots
     else:
-        sro = qml.bisection_intervals(sas, sbs, tres,
+        sro = bisectHJC.bisection_intervals(sas, sbs, tres,
             mec.QAA, mec.QFF, mec.QFA, mec.QAF, mec.kA, mec.kF)
         roots = np.zeros(mec.kF)
         for i in range(mec.kF):
-            roots[i] = qml.bisect(sro[i,0], sro[i,1], tres,
+            roots[i] = bisectHJC.bisect(sro[i,0], sro[i,1], tres,
                 mec.QAA, mec.QFF, mec.QFA, mec.QAF, mec.kA, mec.kF)
         return roots
 
