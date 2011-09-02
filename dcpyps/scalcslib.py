@@ -839,16 +839,31 @@ def printout(mec, output=sys.stdout, eff='c'):
     """
     """
 
-    output.write('\n\nOpen                Equilibrium           Mean life            Mean latency (ms)')
-    output.write('\nstate                occupancy                (ms)               to next shutting')
-    output.write('\n                                                                               given start in this state')
-    #output.write('\nterm\ttau (ms)\tarea (%)')
+    output.write('\n\nOpen\tEquilibrium\tMean life\tMean latency (ms)')
+    output.write('\nstate\toccupancy\t(ms)\tto next shutting')
+    output.write('\n\t\t\tgiven start in this state')
+
     pinf = qml.pinf(mec.Q)
+
     for i in range(mec.k):
+        if i == 0:
+            output.write('\nSubset A ' +
+                '\t{0:.6f}'.format(np.sum(pinf[:mec.kA])) +
+#                '\t{0:.6f}'.format(mean_life_A * 1000) +
+                '\n')
         if i == mec.kA:
-            output.write('\n\nShut                  Equilibrium           Mean life            Mean latency (ms)')
-            output.write('\nstate                 occupancy                (ms)              to next opening')
-            output.write('\n                                                                               given start in this state')
+            output.write('\n\nShut\tEquilibrium\tMean life\tMean latency (ms)')
+            output.write('\nstate\toccupancy\t(ms)\tto next opening')
+            output.write('\n\t\t\tgiven start in this state')
+            output.write('\nSubset B ' +
+                '\t{0:.6f}'.format(np.sum(pinf[mec.kA:mec.kA+mec.kB])) +
+#                '\t{0:.6f}'.format(mean_life_B * 1000) +
+                '\n')
+        if i == mec.kE:
+            output.write('\n\nSubset C ' +
+                '\t{0:.6f}'.format(np.sum(pinf[mec.kA+mec.kB:mec.k])) +
+#                '\t{0:.6f}'.format(mean_life_C * 1000) +
+                '\n')
         mean = mean_latency_given_start_state(mec, i+1)
         output.write('\n{0:d}'.format(i+1) +
             '\t{0:.6f}'.format(pinf[i]) +

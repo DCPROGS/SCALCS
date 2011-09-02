@@ -220,9 +220,9 @@ class Mechanism(object):
         str_repr = '\nclass dcpyps.Mechanism\n'
         str_repr += 'Values of unit rates [1/sec]:\n'
         for rate in self.Rates:
-            str_repr += ('From ' + rate.State1.name + ' to ' +
-                         rate.State2.name + '    ' + rate.name +
-                         '     {0:.3f}'.format(rate.unit_rate()) + 
+            str_repr += ('From ' + rate.State1.name + '\tto ' +
+                         rate.State2.name + '\t' + rate.name +
+                         '\t{0:.3f}'.format(rate.unit_rate()) +
                          '\n')
 
         str_repr += '\n'
