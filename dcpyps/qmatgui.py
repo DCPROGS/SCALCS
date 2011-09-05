@@ -694,7 +694,7 @@ class QMatGUI(QMainWindow):
         
         scburst.printout(self.mec, output=self.log)
         
-        tau, area = scburst.get_burst_ideal_pdf_components(self.mec)
+        tau, area = scburst.length_pdf_components(self.mec)
 
         points = 512
         tmin = 0.00001
@@ -705,7 +705,7 @@ class QMatGUI(QMainWindow):
         fbst = np.zeros(points)
         for i in range(points):
             t[i] = tmin * pow(10, (i * step))
-            fbst[i] = t[i] * scburst.pdf_burst_length(self.mec, t[i])
+            fbst[i] = t[i] * scburst.length_pdf(self.mec, t[i])
         t = t * 1000 # x axis in millisec
         fbrst = fbst
         
@@ -731,7 +731,7 @@ class QMatGUI(QMainWindow):
 
         scburst.printout(self.mec, output=self.log)
 
-        tau, area = scburst.get_burst_ideal_pdf_components(self.mec)
+        tau, area = scburst.length_pdf_components(self.mec)
 
         points = 512
         tmin = 0.00001
@@ -743,8 +743,8 @@ class QMatGUI(QMainWindow):
         cfbst = np.zeros((points, self.mec.kA))
         for i in range(points):
             t[i] = tmin * pow(10, (i * step))
-            fbst[i] = t[i] * scburst.pdf_burst_length(self.mec, t[i])
-            cfbst[i] = t[i] * scburst.cond_pdf_burst_length(self.mec, t[i])
+            fbst[i] = t[i] * scburst.length_pdf(self.mec, t[i])
+            cfbst[i] = t[i] * scburst.length_cond_pdf(self.mec, t[i])
         t = t * 1000 # x axis in millisec
         cfbrst = cfbst.transpose()
 
@@ -774,7 +774,7 @@ class QMatGUI(QMainWindow):
         r = np.arange(1, n+1)
         Pr = np.zeros(n)
         for i in range(n):
-            Pr[i] = scburst.distr_num_burst_openings(self.mec, r[i])
+            Pr[i] = scburst.openings_distr(self.mec, r[i])
 
         self.axes.clear()
         self.axes.plot(r, Pr,'ro')
@@ -794,10 +794,10 @@ class QMatGUI(QMainWindow):
         r = np.arange(1, n+1)
         Pr = np.zeros(n)
         for i in range(n):
-            Pr[i] = scburst.distr_num_burst_openings(self.mec, r[i])
+            Pr[i] = scburst.openings_distr(self.mec, r[i])
         cPr = np.zeros((n, self.mec.kA))
         for i in range(n):
-            cPr[i] = scburst.cond_distr_num_burst_openings_on_start_state(self.mec, r[i])
+            cPr[i] = scburst.openings_cond_distr_depend_on_start_state(self.mec, r[i])
         cPr = cPr.transpose()
 
         self.axes.clear()
@@ -831,7 +831,7 @@ class QMatGUI(QMainWindow):
             for i in range(points):
                 c[i] = cmin + step * i
                 self.mec.set_eff('c', c[i])
-                br[i] = scburst.mean_burst_length(self.mec)
+                br[i] = scburst.length_mean(self.mec)
                 brblk[i] = br[i] * (1 + c[i] / self.mec.KBlk)
             c = c * 1000000 # x axis scale in mikroMoles
             br = br * 1000
@@ -841,7 +841,7 @@ class QMatGUI(QMainWindow):
             for i in range(points):
                 c[i] = cmin + step * i
                 self.mec.set_eff('c', c[i])
-                br[i] = scburst.mean_burst_length(self.mec)
+                br[i] = scburst.length_mean(self.mec)
             c = c * 1000000 # x axis scale in mikroMoles
             br = br * 1000
             self.axes.plot(c, br,'b-')

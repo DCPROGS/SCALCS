@@ -57,7 +57,7 @@ def endBurst(mec):
     eB = np.dot((I - np.dot(mec.GAB, mec.GBA)), uA)
     return eB
 
-def mean_burst_length(mec):
+def length_mean(mec):
     """
     Calculate the mean burst length (Eq. 3.19, CH82).
     m = PhiB * (I - GAB * GBA)^(-1) * (-QAA^(-1)) * \
@@ -84,7 +84,7 @@ def mean_burst_length(mec):
         interm2), uA)[0])
     return m
 
-def mean_open_time_burst(mec):
+def open_time_mean(mec):
     """
     Calculate the mean total open time per burst (Eq. 3.26, CH82).
 
@@ -104,7 +104,7 @@ def mean_open_time_burst(mec):
     m = np.dot(np.dot(phiBurst(mec), -nplin.inv(VAA)), uA)[0]
     return m
 
-def mean_openings_burst(mec):
+def openings_mean(mec):
     """
     Calculate the mean number of openings per burst (Eq. 3.7, CH82).
     mu = phiB * (I - GAB * GBA)^(-1) * uA
@@ -126,7 +126,7 @@ def mean_openings_burst(mec):
     mu = np.dot(np.dot(phiBurst(mec), interm), uA)[0]
     return mu
 
-def distr_num_burst_openings(mec, r):
+def openings_distr(mec, r):
     """
     The distribution of openings per burst (Eq. 3.5, CH82).
     P(r) = phiB * (GAB * GBA)^(r-1) * eB
@@ -156,10 +156,21 @@ def distr_num_burst_openings(mec, r):
     Pr = np.dot(np.dot(phiBurst(mec), interm), endBurst(mec))
     return Pr
 
-def cond_distr_num_burst_openings_on_start_state(mec, r):
-    # TODO: documentation
+def openings_cond_distr_depend_on_start_state(mec, r):
     """
+    The distribution of openings per burst coditional on starting state.
 
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    r : int
+        Number of openings per burst.
+
+    Returns
+    -------
+    vecPr : array_like, shape (kA, 1)
+        Probability of seeing r openings per burst depending on starting state.
     """
 
     GG = np.dot(mec.GAB, mec.GBA)
@@ -172,9 +183,10 @@ def cond_distr_num_burst_openings_on_start_state(mec, r):
         for i in range(2, r):
             interm = np.dot(interm, GG)
     vecPr = np.dot(interm, endBurst(mec))
-    return vecPr.transpose()
+    vecPr = vecPr.transpose()
+    return vecPr
 
-def pdf_burst_length(mec, t):
+def length_pdf(mec, t):
     """
     Probability density function of the burst length (Eq. 3.17, CH82).
     f(t) = phiB * [PEE(t)]AA * (-QAA) * eB, where PEE(t) = exp(QEE * t)
@@ -194,16 +206,29 @@ def pdf_burst_length(mec, t):
         endBurst(mec))
     return f
 
-def cond_pdf_burst_length(mec, t):
-    # TODO: documentation
+def length_cond_pdf(mec, t):
     """
+    The distribution of burst length coditional on starting state.
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    t : float
+        Length.
+
+    Returns
+    -------
+    vec : array_like, shape (kA, 1)
+        Probability of seeing burst length t depending on starting state.
     """
 
     expQEEA = qml.expQt(mec.QEE, t)[:mec.kA, :mec.kA]
-    vect = np.dot(np.dot(expQEEA, -mec.QAA), endBurst(mec))
-    return vect.transpose()
+    vec = np.dot(np.dot(expQEEA, -mec.QAA), endBurst(mec))
+    vec = vec.transpose()
+    return vec
 
-def get_burst_ideal_pdf_components(mec):
+def length_pdf_components(mec):
     """
     Calculate time constants and areas for an ideal (no missed events)
     exponential burst length probability density function.
@@ -231,9 +256,25 @@ def get_burst_ideal_pdf_components(mec):
 
 def printout(mec, output=sys.stdout, eff='c'):
     """
+    Output burst calculations into selected device (sys.stdout, printer, file,
+    text field.
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    output : output device
+        Default device: sys.stdout
+    eff : string
+        Effector; e.g. 'c'- concentration.
     """
+
+    phiB = phiBurst(mec)
+    output.write('\n\nInitial vector for burst (phiB) = \n')
+    for i in range(mec.kA):
+        output.write('{0:.6f}\t'.format(phiB[i]))
     
-    tau, area = get_burst_ideal_pdf_components(mec)
+    tau, area = length_pdf_components(mec)
     output.write('\n\nBURST LENGTH DISTRIBUTION')
     output.write('\nterm\ttau (ms)\tarea (%)')
     for i in range(mec.kE):
@@ -241,16 +282,16 @@ def printout(mec, output=sys.stdout, eff='c'):
             '\t{0:.3f}'.format(tau[i] * 1000) +
             '\t{0:.3f}'.format(area[i] * 100))
 
-    m = mean_burst_length(mec)
+    m = length_mean(mec)
     output.write('\n\nMean burst length = {0:.3f} millisec'.
         format(m * 1000))
         
-    mu = mean_openings_burst(mec)
-    output.write('\nMean number of openings per burst = {0:.3f}'.
+    mu = openings_mean(mec)
+    output.write('\n\nMean number of openings per burst = {0:.3f}'.
         format(mu))
         
-    mop = mean_open_time_burst(mec)
-    output.write('\nThe mean total open time per burst = {0:.3f} '.
+    mop = open_time_mean(mec)
+    output.write('\n\nThe mean total open time per burst = {0:.3f} '.
         format(mop * 1000) + 'millisec')
         
     bpop = mop / m
