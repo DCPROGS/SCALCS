@@ -156,6 +156,28 @@ def openings_distr(mec, r):
     Pr = np.dot(np.dot(phiBurst(mec), interm), endBurst(mec))
     return Pr
 
+def openings_distr_components(mec):
+    """
+
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    r : int
+        Number of openings per burst.
+
+    Returns
+    -------
+    ro :
+    w :
+    """
+
+    GG = np.dot(mec.GAB, mec.GBA)
+    ro, A = qml.eigs(GG)
+    w = np.dot(np.dot(phiBurst(mec), A), endBurst(mec)).transpose()[0]
+    return ro, w
+
 def openings_cond_distr_depend_on_start_state(mec, r):
     """
     The distribution of openings per burst coditional on starting state.
@@ -245,14 +267,21 @@ def length_pdf_components(mec):
     areas : ndarray, shape(k, 1)
     """
 
-    areas = np.zeros(mec.kE)
+    w = np.zeros(mec.kE)
     eigs, A = qml.eigs(-mec.QEE)
     for i in range(mec.kE):
-        areas[i] = (np.dot(np.dot(np.dot(phiBurst(mec),
-            A[i][:mec.kA, :mec.kA]), (-mec.QAA)), endBurst(mec)) / eigs[i])
+        w[i] = np.dot(np.dot(np.dot(phiBurst(mec),
+            A[i][:mec.kA, :mec.kA]), (-mec.QAA)), endBurst(mec))
+    return eigs, w
 
-    taus = 1 / eigs
-    return taus, areas
+def exp_pdf_mean_sd(eigs, w):
+    """
+    """
+
+    am = np.sum(w / (eigs * eigs))
+    var = np.sum(w / (eigs * eigs * eigs))
+    sd = math.sqrt(2 * var - am * am)
+    return am, sd
 
 def printout(mec, output=sys.stdout, eff='c'):
     """
@@ -273,23 +302,59 @@ def printout(mec, output=sys.stdout, eff='c'):
     output.write('\n\nInitial vector for burst (phiB) = \n')
     for i in range(mec.kA):
         output.write('{0:.6f}\t'.format(phiB[i]))
-    
-    tau, area = length_pdf_components(mec)
-    output.write('\n\nBURST LENGTH DISTRIBUTION')
-    output.write('\nterm\ttau (ms)\tarea (%)')
+
+    # # #
+    eigs, w = length_pdf_components(mec)
+    output.write('\n\nTotal burst length, unconditional pdf')
+    output.write('\nFbst(t) =')
+    output.write('\nterm\tw\trate (1/sec)\ttau (ms)\tarea (%)')
     for i in range(mec.kE):
         output.write('\n{0:d}'.format(i+1) +
-            '\t{0:.3f}'.format(tau[i] * 1000) +
-            '\t{0:.3f}'.format(area[i] * 100))
+            '\t{0:.3f}'.format(w[i]) +
+            '\t{0:.1f}'.format(eigs[i]) +
+            '\t{0:.3f}'.format(1000 / eigs[i]) +
+            '\t{0:.3f}'.format(100 * w[i] / eigs[i]))
+
+    mean, sd = exp_pdf_mean_sd(eigs, w)
+    output.write('\nMean (ms) =\t {0:.3f}'.format(mean * 1000) +
+        '\tSD =\t {0:.3f}'.format(sd * 1000) +
+        '\tSD/mean =\t {0:.3f}'.format(sd / mean))
 
     m = length_mean(mec)
-    output.write('\n\nMean burst length = {0:.3f} millisec'.
+    output.write('\nMean from direct matrix calc = {0:.3f} millisec'.
         format(m * 1000))
-        
+
+
+    # # #
+    rho, w = openings_distr_components(mec)
+    norm = 1 / (np.ones((mec.kA)) - rho)
+    area = norm * w
+    am = np.sum(w / np.power(np.ones((mec.kA)) - rho, 2))
+    var = np.sum(w * (np.ones((mec.kA)) + rho) / np.power(np.ones((mec.kA)) - rho, 3))
+    sd = math.sqrt(var - am * am)
+
+    output.write('\n\nNumber (r) of openings / burst (unconditional)')
+    output.write('\nP(r) =')
+    output.write('\nterm\tw\trho\tarea(%)\tNorm mean')
+    for i in range(mec.kA):
+        output.write('\n{0:d}'.format(i+1) +
+            '\t{0:.6f}'.format(w[i]) +
+            '\t{0:.6f}'.format(rho[i]) +
+            '\t{0:.3f}'.format(area[i] * 100) +
+            '\t{0:.3f}'.format(norm[i]))
+    output.write('\nMean number of openings per burst =\t {0:.3f}'.format(am) +
+        '\n\tSD =\t {0:.3f}'.format(sd) +
+        '\tSD/mean =\t {0:.3f}'.format(sd / am))
+
     mu = openings_mean(mec)
-    output.write('\n\nMean number of openings per burst = {0:.3f}'.
-        format(mu))
-        
+    output.write('\nMean from direct matrix calc = {0:.3f}'. format(mu))
+
+    # # #
+#    output.write('\n\nPDF of first opening in a burst with 2 or more openings')
+#    output.write('\nf(t) =')
+#    output.write('\nterm\tw\trate (1/sec)\tarea (%)\ttau (ms)')
+
+    # # #
     mop = open_time_mean(mec)
     output.write('\n\nThe mean total open time per burst = {0:.3f} '.
         format(mop * 1000) + 'millisec')

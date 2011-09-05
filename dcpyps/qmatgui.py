@@ -694,11 +694,11 @@ class QMatGUI(QMainWindow):
         
         scburst.printout(self.mec, output=self.log)
         
-        tau, area = scburst.length_pdf_components(self.mec)
+        eigs, w = scburst.length_pdf_components(self.mec)
 
         points = 512
         tmin = 0.00001
-        tmax = max(tau) * 20
+        tmax = 20 / min(eigs)
         step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
 
         t = np.zeros(points)
