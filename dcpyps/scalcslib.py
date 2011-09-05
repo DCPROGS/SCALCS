@@ -817,6 +817,17 @@ def mean_latency_given_start_state(mec, state):
     F- all shut states (change to A for mean latency to next shutting
     calculation), p(0) = [0 0 0 ..1.. 0] - a row vector with 1 for state in
     question and 0 for all other states.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    state : int
+        State number (counting origin 1)
+
+    Returns
+    -------
+    mean : float
+        Mean latency.
     """
 
     if state <= mec.kA:
@@ -836,6 +847,38 @@ def mean_latency_given_start_state(mec, state):
 
     return mean
 
+def mean_subset_life_time(mec, state1, state2):
+    """
+    Calculate mean life time in a specified subset. Add all rates out of subset
+    to get total rate out. Skip rates within subset.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    state1,state2 : int
+        State numbers (counting origin 1)
+
+    Returns
+    -------
+    mean : float
+        Mean life time.
+
+    """
+
+    p = qml.pinf(mec.Q)
+    # Total occupancy for subset.
+    pstot = np.sum(p[state1-1 : state2])
+
+    # Total rate out
+    s = 0.0
+    for i in range(state1-1, state2):
+        for j in range(mec.k):
+            if (j < state1-1) or (j > state2 - 1):
+                s += mec.Q[i, j] * p[i] / pstot
+
+    mean = 1 / s
+    return mean
+
 def printout(mec, output=sys.stdout, eff='c'):
     """
     """
@@ -848,22 +891,25 @@ def printout(mec, output=sys.stdout, eff='c'):
 
     for i in range(mec.k):
         if i == 0:
+            mean_life_A = mean_subset_life_time(mec, 1, mec.kA)
             output.write('\nSubset A ' +
                 '\t{0:.6f}'.format(np.sum(pinf[:mec.kA])) +
-#                '\t{0:.6f}'.format(mean_life_A * 1000) +
+                '\t{0:.6f}'.format(mean_life_A * 1000) +
                 '\n')
         if i == mec.kA:
+            mean_life_B = mean_subset_life_time(mec, mec.kA + 1, mec.kA + mec.kB)
             output.write('\n\nShut\tEquilibrium\tMean life\tMean latency (ms)')
             output.write('\nstate\toccupancy\t(ms)\tto next opening')
             output.write('\n\t\t\tgiven start in this state')
             output.write('\nSubset B ' +
                 '\t{0:.6f}'.format(np.sum(pinf[mec.kA:mec.kA+mec.kB])) +
-#                '\t{0:.6f}'.format(mean_life_B * 1000) +
+                '\t{0:.6f}'.format(mean_life_B * 1000) +
                 '\n')
         if i == mec.kE:
+            mean_life_C = mean_subset_life_time(mec, mec.kA + mec.kB + 1, mec.k)
             output.write('\n\nSubset C ' +
                 '\t{0:.6f}'.format(np.sum(pinf[mec.kA+mec.kB:mec.k])) +
-#                '\t{0:.6f}'.format(mean_life_C * 1000) +
+                '\t{0:.6f}'.format(mean_life_C * 1000) +
                 '\n')
         mean = mean_latency_given_start_state(mec, i+1)
         output.write('\n{0:d}'.format(i+1) +
