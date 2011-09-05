@@ -12,7 +12,7 @@ except:
 
 import numpy as np
 
-import io
+import dcio
 import filter
 
 class TraceGUI(QMainWindow):

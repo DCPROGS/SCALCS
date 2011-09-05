@@ -32,7 +32,7 @@ import scburst
 import popen
 import optimize
 import dataset
-import io
+import dcio
 import samples
 
 class QMatGUI(QMainWindow):

@@ -44,6 +44,6 @@ import scburst
 from mechanism import * # this should really be in the namespace
                         # so that dcpyps.Mechanism is something like
                         # numpy.array
-import io
+import dcio
 import samples
 import rcj
