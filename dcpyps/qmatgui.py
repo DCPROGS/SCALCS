@@ -29,6 +29,7 @@ except:
 import scalcslib as scl
 import rcj
 import scburst
+import popen
 import optimize
 import dataset
 import io
@@ -412,23 +413,9 @@ class QMatGUI(QMainWindow):
         self.textBox.append('Ideal curve- red dashed line.')
         self.textBox.append('HJC curve- blue solid line.')
 
-        # Calculate EC50, nH and maxPopen for Popen curve
-        # corrected for missed events.
-        emaxPopen, econc = scl.get_maxPopen(self.mec, self.tres)
-        eEC50 = scl.get_EC50(self.mec, self.tres)
-        enH = scl.get_nH(self.mec, self.tres)
-        self.textBox.append('\nHJC Popen curve:\nmaxPopen = {0:.3f}; '
-            .format(emaxPopen) + ' EC50 = {0:.3f} mikroM; '
-            .format(eEC50 * 1000000) + ' nH = {0:.3f}'.format(enH))
+        popen.printout(self.mec, self.tres, output=self.log)
 
-        # Calculate EC50, nH and maxPopen for ideal Popen curve.
-        imaxPopen, iconc = scl.get_maxPopen(self.mec, 0)
-        iEC50 = scl.get_EC50(self.mec, 0)
-        inH = scl.get_nH(self.mec, 0)
-        self.textBox.append('\nIdeal Popen curve:\nmaxPopen = {0:.3f}; '
-            .format(imaxPopen) + ' EC50 = {0:.3f} mikroM; '
-            .format(iEC50 * 1000000) + ' nH = {0:.3f}'.format(inH))
-
+        iEC50 = popen.get_EC50(self.mec, 0)
         cmin = iEC50 / 20 #20000000.0
         cmax = iEC50 * 500 #/ 1000000.0
         logstart = int(np.log10(cmin)) - 1
@@ -442,8 +429,8 @@ class QMatGUI(QMainWindow):
         pi = np.zeros(points)
         for i in range(points):
             c[i] = pow(10, logstart + logstep * i)
-            pe[i] = scl.popen(self.mec, self.tres, c[i])
-            pi[i] = scl.popen(self.mec, 0, c[i])
+            pe[i] = popen.popen(self.mec, self.tres, c[i])
+            pi[i] = popen.popen(self.mec, 0, c[i])
         c = c * 1000000 # x axis in mikroMolar scale
 
         self.axes.clear()
