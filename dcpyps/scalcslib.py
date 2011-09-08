@@ -69,16 +69,16 @@ def hjc_mean_time(mec, tres, open):
     if open:
         phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
         QexpQF = np.dot(mec.QAF, expQFF)
-        DARS = qml.dARSdS(tres, mec.QAA, mec.QAF, mec.QFF, mec.QFA,
-            GAF, GFA, expQFF, expQAA, mec.kA, mec.kF)
+        DARS = qml.dARSdS(tres, mec.QAA, mec.QFF,
+            GAF, GFA, expQFF, mec.kA, mec.kF)
         uF = np.ones((mec.kF, 1))
         # meanOpenTime = tres + phiA * DARS * QexpQF * uF
         mean = tres + np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))
     else:
         phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
         QexpQA = np.dot(mec.QFA, expQAA)
-        DFRS = qml.dARSdS(tres, mec.QFF, mec.QFA, mec.QAA, mec.QAF,
-            GFA, GAF, expQAA, expQFF, mec.kF, mec.kA)
+        DFRS = qml.dARSdS(tres, mec.QFF, mec.QAA,
+            GFA, GAF, expQAA, mec.kF, mec.kA)
         uA = np.ones((mec.kA, 1))
         # meanShutTime = tres + phiF * DFRS * QexpQA * uA
         mean = tres + np.dot(phiF, np.dot(np.dot(DFRS, QexpQA), uA))
@@ -102,7 +102,7 @@ def pdf_open_time(mec, t):
 
     uA = np.ones((mec.kA, 1))
     expQAA = qml.expQt(mec.QAA, t)
-    f = np.dot(np.dot(np.dot(qml.phiO(mec), expQAA), -mec.QAA), uA)
+    f = np.dot(np.dot(np.dot(qml.phiA(mec), expQAA), -mec.QAA), uA)
     return f
 
 def pdf_subset_time(mec, k1, k2, t):
@@ -110,7 +110,7 @@ def pdf_subset_time(mec, k1, k2, t):
     """
     
     u = np.ones((k2 - k1 + 1, 1))
-    phi, QAA = qml.phiA(mec, k1, k2)
+    phi, QAA = qml.phiSub(mec, k1, k2)
     expQAA = qml.expQt(QAA, t)
     f = np.dot(np.dot(np.dot(phi, expQAA), -QAA), u)
     return f
@@ -135,7 +135,7 @@ def pdf_shut_time(mec, t):
 
     uF = np.ones((mec.kF, 1))
     expQFF = qml.expQt(mec.QFF, t)
-    f = np.dot(np.dot(np.dot(qml.phiS(mec), expQFF), -mec.QFF), uF)
+    f = np.dot(np.dot(np.dot(qml.phiF(mec), expQFF), -mec.QFF), uF)
     return f
 
 def get_ideal_pdf_components(mec, open):
@@ -162,14 +162,14 @@ def get_ideal_pdf_components(mec, open):
         eigs, A = qml.eigs(-mec.QAA)
         uA = np.ones((mec.kA, 1))
         for i in range(mec.kA):
-            areas[i] = (np.dot(np.dot(np.dot(qml.phiO(mec), A[i]),
+            areas[i] = (np.dot(np.dot(np.dot(qml.phiA(mec), A[i]),
                 (-mec.QAA)), uA) / eigs[i])
     else:
         areas = np.zeros(mec.kF)
         eigs, A = qml.eigs(-mec.QFF)
         uF = np.ones((mec.kF, 1))
         for i in range(mec.kF):
-            areas[i] = (np.dot(np.dot(np.dot(qml.phiS(mec), A[i]),
+            areas[i] = (np.dot(np.dot(np.dot(qml.phiF(mec), A[i]),
                 (-mec.QFF)), uF) / eigs[i])
 
     taus = 1 / eigs
@@ -203,19 +203,23 @@ def asymptotic_roots(mec, tres, open):
 
     if open:
         sro = bisectHJC.bisection_intervals(sao, sbo, tres,
-            mec.QFF, mec.QAA, mec.QAF, mec.QFA, mec.kF, mec.kA)
+            mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
+            #mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
         roots = np.zeros(mec.kA)
         for i in range(mec.kA):
             roots[i] = bisectHJC.bisect(sro[i,0], sro[i,1], tres,
-                mec.QFF, mec.QAA, mec.QAF, mec.QFA, mec.kF, mec.kA)
+                mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
+                #mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
         return roots
     else:
         sro = bisectHJC.bisection_intervals(sas, sbs, tres,
-            mec.QAA, mec.QFF, mec.QFA, mec.QAF, mec.kA, mec.kF)
+            mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
+            #mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
         roots = np.zeros(mec.kF)
         for i in range(mec.kF):
             roots[i] = bisectHJC.bisect(sro[i,0], sro[i,1], tres,
-                mec.QAA, mec.QFF, mec.QFA, mec.QAF, mec.kA, mec.kF)
+                mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
+                #mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
         return roots
 
 def asymptotic_areas(mec, tres, roots, open):
@@ -266,7 +270,9 @@ def asymptotic_areas(mec, tres, roots, open):
     rowA = np.zeros((k1,k1))
     colA = np.zeros((k1,k1))
     for i in range(k1):
-        WA = qml.W(roots[i], tres, Q22, Q11, Q12, Q21, k2, k1)
+        WA = qml.W(roots[i], tres,
+            Q11, Q22, Q12, Q21, k1, k2)
+            #Q22, Q11, Q21, Q12, k2, k1)
         rowA[i] = qml.pinf(WA)
         AW = np.transpose(WA)
         colA[i] = qml.pinf(AW)
@@ -387,7 +393,7 @@ def GAMAxx(mec, tres, open):
 
     if open:
         phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
-        eigen, Z00, Z10, Z11 = qml.Zxx(tres, mec.Q, mec.kA,
+        eigen, Z00, Z10, Z11 = qml.Zxx(mec.Q, mec.kA,
             mec.QFF, mec.QAF, mec.QFA, expQFF)
         uF = np.ones((mec.kF,1))
         for i in range(k):
@@ -401,7 +407,7 @@ def GAMAxx(mec, tres, open):
 
     else:
         phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
-        eigen, Z00, Z10, Z11 = qml.Zxx(tres, mec.Q, mec.kA,
+        eigen, Z00, Z10, Z11 = qml.Zxx(mec.Q, mec.kA,
             mec.QAA, mec.QFA, mec.QAF, expQAA)
         uA = np.ones((mec.kA, 1))
         for i in range(k):

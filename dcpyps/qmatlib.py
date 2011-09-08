@@ -33,15 +33,10 @@ and maximum likelihood fitting of mechanisms.
 Phil Trans R Soc Lond A 354, 2555-2590.
 """
 
-__author__="R.Lape, University College London"
-__date__ ="$11-Oct-2010 10:33:07$"
-
-import math
-
 import numpy as np
 from numpy import linalg as nplin
 
-import dcpypsrc
+#import dcpypsrc
 
 def eigs(Q):
     """
@@ -125,28 +120,29 @@ def iGs(Q, kA, kB):
     GBA = np.dot(nplin.inv(-1 * QBB), QBA)
     return GAB, GBA
 
-def eGs(G12, G21, k1, k2, expQ22):
+def eGs(GAF, GFA, kA, kF, expQFF):
     """
-    Calculate eGAF (or eGFA) for calculation of initial vectors (HJC92).
+    Calculate eGAF for calculation of initial HJC vectors (HJC92).
         (I - GAF * (I - expQFF) * GFA)^-1 * GAF * expQFF
+    To caculate eGFA exhange A by F and F by A in function call.
 
     Parameters
     ----------
-    G12 : array_like, shape (k1, k2)
-    G21 : array_like, shape (k2, k1)
-    k1 : int
-        A number of open/shut states in kinetic scheme.
-    k2 : int
-        A number of shut/open states in kinetic scheme.
+    GAF : array_like, shape (kA, kF)
+    GFA : array_like, shape (kF, kA)
+    kA : int
+        A number of open states in kinetic scheme.
+    kF : int
+        A number of shut states in kinetic scheme.
 
     Returns
     -------
-    eG12 : array_like, shape (k1, k2)
+    eGAF : array_like, shape (kA, kF)
     """
 
-    temp = np.eye(k1) - np.dot(np.dot(G12, np.eye(k2) - expQ22), G21)
-    eG12 = np.dot(np.dot(nplin.inv(temp), G12), expQ22)
-    return eG12
+    temp = np.eye(kA) - np.dot(np.dot(GAF, np.eye(kF) - expQFF), GFA)
+    eGAF = np.dot(np.dot(nplin.inv(temp), GAF), expQFF)
+    return eGAF
 
 def expQt(M, t):
     """
@@ -181,30 +177,23 @@ def expQt(M, t):
     #     expM += A[m] * math.exp(eigvals[m] * t)
     # END DO NOT DELETE
 
-    # rev. 3 - fastest for me
     expM = np.sum(A * np.exp(eigvals * t).reshape(A.shape[0],1,1), axis=0)
-    
-    # rev. 4 - slower on my system despite math.exp
-    # expM = np.sum(A * np.array([
-    #            math.exp(eigval * t) for eigval in eigvals
-    #            ]).reshape(A.shape[0],1,1), 
-    #               axis=0)
-
     return expM
 
 def phiHJC(eGAF, eGFA, kA):
     """
-    Calculate equilibrium probability vector phi by solving
+    Calculate initial HJC vector for openings by solving
         phi*(I-eG12*eG21)=0 (Eq. 10, HJC92)
+    For shuttings exhange A by F and F by A in function call.
 
     Parameters
     ----------
     eGAF : array_like, shape (kA, kF)
     eGFA : array_like, shape (kF, kA)
     kA : int
-        A number of open/shut states in kinetic scheme.
+        A number of open states in kinetic scheme.
     kF : int
-        A number of shut/open states in kinetic scheme.
+        A number of shut states in kinetic scheme.
 
     Returns
     -------
@@ -213,23 +202,25 @@ def phiHJC(eGAF, eGFA, kA):
 
     if kA == 1:
         phi = 1
-        return phi
 
-    Qsub = np.eye(kA) - np.dot(eGAF, eGFA)
-    u = np.ones((kA, 1))
-    S = np.concatenate((Qsub, u), 1)
-    phi = np.dot(u.transpose(), nplin.inv(np.dot(S, S.transpose())))
+    else:
+        Qsub = np.eye(kA) - np.dot(eGAF, eGFA)
+        u = np.ones((kA, 1))
+        S = np.concatenate((Qsub, u), 1)
+        phi = np.dot(u.transpose(), nplin.inv(np.dot(S, S.transpose())))[0]
 
-    return phi[0]
+    return phi
 
-def dARSdS(tres, Q11, Q12, Q22, Q21, G12, G21, expQ22, expQ11, k1, k2):
+def dARSdS(tres, QAA, QFF, GAF, GFA, expQFF, kA, kF):
     r"""
     Evaluate the derivative with respect to s of the Laplace transform of the
-    survival function (Eq. 3.6, CHS96)
+    survival function (Eq. 3.6, CHS96) for open states:
 
     .. math::
 
        \left[ -\frac{\text{d}}{\text{d}s} {^\cl{A}\!\bs{R}^*(s)} \right]_{s=0}
+
+    For same evaluation for shut states exhange A by F and F by A in function call.
 
     SFF = I - exp(QFF * tres)
     First evaluate [dVA(s) / ds] * s = 0.
@@ -244,51 +235,51 @@ def dARSdS(tres, Q11, Q12, Q22, Q21, G12, G21, expQ22, expQ11, k1, k2):
     ----------
     tres : float
         Time resolution (dead time).
-    Q11 : array_like, shape (k1, k1)
-    Q12 : array_like, shape (k1, k2)
-    Q22 : array_like, shape (k2, k2)
-    Q21 : array_like, shape (k1, k1)
+    QAA : array_like, shape (kA, kA)
+    QAF : array_like, shape (kA, kF)
+    QFF : array_like, shape (kF, kF)
+    QFA : array_like, shape (kF, kA)
         Q11, Q12, Q22, Q21 - submatrices of Q.
-    G12 : array_like, shape (k1, k2)
-    G21 : array_like, shape (k2, k1)
-        G12, G21 - G matrices.
-    expQ22 : array_like, shape(k2, k2)
-    expQ11 : array_like, shape(k1, k1)
-        expQ22, expQ11 - exponentials of submatrices Q22 and Q11.
-    k1 : int
-        A number of open/shut states in kinetic scheme.
-    k2 : int
-        A number of shut/open states in kinetic scheme.
+    GAF : array_like, shape (kA, kF)
+    GFA : array_like, shape (kF, kA)
+        GAF, GFA - G matrices.
+    expQFF : array_like, shape(kF, kF)
+    expQAA : array_like, shape(kA, kA)
+        expQFF, expQAA - exponentials of submatrices QFF and QAA.
+    kA : int
+        A number of open states in kinetic scheme.
+    kF : int
+        A number of shut states in kinetic scheme.
 
     Returns
     -------
-    DARS : array_like, shape (k1, k1)
+    DARS : array_like, shape (kA, kA)
     """
 
-    invQ11 = nplin.inv(Q11)
-    invQ22 = nplin.inv(Q22)
+    invQAA = nplin.inv(QAA)
+    invQFF = nplin.inv(QFF)
 
     #SFF = I - EXPQF
-    I = np.eye(k2)
-    SFF = I - expQ22
+    I = np.eye(kF)
+    SFF = I - expQFF
 
     #Q1 = tres * GAF * exp(QFF*tres) * GFA
-    Q1 = tres * np.dot(G12, np.dot(expQ22, G21))
+    Q1 = tres * np.dot(GAF, np.dot(expQFF, GFA))
     #Q2 = GAF * SFF * inv(QFF) * GFA
-    Q2 = np.dot(G12, np.dot(SFF, np.dot(invQ22, G21)))
+    Q2 = np.dot(GAF, np.dot(SFF, np.dot(invQFF, GFA)))
     #Q3 = -inv(QAA) * GAF * SFF * GFA
-    Q3 = np.dot(np.dot(np.dot(-invQ11, G12), SFF), G21)
+    Q3 = np.dot(np.dot(np.dot(-invQAA, GAF), SFF), GFA)
     Q1 = Q1 - Q2 + Q3
 
     # VA = I - GAF * SFF * GFA
-    I = np.eye(k1)
-    VA = I - np.dot(np.dot(G12, SFF), G21)
+    I = np.eye(kA)
+    VA = I - np.dot(np.dot(GAF, SFF), GFA)
 
     # DARS = inv(VA) * (QAA**-2) - inv(VA) * Q1 * inv(VA) * inv(QAA) =
     #      = inv(VA) * [inv(QAA) - Q1 * inv(VA)] * inv(QAA)
 
-    Q3 = invQ11 + - np.dot(Q1, nplin.inv(VA))
-    DARS = np.dot(np.dot(nplin.inv(VA), Q3), invQ11)
+    Q3 = invQAA + - np.dot(Q1, nplin.inv(VA))
+    DARS = np.dot(np.dot(nplin.inv(VA), Q3), invQAA)
 
     return DARS
 
@@ -312,7 +303,7 @@ def pinf(Q):
     pinf = np.dot(u.transpose(), nplin.inv((np.dot(S,S.transpose()))))[0]
     return pinf
 
-def phiO(mec):
+def phiA(mec):
     """
     Calculate initial vector for openings.
 
@@ -333,7 +324,25 @@ def phiO(mec):
     phi = nom / denom
     return phi
 
-def phiA(mec, k1, k2):
+def phiF(mec):
+    """
+    Calculate inital vector for shuttings.
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    phi : ndarray, shape (kF)
+    """
+
+    GAF, GFA = iGs(mec.Q, mec.kA, mec.kF)
+    phi = np.dot(phiA(mec), GAF)
+    return phi
+
+def phiSub(mec, k1, k2):
     """
     Calculate initial vector for any subset.
 
@@ -349,92 +358,25 @@ def phiA(mec, k1, k2):
 
     u = np.ones((k2 - k1 + 1, 1))
     p = pinf(mec.Q)
-    #print "pinf=", p
     p1, p2, p3 = np.hsplit(p,(k1, k2+1))
-    pF = np.hstack((p1, p3))
-    #print "pF=", pF
+    p1c = np.hstack((p1, p3))
 
     Q = mec.Q.copy()
-    #print "Q=", Q
     Q1, Q2, Q3 = np.hsplit(Q,(k1, k2+1))
     Q21, Q22, Q23 = np.hsplit(Q2.transpose(),(k1, k2+1))
-    QAA = Q22.copy()
-    QFA = np.vstack((Q21.transpose(), Q23.transpose()))
-    #print "QFA=", QFA
+    Q22c = Q22.copy()
+    Q12 = np.vstack((Q21.transpose(), Q23.transpose()))
 
-    nom = np.dot(pF, QFA)
+    nom = np.dot(p1c, Q12)
     denom = np.dot(nom,u)
     phi = nom / denom
-    #print "phi=", phi
-    return phi, QAA
+    return phi, Q22c
 
-def phiS(mec):
-    """
-    Calculate inital vector for shuttings.
-
-    Parameters
-    ----------
-    mec : dcpyps.Mechanism
-        The mechanism to be analysed.
-
-    Returns
-    -------
-    phi : ndarray, shape (kF)
-    """
-
-    GAF, GFA = iGs(mec.Q, mec.kA, mec.kF)
-    phi = np.dot(phiO(mec), GAF)
-    return phi
-
-#def phiBurst(mec):
-#    """
-#    Calculate the start probabilities of a burst (Eq. 3.2, CH82).
-#    PhiB = (pCinf * (QCB * GBA + QCA)) / (pCinf * (QCB * GBA + QCA) * uA)
-#
-#    Parameters
-#    ----------
-#    mec : dcpyps.Mechanism
-#        The mechanism to be analysed.
-#
-#    Returns
-#    -------
-#    phiB : array_like, shape (1, kA)
-#    """
-#
-#    uA = np.ones((mec.kA, 1))
-#    pC = pinf(mec.Q)[mec.kE:]
-#    nom = np.dot(pC, (np.dot(mec.QCB, mec.GBA) + mec.QCA))
-#    denom = np.dot(nom, uA)
-#    phiB = nom / denom
-#    return phiB
-#
-#def endBurst(mec):
-#    r"""
-#    Calculate the end vector for a burst (Eq. 3.4, CH82).
-#
-#    .. math::
-#
-#       \bs{e}_\text{b} = (\bs{I}-\bs{G}_\cl{AB} \bs{G}_\cl{BA}) \bs{u}_\cl{A}
-#
-#    Parameters
-#    ----------
-#    mec : dcpyps.Mechanism
-#        The mechanism to be analysed.
-#
-#    Returns
-#    -------
-#    eB : array_like, shape (kA, 1)
-#    """
-#
-#    uA = np.ones((mec.kA, 1))
-#    I = np.eye(mec.kA)
-#    eB = np.dot((I - np.dot(mec.GAB, mec.GBA)), uA)
-#    return eB
-
-def dW(s, tres, Q12, Q22, Q21, k1, k2):
+def dW(s, tres, QAF, QFF, QFA, kA, kF):
     """
     Evaluate the derivative with respect to s of the matrix W(s) at the root s
-    (Eq. 56, HJC92).
+    (Eq. 56, HJC92) for open states. For same evaluation for shut states
+    exhange A by F and F by A in function call.
     W'(s) = I + QAF * [SFF(s) * (s*I - QFF)^(-1) - tau * (I - SFF(s))] * eGFA(s)
     where SFF(s) = I - exp(-(s*I - QFF) * tau) (Eq. 17, HJC92)
     and eGFA(s) = (s*I - QFF)^(-1) * QFA (Eq. 4, HJC92).
@@ -445,34 +387,35 @@ def dW(s, tres, Q12, Q22, Q21, k1, k2):
         Laplace transform argument.
     tres : float
         Time resolution (dead time).
-    Q12 : array_like, shape (k1, k2)
-    Q22 : array_like, shape (k2, k2)
-    Q21 : array_like, shape (k2, k1)
-        Q12, Q22, Q21 - submatrices of Q.
-    k1 : int
-        A number of open/shut states in kinetic scheme.
-    k2 : int
-        A number of shut/open states in kinetic scheme.
+    QAF : array_like, shape (kA, kF)
+    QFF : array_like, shape (kF, kF)
+    QFA : array_like, shape (kF, kA)
+        QAF, QFF, QFA - submatrices of Q.
+    kA : int
+        A number of open states in kinetic scheme.
+    kF : int
+        A number of shut states in kinetic scheme.
 
     Returns
     -------
-    dW : ndarray, shape (k2, k2)
+    dW : ndarray, shape (kF, kF)
     """
 
-    I2 = np.eye(k2)
-    I1 = np.eye(k1)
-    IQ22 = s * I2 - Q22
-    expIQ22 = expQt(-IQ22, tres)
-    S22 = I2 - expIQ22
-    eG21s = np.dot(nplin.inv(s * I2 - Q22), Q21)
-    w1 = np.dot(S22, nplin.inv(s * I2 - Q22)) - tres * (I2 - S22)
-    dW = I1 + np.dot(np.dot(Q12, w1), eG21s)
+    IF = np.eye(kF)
+    IA = np.eye(kA)
+    IQFF = s * IF - QFF
+    expIQFF = expQt(-IQFF, tres)
+    SFF = IF - expIQFF
+    eGFAs = np.dot(nplin.inv(s * IF - QFF), QFA)
+    w1 = np.dot(SFF, nplin.inv(s * IF - QFF)) - tres * (IF - SFF)
+    dW = IA + np.dot(np.dot(QAF, w1), eGFAs)
     return dW
 
-def H(s, tres, Q11, Q22, Q21, Q12, k1, k2):
+def H(s, tres, QAA, QFF, QAF, QFA, kF):
     """
     Evaluate H(s) funtion (Eq. 54, HJC92).
-    H(s) = QAA + QAF * (s*I - QFF) ^(-1) * (I - exp(-(s*I - QFF) * tau)) * QFA
+    HAA(s) = QAA + QAF * (s*I - QFF) ^(-1) * (I - exp(-(s*I - QFF) * tau)) * QFA
+    To evaluate HFF(s) exhange A by F and F by A in function call.
 
     Parameters
     ----------
@@ -480,32 +423,31 @@ def H(s, tres, Q11, Q22, Q21, Q12, k1, k2):
         Laplace transform argument.
     tres : float
         Time resolution (dead time).
-    Q11 : array_like, shape (k1, k1)
-    Q22 : array_like, shape (k2, k2)
-    Q21 : array_like, shape (k2, k1)
-    Q12 : array_like, shape (k1, k2)
-        Q11, Q12, Q22, Q21 - submatrices of Q.
-    k1 : int
-        A number of open/shut states in kinetic scheme.
-    k2 : int
-        A number of shut/open states in kinetic scheme.
+    QAA : array_like, shape (kA, kA)
+    QFF : array_like, shape (kF, kF)
+    QAF : array_like, shape (kA, kF)
+    QFA : array_like, shape (kF, kA)
+        QAA, QFF, QAF, QFA - submatrices of Q.
+    kF : int
+        A number of shut states in kinetic scheme.
 
     Returns
     -------
-    H : ndarray, shape (k2, k2)
+    H : ndarray, shape (kA, kA)
     """
 
-    I = np.eye(k1)
-    X11 = s * I - Q11
-    invX11 = nplin.inv(X11)
-    expX11 = expQt(-X11, tres)
-    H = Q22 + np.dot(np.dot(np.dot(Q21, invX11), I - expX11), Q12)
+    IF = np.eye(kF)
+    XFF = s * IF - QFF
+    invXFF = nplin.inv(XFF)
+    expXFF = expQt(-XFF, tres)
+    H = QAA + np.dot(np.dot(np.dot(QAF, invXFF), IF - expXFF), QFA)
     return H
 
-def W(s, tres, Q11, Q22, Q21, Q12, k1, k2):
+def W(s, tres, QAA, QFF, QAF, QFA, kA, kF):
     """
     Evaluate W(s) function (Eq. 52, HJC92).
-    W(s) = s * I - H(s)
+    WAA(s) = s * IA - HAA(s)
+    To evaluate WFF(s) exhange A by F and F by A in function call.
 
     Parameters
     ----------
@@ -513,27 +455,24 @@ def W(s, tres, Q11, Q22, Q21, Q12, k1, k2):
         Laplace transform argument.
     tres : float
         Time resolution (dead time).
-    Q11 : array_like, shape (k1, k1)
-    Q22 : array_like, shape (k2, k2)
-    Q21 : array_like, shape (k2, k1)
-    Q12 : array_like, shape (k1, k2)
-        Q11, Q12, Q22, Q21 - submatrices of Q.
-    k1 : int
-        A number of open/shut states in kinetic scheme.
-    k2 : int
-        A number of shut/open states in kinetic scheme.
+    QAA : array_like, shape (kA, kA)
+    QFF : array_like, shape (kF, kF)
+    QAF : array_like, shape (kA, kF)
+    QFA : array_like, shape (kF, kA)
+        QAA, QFF, QAF, QFA - submatrices of Q.
+    kA : int
+        A number of open states in kinetic scheme.
+    kF : int
+        A number of shut states in kinetic scheme.
 
     Returns
     -------
     W : ndarray, shape (k2, k2)
     """
 
-    I = np.eye(k2)
-    W = s * I - H(s, tres, Q11, Q22, Q21, Q12, k1, k2)
+    IA = np.eye(kA)
+    W = s * IA - H(s, tres, QAA, QFF, QAF, QFA, kF)
     return W
-
-
-
 
 def f0(u, eigvals, Z00):
     """
@@ -630,8 +569,6 @@ def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):
         eGAFt = np.sum(XAF * np.exp(roots *
             (t - tres)).reshape(XAF.shape[0],1,1), axis=0)
 
-
-
     return eGAFt
 
 def XAF(tres, roots, QAA, QFF, QAF, QFA, expQFF):
@@ -653,7 +590,6 @@ def XAF(tres, roots, QAA, QFF, QAF, QFA, expQFF):
 
     kA = QAA.shape[0]
     kF = QFF.shape[0]
-#    expQFF = expQt(QFF, tres)
     X = np.zeros((kA, kA, kF))
     rowA = np.zeros((kA, kA))
     colA = np.zeros((kA, kA))
@@ -673,7 +609,7 @@ def XAF(tres, roots, QAA, QFF, QAF, QFA, expQFF):
         X[i] = nom / denom
     return X
 
-def Zxx(t, Q, kopen, QFF, QAF, QFA, expQFF):
+def Zxx(Q, kopen, QFF, QAF, QFA, expQFF):
     """
     Calculate Z constants for the exact open time pdf (Eq. 3.22, HJC90).
     Exchange A and F for shut time pdf.
@@ -701,16 +637,10 @@ def Zxx(t, Q, kopen, QFF, QAF, QFA, expQFF):
     kA = k - QFF.shape[0]
     if kA != kopen:
         open = False
-#    expQFF = expQt(QFF, t)
     eigen, A = eigs(-Q)
     # Maybe needs check for equal eigenvalues.
 
     # Calculate Dj (Eq. 3.16, HJC90) and Cimr (Eq. 3.18, HJC90).
-    #D = []
-    #C00 = []
-    #C11 = []
-    #C10 = []
-
     D = np.empty((k))
     if open:
         C00 = A[:, :kopen, :kopen]
@@ -722,16 +652,6 @@ def Zxx(t, Q, kopen, QFF, QAF, QFA, expQFF):
         D = np.dot(np.dot(A1, expQFF), QFA)
 
     C11 = D * C00
-
-    #for i in range(k):
-        #if open:
-            #D[i] = (np.dot(np.dot(A1[i], expQFF), QFA))
-            #C00.append(A[i, :kopen, :kopen])
-        #else:
-            #D[i] = (np.dot(np.dot(A1[i], expQFF), QFA))
-            #C00.append(A[i, kopen:, kopen:])
-        #C11.append(np.dot(D[i], C00[i]))
-
     C10 = np.empty((k, kA, kA))
     for i in range(k):
         S = np.zeros((kA, kA))
@@ -741,15 +661,7 @@ def Zxx(t, Q, kopen, QFF, QAF, QFA, expQFF):
                     (eigen[j] - eigen[i]))
         C10[i] = S
 
-#    Z00 = []
-#    Z10 = []
-#    Z11 = []
     M = np.dot(QAF, expQFF)
-#    for i in range(k):
-#        Z00.append(np.dot(C00[i], M))
-#        Z10.append(np.dot(C10[i], M))
-#        Z11.append(np.dot(C11[i], M))
-
     Z00 = np.array([np.dot(C, M) for C in C00])
     Z10 = np.array([np.dot(C, M) for C in C10])
     Z11 = np.array([np.dot(C, M) for C in C11])

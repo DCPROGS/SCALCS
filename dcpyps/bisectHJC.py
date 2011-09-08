@@ -9,7 +9,7 @@ import dcpypsrc
 
 import qmatlib as qml
 
-def gFB(s, tres, Q11, Q22, Q21, Q12, k1, k2):
+def gFB(s, tres, Q11, Q22, Q12, Q21, k1, k2):
     """
     Find number of eigenvalues of H(s) that are equal to or less than s.
 
@@ -34,16 +34,16 @@ def gFB(s, tres, Q11, Q22, Q21, Q12, k1, k2):
     ng : int
     """
 
-    h = qml.H(s, tres, Q11, Q22, Q21, Q12, k1, k2)
+    h = qml.H(s, tres, Q11, Q22, Q12, Q21, k2)
     eigval, A = qml.eigs(h)
     ng = 0
-    for i in range(k2):
+    for i in range(k1):
         if eigval[i] <= s: ng += 1
     if dcpypsrc.debug:
         print ('number of eigenvalues that are <= s (=', s, ') =', ng)
     return ng
 
-def bisection_intervals(sa, sb, tres, Q11, Q22, Q21, Q12, k1, k2):
+def bisection_intervals(sa, sb, tres, Q11, Q22, Q12, Q21, k1, k2):
     """
     Find, according to Frank Ball's method, suitable starting guesses for
     each HJC root- the upper and lower limits for bisection. Exactly one root
@@ -69,14 +69,14 @@ def bisection_intervals(sa, sb, tres, Q11, Q22, Q21, Q12, k1, k2):
         Limits of s value intervals containing exactly one root.
     """
 
-    nga = gFB(sa, tres, Q11, Q22, Q21, Q12, k1, k2)
+    nga = gFB(sa, tres, Q11, Q22, Q12, Q21, k1, k2)
     if nga > 0:
         sa = sa * 4
-    ngb = gFB(sb, tres, Q11, Q22, Q21, Q12, k1, k2)
+    ngb = gFB(sb, tres, Q11, Q22, Q12, Q21, k1, k2)
     if ngb < k2:
         sb = sb / 4
 
-    sr = np.zeros((k2, 2))
+    sr = np.zeros((k1, 2))
     sv = np.empty((100, 4))
     sv[0,0] = sa
     sv[0,1] = sb
@@ -86,13 +86,13 @@ def bisection_intervals(sa, sb, tres, Q11, Q22, Q21, Q12, k1, k2):
     ndone = 0
     nsplit = 0
 
-    while (ndone < k2) and (nsplit < 100):
+    while (ndone < k1) and (nsplit < 100):
         sa = sv[ntodo, 0]
         sb = sv[ntodo, 1]
         nga = sv[ntodo, 2]
         ngb = sv[ntodo, 3]
         sa1, sb1, sa2, sb2, nga1, ngb1, nga2, ngb2 = split(sa, sb,
-            nga, ngb, tres, Q11, Q22, Q21, Q12, k1, k2)
+            nga, ngb, tres, Q11, Q22, Q12, Q21, k1, k2)
         nsplit = nsplit + 1
         ntodo = ntodo - 1
 
@@ -119,11 +119,11 @@ def bisection_intervals(sa, sb, tres, Q11, Q22, Q21, Q12, k1, k2):
             sv[ntodo, 2] = nga2
             sv[ntodo, 3] = ngb2
 
-    if ndone < k2:
-        print ('Only', ndone, 'roots out of', k2, 'were located')
+    if ndone < k1:
+        print ('Only', ndone, 'roots out of', k1, 'were located')
     return sr
 
-def split(sa, sb, nga, ngb, tres, Q11, Q22, Q21, Q12, k1, k2):
+def split(sa, sb, nga, ngb, tres, Q11, Q22, Q12, Q21, k1, k2):
     """
     Split interval [sa, sb] into two subintervals, each of which contains
     at least one root.
@@ -159,7 +159,7 @@ def split(sa, sb, nga, ngb, tres, Q11, Q22, Q21, Q12, k1, k2):
 
     while (not end) and (ntry < ntrymax):
         sc = (sa + sb) / 2.0
-        ngc = gFB(sc, tres, Q11, Q22, Q21, Q12, k1, k2)
+        ngc = gFB(sc, tres, Q11, Q22, Q12, Q21, k1, k2)
         if ngc == nga: sa = sc
         elif ngc == ngb: sb = sc
         else:
@@ -180,7 +180,7 @@ def split(sa, sb, nga, ngb, tres, Q11, Q22, Q21, Q12, k1, k2):
 
     return sa1, sb1, sa2, sb2, nga1, ngb1, nga2, ngb2
 
-def bisect(s1, s2, tres, Q11, Q22, Q21, Q12, k1, k2):
+def bisect(s1, s2, tres, Q11, Q22, Q12, Q21, k1, k2):
     """
     Find asymptotic root (det(W) = 0) in interval [s1, s2] using bisection
     method.
@@ -206,7 +206,7 @@ def bisect(s1, s2, tres, Q11, Q22, Q21, Q12, k1, k2):
     """
 
     epsy = 1e-10
-    f = nplin.det(qml.W(s1, tres, Q11, Q22, Q21, Q12, k1, k2))
+    f = nplin.det(qml.W(s1, tres, Q11, Q22, Q12, Q21, k1, k2))
     if f > 0:
         temp = s1
         s1 = s2
@@ -220,7 +220,7 @@ def bisect(s1, s2, tres, Q11, Q22, Q21, Q12, k1, k2):
     while iter < itermax and not solved:
         iter += 1
         sout = 0.5 * (s1 + s2)
-        f = nplin.det(qml.W(sout, tres, Q11, Q22, Q21, Q12, k1, k2))
+        f = nplin.det(qml.W(sout, tres, Q11, Q22, Q12, Q21, k1, k2))
         if f < 0:
             s1 = sout
         elif f > 0:
