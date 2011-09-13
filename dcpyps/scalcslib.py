@@ -184,7 +184,7 @@ def ideal_mean_latency_given_start_state(mec, state):
 
     return mean
 
-def asymptotic_roots(mec, tres, open):
+def asymptotic_roots(tres, QAA, QFF, QAF, QFA, kA, kF):
     """
     Find roots for the asymptotic probability density function (Eqs. 52-58,
     HJC92).
@@ -193,40 +193,32 @@ def asymptotic_roots(mec, tres, open):
     ----------
     tres : float
         Time resolution (dead time).
-    mec : dcpyps.Mechanism
-        The mechanism to be analysed.
-    open : bool
-        True if searching roots for open time pdf; False if searching roots
-        for shut time distribution.
+    QAA : array_like, shape (kA, kA)
+    QFF : array_like, shape (kF, kF)
+    QAF : array_like, shape (kA, kF)
+    QFA : array_like, shape (kF, kA)
+        QAA, QFF, QAF, QFA - submatrices of Q.
+    kA : int
+        A number of open states in kinetic scheme.
+    kF : int
+        A number of shut states in kinetic scheme.
 
     Returns
     -------
-    roots : array_like, shape (k,)
+    roots : array_like, shape (1, kA)
     """
 
-    sao = -100000
-    sbo = -10
     sas = -100000
     sbs = -0.0001
-
-    if open:
-        sro = bisectHJC.bisection_intervals(sao, sbo, tres,
-            mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
-        roots = np.zeros(mec.kA)
-        for i in range(mec.kA):
-            roots[i] = bisectHJC.bisect(sro[i,0], sro[i,1], tres,
-                mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
-    else:
-        sro = bisectHJC.bisection_intervals(sas, sbs, tres,
-            mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
-        roots = np.zeros(mec.kF)
-        for i in range(mec.kF):
-            roots[i] = bisectHJC.bisect(sro[i,0], sro[i,1], tres,
-                mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
-
+    sro = bisectHJC.bisection_intervals(sas, sbs, tres,
+        QAA, QFF, QAF, QFA, kA, kF)
+    roots = np.zeros(kA)
+    for i in range(kA):
+        roots[i] = bisectHJC.bisect(sro[i,0], sro[i,1], tres,
+            QAA, QFF, QAF, QFA, kA, kF)
     return roots
 
-def asymptotic_areas(mec, tres, roots, open):
+def asymptotic_areas(tres, roots, QAA, QFF, QAF, QFA, kA, kF, GAF, GFA):
     """
     Find the areas of the asymptotic pdf (Eq. 58, HJC92).
 
@@ -234,112 +226,55 @@ def asymptotic_areas(mec, tres, roots, open):
     ----------
     tres : float
         Time resolution (dead time).
-    roots : array_like, shape (k,)
+    roots : array_like, shape (1,kA)
         Roots of the asymptotic pdf.
-    mec : dcpyps.Mechanism
-        The mechanism to be analysed.
-    open : bool
-        True if searching roots for open time pdf; False if searching roots
-        for shut time distribution.
+    QAA : array_like, shape (kA, kA)
+    QFF : array_like, shape (kF, kF)
+    QAF : array_like, shape (kA, kF)
+    QFA : array_like, shape (kF, kA)
+        QAA, QFF, QAF, QFA - submatrices of Q.
+    kA : int
+        A number of open states in kinetic scheme.
+    kF : int
+        A number of shut states in kinetic scheme.
+    GAF : array_like, shape (kA, kB)
+    GFA : array_like, shape (kB, kA)
+        GAF, GFA- transition probabilities
 
     Returns
     -------
-    areas : array_like, shape (k,)
+    areas : ndarray, shape (1, kA)
     """
 
-    if open:
-        k1 = mec.kA
-        k2 = mec.kF
-        Q22 = mec.QFF
-        Q11 = mec.QAA
-        Q12 = mec.QAF
-        Q21 = mec.QFA
-        G12, G21 = qml.iGs(mec.Q, mec.kA, mec.kF)
-    else:
-        k1 = mec.kF
-        k2 = mec.kA
-        Q11 = mec.QFF
-        Q22 = mec.QAA
-        Q21 = mec.QAF
-        Q12 = mec.QFA
-        G21, G12 = qml.iGs(mec.Q, mec.kA, mec.kF)
+    expQFF = qml.expQt(QFF, tres)
+    expQAA = qml.expQt(QAA, tres)
+    eGAF = qml.eGs(GAF, GFA, kA, kF, expQFF)
+    eGFA = qml.eGs(GFA, GAF, kF, kA, expQAA)
+    phiA = qml.phiHJC(eGAF, eGFA, kA)
 
-    expQ22 = qml.expQt(Q22, tres)
-    expQ11 = qml.expQt(Q11, tres)
-    eG12 = qml.eGs(G12, G21, k1, k2, expQ22)
-    eG21 = qml.eGs(G21, G12, k2, k1, expQ11)
-    phi1 = qml.phiHJC(eG12, eG21, k1)
-
-    areas = np.zeros(k1)
-    rowA = np.zeros((k1,k1))
-    colA = np.zeros((k1,k1))
-    for i in range(k1):
+    areas = np.zeros(kA)
+    rowA = np.zeros((kA,kA))
+    colA = np.zeros((kA,kA))
+    for i in range(kA):
         WA = qml.W(roots[i], tres,
-            Q11, Q22, Q12, Q21, k1, k2)
-            #Q22, Q11, Q21, Q12, k2, k1)
+            QAA, QFF, QAF, QFA, kA, kF)
         rowA[i] = qml.pinf(WA)
         AW = np.transpose(WA)
         colA[i] = qml.pinf(AW)
 
-    for i in range(k1):
-        u2 = np.ones((k2,1))
-        nom = np.dot(np.dot(np.dot(np.dot(np.dot(phi1, colA[i]), rowA[i]),
-            Q12), expQ22), u2)
-        W1A = qml.dW(roots[i], tres, Q12, Q22, Q21, k1, k2)
+    for i in range(kA):
+        uF = np.ones((kF,1))
+        nom = np.dot(np.dot(np.dot(np.dot(np.dot(phiA, colA[i]), rowA[i]),
+            QAF), expQFF), uF)
+        W1A = qml.dW(roots[i], tres, QAF, QFF, QFA, kA, kF)
         denom = -roots[i] * np.dot(np.dot(rowA[i], W1A), colA[i])
         areas[i] = nom / denom
 
     return areas
 
-def hjc_mean_time(mec, tres, open):
-    """
-    Calculate exact mean open or shut time from HJC probability density
-    function.
-
-    Parameters
-    ----------
-    mec : dcpyps.Mechanism
-        The mechanism to be analysed.
-    tres : float
-        Time resolution (dead time).
-    open : bool
-        True to calculate mean open time, False to calculate mean shut time.
-
-    Returns
-    -------
-    mean : float
-        Apparent mean open/shut time.
-    """
-
-    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
-    expQFF = qml.expQt(mec.QFF, tres)
-    expQAA = qml.expQt(mec.QAA, tres)
-    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
-    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
-
-    if open:
-        phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
-        QexpQF = np.dot(mec.QAF, expQFF)
-        DARS = qml.dARSdS(tres, mec.QAA, mec.QFF,
-            GAF, GFA, expQFF, mec.kA, mec.kF)
-        uF = np.ones((mec.kF, 1))
-        # meanOpenTime = tres + phiA * DARS * QexpQF * uF
-        mean = tres + np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))
-    else:
-        phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
-        QexpQA = np.dot(mec.QFA, expQAA)
-        DFRS = qml.dARSdS(tres, mec.QFF, mec.QAA,
-            GFA, GAF, expQAA, mec.kF, mec.kA)
-        uA = np.ones((mec.kA, 1))
-        # meanShutTime = tres + phiF * DFRS * QexpQA * uA
-        mean = tres + np.dot(phiF, np.dot(np.dot(DFRS, QexpQA), uA))
-
-    return mean[0]
-
-
-def pdf_exact(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
+def exact_pdf(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
     r"""
-    Calculate exponential probabolity density function with exact solution for 
+    Calculate exponential probabolity density function with exact solution for
     missed events correction (Eq. 21, HJC92).
 
     .. math::
@@ -347,7 +282,7 @@ def pdf_exact(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
 
        \begin{align*}
        f(t) =
-       \begin{cases} 
+       \begin{cases}
        f_0(t)                          & \text{for}\; 0 \leq t \leq t_\text{res} \\
        f_0(t) - f_1(t - t_\text{res})  & \text{for}\; t_\text{res} \leq t \leq 2 t_\text{res}
        \end{cases}
@@ -364,7 +299,7 @@ def pdf_exact(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
     eigvals : array_like, shape (k,)
         Eigenvalues of -Q matrix.
     gama00, gama10, gama11 : lists of floats
-        Constants for the exact open/shut time pdf.
+        Coeficients for the exact open/shut time pdf.
 
     Returns
     -------
@@ -382,9 +317,51 @@ def pdf_exact(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
         f = pdfs.expPDF(t - tres, -1 / roots, areas)
     return f
 
-def GAMAxx(mec, tres, open):
+def exact_mean_time(tres, QAA, QFF, QAF, kA, kF, GAF, GFA):
     """
-    Calculate gama constants for the exact open/shut time pdf (Eq. 3.22, HJC90).
+    Calculate exact mean open or shut time from HJC probability density
+    function.
+
+    Parameters
+    ----------
+    tres : float
+        Time resolution (dead time).
+    QAA : array_like, shape (kA, kA)
+    QFF : array_like, shape (kF, kF)
+    QAF : array_like, shape (kA, kF)
+        QAA, QFF, QAF - submatrices of Q.
+    kA : int
+        A number of open states in kinetic scheme.
+    kF : int
+        A number of shut states in kinetic scheme.
+    GAF : array_like, shape (kA, kB)
+    GFA : array_like, shape (kB, kA)
+        GAF, GFA- transition probabilities
+
+    Returns
+    -------
+    mean : float
+        Apparent mean open/shut time.
+    """
+
+    expQFF = qml.expQt(QFF, tres)
+    expQAA = qml.expQt(QAA, tres)
+    eGAF = qml.eGs(GAF, GFA, kA, kF, expQFF)
+    eGFA = qml.eGs(GFA, GAF, kF, kA, expQAA)
+
+    phiA = qml.phiHJC(eGAF, eGFA, kA)
+    QexpQF = np.dot(QAF, expQFF)
+    DARS = qml.dARSdS(tres, QAA, QFF,
+        GAF, GFA, expQFF, kA, kF)
+    uF = np.ones((kF, 1))
+    # meanOpenTime = tres + phiA * DARS * QexpQF * uF
+    mean = tres + np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))[0]
+
+    return mean
+
+def exact_GAMAxx(mec, tres, open):
+    """
+    Calculate gama coeficients for the exact open time pdf (Eq. 3.22, HJC90).
 
     Parameters
     ----------
@@ -423,10 +400,6 @@ def GAMAxx(mec, tres, open):
             gama10.append(np.dot(np.dot(phiA, Z10[i]), uF)[0])
             gama11.append(np.dot(np.dot(phiA, Z11[i]), uF)[0])
 
-#        gama00 = np.array([np.dot(np.dot(phiA, Z), uF)[0] for Z in Z00])
-#        gama10 = np.array([np.dot(np.dot(phiA, Z), uF)[0] for Z in Z10])
-#        gama11 = np.array([np.dot(np.dot(phiA, Z), uF)[0] for Z in Z11])
-
     else:
         phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
         eigen, Z00, Z10, Z11 = qml.Zxx(mec.Q, mec.kA,
@@ -436,153 +409,8 @@ def GAMAxx(mec, tres, open):
             gama00.append(np.dot(np.dot(phiF, Z00[i]), uA)[0])
             gama10.append(np.dot(np.dot(phiF, Z10[i]), uA)[0])
             gama11.append(np.dot(np.dot(phiF, Z11[i]), uA)[0])
-#        gama00 = np.array([np.dot(np.dot(phiF, Z), uA)[0] for Z in Z00])
-#        gama10 = np.array([np.dot(np.dot(phiF, Z), uA)[0] for Z in Z10])
-#        gama11 = np.array([np.dot(np.dot(phiF, Z), uA)[0] for Z in Z11])
 
     return eigen, np.array(gama00), np.array(gama10), np.array(gama11)
-
-def ini_vectors(mec, eGFA, eGAF, expQFF, XFA,
-        roots, tres, tcrit, is_chsvec=False):
-    """
-    Get initial and final vectors, startB and endB, for HJC likelihood
-    calculation (Eqs. 5.5 or 5.7, CHS96).
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    tres : float
-        Time resolution (dead time).
-    tcrit : float
-        Critical gap length (critical shut time).
-    is_chsvec : bool
-        True if CHS vectors should be used (Eq. 5.7, CHS96).
-
-    Returns
-    -------
-    startB : ndarray, shape (1, kA)
-        Initial vector for openings or initial CHS vector (Eq. 5.11, CHS96).
-    endB : ndarray, shape (kF, 1)
-        Column of 1's or final CHS vector (Eq. 5.8, CHS96).
-    """
-
-#    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
-#    expQFF = qml.expQt(mec.QFF, tres)
-#    expQAA = qml.expQt(mec.QAA, tres)
-#    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
-#    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
-    uA = np.ones((mec.kA, 1))
-
-    if is_chsvec:
-#        roots = asymptotic_roots(mec, tres, False)
-        HFA = np.zeros((mec.kF, mec.kA))
-#        XFA = qml.XAF(tres, roots, mec.QFF, mec.QAA, mec.QFA,
-#            mec.QAF, expQFF)
-        for i in range(mec.kF):
-            coeff = -math.exp(roots[i] * (tcrit - tres)) / roots[i]
-            HFA += coeff * XFA[i]
-        phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
-
-        startB = np.dot(phiF, HFA) / np.dot(np.dot(phiF, HFA), uA)
-        endB = np.dot(HFA, uA)
-    else:
-        startB = qml.phiHJC(eGAF, eGFA, mec.kA)
-        endB = np.ones((mec.kF, 1))
-
-    return startB, endB
-
-def HJClik(theta, bursts, opts):
-    #HJClik(bursts, mec, tres, tcrit, is_chsvec=False):
-    
-    """
-    Calculate likelihood for a series of open and shut times using HJC missed
-    events probability density functions (first two dead time intervals- exact
-    solution, then- asymptotic).
-
-    Lik = phi * eGAF(t1) * eGFA(t2) * eGAF(t3) * ... * eGAF(tn) * uF
-    where t1, t3,..., tn are open times; t2, t4,..., t(n-1) are shut times.
-
-    Gaps > tcrit are treated as unusable (e.g. contain double or bad bit of
-    record, or desens gaps that are not in the model, or gaps so long that
-    next opening may not be from the same channel). However this calculation
-    DOES assume that all the shut times predicted by the model are present
-    within each group. The series of multiplied likelihoods is terminated at
-    the end of the opening before an unusable gap. A new series is then
-    started, using appropriate initial vector to give Lik(2), ... At end
-    these are multiplied to give final likelihood.
-
-    Parameters
-    ----------
-    bursts : dictionary
-        A dictionary containing lists of open and shut intervals.
-    mec : instance of type Mechanism
-    tres : float
-        Time resolution (dead time).
-    is_chsvec : bool
-        True if CHS vectors should be used (Eq. 5.7, CHS96).
-
-    Returns
-    -------
-    loglik : float
-        Log-likelihood.
-    """
-
-    mec = opts['mec']
-    conc = opts['conc']
-    tres = opts['tres']
-    tcrit = opts['tcrit']
-    is_chsvec = opts['isCHS']
-
-    mec.set_rateconstants(np.exp(theta))
-    mec.set_eff('c', conc)
-    
-    # TODO: Here reset rates which reached limit or are negative.
-    # TODO: Make new Q from theta.
-    # TODO: Errors.
-
-    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
-    expQFF = qml.expQt(mec.QFF, tres)
-    expQAA = qml.expQt(mec.QAA, tres)
-    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
-    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
-
-
-    Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(mec.Q, mec.kA, mec.QFF,
-        mec.QAF, mec.QFA, expQFF)
-    Aroots = asymptotic_roots(mec, tres, True)
-    Axaf = qml.XAF(tres, Aroots, mec.QAA, mec.QFF, mec.QAF, mec.QFA, expQFF)
-    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(mec.Q, mec.kA, mec.QAA,
-        mec.QFA, mec.QAF, expQAA)
-    Froots = asymptotic_roots(mec, tres, False)
-    Fxaf = qml.XAF(tres, Froots, mec.QFF, mec.QAA, mec.QFA, mec.QAF, expQAA)
-    startB, endB = ini_vectors(mec, eGFA, eGAF, expQAA, Fxaf, Froots,
-        tres, tcrit, is_chsvec)
-#    print 'startB=', startB
-#    print 'endB=', endB
-
-    loglik = 0
-    for ind in bursts:
-        burst = bursts[ind]
-        grouplik = startB
-        for i in range(len(burst)):
-            t = burst[i] * 0.001
-            if i % 2 == 0: # open time
-                #eGAFt = np.zeros(Axaf[0].shape)
-                eGAFt = qml.eGAF(t, tres, Aroots, Axaf, Aeigvals, AZ00, AZ10, AZ11)
-            else: # shut
-                #eGAFt = np.zeros(Fxaf[0].shape)
-                eGAFt = qml.eGAF(t, tres, Froots, Fxaf, Feigvals, FZ00, FZ10, FZ11)
-            grouplik = np.dot(grouplik, eGAFt)
-            if grouplik.max() > 1e50:
-                grouplik = grouplik * 1e-100
-                print 'grouplik was scaled down'
-        grouplik = np.dot(grouplik, endB)
-        loglik += math.log(grouplik[0])
-    return -loglik, np.log(mec.unit_rates())
-
-
-
-
 
 def printout(mec, tres, output=sys.stdout, eff='c'):
     """
@@ -622,6 +450,8 @@ def printout(mec, tres, output=sys.stdout, eff='c'):
             '\t{0:.6f}'.format(-1 / mec.Q[i,i] * 1000) +
             '\t{0:.6f}'.format(mean * 1000))
 
+
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
     # OPEN TIME DISTRIBUTIONS
     open = True
     # Ideal pdf
@@ -637,8 +467,12 @@ def printout(mec, tres, output=sys.stdout, eff='c'):
         '\t{0:.3f}'.format(1.0 / tau[i]))
 
     # Asymptotic pdf
-    roots = asymptotic_roots(mec, tres, open)
-    areas = asymptotic_areas(mec, tres, roots, open)
+    #roots = asymptotic_roots(mec, tres, open)
+    roots = asymptotic_roots(tres,
+        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
+    #areas = asymptotic_areas(mec, tres, roots, open)
+    areas = asymptotic_areas(tres, roots,
+        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF, GAF, GFA)
     output.write('\n\nASYMPTOTIC OPEN TIME DISTRIBUTION')
     output.write('\nterm\ttau (ms)\tarea (%)\trate const (1/sec)')
     for i in range(mec.kA):
@@ -655,11 +489,12 @@ def printout(mec, tres, output=sys.stdout, eff='c'):
     for i in range(mec.kA):
         output.write('\n{0:d}'.format(i+1) +
         '\t{0:.3f}'.format(areast0[i] * 100))
-    mean = hjc_mean_time(mec, tres, open)
+    mean = exact_mean_time(tres,
+            mec.QAA, mec.QFF, mec.QAF, mec.kA, mec.kF, GAF, GFA)
     output.write('\nMean open time (ms) = {0:.6f}'.format(mean * 1000))
 
     # Exact pdf
-    eigvals, gamma00, gamma10, gamma11 = GAMAxx(mec, tres, open)
+    eigvals, gamma00, gamma10, gamma11 = exact_GAMAxx(mec, tres, open)
     output.write('\n\nEXACT OPEN TIME DISTRIBUTION')
     output.write('\neigen\tg00(m)\tg10(m)\tg11(m)')
     for i in range(mec.k):
@@ -683,8 +518,12 @@ def printout(mec, tres, output=sys.stdout, eff='c'):
         '\t{0:.3f}'.format(1.0 / tau[i]))
 
     # Asymptotic pdf
-    roots = asymptotic_roots(mec, tres, open)
-    areas = asymptotic_areas(mec, tres, roots, open)
+    #roots = asymptotic_roots(mec, tres, open)
+    roots = asymptotic_roots(tres,
+        mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
+    #areas = asymptotic_areas(mec, tres, roots, open)
+    areas = asymptotic_areas(tres, roots,
+        mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA, GFA, GAF)
     output.write('\n\nASYMPTOTIC SHUT TIME DISTRIBUTION')
     output.write('\nterm\ttau (ms)\tarea (%)\trate const (1/sec)')
     for i in range(mec.kF):
@@ -701,11 +540,12 @@ def printout(mec, tres, output=sys.stdout, eff='c'):
     for i in range(mec.kF):
         output.write('\n{0:d}'.format(i+1) +
         '\t{0:.3f}'.format(areast0[i] * 100))
-    mean = hjc_mean_time(mec, tres, open)
+    mean = exact_mean_time(tres,
+            mec.QFF, mec.QAA, mec.QFA, mec.kF, mec.kA, GFA, GAF)
     output.write('\nMean shut time (ms) = {0:.6f}'.format(mean * 1000))
 
     # Exact pdf
-    eigvals, gamma00, gamma10, gamma11 = GAMAxx(mec, tres, open)
+    eigvals, gamma00, gamma10, gamma11 = exact_GAMAxx(mec, tres, open)
     output.write('\n\nEXACT SHUT TIME DISTRIBUTION')
     output.write('\neigen\tg00(m)\tg10(m)\tg11(m)')
     for i in range(mec.k):

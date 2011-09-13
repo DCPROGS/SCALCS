@@ -34,13 +34,15 @@ def popen(mec, tres, conc, eff='c'):
     if tres == 0:
         p = qml.pinf(mec.Q)
         Popen = np.sum(p[:mec.kA])
-#        Popen = 0
-#        for i in range(mec.kA):
-#            Popen = Popen + p[i]
+
     else:
-        hmopen = scl.hjc_mean_time(mec, tres, True)
-        hmshut = scl.hjc_mean_time(mec, tres, False)
+        GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+        hmopen = scl.exact_mean_time(tres,
+            mec.QAA, mec.QFF, mec.QAF, mec.kA, mec.kF, GAF, GFA)
+        hmshut = scl.exact_mean_time(tres,
+            mec.QFF, mec.QAA, mec.QFA, mec.kF, mec.kA, GFA, GAF)
         Popen = (hmopen / (hmopen + hmshut))
+
     if mec.fastblk:
         Popen = Popen / (1 + conc / mec.KBlk)
     return Popen

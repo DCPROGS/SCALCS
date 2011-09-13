@@ -463,7 +463,10 @@ class QMatGUI(QMainWindow):
         scl.printout(self.mec, self.tres, output=self.log)
 
         # Asymptotic pdf
-        roots = scl.asymptotic_roots(self.mec, self.tres, open)
+        #roots = scl.asymptotic_roots(self.mec, self.tres, open)
+        roots = scl.asymptotic_roots(self.tres, 
+            self.mec.QAA, self.mec.QFF, self.mec.QAF, self.mec.QFA,
+            self.mec.kA, self.mec.kF)
 
         tmax = (-1 / roots.max()) * 20
         tmin = 0.00001 # 10 mikrosec
@@ -485,17 +488,22 @@ class QMatGUI(QMainWindow):
                 self.mec.QAA, qml.phiA(self.mec)) * fac
 
         # Asymptotic pdf
-        areas = scl.asymptotic_areas(self.mec, self.tres, roots, open)
+        GAF, GFA = qml.iGs(self.mec.Q, self.mec.kA, self.mec.kF)
+        #areas = scl.asymptotic_areas(self.mec, self.tres, roots, open)
+        areas = scl.asymptotic_areas(self.tres, roots,
+            self.mec.QAA, self.mec.QFF, self.mec.QAF, self.mec.QFA,
+            self.mec.kA, self.mec.kF, GAF, GFA)
+        
         apdf = np.zeros(points)
         for i in range(points):
             apdf[i] = t[i] * pdfs.expPDF(t[i] - self.tres, -1 / roots, areas)
 
         # Exact pdf
-        eigvals, gamma00, gamma10, gamma11 = scl.GAMAxx(self.mec,
+        eigvals, gamma00, gamma10, gamma11 = scl.exact_GAMAxx(self.mec,
             self.tres, open)
         epdf = np.zeros(points)
         for i in range(points):
-            epdf[i] = (t[i] * scl.pdf_exact(t[i], self.tres,
+            epdf[i] = (t[i] * scl.exact_pdf(t[i], self.tres,
                 roots, areas, eigvals, gamma00, gamma10, gamma11))
 
         t = t * 1000 # x scale in millisec
@@ -578,7 +586,10 @@ class QMatGUI(QMainWindow):
         open = False
 
         # Asymptotic pdf
-        roots = scl.asymptotic_roots(self.mec, self.tres, open)
+        #roots = scl.asymptotic_roots(self.mec, self.tres, open)
+        roots = scl.asymptotic_roots(self.tres,
+            self.mec.QFF, self.mec.QAA, self.mec.QFA, self.mec.QAF,
+            self.mec.kF, self.mec.kA)
 
         tmax = (-1 / roots.max()) * 20
         tmin = 0.00001 # 10 mikrosec
@@ -600,17 +611,21 @@ class QMatGUI(QMainWindow):
                 self.mec.QFF, qml.phiF(self.mec)) * fac
 
         # Asymptotic pdf
-        areas = scl.asymptotic_areas(self.mec, self.tres, roots, open)
+        GAF, GFA = qml.iGs(self.mec.Q, self.mec.kA, self.mec.kF)
+        #areas = scl.asymptotic_areas(self.mec, self.tres, roots, open)
+        areas = scl.asymptotic_areas(self.tres, roots,
+            self.mec.QFF, self.mec.QAA, self.mec.QFA, self.mec.QAF,
+            self.mec.kF, self.mec.kA, GFA, GAF)
         apdf = np.zeros(points)
         for i in range(points):
             apdf[i] = t[i] * pdfs.expPDF(t[i] - self.tres, -1 / roots, areas)
 
         # Exact pdf
-        eigvals, gamma00, gamma10, gamma11 = scl.GAMAxx(self.mec,
+        eigvals, gamma00, gamma10, gamma11 = scl.exact_GAMAxx(self.mec,
             self.tres, open)
         epdf = np.zeros(points)
         for i in range(points):
-            epdf[i] = (t[i] * scl.pdf_exact(t[i], self.tres,
+            epdf[i] = (t[i] * scl.exact_pdf(t[i], self.tres,
                 roots, areas, eigvals, gamma00, gamma10, gamma11))
 
         t = t * 1000 # x scale in millisec

@@ -1,7 +1,145 @@
-"""A collection of some useful functions used in DC_PyPs project."""
+"""A collection of some HJCFit related functions."""
 
 import numpy as np
 from math import*
+
+def ini_vectors(mec, eGFA, eGAF, expQFF, XFA,
+        roots, tres, tcrit, is_chsvec=False):
+    """
+    Get initial and final vectors, startB and endB, for HJC likelihood
+    calculation (Eqs. 5.5 or 5.7, CHS96).
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution (dead time).
+    tcrit : float
+        Critical gap length (critical shut time).
+    is_chsvec : bool
+        True if CHS vectors should be used (Eq. 5.7, CHS96).
+
+    Returns
+    -------
+    startB : ndarray, shape (1, kA)
+        Initial vector for openings or initial CHS vector (Eq. 5.11, CHS96).
+    endB : ndarray, shape (kF, 1)
+        Column of 1's or final CHS vector (Eq. 5.8, CHS96).
+    """
+
+#    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+#    expQFF = qml.expQt(mec.QFF, tres)
+#    expQAA = qml.expQt(mec.QAA, tres)
+#    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
+#    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
+    uA = np.ones((mec.kA, 1))
+
+    if is_chsvec:
+#        roots = asymptotic_roots(mec, tres, False)
+        HFA = np.zeros((mec.kF, mec.kA))
+#        XFA = qml.XAF(tres, roots, mec.QFF, mec.QAA, mec.QFA,
+#            mec.QAF, expQFF)
+        for i in range(mec.kF):
+            coeff = -math.exp(roots[i] * (tcrit - tres)) / roots[i]
+            HFA += coeff * XFA[i]
+        phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
+
+        startB = np.dot(phiF, HFA) / np.dot(np.dot(phiF, HFA), uA)
+        endB = np.dot(HFA, uA)
+    else:
+        startB = qml.phiHJC(eGAF, eGFA, mec.kA)
+        endB = np.ones((mec.kF, 1))
+
+    return startB, endB
+
+def HJClik(theta, bursts, opts):
+    #HJClik(bursts, mec, tres, tcrit, is_chsvec=False):
+
+    """
+    Calculate likelihood for a series of open and shut times using HJC missed
+    events probability density functions (first two dead time intervals- exact
+    solution, then- asymptotic).
+
+    Lik = phi * eGAF(t1) * eGFA(t2) * eGAF(t3) * ... * eGAF(tn) * uF
+    where t1, t3,..., tn are open times; t2, t4,..., t(n-1) are shut times.
+
+    Gaps > tcrit are treated as unusable (e.g. contain double or bad bit of
+    record, or desens gaps that are not in the model, or gaps so long that
+    next opening may not be from the same channel). However this calculation
+    DOES assume that all the shut times predicted by the model are present
+    within each group. The series of multiplied likelihoods is terminated at
+    the end of the opening before an unusable gap. A new series is then
+    started, using appropriate initial vector to give Lik(2), ... At end
+    these are multiplied to give final likelihood.
+
+    Parameters
+    ----------
+    bursts : dictionary
+        A dictionary containing lists of open and shut intervals.
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution (dead time).
+    is_chsvec : bool
+        True if CHS vectors should be used (Eq. 5.7, CHS96).
+
+    Returns
+    -------
+    loglik : float
+        Log-likelihood.
+    """
+
+    mec = opts['mec']
+    conc = opts['conc']
+    tres = opts['tres']
+    tcrit = opts['tcrit']
+    is_chsvec = opts['isCHS']
+
+    mec.set_rateconstants(np.exp(theta))
+    mec.set_eff('c', conc)
+
+    # TODO: Here reset rates which reached limit or are negative.
+    # TODO: Make new Q from theta.
+    # TODO: Errors.
+
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+    expQFF = qml.expQt(mec.QFF, tres)
+    expQAA = qml.expQt(mec.QAA, tres)
+    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
+    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
+
+
+    Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(mec.Q, mec.kA, mec.QFF,
+        mec.QAF, mec.QFA, expQFF)
+    Aroots = asymptotic_roots(mec, tres, True)
+    Axaf = qml.XAF(tres, Aroots, mec.QAA, mec.QFF, mec.QAF, mec.QFA, expQFF)
+    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(mec.Q, mec.kA, mec.QAA,
+        mec.QFA, mec.QAF, expQAA)
+    Froots = asymptotic_roots(mec, tres, False)
+    Fxaf = qml.XAF(tres, Froots, mec.QFF, mec.QAA, mec.QFA, mec.QAF, expQAA)
+    startB, endB = ini_vectors(mec, eGFA, eGAF, expQAA, Fxaf, Froots,
+        tres, tcrit, is_chsvec)
+#    print 'startB=', startB
+#    print 'endB=', endB
+
+    loglik = 0
+    for ind in bursts:
+        burst = bursts[ind]
+        grouplik = startB
+        for i in range(len(burst)):
+            t = burst[i] * 0.001
+            if i % 2 == 0: # open time
+                #eGAFt = np.zeros(Axaf[0].shape)
+                eGAFt = qml.eGAF(t, tres, Aroots, Axaf, Aeigvals, AZ00, AZ10, AZ11)
+            else: # shut
+                #eGAFt = np.zeros(Fxaf[0].shape)
+                eGAFt = qml.eGAF(t, tres, Froots, Fxaf, Feigvals, FZ00, FZ10, FZ11)
+            grouplik = np.dot(grouplik, eGAFt)
+            if grouplik.max() > 1e50:
+                grouplik = grouplik * 1e-100
+                print 'grouplik was scaled down'
+        grouplik = np.dot(grouplik, endB)
+        loglik += math.log(grouplik[0])
+    return -loglik, np.log(mec.unit_rates())
 
 def sortShell(vals, simp):
     """
