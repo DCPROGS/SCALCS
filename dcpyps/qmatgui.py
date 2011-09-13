@@ -456,54 +456,14 @@ class QMatGUI(QMainWindow):
         self.textBox.append('Ideal pdf- red dashed line.')
         self.textBox.append('Exact pdf- blue solid line.')
         self.textBox.append('Asymptotic pdf- green solid line.')
+
         self.mec.set_eff('c', self.conc)
         open = True
-        
-        # Ideal pdf
-        #tau, area = scl.get_ideal_pdf_components(self.mec, open)
-        tau, area = scl.ideal_dwell_time_pdf_components(self.mec.QAA,
-            qml.phiA(self.mec))
-        self.textBox.append('\nIDEAL OPEN TIME DISTRIBUTION')
-        self.textBox.append('term\ttau (ms)\tarea (%)\trate const (1/sec)')
-        for i in range(self.mec.kA):
-            self.textBox.append('{0:d}'.format(i+1) +
-            '\t{0:.3f}'.format(tau[i] * 1000) +
-            '\t{0:.3f}'.format(area[i] * 100) +
-            '\t{0:.3f}'.format(1.0 / tau[i]))
+
+        scl.printout(self.mec, self.tres, output=self.log)
 
         # Asymptotic pdf
         roots = scl.asymptotic_roots(self.mec, self.tres, open)
-        areas = scl.asymptotic_areas(self.mec, self.tres, roots, open)
-        self.textBox.append('\nASYMPTOTIC OPEN TIME DISTRIBUTION')
-        self.textBox.append('term\ttau (ms)\tarea (%)\trate const (1/sec)')
-        for i in range(self.mec.kA):
-            self.textBox.append('{0:d}'.format(i+1) +
-            '\t{0:.3f}'.format(-1.0 / roots[i] * 1000) +
-            '\t{0:.3f}'.format(areas[i] * 100) +
-            '\t{0:.3f}'.format(- roots[i]))
-        areast0 = np.zeros(self.mec.kA)
-        for i in range(self.mec.kA):
-            areast0[i] = areas[i] * np.exp(- self.tres * roots[i])
-        areast0 = areast0 / np.sum(areast0)
-        self.textBox.append('Areas for asymptotic pdf renormalised for t=0 to\
-        infinity (and sum=1), so areas can be compared with ideal pdf.')
-        for i in range(self.mec.kA):
-            self.textBox.append('{0:d}'.format(i+1) +
-            '\t{0:.3f}'.format(areast0[i] * 100))
-        mean = scl.hjc_mean_time(self.mec, self.tres, open)
-        self.textBox.append('Mean open time (ms) = {0:.6f}'.format(mean * 1000))
-
-
-        # Exact pdf
-        eigvals, gamma00, gamma10, gamma11 = scl.GAMAxx(self.mec,
-            self.tres, open)
-        self.textBox.append('\nEXACT OPEN TIME DISTRIBUTION')
-        self.textBox.append('eigen\tg00(m)\tg10(m)\tg11(m)')
-        for i in range(self.mec.k):
-            self.textBox.append('{0:.3f}'.format(eigvals[i]) +
-            '\t{0:.3f}'.format(gamma00[i]) +
-            '\t{0:.3f}'.format(gamma10[i]) +
-            '\t{0:.3f}'.format(gamma11[i]))
 
         tmax = (-1 / roots.max()) * 20
         tmin = 0.00001 # 10 mikrosec
@@ -513,30 +473,32 @@ class QMatGUI(QMainWindow):
 
         # Ideal pdf.
         f = 0.0
+        tau, area = scl.ideal_dwell_time_pdf_components(self.mec.QAA,
+            qml.phiA(self.mec))
         for i in range(self.mec.kA):
             f += area[i] * np.exp(-self.tres / tau[i])
         fac = 1 / f # Scale factor.
         ipdf = np.zeros(points)
         for i in range(points):
             t[i] = tmin * pow(10, (i * step))
-            #ipdf[i] = t[i] * scl.pdf_open_time(self.mec, t[i]) * fac
             ipdf[i] = t[i] * scl.ideal_dwell_time_pdf(t[i],
                 self.mec.QAA, qml.phiA(self.mec)) * fac
 
         # Asymptotic pdf
+        areas = scl.asymptotic_areas(self.mec, self.tres, roots, open)
         apdf = np.zeros(points)
         for i in range(points):
-            #apdf[i] = t[i] * scl.pdf_exponential(t[i], self.tres, roots, areas)
             apdf[i] = t[i] * pdfs.expPDF(t[i] - self.tres, -1 / roots, areas)
 
         # Exact pdf
+        eigvals, gamma00, gamma10, gamma11 = scl.GAMAxx(self.mec,
+            self.tres, open)
         epdf = np.zeros(points)
         for i in range(points):
             epdf[i] = (t[i] * scl.pdf_exact(t[i], self.tres,
                 roots, areas, eigvals, gamma00, gamma10, gamma11))
 
         t = t * 1000 # x scale in millisec
-        #self.textBox.append(text1)
         self.axes.clear()
         self.axes.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
         self.axes.set_yscale('sqrtscale')
@@ -611,54 +573,12 @@ class QMatGUI(QMainWindow):
         self.textBox.append('Ideal pdf- red dashed line.')
         self.textBox.append('Exact pdf- blue solid line.')
         self.textBox.append('Asymptotic pdf- green solid line.')
+
         self.mec.set_eff('c', self.conc)
         open = False
 
-        # Ideal pdf
-        #tau, area = scl.get_ideal_pdf_components(self.mec, open)
-        tau, area = scl.ideal_dwell_time_pdf_components(self.mec.QFF,
-            qml.phiF(self.mec))
-        self.textBox.append('\nIDEAL SHUT TIME DISTRIBUTION')
-        self.textBox.append('term\ttau (ms)\tarea (%)\trate const (1/sec)')
-        for i in range(self.mec.kF):
-            self.textBox.append('{0:d}'.format(i+1) +
-            '\t{0:.3f}'.format(tau[i] * 1000) +
-            '\t{0:.3f}'.format(area[i] * 100) +
-            '\t{0:.3f}'.format(1.0 / tau[i]))
-
         # Asymptotic pdf
         roots = scl.asymptotic_roots(self.mec, self.tres, open)
-        areas = scl.asymptotic_areas(self.mec, self.tres, roots, open)
-        self.textBox.append('\nASYMPTOTIC SHUT TIME DISTRIBUTION')
-        self.textBox.append('term\ttau (ms)\tarea (%)\trate const (1/sec)')
-        for i in range(self.mec.kF):
-            self.textBox.append('{0:d}'.format(i+1) +
-            '\t{0:.3f}'.format(-1.0 / roots[i] * 1000) +
-            '\t{0:.3f}'.format(areas[i] * 100) +
-            '\t{0:.3f}'.format(- roots[i]))
-        areast0 = np.zeros(self.mec.kF)
-        for i in range(self.mec.kF):
-            areast0[i] = areas[i] * np.exp(- self.tres * roots[i])
-        areast0 = areast0 / np.sum(areast0)
-        self.textBox.append('Areas for asymptotic pdf renormalised for t=0 to\
-        infinity (and sum=1), so areas can be compared with ideal pdf.')
-        for i in range(self.mec.kF):
-            self.textBox.append('{0:d}'.format(i+1) +
-            '\t{0:.3f}'.format(areast0[i] * 100))
-        mean = scl.hjc_mean_time(self.mec, self.tres, open)
-        self.textBox.append('Mean shut time (ms) = {0:.6f}'.format(mean * 1000))
-
-        # Exact pdf
-        eigvals, gamma00, gamma10, gamma11 = scl.GAMAxx(self.mec,
-            self.tres, open)
-        self.textBox.append('\nEXACT SHUT TIME DISTRIBUTION')
-        self.textBox.append('eigen\tg00(m)\tg10(m)\tg11(m)')
-        for i in range(self.mec.k):
-            self.textBox.append('{0:.3f}'.format(eigvals[i]) +
-            '\t{0:.3f}'.format(gamma00[i]) +
-            '\t{0:.3f}'.format(gamma10[i]) +
-            '\t{0:.3f}'.format(gamma11[i]))
-
 
         tmax = (-1 / roots.max()) * 20
         tmin = 0.00001 # 10 mikrosec
@@ -667,6 +587,8 @@ class QMatGUI(QMainWindow):
         t = np.zeros(points)
 
         # Ideal pdf.
+        tau, area = scl.ideal_dwell_time_pdf_components(self.mec.QFF,
+            qml.phiF(self.mec))
         f = 0.0
         for i in range(self.mec.kF):
             f += area[i] * np.exp(-self.tres / tau[i])
@@ -674,24 +596,24 @@ class QMatGUI(QMainWindow):
         ipdf = np.zeros(points)
         for i in range(points):
             t[i] = tmin * pow(10, (i * step))
-            #ipdf[i] = t[i] * scl.pdf_shut_time(self.mec, t[i]) * fac
             ipdf[i] = t[i] * scl.ideal_dwell_time_pdf(t[i],
                 self.mec.QFF, qml.phiF(self.mec)) * fac
 
         # Asymptotic pdf
+        areas = scl.asymptotic_areas(self.mec, self.tres, roots, open)
         apdf = np.zeros(points)
         for i in range(points):
-            #apdf[i] = t[i] * scl.pdf_exponential(t[i], self.tres, roots, areas)
             apdf[i] = t[i] * pdfs.expPDF(t[i] - self.tres, -1 / roots, areas)
 
         # Exact pdf
+        eigvals, gamma00, gamma10, gamma11 = scl.GAMAxx(self.mec,
+            self.tres, open)
         epdf = np.zeros(points)
         for i in range(points):
             epdf[i] = (t[i] * scl.pdf_exact(t[i], self.tres,
                 roots, areas, eigvals, gamma00, gamma10, gamma11))
 
         t = t * 1000 # x scale in millisec
-        #self.textBox.append(text1)
         self.axes.clear()
         self.axes.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
         self.axes.set_yscale('sqrtscale')
@@ -887,9 +809,6 @@ class QMatGUI(QMainWindow):
         self.textBox.append("\nLoaded Demo.\n")
         self.mec.printout(self.log)
 
-        self.mec.set_eff('c', self.conc)
-        scl.printout(self.mec, output=self.log)
-        
     def onLoadMecFile(self):
         """
         Load a mechanism and rates from DC's mec file.
@@ -912,9 +831,6 @@ class QMatGUI(QMainWindow):
         self.textBox.append("Loaded mec: " + meclist[nrate][2])
         self.textBox.append("Loaded rates: " + meclist[nrate][3] + "\n")
         self.mec.printout(self.log)
-
-        self.mec.set_eff('c', self.conc)
-        scl.printout(self.mec, output=self.log)
 
 class PrintLog:
     """

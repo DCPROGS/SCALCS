@@ -584,7 +584,7 @@ def HJClik(theta, bursts, opts):
 
 
 
-def printout(mec, output=sys.stdout, eff='c'):
+def printout(mec, tres, output=sys.stdout, eff='c'):
     """
     """
 
@@ -622,3 +622,94 @@ def printout(mec, output=sys.stdout, eff='c'):
             '\t{0:.6f}'.format(-1 / mec.Q[i,i] * 1000) +
             '\t{0:.6f}'.format(mean * 1000))
 
+    # OPEN TIME DISTRIBUTIONS
+    open = True
+    # Ideal pdf
+    #tau, area = scl.get_ideal_pdf_components(self.mec, open)
+    tau, area = ideal_dwell_time_pdf_components(mec.QAA,
+        qml.phiA(mec))
+    output.write('\n\nIDEAL OPEN TIME DISTRIBUTION')
+    output.write('\nterm\ttau (ms)\tarea (%)\trate const (1/sec)')
+    for i in range(mec.kA):
+        output.write('\n{0:d}'.format(i+1) +
+        '\t{0:.3f}'.format(tau[i] * 1000) +
+        '\t{0:.3f}'.format(area[i] * 100) +
+        '\t{0:.3f}'.format(1.0 / tau[i]))
+
+    # Asymptotic pdf
+    roots = asymptotic_roots(mec, tres, open)
+    areas = asymptotic_areas(mec, tres, roots, open)
+    output.write('\n\nASYMPTOTIC OPEN TIME DISTRIBUTION')
+    output.write('\nterm\ttau (ms)\tarea (%)\trate const (1/sec)')
+    for i in range(mec.kA):
+        output.write('\n{0:d}'.format(i+1) +
+        '\t{0:.3f}'.format(-1.0 / roots[i] * 1000) +
+        '\t{0:.3f}'.format(areas[i] * 100) +
+        '\t{0:.3f}'.format(- roots[i]))
+    areast0 = np.zeros(mec.kA)
+    for i in range(mec.kA):
+        areast0[i] = areas[i] * np.exp(- tres * roots[i])
+    areast0 = areast0 / np.sum(areast0)
+    output.write('\nAreas for asymptotic pdf renormalised for t=0 to\
+    infinity (and sum=1), so areas can be compared with ideal pdf.')
+    for i in range(mec.kA):
+        output.write('\n{0:d}'.format(i+1) +
+        '\t{0:.3f}'.format(areast0[i] * 100))
+    mean = hjc_mean_time(mec, tres, open)
+    output.write('\nMean open time (ms) = {0:.6f}'.format(mean * 1000))
+
+    # Exact pdf
+    eigvals, gamma00, gamma10, gamma11 = GAMAxx(mec, tres, open)
+    output.write('\n\nEXACT OPEN TIME DISTRIBUTION')
+    output.write('\neigen\tg00(m)\tg10(m)\tg11(m)')
+    for i in range(mec.k):
+        output.write('\n{0:.3f}'.format(eigvals[i]) +
+        '\t{0:.3f}'.format(gamma00[i]) +
+        '\t{0:.3f}'.format(gamma10[i]) +
+        '\t{0:.3f}'.format(gamma11[i]))
+
+
+    # SHUT TIME DISTRIBUTIONS
+    open = False
+        # Ideal pdf
+    #tau, area = scl.get_ideal_pdf_components(self.mec, open)
+    tau, area = ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
+    output.write('\n\n\nIDEAL SHUT TIME DISTRIBUTION')
+    output.write('\nterm\ttau (ms)\tarea (%)\trate const (1/sec)')
+    for i in range(mec.kF):
+        output.write('\n{0:d}'.format(i+1) +
+        '\t{0:.3f}'.format(tau[i] * 1000) +
+        '\t{0:.3f}'.format(area[i] * 100) +
+        '\t{0:.3f}'.format(1.0 / tau[i]))
+
+    # Asymptotic pdf
+    roots = asymptotic_roots(mec, tres, open)
+    areas = asymptotic_areas(mec, tres, roots, open)
+    output.write('\n\nASYMPTOTIC SHUT TIME DISTRIBUTION')
+    output.write('\nterm\ttau (ms)\tarea (%)\trate const (1/sec)')
+    for i in range(mec.kF):
+        output.write('\n{0:d}'.format(i+1) +
+        '\t{0:.3f}'.format(-1.0 / roots[i] * 1000) +
+        '\t{0:.3f}'.format(areas[i] * 100) +
+        '\t{0:.3f}'.format(- roots[i]))
+    areast0 = np.zeros(mec.kF)
+    for i in range(mec.kF):
+        areast0[i] = areas[i] * np.exp(- tres * roots[i])
+    areast0 = areast0 / np.sum(areast0)
+    output.write('\nAreas for asymptotic pdf renormalised for t=0 to\
+    infinity (and sum=1), so areas can be compared with ideal pdf.')
+    for i in range(mec.kF):
+        output.write('\n{0:d}'.format(i+1) +
+        '\t{0:.3f}'.format(areast0[i] * 100))
+    mean = hjc_mean_time(mec, tres, open)
+    output.write('\nMean shut time (ms) = {0:.6f}'.format(mean * 1000))
+
+    # Exact pdf
+    eigvals, gamma00, gamma10, gamma11 = GAMAxx(mec, tres, open)
+    output.write('\n\nEXACT SHUT TIME DISTRIBUTION')
+    output.write('\neigen\tg00(m)\tg10(m)\tg11(m)')
+    for i in range(mec.k):
+        output.write('\n{0:.3f}'.format(eigvals[i]) +
+        '\t{0:.3f}'.format(gamma00[i]) +
+        '\t{0:.3f}'.format(gamma10[i]) +
+        '\t{0:.3f}'.format(gamma11[i]))
