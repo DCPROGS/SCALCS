@@ -313,7 +313,8 @@ def printout(mec, output=sys.stdout, eff='c'):
             '\t{0:.3f}'.format(1000 / eigs[i]) +
             '\t{0:.3f}'.format(100 * w[i] / eigs[i]))
 
-    mean, sd = pdfs.expPDF_mean_sd(eigs, w)
+    #mean, sd = pdfs.expPDF_mean_sd(eigs, w)
+    mean, sd = pdfs.expPDF_mean_sd(1 / eigs, w / eigs)
     output.write('\nMean (ms) =\t {0:.3f}'.format(mean * 1000) +
         '\tSD =\t {0:.3f}'.format(sd * 1000) +
         '\tSD/mean =\t {0:.3f}'.format(sd / mean))

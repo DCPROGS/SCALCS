@@ -2,16 +2,39 @@ import math
 
 import numpy as np
 
-def expPDF_mean_sd(eigs, w):
+def expPDF(t, tau, area):
+    """
+    Calculate exponential probabolity density function.
+
+    Parameters
+    ----------
+    t : float
+        Time.
+    tau : ndarray, shape(k, 1)
+        Time constants.
+    area : ndarray, shape(k, 1)
+        Component relative area.
+
+    Returns
+    -------
+    f : float
+    """
+
+    f = 0
+    if t >= 0:
+        f = np.sum((area / tau) * np.exp(-t / tau))
+    return f
+
+def expPDF_mean_sd(tau, area):
     """
     Calculate mean and standard deviation for exponential PDF.
 
     Parameters
     ----------
-    eigs : ndarray, shape(k, 1)
+    tau : ndarray, shape(k, 1)
         Time constants.
-    w : ndarray, shape(k, 1)
-        Component amplitudes.
+    area : ndarray, shape(k, 1)
+        Component relative area.
 
     Returns
     -------
@@ -21,10 +44,10 @@ def expPDF_mean_sd(eigs, w):
         Standard deviation.
     """
 
-    m = np.sum(w / (eigs * eigs))  # (area * tau)
-    var = np.sum(w / (eigs * eigs * eigs)) # (area * tau^2)
+    m = np.sum(area * tau)
+    var = np.sum(area * tau * tau)
     sd = math.sqrt(2 * var - m * m)
-    
+
     return m, sd
 
 def geometricPDF_mean_sd(rho, w):

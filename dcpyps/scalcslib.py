@@ -1,5 +1,5 @@
-"""A collection of functions for single channel or macroscopic
-current calculations.
+"""A collection of functions for dwell time ideal, asymptotic and exact
+probabulity density function calculations.
 
 Notes
 -----
@@ -39,142 +39,150 @@ from numpy import linalg as nplin
 
 import qmatlib as qml
 import bisectHJC
+import pdfs
 
-def hjc_mean_time(mec, tres, open):
-    """
-    Calculate exact mean open or shut time from HJC probability density
-    function.
-
-    Parameters
-    ----------
-    mec : dcpyps.Mechanism
-        The mechanism to be analysed.
-    tres : float
-        Time resolution (dead time).
-    open : bool
-        True to calculate mean open time, False to calculate mean shut time.
-
-    Returns
-    -------
-    mean : float
-        Apparent mean open/shut time.
-    """
-
-    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
-    expQFF = qml.expQt(mec.QFF, tres)
-    expQAA = qml.expQt(mec.QAA, tres)
-    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
-    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
-
-    if open:
-        phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
-        QexpQF = np.dot(mec.QAF, expQFF)
-        DARS = qml.dARSdS(tres, mec.QAA, mec.QFF,
-            GAF, GFA, expQFF, mec.kA, mec.kF)
-        uF = np.ones((mec.kF, 1))
-        # meanOpenTime = tres + phiA * DARS * QexpQF * uF
-        mean = tres + np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))
-    else:
-        phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
-        QexpQA = np.dot(mec.QFA, expQAA)
-        DFRS = qml.dARSdS(tres, mec.QFF, mec.QAA,
-            GFA, GAF, expQAA, mec.kF, mec.kA)
-        uA = np.ones((mec.kA, 1))
-        # meanShutTime = tres + phiF * DFRS * QexpQA * uA
-        mean = tres + np.dot(phiF, np.dot(np.dot(DFRS, QexpQA), uA))
-
-    return mean[0]
-
-def pdf_open_time(mec, t):
+def ideal_dwell_time_pdf(t, QAA, phiA):
     """
     Probability density function of the open time.
     f(t) = phiOp * exp(-QAA * t) * (-QAA) * uA
+    For shut time pdf A by F in function call.
 
     Parameters
     ----------
-    mec : dcpyps.Mechanism
-        The mechanism to be analysed.
-
-    Returns
-    -------
-    f : float
-    """
-
-    uA = np.ones((mec.kA, 1))
-    expQAA = qml.expQt(mec.QAA, t)
-    f = np.dot(np.dot(np.dot(qml.phiA(mec), expQAA), -mec.QAA), uA)
-    return f
-
-def pdf_subset_time(mec, k1, k2, t):
-    """
-    """
-    
-    u = np.ones((k2 - k1 + 1, 1))
-    phi, QAA = qml.phiSub(mec, k1, k2)
-    expQAA = qml.expQt(QAA, t)
-    f = np.dot(np.dot(np.dot(phi, expQAA), -QAA), u)
-    return f
-
-
-def pdf_shut_time(mec, t):
-    """
-    Probability density function of the shut time.
-    f(t) = phiShut * exp(QFF * t) * (-QFF) * uF
-
-    Parameters
-    ----------
-    mec : dcpyps.Mechanism
-        The mechanism to be analysed.
     t : float
-        Time.
+        Time (sec).
+    QAA : array_like, shape (kA, kA)
+        Submatrix of Q.
+    phiA : array_like, shape (1, kA)
+        Initial vector for openings
 
     Returns
     -------
     f : float
     """
 
-    uF = np.ones((mec.kF, 1))
-    expQFF = qml.expQt(mec.QFF, t)
-    f = np.dot(np.dot(np.dot(qml.phiF(mec), expQFF), -mec.QFF), uF)
+    kA = QAA.shape[0]
+    uA = np.ones((kA, 1))
+    expQAA = qml.expQt(QAA, t)
+    f = np.dot(np.dot(np.dot(phiA, expQAA), -QAA), uA)
     return f
 
-def get_ideal_pdf_components(mec, open):
+def ideal_dwell_time_pdf_components(QAA, phiA):
     """
     Calculate time constants and areas for an ideal (no missed events)
-    exponential open/shut time probability density function.
+    exponential open time probability density function.
+    For shut time pdf A by F in function call.
 
     Parameters
     ----------
-    mec : dcpyps.Mechanism
-        The mechanism to be analysed.
-    open : bool
-        True to calculate mean open time, False to calculate mean shut time.
+    t : float
+        Time (sec).
+    QAA : array_like, shape (kA, kA)
+        Submatrix of Q.
+    phiA : array_like, shape (1, kA)
+        Initial vector for openings
 
     Returns
     -------
     taus : ndarray, shape(k, 1)
         Time constants.
     areas : ndarray, shape(k, 1)
+        Component relative areas.
     """
 
-    if open:
-        areas = np.zeros(mec.kA)
-        eigs, A = qml.eigs(-mec.QAA)
-        uA = np.ones((mec.kA, 1))
-        for i in range(mec.kA):
-            areas[i] = (np.dot(np.dot(np.dot(qml.phiA(mec), A[i]),
-                (-mec.QAA)), uA) / eigs[i])
-    else:
-        areas = np.zeros(mec.kF)
-        eigs, A = qml.eigs(-mec.QFF)
-        uF = np.ones((mec.kF, 1))
-        for i in range(mec.kF):
-            areas[i] = (np.dot(np.dot(np.dot(qml.phiF(mec), A[i]),
-                (-mec.QFF)), uF) / eigs[i])
+    kA = QAA.shape[0]
+    areas = np.zeros(kA)
+    eigs, A = qml.eigs(-QAA)
+    uA = np.ones((kA, 1))
+    #TODO: remove 'for'
+    for i in range(kA):
+        areas[i] = (np.dot(np.dot(np.dot(phiA, A[i]),
+            (-QAA)), uA) / eigs[i])
 
     taus = 1 / eigs
     return taus, areas
 
+def ideal_subset_time_pdf(Q, k1, k2, t):
+    """
+    """
+    
+    u = np.ones((k2 - k1 + 1, 1))
+    phi, QSub = qml.phiSub(Q, k1, k2)
+    expQSub = qml.expQt(QSub, t)
+    f = np.dot(np.dot(np.dot(phi, expQSub), -QSub), u)
+    return f
+
+def ideal_subset_mean_life_time(Q, state1, state2):
+    """
+    Calculate mean life time in a specified subset. Add all rates out of subset
+    to get total rate out. Skip rates within subset.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    state1,state2 : int
+        State numbers (counting origin 1)
+
+    Returns
+    -------
+    mean : float
+        Mean life time.
+    """
+
+    k = Q.shape[0]
+    p = qml.pinf(Q)
+    # Total occupancy for subset.
+    pstot = np.sum(p[state1-1 : state2])
+
+    # Total rate out
+    s = 0.0
+    for i in range(state1-1, state2):
+        for j in range(k):
+            if (j < state1-1) or (j > state2 - 1):
+                s += Q[i, j] * p[i] / pstot
+
+    mean = 1 / s
+    return mean
+
+def ideal_mean_latency_given_start_state(mec, state):
+    """
+    Calculate mean latency to next opening (shutting), given starting in
+    specified shut (open) state.
+
+    mean latency given starting state = pF(0) * inv(-QFF) * uF
+
+    F- all shut states (change to A for mean latency to next shutting
+    calculation), p(0) = [0 0 0 ..1.. 0] - a row vector with 1 for state in
+    question and 0 for all other states.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    state : int
+        State number (counting origin 1)
+
+    Returns
+    -------
+    mean : float
+        Mean latency.
+    """
+
+    if state <= mec.kA:
+        # for calculating mean latency to next shutting
+        p = np.zeros((mec.kA))
+        p[state-1] = 1
+        uF = np.ones((mec.kA, 1))
+        invQFF = nplin.inv(-mec.QAA)
+    else:
+        # for calculating mean latency to next opening
+        p = np.zeros((mec.kF))
+        p[state-mec.kA-1] = 1
+        uF = np.ones((mec.kF, 1))
+        invQFF = nplin.inv(-mec.QFF)
+
+    mean = np.dot(np.dot(p, invQFF), uF)[0]
+
+    return mean
 
 def asymptotic_roots(mec, tres, open):
     """
@@ -204,23 +212,19 @@ def asymptotic_roots(mec, tres, open):
     if open:
         sro = bisectHJC.bisection_intervals(sao, sbo, tres,
             mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
-            #mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
         roots = np.zeros(mec.kA)
         for i in range(mec.kA):
             roots[i] = bisectHJC.bisect(sro[i,0], sro[i,1], tres,
                 mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
-                #mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
-        return roots
     else:
         sro = bisectHJC.bisection_intervals(sas, sbs, tres,
             mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
-            #mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
         roots = np.zeros(mec.kF)
         for i in range(mec.kF):
             roots[i] = bisectHJC.bisect(sro[i,0], sro[i,1], tres,
                 mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
-                #mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
-        return roots
+
+    return roots
 
 def asymptotic_areas(mec, tres, roots, open):
     """
@@ -287,33 +291,51 @@ def asymptotic_areas(mec, tres, roots, open):
 
     return areas
 
-def pdf_exponential(t, tres, roots, areas):
+def hjc_mean_time(mec, tres, open):
     """
-    Calculate exponential probabolity density function.
+    Calculate exact mean open or shut time from HJC probability density
+    function.
 
     Parameters
     ----------
-    t : float
-        Time.
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
     tres : float
         Time resolution (dead time).
-    roots : array_like, shape (k,)
-    areas : array_like, shape (k,).
+    open : bool
+        True to calculate mean open time, False to calculate mean shut time.
 
     Returns
     -------
-    f : float
+    mean : float
+        Apparent mean open/shut time.
     """
 
-    if t < tres:
-        f = 0
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+    expQFF = qml.expQt(mec.QFF, tres)
+    expQAA = qml.expQt(mec.QAA, tres)
+    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
+    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
+
+    if open:
+        phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
+        QexpQF = np.dot(mec.QAF, expQFF)
+        DARS = qml.dARSdS(tres, mec.QAA, mec.QFF,
+            GAF, GFA, expQFF, mec.kA, mec.kF)
+        uF = np.ones((mec.kF, 1))
+        # meanOpenTime = tres + phiA * DARS * QexpQF * uF
+        mean = tres + np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))
     else:
-        f = 0
-        for j in range(roots.shape[0]):
-            ta = -1 / roots[j]
-            ar = areas[j]
-            f = f + ((ar / ta) * np.exp(-(t - tres) / ta))
-    return f
+        phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
+        QexpQA = np.dot(mec.QFA, expQAA)
+        DFRS = qml.dARSdS(tres, mec.QFF, mec.QAA,
+            GFA, GAF, expQAA, mec.kF, mec.kA)
+        uA = np.ones((mec.kA, 1))
+        # meanShutTime = tres + phiF * DFRS * QexpQA * uA
+        mean = tres + np.dot(phiF, np.dot(np.dot(DFRS, QexpQA), uA))
+
+    return mean[0]
+
 
 def pdf_exact(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
     r"""
@@ -357,7 +379,7 @@ def pdf_exact(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
         f = (qml.f0((t - tres), eigvals, gamma00) -
             qml.f1((t - 2 * tres), eigvals, gamma10, gamma11))
     else:
-        f = pdf_exponential(t, tres, roots, areas)
+        f = pdfs.expPDF(t - tres, -1 / roots, areas)
     return f
 
 def GAMAxx(mec, tres, open):
@@ -525,11 +547,11 @@ def HJClik(theta, bursts, opts):
     eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
 
 
-    Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(tres, mec.Q, mec.kA, mec.QFF,
+    Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(mec.Q, mec.kA, mec.QFF,
         mec.QAF, mec.QFA, expQFF)
     Aroots = asymptotic_roots(mec, tres, True)
     Axaf = qml.XAF(tres, Aroots, mec.QAA, mec.QFF, mec.QAF, mec.QFA, expQFF)
-    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(tres, mec.Q, mec.kA, mec.QAA,
+    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(mec.Q, mec.kA, mec.QAA,
         mec.QFA, mec.QAF, expQAA)
     Froots = asymptotic_roots(mec, tres, False)
     Fxaf = qml.XAF(tres, Froots, mec.QFF, mec.QAA, mec.QFA, mec.QAF, expQAA)
@@ -558,77 +580,9 @@ def HJClik(theta, bursts, opts):
         loglik += math.log(grouplik[0])
     return -loglik, np.log(mec.unit_rates())
 
-def mean_latency_given_start_state(mec, state):
-    """
-    Calculate mean latency to next opening (shutting), given starting in
-    specified shut (open) state.
 
-    mean latency given starting state = pF(0) * inv(-QFF) * uF
 
-    F- all shut states (change to A for mean latency to next shutting
-    calculation), p(0) = [0 0 0 ..1.. 0] - a row vector with 1 for state in
-    question and 0 for all other states.
 
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    state : int
-        State number (counting origin 1)
-
-    Returns
-    -------
-    mean : float
-        Mean latency.
-    """
-
-    if state <= mec.kA:
-        # for calculating mean latency to next shutting
-        p = np.zeros((mec.kA))
-        p[state-1] = 1
-        uF = np.ones((mec.kA, 1))
-        invQFF = nplin.inv(-mec.QAA)
-    else:
-        # for calculating mean latency to next opening
-        p = np.zeros((mec.kF))
-        p[state-mec.kA-1] = 1
-        uF = np.ones((mec.kF, 1))
-        invQFF = nplin.inv(-mec.QFF)
-
-    mean = np.dot(np.dot(p, invQFF), uF)[0]
-
-    return mean
-
-def mean_subset_life_time(mec, state1, state2):
-    """
-    Calculate mean life time in a specified subset. Add all rates out of subset
-    to get total rate out. Skip rates within subset.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    state1,state2 : int
-        State numbers (counting origin 1)
-
-    Returns
-    -------
-    mean : float
-        Mean life time.
-
-    """
-
-    p = qml.pinf(mec.Q)
-    # Total occupancy for subset.
-    pstot = np.sum(p[state1-1 : state2])
-
-    # Total rate out
-    s = 0.0
-    for i in range(state1-1, state2):
-        for j in range(mec.k):
-            if (j < state1-1) or (j > state2 - 1):
-                s += mec.Q[i, j] * p[i] / pstot
-
-    mean = 1 / s
-    return mean
 
 def printout(mec, output=sys.stdout, eff='c'):
     """
@@ -642,13 +596,13 @@ def printout(mec, output=sys.stdout, eff='c'):
 
     for i in range(mec.k):
         if i == 0:
-            mean_life_A = mean_subset_life_time(mec, 1, mec.kA)
+            mean_life_A = ideal_subset_mean_life_time(mec.Q, 1, mec.kA)
             output.write('\nSubset A ' +
                 '\t{0:.6f}'.format(np.sum(pinf[:mec.kA])) +
                 '\t{0:.6f}'.format(mean_life_A * 1000) +
                 '\n')
         if i == mec.kA:
-            mean_life_B = mean_subset_life_time(mec, mec.kA + 1, mec.kA + mec.kB)
+            mean_life_B = ideal_subset_mean_life_time(mec.Q, mec.kA + 1, mec.kA + mec.kB)
             output.write('\n\nShut\tEquilibrium\tMean life\tMean latency (ms)')
             output.write('\nstate\toccupancy\t(ms)\tto next opening')
             output.write('\n\t\t\tgiven start in this state')
@@ -657,12 +611,12 @@ def printout(mec, output=sys.stdout, eff='c'):
                 '\t{0:.6f}'.format(mean_life_B * 1000) +
                 '\n')
         if i == mec.kE:
-            mean_life_C = mean_subset_life_time(mec, mec.kA + mec.kB + 1, mec.k)
+            mean_life_C = ideal_subset_mean_life_time(mec.Q, mec.kA + mec.kB + 1, mec.k)
             output.write('\n\nSubset C ' +
                 '\t{0:.6f}'.format(np.sum(pinf[mec.kA+mec.kB:mec.k])) +
                 '\t{0:.6f}'.format(mean_life_C * 1000) +
                 '\n')
-        mean = mean_latency_given_start_state(mec, i+1)
+        mean = ideal_mean_latency_given_start_state(mec, i+1)
         output.write('\n{0:d}'.format(i+1) +
             '\t{0:.6f}'.format(pinf[i]) +
             '\t{0:.6f}'.format(-1 / mec.Q[i,i] * 1000) +

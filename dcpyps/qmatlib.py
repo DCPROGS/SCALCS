@@ -241,7 +241,7 @@ def phiF(mec):
     phi = np.dot(phiA(mec), GAF)
     return phi
 
-def phiSub(mec, k1, k2):
+def phiSub(Q, k1, k2):
     """
     Calculate initial vector for any subset.
 
@@ -256,11 +256,11 @@ def phiSub(mec, k1, k2):
     """
 
     u = np.ones((k2 - k1 + 1, 1))
-    p = pinf(mec.Q)
+    p = pinf(Q)
     p1, p2, p3 = np.hsplit(p,(k1, k2+1))
     p1c = np.hstack((p1, p3))
 
-    Q = mec.Q.copy()
+    #Q = Q.copy()
     Q1, Q2, Q3 = np.hsplit(Q,(k1, k2+1))
     Q21, Q22, Q23 = np.hsplit(Q2.transpose(),(k1, k2+1))
     Q22c = Q22.copy()
@@ -539,10 +539,10 @@ def XAF(tres, roots, QAA, QFF, QAF, QFA, expQFF):
     rowA = np.zeros((kA, kA))
     colA = np.zeros((kA, kA))
     for i in range(kA):
-        WAA = W(roots[i], tres, QFF, QAA, QAF, QFA, kF, kA)
-        rowA[i] = pinf(WAA)
+        WAA = W(roots[i], tres, QFF, QAA, QFA, QAF, kF, kA)
+        rowA[i] = pinf(WAA)[0]
         TrWAA = np.transpose(WAA)
-        colA[i] = pinf(TrWAA)
+        colA[i] = pinf(TrWAA)[0]
     colA = np.transpose(colA)
 
     for i in range(kA):

@@ -26,6 +26,7 @@ try:
 except:
     raise ImportError("matplotlib module is missing")
 
+import qmatlib as qml
 import scalcslib as scl
 import rcj
 import scburst
@@ -33,6 +34,7 @@ import popen
 import optimize
 import dataset
 import dcio
+import pdfs
 import samples
 
 class QMatGUI(QMainWindow):
@@ -241,7 +243,7 @@ class QMatGUI(QMainWindow):
         filename = QFileDialog.getOpenFileName(self,
             "Open SCN File...", "", "DC SCN Files (*.scn)")
         ioffset, nint, calfac, header = io.scn_read_header(filename)
-        tint, iampl, iprops = io.scn_read_data(filename, ioffset, nint, calfac)
+        tint, iampl, iprops = dcio.scn_read_data(filename, ioffset, nint, calfac)
         self.rec1 = dataset.TimeSeries(filename, header, tint, iampl, iprops)
         self.textBox.append("\nLoaded record from file: " +
             os.path.split(str(filename))[1])
@@ -458,7 +460,9 @@ class QMatGUI(QMainWindow):
         open = True
         
         # Ideal pdf
-        tau, area = scl.get_ideal_pdf_components(self.mec, open)
+        #tau, area = scl.get_ideal_pdf_components(self.mec, open)
+        tau, area = scl.ideal_dwell_time_pdf_components(self.mec.QAA,
+            qml.phiA(self.mec))
         self.textBox.append('\nIDEAL OPEN TIME DISTRIBUTION')
         self.textBox.append('term\ttau (ms)\tarea (%)\trate const (1/sec)')
         for i in range(self.mec.kA):
@@ -515,12 +519,15 @@ class QMatGUI(QMainWindow):
         ipdf = np.zeros(points)
         for i in range(points):
             t[i] = tmin * pow(10, (i * step))
-            ipdf[i] = t[i] * scl.pdf_open_time(self.mec, t[i]) * fac
+            #ipdf[i] = t[i] * scl.pdf_open_time(self.mec, t[i]) * fac
+            ipdf[i] = t[i] * scl.ideal_dwell_time_pdf(t[i],
+                self.mec.QAA, qml.phiA(self.mec)) * fac
 
         # Asymptotic pdf
         apdf = np.zeros(points)
         for i in range(points):
-            apdf[i] = t[i] * scl.pdf_exponential(t[i], self.tres, roots, areas)
+            #apdf[i] = t[i] * scl.pdf_exponential(t[i], self.tres, roots, areas)
+            apdf[i] = t[i] * pdfs.expPDF(t[i] - self.tres, -1 / roots, areas)
 
         # Exact pdf
         epdf = np.zeros(points)
@@ -552,7 +559,13 @@ class QMatGUI(QMainWindow):
         open = False
         self.mec.set_eff('c', self.conc)
 
-        tau, area = scl.get_ideal_pdf_components(self.mec, open)
+        #tau, area = scl.get_ideal_pdf_components(self.mec, open)
+        if open:
+            tau, area = scl.ideal_dwell_time_pdf_components(self.mec.QAA,
+                qml.phiA(self.mec))
+        else:
+            tau, area = scl.ideal_dwell_time_pdf_components(self.mec.QFF,
+                qml.phiF(self.mec))
 
         tmax = tau.max() * 20
         tmin = 0.00001 # 10 mikrosec
@@ -569,8 +582,10 @@ class QMatGUI(QMainWindow):
         spdf = np.zeros(points)
         for i in range(points):
             t[i] = tmin * pow(10, (i * step))
-            ipdf[i] = t[i] * scl.pdf_shut_time(self.mec, t[i]) * fac
-            spdf[i] = t[i] * scl.pdf_subset_time(self.mec, 8, 10, t[i]) * fac
+            #ipdf[i] = t[i] * scl.pdf_shut_time(self.mec, t[i]) * fac
+            ipdf[i] = t[i] * scl.ideal_dwell_time_pdf(t[i],
+                self.mec.QFF, qml.phiF(self.mec)) * fac
+            spdf[i] = t[i] * scl.ideal_subset_time_pdf(self.mec.Q, 8, 10, t[i]) * fac
 
 
         t = t * 1000 # x scale in millisec
@@ -600,7 +615,9 @@ class QMatGUI(QMainWindow):
         open = False
 
         # Ideal pdf
-        tau, area = scl.get_ideal_pdf_components(self.mec, open)
+        #tau, area = scl.get_ideal_pdf_components(self.mec, open)
+        tau, area = scl.ideal_dwell_time_pdf_components(self.mec.QFF,
+            qml.phiF(self.mec))
         self.textBox.append('\nIDEAL SHUT TIME DISTRIBUTION')
         self.textBox.append('term\ttau (ms)\tarea (%)\trate const (1/sec)')
         for i in range(self.mec.kF):
@@ -657,12 +674,15 @@ class QMatGUI(QMainWindow):
         ipdf = np.zeros(points)
         for i in range(points):
             t[i] = tmin * pow(10, (i * step))
-            ipdf[i] = t[i] * scl.pdf_shut_time(self.mec, t[i]) * fac
+            #ipdf[i] = t[i] * scl.pdf_shut_time(self.mec, t[i]) * fac
+            ipdf[i] = t[i] * scl.ideal_dwell_time_pdf(t[i],
+                self.mec.QFF, qml.phiF(self.mec)) * fac
 
         # Asymptotic pdf
         apdf = np.zeros(points)
         for i in range(points):
-            apdf[i] = t[i] * scl.pdf_exponential(t[i], self.tres, roots, areas)
+            #apdf[i] = t[i] * scl.pdf_exponential(t[i], self.tres, roots, areas)
+            apdf[i] = t[i] * pdfs.expPDF(t[i] - self.tres, -1 / roots, areas)
 
         # Exact pdf
         epdf = np.zeros(points)
@@ -879,7 +899,7 @@ class QMatGUI(QMainWindow):
             "Open Mec File...", "", "DC Mec Files (*.mec)")
         self.textBox.append("\nFile to read: " + os.path.split(str(filename))[1])
 
-        version, meclist, max_mecnum = io.mec_get_list(filename)
+        version, meclist, max_mecnum = dcio.mec_get_list(filename)
         self.textBox.append("Mec file version: %d; contains %d mechanisms."
             %(version, max_mecnum))
 
@@ -887,7 +907,7 @@ class QMatGUI(QMainWindow):
         if dialog.exec_():
             nrate = dialog.returnRates()
 
-        self.mec = io.mec_load(filename, meclist[nrate][0])
+        self.mec = dcio.mec_load(filename, meclist[nrate][0])
 
         self.textBox.append("Loaded mec: " + meclist[nrate][2])
         self.textBox.append("Loaded rates: " + meclist[nrate][3] + "\n")
