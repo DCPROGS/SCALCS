@@ -614,7 +614,7 @@ def f1(u, eigvals, Z10, Z11):
         f = np.sum((Z10 + Z11 * u) * np.exp(-eigvals * u))
     return f
 
-def Zxx(Q, kopen, QFF, QAF, QFA, expQFF):
+def Zxx(Q, kopen, QFF, QAF, QFA, expQFF, open):
     """
     Calculate Z constants for the exact open time pdf (Eq. 3.22, HJC90).
     Exchange A and F for shut time pdf.
@@ -627,7 +627,9 @@ def Zxx(Q, kopen, QFF, QAF, QFA, expQFF):
     kopen : int
         Number of open states.
     QFF, QAF, QFA : array_like
-        Submatrices of Q. 
+        Submatrices of Q.
+    open : bool
+        True for open time pdf, False for shut time pdf.
 
     Returns
     -------
@@ -637,11 +639,8 @@ def Zxx(Q, kopen, QFF, QAF, QFA, expQFF):
         Z constants for the exact open time pdf.
     """
 
-    open = True
     k = Q.shape[0]
     kA = k - QFF.shape[0]
-    if kA != kopen:
-        open = False
     eigen, A = eigs(-Q)
     # Maybe needs check for equal eigenvalues.
 
@@ -650,14 +649,14 @@ def Zxx(Q, kopen, QFF, QAF, QFA, expQFF):
     if open:
         C00 = A[:, :kopen, :kopen]
         A1 = A[:, :kopen, kopen:]
-        D = np.dot(np.dot(A1, expQFF), QFA)
     else:
         C00 = A[:, kopen:, kopen:]
         A1 = A[:, kopen:, :kopen]
-        D = np.dot(np.dot(A1, expQFF), QFA)
+    D = np.dot(np.dot(A1, expQFF), QFA)
 
     C11 = D * C00
     C10 = np.empty((k, kA, kA))
+    #TODO: try to remove 'for' cycles
     for i in range(k):
         S = np.zeros((kA, kA))
         for j in range(k):

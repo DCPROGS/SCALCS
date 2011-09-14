@@ -104,6 +104,7 @@ def ideal_dwell_time_pdf_components(QAA, phiA):
 
 def ideal_subset_time_pdf(Q, k1, k2, t):
     """
+    
     """
     
     u = np.ones((k2 - k1 + 1, 1))
@@ -393,7 +394,7 @@ def exact_GAMAxx(mec, tres, open):
     if open:
         phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
         eigen, Z00, Z10, Z11 = qml.Zxx(mec.Q, mec.kA,
-            mec.QFF, mec.QAF, mec.QFA, expQFF)
+            mec.QFF, mec.QAF, mec.QFA, expQFF, open)
         uF = np.ones((mec.kF,1))
         for i in range(k):
             gama00.append(np.dot(np.dot(phiA, Z00[i]), uF)[0])
@@ -403,7 +404,7 @@ def exact_GAMAxx(mec, tres, open):
     else:
         phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
         eigen, Z00, Z10, Z11 = qml.Zxx(mec.Q, mec.kA,
-            mec.QAA, mec.QFA, mec.QAF, expQAA)
+            mec.QAA, mec.QFA, mec.QAF, expQAA, open)
         uA = np.ones((mec.kA, 1))
         for i in range(k):
             gama00.append(np.dot(np.dot(phiF, Z00[i]), uA)[0])
@@ -412,7 +413,7 @@ def exact_GAMAxx(mec, tres, open):
 
     return eigen, np.array(gama00), np.array(gama10), np.array(gama11)
 
-def printout(mec, tres, output=sys.stdout, eff='c'):
+def printout_occupancies(mec, output=sys.stdout):
     """
     """
 
@@ -450,6 +451,10 @@ def printout(mec, tres, output=sys.stdout, eff='c'):
             '\t{0:.6f}'.format(-1 / mec.Q[i,i] * 1000) +
             '\t{0:.6f}'.format(mean * 1000))
 
+def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
+    """
+
+    """
 
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
     # OPEN TIME DISTRIBUTIONS

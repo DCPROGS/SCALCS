@@ -460,7 +460,8 @@ class QMatGUI(QMainWindow):
         self.mec.set_eff('c', self.conc)
         open = True
 
-        scl.printout(self.mec, self.tres, output=self.log)
+        scl.printout_occupancies(self.mec, output=self.log)
+        scl.printout_distributions(self.mec, self.tres, output=self.log)
 
         # Asymptotic pdf
         #roots = scl.asymptotic_roots(self.mec, self.tres, open)
