@@ -417,7 +417,7 @@ class QMatGUI(QMainWindow):
 
         popen.printout(self.mec, self.tres, output=self.log)
 
-        iEC50 = popen.get_EC50(self.mec, 0)
+        iEC50 = popen.EC50(self.mec, 0)
         cmin = iEC50 / 20 #20000000.0
         cmax = iEC50 * 500 #/ 1000000.0
         logstart = int(np.log10(cmin)) - 1
@@ -431,8 +431,8 @@ class QMatGUI(QMainWindow):
         pi = np.zeros(points)
         for i in range(points):
             c[i] = pow(10, logstart + logstep * i)
-            pe[i] = popen.popen(self.mec, self.tres, c[i])
-            pi[i] = popen.popen(self.mec, 0, c[i])
+            pe[i] = popen.Popen(self.mec, self.tres, c[i])
+            pi[i] = popen.Popen(self.mec, 0, c[i])
         c = c * 1000000 # x axis in mikroMolar scale
 
         self.axes.clear()
