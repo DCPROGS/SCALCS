@@ -36,6 +36,7 @@ import dataset
 import dcio
 import pdfs
 import samples
+import scplotlib as scpl
 
 class QMatGUI(QMainWindow):
     def __init__(self, parent=None):
@@ -120,7 +121,7 @@ class QMatGUI(QMainWindow):
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.mplTools = NavigationToolbar(self.canvas, self.mainFrame)
-        mscale.register_scale(SquareRootScale)
+        mscale.register_scale(scpl.SquareRootScale)
 
         self.textBox = QTextBrowser()
         # Set here if printout to TextBox only or also to file or console.
@@ -442,77 +443,16 @@ class QMatGUI(QMainWindow):
         self.axes.yaxis.set_ticks_position('left')
         #self.axes.set_xlabel('Agonist concentration, mikroM')
         self.canvas.draw()
-
+        
     def onPlotOpenTimePDF(self):
         """
         Display open time probability density function.
         """
-
-        self.textBox.append('\n\t===== OPEN TIME PDF =====')
-        self.textBox.append('Agonist concentration = {0:.6f} mikroM'.
-            format(self.conc * 1000000))
-        self.textBox.append('Resolution = {0:.2f} mikrosec'.
-            format(self.tres * 1000000))
-        self.textBox.append('Ideal pdf- red dashed line.')
-        self.textBox.append('Exact pdf- blue solid line.')
-        self.textBox.append('Asymptotic pdf- green solid line.')
-
         self.mec.set_eff('c', self.conc)
-        open = True
-
         scl.printout_occupancies(self.mec, output=self.log)
         scl.printout_distributions(self.mec, self.tres, output=self.log)
-
-        # Asymptotic pdf
-        #roots = scl.asymptotic_roots(self.mec, self.tres, open)
-        roots = scl.asymptotic_roots(self.tres, 
-            self.mec.QAA, self.mec.QFF, self.mec.QAF, self.mec.QFA,
-            self.mec.kA, self.mec.kF)
-
-        tmax = (-1 / roots.max()) * 20
-        tmin = 0.00001 # 10 mikrosec
-        points = 512
-        step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
-        t = np.zeros(points)
-
-        # Ideal pdf.
-        f = 0.0
-        tau, area = scl.ideal_dwell_time_pdf_components(self.mec.QAA,
-            qml.phiA(self.mec))
-        for i in range(self.mec.kA):
-            f += area[i] * np.exp(-self.tres / tau[i])
-        fac = 1 / f # Scale factor.
-        ipdf = np.zeros(points)
-        for i in range(points):
-            t[i] = tmin * pow(10, (i * step))
-            ipdf[i] = t[i] * scl.ideal_dwell_time_pdf(t[i],
-                self.mec.QAA, qml.phiA(self.mec)) * fac
-
-        # Asymptotic pdf
-        GAF, GFA = qml.iGs(self.mec.Q, self.mec.kA, self.mec.kF)
-        #areas = scl.asymptotic_areas(self.mec, self.tres, roots, open)
-        areas = scl.asymptotic_areas(self.tres, roots,
-            self.mec.QAA, self.mec.QFF, self.mec.QAF, self.mec.QFA,
-            self.mec.kA, self.mec.kF, GAF, GFA)
-        
-        apdf = np.zeros(points)
-        for i in range(points):
-            apdf[i] = t[i] * pdfs.expPDF(t[i] - self.tres, -1 / roots, areas)
-
-        # Exact pdf
-        eigvals, gamma00, gamma10, gamma11 = scl.exact_GAMAxx(self.mec,
-            self.tres, open)
-        epdf = np.zeros(points)
-        for i in range(points):
-            epdf[i] = (t[i] * scl.exact_pdf(t[i], self.tres,
-                roots, areas, eigvals, gamma00, gamma10, gamma11))
-
-        t = t * 1000 # x scale in millisec
-        self.axes.clear()
-        self.axes.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
-        self.axes.set_yscale('sqrtscale')
-        self.axes.xaxis.set_ticks_position('bottom')
-        self.axes.yaxis.set_ticks_position('left')
+        self.axes = scpl.open_time_pdf(self.mec, self.tres, self.conc,
+            self.axes, output=self.log)
         self.canvas.draw()
 
     def onPlotSubsetTimePDF(self):
@@ -1110,57 +1050,3 @@ class AboutDlg(QDialog):
         movie_screen.setMovie(movie)
         movie.start()
         return movie_screen
-
-class SquareRootScale(mscale.ScaleBase):
-    """
-    Class for generating sqare root scaled axis for probability density
-    function plots.
-    """
-
-    name = 'sqrtscale'
-    def __init__(self, axis, **kwargs):
-        mscale.ScaleBase.__init__(self)
-    def get_transform(self):
-        """
-        Set the actual transform for the axis coordinates.
-        """
-        return self.SqrTransform()
-    def set_default_locators_and_formatters(self, axis):
-        """
-        Set the locators and formatters to reasonable defaults.
-        """
-        axis.set_major_formatter(ticker.ScalarFormatter())
-
-    class SqrTransform(mtransforms.Transform):
-        """
-        """
-        input_dims = 1
-        output_dims = 1
-        is_separable = True
-
-        def __init__(self):
-            mtransforms.Transform.__init__(self)
-        def transform(self, a):
-            """
-            Take numpy array and return transformed copy.
-            """
-            return np.sqrt(a)
-        def inverted(self):
-            """
-            Get inverse transform.
-            """
-            return SquareRootScale.InvertedSqrTransform()
-
-    class InvertedSqrTransform(mtransforms.Transform):
-        """
-        """
-        input_dims = 1
-        output_dims = 1
-        is_separable = True
-
-        def __init__(self):
-            mtransforms.Transform.__init__(self)
-        def transform(self, a):
-            return np.power(a, 2)
-        def inverted(self):
-            return SquareRootScale.SqrTransform()

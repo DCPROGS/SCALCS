@@ -3,6 +3,7 @@
 Example of realistic concentration jump calculation.
 """
 
+import sys
 import matplotlib.pyplot as plt
 from dcpyps import samples
 from dcpyps import rcj
@@ -10,6 +11,7 @@ from dcpyps import rcj
 if __name__ == "__main__":
 
     mec = samples.CH82()
+    sys.stdout.write('%s' % mec)
 
     # Here one can tweak the parameters of the jump.
     jump_params = {
@@ -23,7 +25,7 @@ if __name__ == "__main__":
     
     for rise in jump_params['rise_time']:
 
-        print 'Calculating jump with %s microsec rise...' %(rise)
+        print '\nCalculating jump with %s microsec rise...' %(rise)
         
         rcj.printout(mec, jump_params)
 

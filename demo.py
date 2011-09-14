@@ -7,7 +7,12 @@ nH parameters.
 DCMAJOR = 0
 DCMINOR = 1
 
-import matplotlib.pyplot as plt
+
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib import scale as mscale
+except:
+    raise ImportError("matplotlib module is missing")
 import argparse
 import sys
 import os
@@ -18,10 +23,14 @@ try:
 except:
     HASTK = False
 
+import numpy as np
+
 from dcpyps import scalcslib as scl
 from dcpyps import scplotlib as scpl
 from dcpyps import io
 from dcpyps import samples
+from dcpyps import popen
+from dcpyps import scburst
 
 def create_parser():
     parser = argparse.ArgumentParser(
@@ -107,11 +116,15 @@ def console_demo(demomec):
     tmin = tres
     tmax = 100
 
-    #     POPEN CURVE CALCULATIONS
-    sys.stdout.write('\nCalculating Popen curve parameters:\n')
-    text1, text2, c, pe, pi = scpl.get_Popen_plot(demomec, tres, cmin, cmax)
+    demomec.set_eff('c', conc)
 
-    sys.stdout.write(text1 + text2 + '\n')
+    #     POPEN CURVE CALCULATIONS
+    sys.stdout.write('\n\nCalculating Popen curve parameters:')
+    popen.printout(demomec, tres)
+    c, pe, pi = scpl.get_Popen_plot(demomec, tres, cmin, cmax)
+
+    mscale.register_scale(scpl.SquareRootScale)
+
     plt.subplot(221)
     plt.semilogx(c, pe, 'b-', c, pi, 'r--')
     plt.ylabel('Popen')
@@ -119,19 +132,19 @@ def console_demo(demomec):
     plt.title('Apparent and ideal Popen curves')
 
     #     BURST CALCULATIONS
-    sys.stdout.write('\nCalculating burst properties:\n')
-    sys.stdout.write('Agonist concentration = %e M\n' %conc)
-    text1, t, fbst = scpl.get_burstlen_pdf(demomec, conc, tmin, tmax)
-    sys.stdout.write(text1 + '\n')
+    sys.stdout.write('\n\nCalculating burst properties:')
+    sys.stdout.write('\nAgonist concentration = %e M' %conc)
+    scburst.printout(demomec)
+
+    t, fbst = scpl.get_burstlen_pdf(demomec, conc, tmin, tmax)
     plt.subplot(222)
     plt.semilogx(t, fbst, 'b-')
     plt.ylabel('fbst(t)')
-    plt.xlabel('burst length, s')
+    plt.xlabel('burst length, ms')
     plt.title('The burst length pdf')
 
     # Calculate mean number of openings per burst.
-    text1, r, Pr = scpl.get_burstopenings_distr(demomec, conc)
-    sys.stdout.write(text1 + '\n')
+    r, Pr = scpl.get_burstopenings_distr(demomec, conc)
     # Plot distribution of number of openings per burst
     plt.subplot(223)
     plt.plot(r, Pr,'ro')
@@ -140,17 +153,23 @@ def console_demo(demomec):
     plt.title('Openings per burst')
     plt.axis([0, max(r)+1, 0, 1])
 
-    cmin = 1e-6    # in M
-    cmax = 1e-2    # in M
-    c, b = scpl.get_burstlen_conc_plot(demomec, cmin, cmax)
-    plt.subplot(224)
-    #if mec.fastblk:
-    #    plt.plot(c, b, 'b-', c, blk, 'g-')
-    #else:
-    plt.plot(c, b, 'b-')
-    plt.ylabel('Mean burst length, ms')
-    plt.xlabel('Concentration, mM')
-    plt.title('Mean burst length')
+#    cmin = 1e-6    # in M
+#    cmax = 1e-2    # in M
+#    c, b = scpl.get_burstlen_conc_plot(demomec, cmin, cmax)
+#    plt.subplot(224)
+#    #if mec.fastblk:
+#    #    plt.plot(c, b, 'b-', c, blk, 'g-')
+#    #else:
+#    plt.plot(c, b, 'b-')
+#    plt.ylabel('Mean burst length, ms')
+#    plt.xlabel('Concentration, mM')
+#    plt.title('Mean burst length')
+
+    #     OPEN TIME DISTRIBUTION
+    sys.stdout.write('\n\nCalculating open and shut time distributions:')
+    scl.printout_occupancies(demomec)
+    scl.printout_distributions(demomec, tres)
+    scpl.open_time_pdf(demomec, tres, conc, plt.subplot(224))
 
     plt.subplots_adjust(left=None, bottom=0.1, right=None, top=None,
         wspace=0.4, hspace=0.5)
