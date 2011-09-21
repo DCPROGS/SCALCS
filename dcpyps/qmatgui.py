@@ -87,6 +87,11 @@ class QMatGUI(QMainWindow):
             plotBurstOpeningDistrAction, plotBurstOpeningDistrActionCond,
             plotBurstLenVConcAction, plotJumpAction))
 
+        printOutMenu = self.menuBar().addMenu('&Printout')
+        printOutSaveAction = self.createAction("&Save", self.onPrintOutSave)
+        self.addActions(printOutMenu, (printOutSaveAction,
+            None))
+
 # UNCOMMENT NEXT LINES TO ENABLE DATA DISTRIBUTION PLOTTING
 #        dataMenu = self.menuBar().addMenu('&Data')
 #        openScanAction = self.createAction("&Load SC record", self.onLoadData)
@@ -377,17 +382,18 @@ class QMatGUI(QMainWindow):
         if dialog.exec_():
             jpar = dialog.return_par()
             
-        self.textBox.append('\n===== REALISTIC CONCENTRATION JUMP =====')
-        self.textBox.append('Concentration profile- green solid line.')
-        self.textBox.append('Relaxation- blue solid line.')
-        self.textBox.append('\nConcentration pulse profile:')
-        self.textBox.append('Concentration = {0:.3f} mM'
+        self.txtPltBox.clear()
+        self.txtPltBox.append('===== REALISTIC CONCENTRATION JUMP =====')
+        self.txtPltBox.append('Concentration profile- green solid line.')
+        self.txtPltBox.append('Relaxation- blue solid line.')
+        self.txtPltBox.append('\nConcentration pulse profile:')
+        self.txtPltBox.append('Concentration = {0:.3f} mM'
             .format(jpar['peak_conc'] * 1000))
-        self.textBox.append('10- 90% rise time = {0:.0f} microsec'
+        self.txtPltBox.append('10- 90% rise time = {0:.0f} microsec'
             .format(jpar['rise_time']))
-        self.textBox.append('Pulse width = {0:.1f} millisec'
+        self.txtPltBox.append('Pulse width = {0:.1f} millisec'
             .format(jpar['pulse_width'] * 0.001))
-        self.textBox.append("---\n")
+        self.txtPltBox.append("---\n")
         
         # TODO: get slowest relaxation tau and automaticaly calculate
         # record length.
@@ -412,6 +418,7 @@ class QMatGUI(QMainWindow):
         Display Popen curve.
         """
 
+        self.txtPltBox.clear()
         self.txtPltBox.append('\t===== Popen PLOT =====')
         self.txtPltBox.append('Resolution = {0:.2f} mikrosec'.
             format(self.tres * 1000000))
@@ -622,6 +629,23 @@ class QMatGUI(QMainWindow):
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
+
+    def onPrintOutSave(self):
+        """
+        """
+        printOutFilename = QFileDialog.getSaveFileName(self,
+                "Save as PRT file...", ".prt",
+                "PRT files (*.prt)")
+
+        self.textBox.selectAll()
+        text = self.textBox.toPlainText()
+        fout = open(printOutFilename,'w')
+        fout.write(text)
+        fout.close()
+
+        self.txtPltBox.clear()
+        self.txtPltBox.append('Saved printout file:')
+        self.txtPltBox.append(printOutFilename)
 
     def onHelpAbout(self):
         """
