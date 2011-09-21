@@ -33,6 +33,7 @@ build/*
 dist
 dist/*
 nbproject
+nbproject.*
 nbproject/*
 .spyderproject
 
