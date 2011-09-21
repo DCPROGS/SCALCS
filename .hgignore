@@ -34,6 +34,7 @@ dist
 dist/*
 nbproject
 nbproject/*
+.spyderproject
 
 # doc build
 
