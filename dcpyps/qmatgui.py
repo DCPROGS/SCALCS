@@ -56,8 +56,10 @@ class QMatGUI(QMainWindow):
         loadFromMecFileAction = self.createAction("&From Mec File...",
             self.onLoadMecFile,
             None, "loadfrommecfile", "Load from Mec file")
+        quitAction = self.createAction("&Quit", self.close,
+            "Ctrl+Q", "appquit", "Close the application")
         self.addActions(loadMenu, (loadDemoAction,
-            loadFromMecFileAction))
+            loadFromMecFileAction, quitAction))
 
         plotMenu = self.menuBar().addMenu('&Plot')
         plotPopenAction = self.createAction("&Popen curve", self.onPlotPopen)
