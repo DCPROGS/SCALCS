@@ -7,10 +7,8 @@ nH parameters.
 DCMAJOR = 0
 DCMINOR = 1
 
-
 try:
     import matplotlib.pyplot as plt
-    from matplotlib import scale as mscale
 except:
     raise ImportError("matplotlib module is missing")
 import argparse
@@ -23,11 +21,9 @@ try:
 except:
     HASTK = False
 
-import numpy as np
-
 from dcpyps import scalcslib as scl
 from dcpyps import scplotlib as scpl
-from dcpyps import io
+from dcpyps import dcio
 from dcpyps import samples
 from dcpyps import popen
 from dcpyps import scburst
@@ -75,12 +71,12 @@ def process_args(args):
             sys.stderr.write("Couldn't find file %s. Exiting now.\n" % mecfn)
             sys.exit(1)
 
-        version, meclist, max_mecnum = io.mec_get_list(mecfn)
+        version, meclist, max_mecnum = dcio.mec_get_list(mecfn)
         sys.stdout.write('mecfile: %s\n' % mecfn)
         sys.stdout.write('version: %s\n' % version)
-        mecnum, ratenum = io.mec_choose_from_list(meclist, max_mecnum)
+        mecnum, ratenum = dcio.mec_choose_from_list(meclist, max_mecnum)
         sys.stdout.write('\nRead rate set #%d of mec #%d\n' % (ratenum+1, mecnum))
-        demomec = io.mec_load(mecfn, meclist[ratenum][0])
+        demomec = dcio.mec_load(mecfn, meclist[ratenum][0])
 
     return demomec
 
@@ -95,7 +91,7 @@ def file_dialog():
 
     root = Tk.Tk()
     mecfile = tkFileDialog.askopenfilename(
-        initialdir='/home/remis/pDC/data',
+        initialdir='',
         filetypes=[("DC mec", "*.mec"),("DC mec", "*.MEC"),
                    ("all files", "*")])
     root.destroy()
@@ -106,24 +102,15 @@ def console_demo(demomec):
 
     sys.stdout.write('%s' % demomec)
 
-    tres = 0.00004  # resolution in seconds
+    tres = 0.0001  # resolution in seconds
     demomec.fastBlk = False
     demomec.KBlk = 0.01
-
     conc = 100e-9    # 100 nM
-    cmin = 100e-9
-    cmax = 0.01
-    tmin = tres
-    tmax = 100
-
-    demomec.set_eff('c', conc)
 
     #     POPEN CURVE CALCULATIONS
     sys.stdout.write('\n\nCalculating Popen curve parameters:')
     popen.printout(demomec, tres)
-    c, pe, pi = scpl.get_Popen_plot(demomec, tres, cmin, cmax)
-
-    mscale.register_scale(scpl.SquareRootScale)
+    c, pe, pi = scpl.Popen(demomec, tres)
 
     plt.subplot(221)
     plt.semilogx(c, pe, 'b-', c, pi, 'r--')
@@ -131,45 +118,49 @@ def console_demo(demomec):
     plt.xlabel('Concentration, M')
     plt.title('Apparent and ideal Popen curves')
 
+    demomec.set_eff('c', conc)
+
     #     BURST CALCULATIONS
     sys.stdout.write('\n\nCalculating burst properties:')
     sys.stdout.write('\nAgonist concentration = %e M' %conc)
     scburst.printout(demomec)
 
-    t, fbst = scpl.get_burstlen_pdf(demomec, conc, tmin, tmax)
+    t, fbst = scpl.burst_length_pdf(demomec)
     plt.subplot(222)
     plt.semilogx(t, fbst, 'b-')
     plt.ylabel('fbst(t)')
     plt.xlabel('burst length, ms')
     plt.title('The burst length pdf')
 
-    # Calculate mean number of openings per burst.
-    r, Pr = scpl.get_burstopenings_distr(demomec, conc)
-    # Plot distribution of number of openings per burst
-    plt.subplot(223)
-    plt.plot(r, Pr,'ro')
-    plt.ylabel('Pr')
-    plt.xlabel('Openings per burst')
-    plt.title('Openings per burst')
-    plt.axis([0, max(r)+1, 0, 1])
-
-#    cmin = 1e-6    # in M
-#    cmax = 1e-2    # in M
-#    c, b = scpl.get_burstlen_conc_plot(demomec, cmin, cmax)
-#    plt.subplot(224)
-#    #if mec.fastblk:
-#    #    plt.plot(c, b, 'b-', c, blk, 'g-')
-#    #else:
-#    plt.plot(c, b, 'b-')
-#    plt.ylabel('Mean burst length, ms')
-#    plt.xlabel('Concentration, mM')
-#    plt.title('Mean burst length')
+#    # Calculate mean number of openings per burst.
+#    r, Pr = scpl.get_burstopenings_distr(demomec, conc)
+#    # Plot distribution of number of openings per burst
+#    plt.subplot(223)
+#    plt.plot(r, Pr,'ro')
+#    plt.ylabel('Pr')
+#    plt.xlabel('Openings per burst')
+#    plt.title('Openings per burst')
+#    plt.axis([0, max(r)+1, 0, 1])
 
     #     OPEN TIME DISTRIBUTION
     sys.stdout.write('\n\nCalculating open and shut time distributions:')
     scl.printout_occupancies(demomec)
     scl.printout_distributions(demomec, tres)
-    scpl.open_time_pdf(demomec, tres, conc, plt.subplot(224))
+    t, ipdf, epdf, apdf = scpl.open_time_pdf(demomec, tres)
+
+    plt.subplot(223)
+    plt.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
+    plt.ylabel('fopen(t)')
+    plt.xlabel('Open time, ms')
+    plt.title('The open time pdf')
+
+    #     SHUT TIME DISTRIBUTION
+    t, ipdf, epdf, apdf = scpl.shut_time_pdf(demomec, tres)
+    plt.subplot(224)
+    plt.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
+    plt.ylabel('fshut(t)')
+    plt.xlabel('Shut time, ms')
+    plt.title('The shut time pdf')
 
     plt.subplots_adjust(left=None, bottom=0.1, right=None, top=None,
         wspace=0.4, hspace=0.5)

@@ -174,6 +174,9 @@ class QMatGUI(QMainWindow):
         fastBlkBox.addStretch()
         plotSetLayout.addLayout(fastBlkBox)
 
+        self.txtPltBox = QTextBrowser()
+        plotSetLayout.addWidget(self.txtPltBox)
+
         leftVBox = QVBoxLayout()
         leftVBox.addLayout(plotSetLayout)
         leftVBox.addWidget(self.canvas)
@@ -410,31 +413,33 @@ class QMatGUI(QMainWindow):
         Display Popen curve.
         """
 
-        self.textBox.append('\n\n\t===== Popen PLOT =====')
-        self.textBox.append('Resolution = {0:.2f} mikrosec'.
+        self.txtPltBox.append('\t===== Popen PLOT =====')
+        self.txtPltBox.append('Resolution = {0:.2f} mikrosec'.
             format(self.tres * 1000000))
-        self.textBox.append('Ideal curve- red dashed line.')
-        self.textBox.append('HJC curve- blue solid line.')
+        self.txtPltBox.append('Ideal curve- red dashed line.')
+        self.txtPltBox.append('HJC curve- blue solid line.')
 
         popen.printout(self.mec, self.tres, output=self.log)
 
-        iEC50 = popen.EC50(self.mec, 0)
-        cmin = iEC50 / 20 #20000000.0
-        cmax = iEC50 * 500 #/ 1000000.0
-        logstart = int(np.log10(cmin)) - 1
-        logend = int(np.log10(cmax)) - 1
-        decades = int(logend - logstart)
-        logstep = 0.01    # increase this if want more points per curve
-        points = int(decades / logstep + 1)
+#        iEC50 = popen.EC50(self.mec, 0)
+#        cmin = iEC50 / 20 #20000000.0
+#        cmax = iEC50 * 500 #/ 1000000.0
+#        logstart = int(np.log10(cmin)) - 1
+#        logend = int(np.log10(cmax)) - 1
+#        decades = int(logend - logstart)
+#        logstep = 0.01    # increase this if want more points per curve
+#        points = int(decades / logstep + 1)
+#
+#        c = np.zeros(points)
+#        pe = np.zeros(points)
+#        pi = np.zeros(points)
+#        for i in range(points):
+#            c[i] = pow(10, logstart + logstep * i)
+#            pe[i] = popen.Popen(self.mec, self.tres, c[i])
+#            pi[i] = popen.Popen(self.mec, 0, c[i])
+#        c = c * 1000000 # x axis in mikroMolar scale
 
-        c = np.zeros(points)
-        pe = np.zeros(points)
-        pi = np.zeros(points)
-        for i in range(points):
-            c[i] = pow(10, logstart + logstep * i)
-            pe[i] = popen.Popen(self.mec, self.tres, c[i])
-            pi[i] = popen.Popen(self.mec, 0, c[i])
-        c = c * 1000000 # x axis in mikroMolar scale
+        c, pe, pi = scpl.Popen(self.mec, self.tres)
 
         self.axes.clear()
         self.axes.semilogx(c, pe, 'b-', c , pi, 'r--')
@@ -448,58 +453,50 @@ class QMatGUI(QMainWindow):
         """
         Display open time probability density function.
         """
+        self.txtPltBox.clear()
+        self.txtPltBox.append('\t===== OPEN TIME PDF =====')
+        self.txtPltBox.append('Agonist concentration = {0:.6f} mikroM'.
+            format(self.conc * 1000000))
+        self.txtPltBox.append('Resolution = {0:.2f} mikrosec'.
+            format(self.tres * 1000000))
+        self.txtPltBox.append('Ideal pdf- red dashed line.')
+        self.txtPltBox.append('Exact pdf- blue solid line.')
+        self.txtPltBox.append('Asymptotic pdf- green solid line.')
+
         self.mec.set_eff('c', self.conc)
+
         scl.printout_occupancies(self.mec, output=self.log)
         scl.printout_distributions(self.mec, self.tres, output=self.log)
-        self.axes = scpl.open_time_pdf(self.mec, self.tres, self.conc,
-            self.axes, output=self.log)
+        
+        t, ipdf, epdf, apdf = scpl.open_time_pdf(self.mec, self.tres)
+
+        self.axes.clear()
+        self.axes.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
+        self.axes.set_yscale('sqrtscale')
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
 
     def onPlotSubsetTimePDF(self):
         """
         """
 
-        self.textBox.append('\n\t===== SUBSET TIME PDF =====')
-        self.textBox.append('Agonist concentration = {0:.6f} mikroM'.
+        self.txtPltBox.clear()
+        self.txtPltBox.append('\t===== SUBSET TIME PDF =====')
+        self.txtPltBox.append('Agonist concentration = {0:.6f} mikroM'.
             format(self.conc * 1000000))
-        self.textBox.append('Resolution = {0:.2f} mikrosec'.
+        self.txtPltBox.append('Resolution = {0:.2f} mikrosec'.
             format(self.tres * 1000000))
-        self.textBox.append('Subset life time pdf- blue solid line.')
-        self.textBox.append('Ideal pdf- red dashed line.')
+        self.txtPltBox.append('Ideal pdf- red dashed line.')
+        self.txtPltBox.append('Subset life time pdf- blue solid line.')
 
-        open = False
         self.mec.set_eff('c', self.conc)
+        # TODO: need dialog to enter state1 and state2
+        state1 = 8
+        state2 = 10
 
-        #tau, area = scl.get_ideal_pdf_components(self.mec, open)
-        if open:
-            tau, area = scl.ideal_dwell_time_pdf_components(self.mec.QAA,
-                qml.phiA(self.mec))
-        else:
-            tau, area = scl.ideal_dwell_time_pdf_components(self.mec.QFF,
-                qml.phiF(self.mec))
+        t, ipdf, spdf = scpl.subset_time_pdf(self.mec, self.tres, state1, state2)
 
-        tmax = tau.max() * 20
-        tmin = 0.00001 # 10 mikrosec
-        points = 512
-        step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
-        t = np.zeros(points)
-
-        # Ideal pdf.
-        f = 0.0
-        for i in range(self.mec.kF):
-            f += area[i] * np.exp(-self.tres / tau[i])
-        fac = 1 / f # Scale factor.
-        ipdf = np.zeros(points)
-        spdf = np.zeros(points)
-        for i in range(points):
-            t[i] = tmin * pow(10, (i * step))
-            #ipdf[i] = t[i] * scl.pdf_shut_time(self.mec, t[i]) * fac
-            ipdf[i] = t[i] * scl.ideal_dwell_time_pdf(t[i],
-                self.mec.QFF, qml.phiF(self.mec)) * fac
-            spdf[i] = t[i] * scl.ideal_subset_time_pdf(self.mec.Q, 8, 10, t[i]) * fac
-
-
-        t = t * 1000 # x scale in millisec
         self.axes.clear()
         self.axes.semilogx(t, spdf, 'b-', t, ipdf, 'r--')
         self.axes.set_yscale('sqrtscale')
@@ -507,69 +504,24 @@ class QMatGUI(QMainWindow):
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
 
-
-
     def onPlotShutTimePDF(self):
         """
         Display shut time probability density function.
         """
 
-        self.textBox.append('\n\t===== SHUT TIME PDF =====')
-        self.textBox.append('Agonist concentration = {0:.6f} mikroM'.
+        self.txtPltBox.clear()
+        self.txtPltBox.append('\t===== SHUT TIME PDF =====')
+        self.txtPltBox.append('Agonist concentration = {0:.6f} mikroM'.
             format(self.conc * 1000000))
-        self.textBox.append('Resolution = {0:.2f} mikrosec'.
+        self.txtPltBox.append('Resolution = {0:.2f} mikrosec'.
             format(self.tres * 1000000))
-        self.textBox.append('Ideal pdf- red dashed line.')
-        self.textBox.append('Exact pdf- blue solid line.')
-        self.textBox.append('Asymptotic pdf- green solid line.')
+        self.txtPltBox.append('Ideal pdf- red dashed line.')
+        self.txtPltBox.append('Exact pdf- blue solid line.')
+        self.txtPltBox.append('Asymptotic pdf- green solid line.')
 
         self.mec.set_eff('c', self.conc)
-        open = False
+        t, ipdf, epdf, apdf = scpl.shut_time_pdf(self.mec, self.tres)
 
-        # Asymptotic pdf
-        #roots = scl.asymptotic_roots(self.mec, self.tres, open)
-        roots = scl.asymptotic_roots(self.tres,
-            self.mec.QFF, self.mec.QAA, self.mec.QFA, self.mec.QAF,
-            self.mec.kF, self.mec.kA)
-
-        tmax = (-1 / roots.max()) * 20
-        tmin = 0.00001 # 10 mikrosec
-        points = 512
-        step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
-        t = np.zeros(points)
-
-        # Ideal pdf.
-        tau, area = scl.ideal_dwell_time_pdf_components(self.mec.QFF,
-            qml.phiF(self.mec))
-        f = 0.0
-        for i in range(self.mec.kF):
-            f += area[i] * np.exp(-self.tres / tau[i])
-        fac = 1 / f # Scale factor.
-        ipdf = np.zeros(points)
-        for i in range(points):
-            t[i] = tmin * pow(10, (i * step))
-            ipdf[i] = t[i] * scl.ideal_dwell_time_pdf(t[i],
-                self.mec.QFF, qml.phiF(self.mec)) * fac
-
-        # Asymptotic pdf
-        GAF, GFA = qml.iGs(self.mec.Q, self.mec.kA, self.mec.kF)
-        #areas = scl.asymptotic_areas(self.mec, self.tres, roots, open)
-        areas = scl.asymptotic_areas(self.tres, roots,
-            self.mec.QFF, self.mec.QAA, self.mec.QFA, self.mec.QAF,
-            self.mec.kF, self.mec.kA, GFA, GAF)
-        apdf = np.zeros(points)
-        for i in range(points):
-            apdf[i] = t[i] * pdfs.expPDF(t[i] - self.tres, -1 / roots, areas)
-
-        # Exact pdf
-        eigvals, gamma00, gamma10, gamma11 = scl.exact_GAMAxx(self.mec,
-            self.tres, open)
-        epdf = np.zeros(points)
-        for i in range(points):
-            epdf[i] = (t[i] * scl.exact_pdf(t[i], self.tres,
-                roots, areas, eigvals, gamma00, gamma10, gamma11))
-
-        t = t * 1000 # x scale in millisec
         self.axes.clear()
         self.axes.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
         self.axes.set_yscale('sqrtscale')
@@ -581,31 +533,15 @@ class QMatGUI(QMainWindow):
         """
         Display the burst length distribution.
         """
-        self.textBox.append('\n\t===== BURST LENGTH PDF =====')
-        self.textBox.append('Agonist concentration = {0:.6f} microM'.
+        self.txtPltBox.clear()
+        self.txtPltBox.append('\t===== BURST LENGTH PDF =====')
+        self.txtPltBox.append('Agonist concentration = {0:.6f} microM'.
             format(self.conc * 1000000))
-        self.textBox.append('Resolution = {0:.2f} microsec'.
-            format(self.tres * 1000000))
-        self.textBox.append('Ideal pdf- blue solid line.')
+        self.txtPltBox.append('Ideal pdf- blue solid line.')
 
         self.mec.set_eff('c', self.conc)
-        
         scburst.printout(self.mec, output=self.log)
-        
-        eigs, w = scburst.length_pdf_components(self.mec)
-
-        points = 512
-        tmin = 0.00001
-        tmax = 20 / min(eigs)
-        step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
-
-        t = np.zeros(points)
-        fbst = np.zeros(points)
-        for i in range(points):
-            t[i] = tmin * pow(10, (i * step))
-            fbst[i] = t[i] * scburst.length_pdf(self.mec, t[i])
-        t = t * 1000 # x axis in millisec
-        fbrst = fbst
+        t, fbrst = scpl.burst_length_pdf(self.mec)
         
         self.axes.clear()
         self.axes.semilogx(t, fbrst, 'b-')
@@ -618,39 +554,21 @@ class QMatGUI(QMainWindow):
         """
         Display the conditional burst length distribution.
         """
-        self.textBox.append('\n\t===== CONDITIONAL BURST LENGTH PDF =====')
-        self.textBox.append('Agonist concentration = {0:.6f} microM'.
+        self.txtPltBox.clear()
+        self.txtPltBox.append('===== BURST LENGTH PDF ' +
+            '\nCONDITIONAL ON STARTING STATE =====')
+        self.txtPltBox.append('Agonist concentration = {0:.6f} microM'.
             format(self.conc * 1000000))
-        self.textBox.append('Resolution = {0:.2f} microsec'.
-            format(self.tres * 1000000))
-        self.textBox.append('Ideal pdf- blue solid line.')
+        self.txtPltBox.append('Ideal pdf- blue solid line.')
 
         self.mec.set_eff('c', self.conc)
 
-        scburst.printout(self.mec, output=self.log)
-
-        tau, area = scburst.length_pdf_components(self.mec)
-
-        points = 512
-        tmin = 0.00001
-        tmax = max(tau) * 20
-        step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
-
-        t = np.zeros(points)
-        fbst = np.zeros(points)
-        cfbst = np.zeros((points, self.mec.kA))
-        for i in range(points):
-            t[i] = tmin * pow(10, (i * step))
-            fbst[i] = t[i] * scburst.length_pdf(self.mec, t[i])
-            cfbst[i] = t[i] * scburst.length_cond_pdf(self.mec, t[i])
-        t = t * 1000 # x axis in millisec
-        cfbrst = cfbst.transpose()
-
+        t, fbst, cfbst = scpl.burst_length_pdf(self.mec, conditional=True)
         self.axes.clear()
 
         # TODO: only 6 colours are available now.        
         for i in range(self.mec.kA):
-            self.axes.semilogx(t, cfbrst[i], self.my_colour[i]+'-',
+            self.axes.semilogx(t, cfbst[i], self.my_colour[i]+'-',
                 label="State {0:d}".format(i+1))
         self.axes.semilogx(t, fbst, 'k-', label="Not conditional")
         handles, labels = self.axes.get_legend_handles_labels()
@@ -666,13 +584,13 @@ class QMatGUI(QMainWindow):
         Display the distribution of number of openings per burst.
         """
 
-        self.mec.set_eff('c', self.conc)
+        self.txtPltBox.clear()
+        self.txtPltBox.append('===== DISTRIBUTION OF NUMBER OF OPENINGS PER BURST =====')
 
+        self.mec.set_eff('c', self.conc)
+        # TODO: need dialog to enter n
         n = 10
-        r = np.arange(1, n+1)
-        Pr = np.zeros(n)
-        for i in range(n):
-            Pr[i] = scburst.openings_distr(self.mec, r[i])
+        r, Pr = scpl.burst_openings_pdf(self.mec, n)
 
         self.axes.clear()
         self.axes.plot(r, Pr,'ro')
@@ -686,17 +604,13 @@ class QMatGUI(QMainWindow):
         Display the conditional distribution of number of openings per burst.
         """
 
-        self.mec.set_eff('c', self.conc)
+        self.txtPltBox.clear()
+        self.txtPltBox.append('===== DISTRIBUTION OF NUMBER OF OPENINGS PER BURST' +
+        '\nCONDITIONAL ON STARTING STATE=====')
 
+        self.mec.set_eff('c', self.conc)
         n = 10
-        r = np.arange(1, n+1)
-        Pr = np.zeros(n)
-        for i in range(n):
-            Pr[i] = scburst.openings_distr(self.mec, r[i])
-        cPr = np.zeros((n, self.mec.kA))
-        for i in range(n):
-            cPr[i] = scburst.openings_cond_distr_depend_on_start_state(self.mec, r[i])
-        cPr = cPr.transpose()
+        r, Pr, cPr = scpl.burst_openings_pdf(self.mec, n, conditional=True)
 
         self.axes.clear()
         # TODO: only 6 colours are available now.
@@ -715,34 +629,17 @@ class QMatGUI(QMainWindow):
         """
         Display mean burst length versus concentration plot.
         """
-        self.axes.clear()
+        self.txtPltBox.clear()
+        self.txtPltBox.append('===== MEAN BURST LENGTH VERSUS CONCENTRATION =====')
+        self.txtPltBox.append('Dashed line: corrected for fast block.')
 
+        # TODO: need dialog to enter concentration range.
         cmin = 10e-9
         cmax = 0.1
-        points = 100
-        step = (cmax - cmin)/(points - 1)
-        c = np.zeros(points)
-        br = np.zeros(points)
+        c, br, brblk = scpl.burst_length_versus_conc_plot(self.mec, cmin, cmax)
 
-        if self.mec.fastblk:
-            brblk = np.zeros(points)
-            for i in range(points):
-                c[i] = cmin + step * i
-                self.mec.set_eff('c', c[i])
-                br[i] = scburst.length_mean(self.mec)
-                brblk[i] = br[i] * (1 + c[i] / self.mec.KBlk)
-            c = c * 1000000 # x axis scale in mikroMoles
-            br = br * 1000
-            brblk= brblk * 1000
-            self.axes.plot(c, br,'b-', c, brblk, 'g-')
-        else:
-            for i in range(points):
-                c[i] = cmin + step * i
-                self.mec.set_eff('c', c[i])
-                br[i] = scburst.length_mean(self.mec)
-            c = c * 1000000 # x axis scale in mikroMoles
-            br = br * 1000
-            self.axes.plot(c, br,'b-')
+        self.axes.clear()
+        self.axes.plot(c, br,'r-', c, brblk, 'r--')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
