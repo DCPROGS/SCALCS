@@ -37,13 +37,19 @@ and maximum likelihood fitting of mechanisms.
 Phil Trans R Soc Lond A 354, 2555-2590.
 """
 
-import qmatlib
-import scalcslib
-import scplotlib
-import scburst
+import bisectHJC
+import dcio
+import dcpypsrc
 from mechanism import * # this should really be in the namespace
                         # so that dcpyps.Mechanism is something like
                         # numpy.array
-import dcio
-import samples
+import pdfs
+import popen
+import qmatgui
+import qmatlib
 import rcj
+import scalcslib
+import scburst
+import scplotlib
+
+import samples
