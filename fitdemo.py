@@ -11,7 +11,7 @@ import numpy as np
 from dcpyps import scalcslib as scl
 from dcpyps import optimize
 from dcpyps import dataset
-from dcpyps import io
+from dcpyps import dcio
 from dcpyps import samples
 
 # profiler 
@@ -39,8 +39,8 @@ def main():
 
     # Load data.
     filename = "./dcpyps/samples/CH82.scn"
-    ioffset, nint, calfac, header = io.scn_read_header(filename)
-    tint, iampl, iprops = io.scn_read_data(filename, ioffset, nint, calfac)
+    ioffset, nint, calfac, header = dcio.scn_read_header(filename)
+    tint, iampl, iprops = dcio.scn_read_data(filename, ioffset, nint, calfac)
     rec1 = dataset.TimeSeries(filename, header, tint, iampl, iprops)
 
     # Impose resolution, get open/shut times and bursts.

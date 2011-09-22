@@ -100,8 +100,8 @@ class TraceGUI(QMainWindow):
 
         self.filename = QFileDialog.getOpenFileName(self,
             "Open Data File...", "", "Consam files (*.ssd *.SSD *.dat *.DAT)")
-        self.h = io.ssd_read_header (self.filename)
-        self.trace = io.ssd_read_data(self.filename, self.h)
+        self.h = dcio.ssd_read_header (self.filename)
+        self.trace = dcio.ssd_read_data(self.filename, self.h)
 
         self.calfac = self.h['calfac']
         self.srate = self.h['srate']
@@ -120,8 +120,8 @@ class TraceGUI(QMainWindow):
 
         self.filename = QFileDialog.getOpenFileName(self,
             "Open Data File...", "", "Axon files (*.abf)")
-        self.h = io.abf_read_header(self.filename)
-        self.trace = io.abf_read_data(self.filename, self.h)
+        self.h = dcio.abf_read_header(self.filename)
+        self.trace = dcio.abf_read_data(self.filename, self.h)
 
         self.points_total = self.h['IActualAcqLength'] / self.h['nADCNumChannels']
         self.srate = 1 / (self.h['fADCSampleInterval'] * self.h['nADCNumChannels'])
@@ -150,10 +150,10 @@ class TraceGUI(QMainWindow):
                 self.h['filt'] = self.ffilter
                 self.h['idt'] = self.sample * 1e6
 
-            io.ssd_save(self.out_filename, self.h, self.trace)
+            dcio.ssd_save(self.out_filename, self.h, self.trace)
         elif self.file_type == 'abf':
-            h_conv = io.abf2ssd(self.h)
-            io.ssd_save(self.out_filename, h_conv, self.trace)
+            h_conv = dcio.abf2ssd(self.h)
+            dcio.ssd_save(self.out_filename, h_conv, self.trace)
 
     def onSliceTrace(self):
         """
