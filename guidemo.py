@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 """
 An example of Qt based GUI to display single channel related plots.
 """

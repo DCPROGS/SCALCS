@@ -51,5 +51,6 @@ import rcj
 import scalcslib
 import scburst
 import scplotlib
+import version
 
 import samples

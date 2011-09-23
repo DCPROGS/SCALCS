@@ -1,11 +1,8 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 """
 This script uses scalcslib module to calculate maxPopen, EC50 and
 nH parameters.
 """
-
-DCMAJOR = 0
-DCMINOR = 1
 
 try:
     import matplotlib.pyplot as plt
@@ -27,10 +24,11 @@ from dcpyps import dcio
 from dcpyps import samples
 from dcpyps import popen
 from dcpyps import scburst
+from dcpyps import version
 
 def create_parser():
     parser = argparse.ArgumentParser(
-        description='DC_PyPs %d.%d demo program.' %(DCMAJOR, DCMINOR))
+        description='DC_PyPs %s demo program.' % (version.full_version))
     parser.add_argument('-f', '--file', action='store', nargs=1, dest='file',
                         help='mechanism file (optional); ' \
                              'will use demo sample if not provided')
@@ -38,7 +36,7 @@ def create_parser():
                         default=False,
                         help='mechanism file')
     parser.add_argument('-v', '--version', action='version', 
-                        version='DC_PyPs %d.%d' %(DCMAJOR,DCMINOR), 
+                        version='DC_PyPs %s' %(version.full_version), 
                         help='print version information')
     
     return parser

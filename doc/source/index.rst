@@ -13,7 +13,6 @@ Contents:
 
    qmatlib.rst
    scalcslib.rst
-   cjumpslib.rst
    bisectHJC.rst
    popen.rst
    scburst.rst
