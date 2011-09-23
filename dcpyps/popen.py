@@ -286,4 +286,4 @@ def printout(mec, tres, output=sys.stdout, eff='c'):
     inH = nH(mec, 0)
     output.write('\n\nIdeal Popen curve:\nmaxPopen = {0:.3f}; '
         .format(imaxPopen) + ' EC50 = {0:.3f} mikroM; '
-        .format(iEC50 * 1000000) + ' nH = {0:.3f}'.format(inH))
+        .format(iEC50 * 1000000) + ' nH = {0:.3f}\n'.format(inH))
