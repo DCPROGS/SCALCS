@@ -11,11 +11,16 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   qmatlib.rst
-   scalcslib.rst
    bisectHJC.rst
+   dcio.rst
+   mechanism.rst
+   pdfs.rst
    popen.rst
+   qmatlib.rst
+   rcj.rst
+   scalcslib.rst
    scburst.rst
+   scplotlib.rst
 
 Indices and tables
 ==================

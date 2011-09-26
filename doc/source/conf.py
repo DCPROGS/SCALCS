@@ -13,8 +13,7 @@
 
 import sys, os
 sys.path.insert(0, os.path.abspath('../sphinxext'))
-sys.path.insert(0, os.path.abspath('../../'))
-from dcpyps import qmatlib
+sys.path.insert(0, os.path.abspath('../../dcpyps/'))
 
 import sphinx
 

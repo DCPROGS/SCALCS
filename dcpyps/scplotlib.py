@@ -386,7 +386,7 @@ def subset_time_pdf(mec, tres, state1, state2,
 
 class SquareRootScale(mscale.ScaleBase):
     """
-    Class for generating sqare root scaled axis for probability density
+    Class for generating square root scaled axis for probability density
     function plots.
     """
 

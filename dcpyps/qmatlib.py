@@ -181,7 +181,7 @@ def eGs(GAF, GFA, kA, kF, expQFF):
     Calculate eGAF, probabilities from transitions from apparently open to
     shut states regardles of when the transition occurs. Thease are Laplace
     transform of eGAF(t) when s=0. Used to calculat initial HJC vectors (HJC92).
-        eGAF*(s=0) = (I - GAF * (I - expQFF) * GFA)^-1 * GAF * expQFF
+    eGAF*(s=0) = (I - GAF * (I - expQFF) * GFA)^-1 * GAF * expQFF
     To caculate eGFA exhange A by F and F by A in function call.
 
     Parameters
@@ -192,7 +192,7 @@ def eGs(GAF, GFA, kA, kF, expQFF):
         A number of open states in kinetic scheme.
     kF : int
         A number of shut states in kinetic scheme.
-
+    
     Returns
     -------
     eGAF : array_like, shape (kA, kF)
@@ -274,7 +274,7 @@ def phiSub(Q, k1, k2):
 def phiHJC(eGAF, eGFA, kA):
     """
     Calculate initial HJC vector for openings by solving
-        phi*(I-eGAF*eGFA)=0 (Eq. 10, HJC92)
+    phi*(I-eGAF*eGFA)=0 (Eq. 10, HJC92)
     For shuttings exhange A by F and F by A in function call.
 
     Parameters

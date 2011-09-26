@@ -20,12 +20,9 @@ def mec_get_list(mecfile):
     -------
     version : int
         Version of mec file.
-    meclist : list
-        Each element is another list containing:
-        jstart : int
-            Start byte for mechanism in mefile.
-        mecnum : int
-            Mechanism sequence number in mecfile.
+    meclist : list; each element is another list containing
+        jstart : int; start byte for mechanism in mefile.
+        mecnum : int; mechanism sequence number in mecfile.
         mectitle : string
         ratetitle : string
     max_mecnum : int
@@ -85,12 +82,9 @@ def mec_choose_from_list(meclist, max_mecnum):
 
     Parameters
     ----------
-    meclist : list
-        Each element is another list containing:
-        jstart : int
-            Start byte for mechanism in mefile.
-        mecnum : int
-            Mechanism sequence number in mecfile.
+    meclist : list; each element is another list containing:
+        jstart : int; start byte for mechanism in mefile.
+        mecnum : int; mechanism sequence number in mecfile.
         mectitle : string
         ratetitle : string
     max_mecnum : int
