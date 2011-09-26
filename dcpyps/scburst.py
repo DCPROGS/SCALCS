@@ -281,6 +281,36 @@ def open_time_mean(mec):
     m = np.dot(np.dot(phiBurst(mec), -nplin.inv(VAA)), uA)[0]
     return m
 
+def first_opening_length_pdf_components(mec):
+    """
+    Calculate time constants and amplitudes for an ideal (no missed events)
+    pdf of first opening in a burst with 2 or more openings.
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    eigs : ndarray, shape(k, 1)
+        Time constants.
+    w : ndarray, shape(k, 1)
+        Component amplitudes.
+    """
+
+    uA = np.ones((mec.kA, 1))
+    eigs, A = qml.eigs(-mec.QAA)
+    GG = np.dot(mec.GAB, mec.GBA)
+    norm = np.dot(np.dot(phiBurst(mec), GG), uA)[0]
+
+    w = np.zeros(mec.kA)
+    for i in range(mec.kA):
+        w[i] = np.dot(np.dot(np.dot(np.dot(phiBurst(mec),
+            A[i]), (-mec.QAA)), GG), uA) / norm
+
+    return eigs, w
+
 def printout(mec, output=sys.stdout, eff='c'):
     """
     Output burst calculations into selected device (sys.stdout, printer, file,
@@ -347,9 +377,20 @@ def printout(mec, output=sys.stdout, eff='c'):
     output.write('\nMean from direct matrix calc = {0:.3f}'. format(mu))
 
     # # #
-#    output.write('\n\nPDF of first opening in a burst with 2 or more openings')
-#    output.write('\nf(t) =')
-#    output.write('\nterm\tw\trate (1/sec)\tarea (%)\ttau (ms)')
+    output.write('\n\nPDF of first opening in a burst with 2 or more openings')
+    output.write('\nf(open; r>1) =')
+    output.write('\nterm\tw\trate (1/sec)\ttau (ms)\tarea (%)')
+    eigs, w = first_opening_length_pdf_components(mec)
+    for i in range(mec.kA):
+        output.write('\n{0:d}'.format(i+1) +
+            '\t{0:.3f}'.format(w[i]) +
+            '\t{0:.1f}'.format(eigs[i]) +
+            '\t{0:.3f}'.format(1000 / eigs[i]) +
+            '\t{0:.3f}'.format(100 * w[i] / eigs[i]))
+    mean, sd = pdfs.expPDF_mean_sd(1 / eigs, w / eigs)
+    output.write('\nMean (ms) =\t {0:.3f}'.format(mean * 1000) +
+        '\tSD =\t {0:.3f}'.format(sd * 1000) +
+        '\tSD/mean =\t {0:.3f}'.format(sd / mean))
 
     # # #
     mop = open_time_mean(mec)
