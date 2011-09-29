@@ -261,6 +261,21 @@ def openings_cond_distr_depend_on_start_state(mec, r):
     vecPr = vecPr.transpose()
     return vecPr
 
+def open_time_total_pdf_components(mec):
+    """
+    Eq. 3.23, CH82
+    """
+
+    VAA = mec.QAA + np.dot(mec.QAB, mec.GBA)
+    eigs, A = qml.eigs(-VAA)
+    uA = np.ones((mec.kA, 1))
+
+    w = np.zeros(mec.kA)
+    for i in range(mec.kA):
+        w[i] = np.dot(np.dot(np.dot(phiBurst(mec), A[i]), (-VAA)), uA)
+
+    return eigs, w
+
 def open_time_mean(mec):
     """
     Calculate the mean total open time per burst (Eq. 3.26, CH82).
@@ -303,6 +318,22 @@ def shut_times_between_burst_pdf_components(mec):
 
     w = np.append(wB, wF)
     eigs = np.append(eigsB, eigsF)
+    return eigs, w
+
+def shut_time_total_pdf_components(mec):
+    """
+    Eq. 3.40, CH82
+    """
+
+    WBB = mec.QBB + np.dot(mec.QBA, mec.GAB)
+    eigs, A = qml.eigs(-WBB)
+    norm = 1 - np.dot(phiBurst(mec), endBurst(mec))[0]
+
+    w = np.zeros(mec.kB)
+    for i in range(mec.kB):
+        w[i] = np.dot(np.dot(np.dot(np.dot(phiBurst(mec), mec.GAB),
+            A[i]), (mec.QBA)), endBurst(mec)) / norm
+
     return eigs, w
 
 def first_opening_length_pdf_components(mec):
@@ -420,6 +451,43 @@ def printout(mec, output=sys.stdout, eff='c'):
         '\tSD/mean =\t {0:.3f}'.format(sd / mean))
 
     # # #
+    output.write('\n\nPDF of total open time per bursts')
+    output.write('\nf(open tot) =')
+    output.write('\nterm\tw\trate (1/sec)\ttau (ms)\tarea (%)')
+    eigs, w = open_time_total_pdf_components(mec)
+    for i in range(mec.kA):
+        output.write('\n{0:d}'.format(i+1) +
+            '\t{0:.3f}'.format(w[i]) +
+            '\t{0:.1f}'.format(eigs[i]) +
+            '\t{0:.3f}'.format(1000 / eigs[i]) +
+            '\t{0:.3f}'.format(100 * w[i] / eigs[i]))
+    mean, sd = pdfs.expPDF_mean_sd(1 / eigs, w / eigs)
+    output.write('\nMean (ms) =\t {0:.3f}'.format(mean * 1000) +
+        '\tSD =\t {0:.3f}'.format(sd * 1000) +
+        '\tSD/mean =\t {0:.3f}'.format(sd / mean))
+
+    mop = open_time_mean(mec)
+    output.write('\n\nThe mean total open time per burst = {0:.3f} '.
+        format(mop * 1000) + 'millisec')
+
+
+    # # #
+    output.write('\n\nPDF of total shut time per bursts')
+    output.write('\nf(gap tot) =')
+    output.write('\nterm\tw\trate (1/sec)\ttau (ms)\tarea (%)')
+    eigs, w = shut_time_total_pdf_components(mec)
+    for i in range(mec.kB):
+        output.write('\n{0:d}'.format(i+1) +
+            '\t{0:.3f}'.format(w[i]) +
+            '\t{0:.1f}'.format(eigs[i]) +
+            '\t{0:.3f}'.format(1000 / eigs[i]) +
+            '\t{0:.3f}'.format(100 * w[i] / eigs[i]))
+    mean, sd = pdfs.expPDF_mean_sd(1 / eigs, w / eigs)
+    output.write('\nMean (ms) =\t {0:.3f}'.format(mean * 1000) +
+        '\tSD =\t {0:.3f}'.format(sd * 1000) +
+        '\tSD/mean =\t {0:.3f}'.format(sd / mean))
+
+    # # #
     output.write('\n\nPDF of gaps between bursts')
     output.write('\nf(gap) =')
     output.write('\nterm\tw\trate (1/sec)\ttau (ms)\tarea (%)')
@@ -436,9 +504,6 @@ def printout(mec, output=sys.stdout, eff='c'):
         '\tSD/mean =\t {0:.3f}'.format(sd / mean))
 
     # # #
-    mop = open_time_mean(mec)
-    output.write('\n\nThe mean total open time per burst = {0:.3f} '.
-        format(mop * 1000) + 'millisec')
         
     bpop = mop / m
     output.write('\nPopen WITHIN BURST = (open time/bst)/(bst length)\
