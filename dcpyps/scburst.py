@@ -281,6 +281,30 @@ def open_time_mean(mec):
     m = np.dot(np.dot(phiBurst(mec), -nplin.inv(VAA)), uA)[0]
     return m
 
+def shut_times_between_burst_pdf_components(mec):
+    """
+    """
+
+    uA = np.ones((mec.kA, 1))
+    uC = np.ones((mec.kC, 1))
+    eigsB, AmatB = qml.eigs(-mec.QBB)
+    eigsF, AmatF = qml.eigs(-mec.QFF)
+    pA = qml.pinf(mec.Q)[:mec.kA]
+    GBC = -np.dot(nplin.inv(mec.QBB), mec.QBC)
+    end = np.dot((np.dot(mec.QAB, GBC) + mec.QAC), uC)
+    start = pA / np.dot(pA, end)
+
+    rowB = np.dot(start, mec.QAB)
+    rowF = np.dot(start, mec.QAF)
+    colB = np.dot(mec.QBA, uA)
+    colF = np.dot(mec.QFA, uA)
+    wB = -np.dot(np.dot(rowB, AmatB), colB)
+    wF = np.dot(np.dot(rowF, AmatF), colF)
+
+    w = np.append(wB, wF)
+    eigs = np.append(eigsB, eigsF)
+    return eigs, w
+
 def first_opening_length_pdf_components(mec):
     """
     Calculate time constants and amplitudes for an ideal (no missed events)
@@ -326,8 +350,11 @@ def printout(mec, output=sys.stdout, eff='c'):
         Effector; e.g. 'c'- concentration.
     """
 
+    output.write('\n\n*******************************************\n')
+    output.write('CALCULATED SINGLE CHANNEL BURST PDFS ETC....\n')
+
     phiB = phiBurst(mec)
-    output.write('\n\nInitial vector for burst (phiB) = \n')
+    output.write('\nInitial vector for burst (phiB) = \n')
     for i in range(mec.kA):
         output.write('{0:.6f}\t'.format(phiB[i]))
 
@@ -393,6 +420,22 @@ def printout(mec, output=sys.stdout, eff='c'):
         '\tSD/mean =\t {0:.3f}'.format(sd / mean))
 
     # # #
+    output.write('\n\nPDF of gaps between bursts')
+    output.write('\nf(gap) =')
+    output.write('\nterm\tw\trate (1/sec)\ttau (ms)\tarea (%)')
+    eigs, w = shut_times_between_burst_pdf_components(mec)
+    for i in range(mec.kB + mec.kF):
+        output.write('\n{0:d}'.format(i+1) +
+            '\t{0:.3f}'.format(w[i]) +
+            '\t{0:.1f}'.format(eigs[i]) +
+            '\t{0:.3f}'.format(1000 / eigs[i]) +
+            '\t{0:.3f}'.format(100 * w[i] / eigs[i]))
+    mean, sd = pdfs.expPDF_mean_sd(1 / eigs, w / eigs)
+    output.write('\nMean (ms) =\t {0:.3f}'.format(mean * 1000) +
+        '\tSD =\t {0:.3f}'.format(sd * 1000) +
+        '\tSD/mean =\t {0:.3f}'.format(sd / mean))
+
+    # # #
     mop = open_time_mean(mec)
     output.write('\n\nThe mean total open time per burst = {0:.3f} '.
         format(mop * 1000) + 'millisec')
@@ -400,3 +443,5 @@ def printout(mec, output=sys.stdout, eff='c'):
     bpop = mop / m
     output.write('\nPopen WITHIN BURST = (open time/bst)/(bst length)\
         = {0:.3f} \n'.format(bpop))
+
+    
