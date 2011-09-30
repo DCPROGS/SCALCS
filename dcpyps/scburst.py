@@ -366,7 +366,7 @@ def first_opening_length_pdf_components(mec):
 
     return eigs, w
 
-def printout(mec, output=sys.stdout, eff='c'):
+def printout(mec, output=sys.stdout):
     """
     Output burst calculations into selected device (sys.stdout, printer, file,
     text field.
@@ -384,129 +384,64 @@ def printout(mec, output=sys.stdout, eff='c'):
     output.write('\n\n*******************************************\n')
     output.write('CALCULATED SINGLE CHANNEL BURST PDFS ETC....\n')
 
+    # # #
     phiB = phiBurst(mec)
     output.write('\nInitial vector for burst (phiB) = \n')
     for i in range(mec.kA):
         output.write('{0:.6f}\t'.format(phiB[i]))
+    endB = endBurst(mec)
+    output.write('\nEnd vector for burst (endB) = \n')
+    for i in range(mec.kA):
+        output.write('{0:.6f}\t'.format(endB[i, 0]))
 
     # # #
     eigs, w = length_pdf_components(mec)
     output.write('\n\nTotal burst length, unconditional pdf')
     output.write('\nFbst(t) =')
-    output.write('\nterm\tw\trate (1/sec)\ttau (ms)\tarea (%)')
-    for i in range(mec.kE):
-        output.write('\n{0:d}'.format(i+1) +
-            '\t{0:.3f}'.format(w[i]) +
-            '\t{0:.1f}'.format(eigs[i]) +
-            '\t{0:.3f}'.format(1000 / eigs[i]) +
-            '\t{0:.3f}'.format(100 * w[i] / eigs[i]))
-
-    #mean, sd = pdfs.expPDF_mean_sd(eigs, w)
-    mean, sd = pdfs.expPDF_mean_sd(1 / eigs, w / eigs)
-    output.write('\nMean (ms) =\t {0:.3f}'.format(mean * 1000) +
-        '\tSD =\t {0:.3f}'.format(sd * 1000) +
-        '\tSD/mean =\t {0:.3f}'.format(sd / mean))
-
+    pdfs.expPDF_printout(eigs, w, output)
     m = length_mean(mec)
     output.write('\nMean from direct matrix calc = {0:.3f} millisec'.
         format(m * 1000))
 
-
     # # #
     rho, w = openings_distr_components(mec)
-    norm = 1 / (np.ones((mec.kA)) - rho)
-    area = norm * w
-    mean, sd = pdfs.geometricPDF_mean_sd(rho, w)
-
     output.write('\n\nNumber (r) of openings / burst (unconditional)')
     output.write('\nP(r) =')
-    output.write('\nterm\tw\trho\tarea(%)\tNorm mean')
-    for i in range(mec.kA):
-        output.write('\n{0:d}'.format(i+1) +
-            '\t{0:.6f}'.format(w[i]) +
-            '\t{0:.6f}'.format(rho[i]) +
-            '\t{0:.3f}'.format(area[i] * 100) +
-            '\t{0:.3f}'.format(norm[i]))
-    output.write('\nMean number of openings per burst =\t {0:.3f}'.format(mean) +
-        '\n\tSD =\t {0:.3f}'.format(sd) +
-        '\tSD/mean =\t {0:.3f}'.format(sd / mean))
-
+    pdfs.geometricPDF_printout(rho, w, output)
     mu = openings_mean(mec)
     output.write('\nMean from direct matrix calc = {0:.3f}'. format(mu))
 
     # # #
     output.write('\n\nPDF of first opening in a burst with 2 or more openings')
     output.write('\nf(open; r>1) =')
-    output.write('\nterm\tw\trate (1/sec)\ttau (ms)\tarea (%)')
     eigs, w = first_opening_length_pdf_components(mec)
-    for i in range(mec.kA):
-        output.write('\n{0:d}'.format(i+1) +
-            '\t{0:.3f}'.format(w[i]) +
-            '\t{0:.1f}'.format(eigs[i]) +
-            '\t{0:.3f}'.format(1000 / eigs[i]) +
-            '\t{0:.3f}'.format(100 * w[i] / eigs[i]))
-    mean, sd = pdfs.expPDF_mean_sd(1 / eigs, w / eigs)
-    output.write('\nMean (ms) =\t {0:.3f}'.format(mean * 1000) +
-        '\tSD =\t {0:.3f}'.format(sd * 1000) +
-        '\tSD/mean =\t {0:.3f}'.format(sd / mean))
+    pdfs.expPDF_printout(eigs, w, output)
 
     # # #
     output.write('\n\nPDF of total open time per bursts')
     output.write('\nf(open tot) =')
-    output.write('\nterm\tw\trate (1/sec)\ttau (ms)\tarea (%)')
     eigs, w = open_time_total_pdf_components(mec)
-    for i in range(mec.kA):
-        output.write('\n{0:d}'.format(i+1) +
-            '\t{0:.3f}'.format(w[i]) +
-            '\t{0:.1f}'.format(eigs[i]) +
-            '\t{0:.3f}'.format(1000 / eigs[i]) +
-            '\t{0:.3f}'.format(100 * w[i] / eigs[i]))
-    mean, sd = pdfs.expPDF_mean_sd(1 / eigs, w / eigs)
-    output.write('\nMean (ms) =\t {0:.3f}'.format(mean * 1000) +
-        '\tSD =\t {0:.3f}'.format(sd * 1000) +
-        '\tSD/mean =\t {0:.3f}'.format(sd / mean))
-
+    pdfs.expPDF_printout(eigs, w, output)
     mop = open_time_mean(mec)
-    output.write('\n\nThe mean total open time per burst = {0:.3f} '.
+    output.write('\nMean from direct matrix calc = {0:.3f} '.
         format(mop * 1000) + 'millisec')
-
 
     # # #
     output.write('\n\nPDF of total shut time per bursts')
     output.write('\nf(gap tot) =')
-    output.write('\nterm\tw\trate (1/sec)\ttau (ms)\tarea (%)')
     eigs, w = shut_time_total_pdf_components(mec)
-    for i in range(mec.kB):
-        output.write('\n{0:d}'.format(i+1) +
-            '\t{0:.3f}'.format(w[i]) +
-            '\t{0:.1f}'.format(eigs[i]) +
-            '\t{0:.3f}'.format(1000 / eigs[i]) +
-            '\t{0:.3f}'.format(100 * w[i] / eigs[i]))
-    mean, sd = pdfs.expPDF_mean_sd(1 / eigs, w / eigs)
-    output.write('\nMean (ms) =\t {0:.3f}'.format(mean * 1000) +
-        '\tSD =\t {0:.3f}'.format(sd * 1000) +
-        '\tSD/mean =\t {0:.3f}'.format(sd / mean))
+    pdfs.expPDF_printout(eigs, w, output)
 
     # # #
     output.write('\n\nPDF of gaps between bursts')
     output.write('\nf(gap) =')
-    output.write('\nterm\tw\trate (1/sec)\ttau (ms)\tarea (%)')
     eigs, w = shut_times_between_burst_pdf_components(mec)
-    for i in range(mec.kB + mec.kF):
-        output.write('\n{0:d}'.format(i+1) +
-            '\t{0:.3f}'.format(w[i]) +
-            '\t{0:.1f}'.format(eigs[i]) +
-            '\t{0:.3f}'.format(1000 / eigs[i]) +
-            '\t{0:.3f}'.format(100 * w[i] / eigs[i]))
-    mean, sd = pdfs.expPDF_mean_sd(1 / eigs, w / eigs)
-    output.write('\nMean (ms) =\t {0:.3f}'.format(mean * 1000) +
-        '\tSD =\t {0:.3f}'.format(sd * 1000) +
-        '\tSD/mean =\t {0:.3f}'.format(sd / mean))
+    pdfs.expPDF_printout(eigs, w, output)
 
     # # #
-        
     bpop = mop / m
-    output.write('\nPopen WITHIN BURST = (open time/bst)/(bst length)\
+    output.write('\n\nPopen WITHIN BURST = (open time/bst)/(bst length)\
         = {0:.3f} \n'.format(bpop))
+    output.write('*******************************************\n')
 
     
