@@ -80,7 +80,7 @@ def length_pdf(mec, t):
 
 def length_pdf_components(mec):
     """
-    Calculate time constants and areas for an ideal (no missed events)
+    Calculate time constants and amplitudes for an ideal (no missed events)
     exponential burst length probability density function.
 
     Parameters
@@ -154,6 +154,21 @@ def length_cond_pdf(mec, t):
 
 def length_no_single_openings_pdf_components(mec):
     """
+    Calculate time constants and amplitudes for an ideal (no missed events)
+    exponential burst length probability density function for bursts with
+    two or more openings.
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    eigs : ndarray, shape(k, 1)
+        Time constants.
+    w : ndarray, shape(k, 1)
+        Component amplitudes.
     """
 
     eigsA, AmatA = qml.eigs(-mec.QAA)
@@ -284,6 +299,18 @@ def openings_cond_distr_depend_on_start_state(mec, r):
 def open_time_total_pdf_components(mec):
     """
     Eq. 3.23, CH82
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    eigs : ndarray, shape(k, 1)
+        Time constants.
+    w : ndarray, shape(k, 1)
+        Component amplitudes.
     """
 
     VAA = mec.QAA + np.dot(mec.QAB, mec.GBA)
@@ -318,7 +345,20 @@ def open_time_mean(mec):
 
 def shut_times_inside_burst_pdf_components(mec):
     """
-    Eq. 3.75, CH82.
+    Calculate time constants and amplitudes for a PDF of all gaps within
+    bursts (Eq. 3.75, CH82).
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    eigs : ndarray, shape(k, 1)
+        Time constants.
+    w : ndarray, shape(k, 1)
+        Component amplitudes.
     """
 
     uA = np.ones((mec.kA, 1))
@@ -335,15 +375,25 @@ def shut_times_inside_burst_pdf_components(mec):
 
 def shut_times_between_burst_pdf_components(mec):
     """
+    Calculate time constants and amplitudes for a PDF of gaps between bursts.
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    eigs : ndarray, shape(k, 1)
+        Time constants.
+    w : ndarray, shape(k, 1)
+        Component amplitudes.
     """
 
     uA = np.ones((mec.kA, 1))
-    #uC = np.ones((mec.kC, 1))
     eigsB, AmatB = qml.eigs(-mec.QBB)
     eigsF, AmatF = qml.eigs(-mec.QFF)
     pA = qml.pinf(mec.Q)[:mec.kA]
-    #GBC = -np.dot(nplin.inv(mec.QBB), mec.QBC)
-    #end = np.dot((np.dot(mec.QAB, GBC) + mec.QAC), uC)
     end = np.dot(-mec.QAA, endBurst(mec))
     start = pA / np.dot(pA, end)
 
@@ -360,9 +410,18 @@ def shut_times_between_burst_pdf_components(mec):
 
 def shut_times_between_burst_mean(mec):
     """
-    Eq. 3.85, CH82.
-    """
+    Calculate the mean length of the gap between bursts (Eq. 3.86, CH82).
 
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    m : float
+        The mean shut time between bursts.
+    """
 
     pA = qml.pinf(mec.Q)[:mec.kA]
     end = np.dot(-mec.QAA, endBurst(mec))
@@ -381,7 +440,20 @@ def shut_times_between_burst_mean(mec):
 
 def shut_time_total_pdf_components(mec):
     """
-    Eq. 3.40, CH82
+    Calculate time constants and amplitudes for a PDF of total shut time 
+    per burst (Eq. 3.40, CH82).
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    eigs : ndarray, shape(k, 1)
+        Time constants.
+    w : ndarray, shape(k, 1)
+        Component amplitudes.
     """
 
     WBB = mec.QBB + np.dot(mec.QBA, mec.GAB)
@@ -436,8 +508,6 @@ def printout(mec, output=sys.stdout):
         The mechanism to be analysed.
     output : output device
         Default device: sys.stdout
-    eff : string
-        Effector; e.g. 'c'- concentration.
     """
 
     output.write('\n\n*******************************************\n')
