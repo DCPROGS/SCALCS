@@ -152,6 +152,26 @@ def length_cond_pdf(mec, t):
     vec = vec.transpose()
     return vec
 
+def length_no_single_openings_pdf_components(mec):
+    """
+    """
+
+    eigsA, AmatA = qml.eigs(-mec.QAA)
+    eigsE, AmatE = qml.eigs(-mec.QEE)
+    eigs = np.append(eigsE, eigsA)
+    A = np.append(AmatE[:,:mec.kA, :mec.kA], -AmatA, axis=0)
+    w = np.zeros(mec.kA + mec.kE)
+
+    endB = endBurst(mec)
+    start = phiBurst(mec)
+    norm = 1 - np.dot(start, endB)[0]
+
+    for i in range(mec.kA + mec.kE):
+        w[i] = np.dot(np.dot(np.dot(start,
+            A[i]), (-mec.QAA)), endB) / norm
+     
+    return eigs, w
+
 def openings_distr(mec, r):
     """
     The distribution of openings per burst (Eq. 3.5, CH82).
@@ -296,17 +316,35 @@ def open_time_mean(mec):
     m = np.dot(np.dot(phiBurst(mec), -nplin.inv(VAA)), uA)[0]
     return m
 
+def shut_times_inside_burst_pdf_components(mec):
+    """
+    Eq. 3.75, CH82.
+    """
+
+    uA = np.ones((mec.kA, 1))
+    eigs, A = qml.eigs(-mec.QBB)
+    interm = nplin.inv(np.eye(mec.kA) - np.dot(mec.GAB, mec.GBA))
+    norm = openings_mean(mec) - 1
+
+    w = np.zeros(mec.kB)
+    for i in range(mec.kB):
+        w[i] = np.dot(np.dot(np.dot(np.dot(np.dot(np.dot(phiBurst(mec), interm),
+            mec.GAB), A[i]), (-mec.QBB)), mec.GBA), uA) / norm
+
+    return eigs, w
+
 def shut_times_between_burst_pdf_components(mec):
     """
     """
 
     uA = np.ones((mec.kA, 1))
-    uC = np.ones((mec.kC, 1))
+    #uC = np.ones((mec.kC, 1))
     eigsB, AmatB = qml.eigs(-mec.QBB)
     eigsF, AmatF = qml.eigs(-mec.QFF)
     pA = qml.pinf(mec.Q)[:mec.kA]
-    GBC = -np.dot(nplin.inv(mec.QBB), mec.QBC)
-    end = np.dot((np.dot(mec.QAB, GBC) + mec.QAC), uC)
+    #GBC = -np.dot(nplin.inv(mec.QBB), mec.QBC)
+    #end = np.dot((np.dot(mec.QAB, GBC) + mec.QAC), uC)
+    end = np.dot(-mec.QAA, endBurst(mec))
     start = pA / np.dot(pA, end)
 
     rowB = np.dot(start, mec.QAB)
@@ -319,6 +357,27 @@ def shut_times_between_burst_pdf_components(mec):
     w = np.append(wB, wF)
     eigs = np.append(eigsB, eigsF)
     return eigs, w
+
+def shut_times_between_burst_mean(mec):
+    """
+    Eq. 3.85, CH82.
+    """
+
+
+    pA = qml.pinf(mec.Q)[:mec.kA]
+    end = np.dot(-mec.QAA, endBurst(mec))
+    start = pA / np.dot(pA, end)
+    uA = np.ones((mec.kA, 1))
+
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+    invQFF = -nplin.inv(mec.QFF)
+    invQBB = -nplin.inv(mec.QBB)
+
+    m1 = np.dot(np.dot(mec.QAF, invQFF), GFA)
+    m2 = np.dot(np.dot(mec.QAB, invQBB), mec.GBA)
+    m = np.dot(np.dot(start, m1 - m2), uA)[0]
+
+    return m
 
 def shut_time_total_pdf_components(mec):
     """
@@ -399,9 +458,15 @@ def printout(mec, output=sys.stdout):
     output.write('\n\nTotal burst length, unconditional pdf')
     output.write('\nFbst(t) =')
     pdfs.expPDF_printout(eigs, w, output)
-    m = length_mean(mec)
+    mbl = length_mean(mec)
     output.write('\nMean from direct matrix calc = {0:.3f} millisec'.
-        format(m * 1000))
+        format(mbl * 1000))
+        
+    # # #
+    eigs, w = length_no_single_openings_pdf_components(mec)
+    output.write('\n\nBurst length pdf for bursts with 2 or more openings.')
+    output.write('\nFbst(bst>1) =')
+    pdfs.expPDF_printout(eigs, w, output)
 
     # # #
     rho, w = openings_distr_components(mec)
@@ -432,16 +497,31 @@ def printout(mec, output=sys.stdout):
     eigs, w = shut_time_total_pdf_components(mec)
     pdfs.expPDF_printout(eigs, w, output)
 
+    output.write('\n\nNo of gaps within burst per unit open time = {0:.3f} '.
+        format((mu - 1) / mop))
+
+    # # #
+    output.write('\n\nPDF of gaps inside bursts')
+    output.write('\nf(gap) =')
+    eigs, w = shut_times_inside_burst_pdf_components(mec)
+    pdfs.expPDF_printout(eigs, w, output)
+
     # # #
     output.write('\n\nPDF of gaps between bursts')
     output.write('\nf(gap) =')
     eigs, w = shut_times_between_burst_pdf_components(mec)
     pdfs.expPDF_printout(eigs, w, output)
+    msh = shut_times_between_burst_mean(mec)
+    output.write('\nMean from direct matrix calc = {0:.3f} '.
+        format(msh * 1000) + 'millisec')
 
     # # #
-    bpop = mop / m
+    bpop = mop / mbl
     output.write('\n\nPopen WITHIN BURST = (open time/bst)/(bst length)\
-        = {0:.3f} \n'.format(bpop))
+        = {0:.4f} \n'.format(bpop))
+    tpop = mop / (mbl + msh)
+    output.write('Total Popen = (open time/bst)/(bst_length + ' +
+        'mean gap between burst) = {0:.4f} \n'.format(tpop))
     output.write('*******************************************\n')
 
     
