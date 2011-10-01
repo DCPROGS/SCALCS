@@ -91,16 +91,14 @@ def ideal_dwell_time_pdf_components(QAA, phiA):
     """
 
     kA = QAA.shape[0]
-    areas = np.zeros(kA)
+    w = np.zeros(kA)
     eigs, A = qml.eigs(-QAA)
     uA = np.ones((kA, 1))
     #TODO: remove 'for'
     for i in range(kA):
-        areas[i] = (np.dot(np.dot(np.dot(phiA, A[i]),
-            (-QAA)), uA) / eigs[i])
+        w[i] = np.dot(np.dot(np.dot(phiA, A[i]), (-QAA)), uA)
 
-    taus = 1 / eigs
-    return taus, areas
+    return eigs, w
 
 def ideal_subset_time_pdf(Q, k1, k2, t):
     """
@@ -460,16 +458,10 @@ def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
     # OPEN TIME DISTRIBUTIONS
     open = True
     # Ideal pdf
-    #tau, area = scl.get_ideal_pdf_components(self.mec, open)
-    tau, area = ideal_dwell_time_pdf_components(mec.QAA,
+    eigs, w = ideal_dwell_time_pdf_components(mec.QAA,
         qml.phiA(mec))
     output.write('\n\nIDEAL OPEN TIME DISTRIBUTION')
-    output.write('\nterm\ttau (ms)\tarea (%)\trate const (1/sec)')
-    for i in range(mec.kA):
-        output.write('\n{0:d}'.format(i+1) +
-        '\t{0:.3f}'.format(tau[i] * 1000) +
-        '\t{0:.3f}'.format(area[i] * 100) +
-        '\t{0:.3f}'.format(1.0 / tau[i]))
+    pdfs.expPDF_printout(eigs, w, output)
 
     # Asymptotic pdf
     #roots = asymptotic_roots(mec, tres, open)
@@ -511,16 +503,10 @@ def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
 
     # SHUT TIME DISTRIBUTIONS
     open = False
-        # Ideal pdf
-    #tau, area = scl.get_ideal_pdf_components(self.mec, open)
-    tau, area = ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
+    # Ideal pdf
+    eigs, w = ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
     output.write('\n\n\nIDEAL SHUT TIME DISTRIBUTION')
-    output.write('\nterm\ttau (ms)\tarea (%)\trate const (1/sec)')
-    for i in range(mec.kF):
-        output.write('\n{0:d}'.format(i+1) +
-        '\t{0:.3f}'.format(tau[i] * 1000) +
-        '\t{0:.3f}'.format(area[i] * 100) +
-        '\t{0:.3f}'.format(1.0 / tau[i]))
+    pdfs.expPDF_printout(eigs, w, output)
 
     # Asymptotic pdf
     #roots = asymptotic_roots(mec, tres, open)

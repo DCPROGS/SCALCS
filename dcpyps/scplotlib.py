@@ -6,6 +6,7 @@ __author__="R.Lape, University College London"
 __date__ ="$07-Dec-2010 23:01:09$"
 
 import sys
+import math
 
 import numpy as np
 try:
@@ -48,18 +49,16 @@ def Popen(mec, tres):
     cmax = iEC50 * 500
     log_start = int(np.log10(cmin)) - 1
     log_end = int(np.log10(cmax)) - 1
-    decades = int(log_end - log_start)
-    log_int = 0.01    # increase this if want more points per curve
-    points = int(decades / log_int + 1)
+    points = 512
 
-    c = np.zeros(points)
+    c = np.logspace(log_start, log_end, points)
     pe = np.zeros(points)
     pi = np.zeros(points)
     for i in range(points):
-        ctemp = pow(10, log_start + log_int * i)
-        pe[i] = popen.Popen(mec, tres, ctemp)
-        pi[i] = popen.Popen(mec, 0, ctemp)
-        c[i] = ctemp * 1000000
+        pe[i] = popen.Popen(mec, tres, c[i])
+        pi[i] = popen.Popen(mec, 0, c[i])
+
+    c = c * 1000000
 
     return c, pe, pi
 
@@ -89,12 +88,10 @@ def burst_length_pdf(mec, conditional=False, tmin=0.00001, tmax=1000, points=512
 
     eigs, w = scburst.length_pdf_components(mec)
     tmax = 20 / min(eigs)
-    step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
+    t = np.logspace(math.log10(tmin), math.log10(tmax), points)
 
-    t = np.zeros(points)
     fbst = np.zeros(points)
     for i in range(points):
-        t[i] = tmin * pow(10, (i * step))
         fbst[i] = t[i] * scburst.length_pdf(mec, t[i])
 
     if conditional:
@@ -213,30 +210,22 @@ def open_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
     open = True
 
     # Asymptotic pdf
-    #roots = scl.asymptotic_roots(self.mec, self.tres, open)
     roots = scl.asymptotic_roots(tres,
         mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
 
     tmax = (-1 / roots.max()) * 20
-    step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
-    t = np.zeros(points)
+    t = np.logspace(math.log10(tmin), math.log10(tmax), points)
 
     # Ideal pdf.
-    f = 0.0
-    tau, area = scl.ideal_dwell_time_pdf_components(mec.QAA,
-        qml.phiA(mec))
-    for i in range(mec.kA):
-        f += area[i] * np.exp(-tres / tau[i])
-    fac = 1 / f # Scale factor.
+    eigs, w = scl.ideal_dwell_time_pdf_components(mec.QAA, qml.phiA(mec))
+    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
     ipdf = np.zeros(points)
     for i in range(points):
-        t[i] = tmin * pow(10, (i * step))
         ipdf[i] = t[i] * scl.ideal_dwell_time_pdf(t[i],
             mec.QAA, qml.phiA(mec)) * fac
 
     # Asymptotic pdf
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
-    #areas = scl.asymptotic_areas(self.mec, self.tres, roots, open)
     areas = scl.asymptotic_areas(tres, roots,
         mec.QAA, mec.QFF, mec.QAF, mec.QFA,
         mec.kA, mec.kF, GAF, GFA)
@@ -285,29 +274,23 @@ def shut_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
     open = False
 
     # Asymptotic pdf
-    #roots = scl.asymptotic_roots(self.mec, self.tres, open)
     roots = scl.asymptotic_roots(tres, mec.QFF, mec.QAA, mec.QFA, mec.QAF,
         mec.kF, mec.kA)
 
     tmax = (-1 / roots.max()) * 20
-    step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
-    t = np.zeros(points)
+    t = np.logspace(math.log10(tmin), math.log10(tmax), points)
 
     # Ideal pdf.
-    tau, area = scl.ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
-    f = 0.0
-    for i in range(mec.kF):
-        f += area[i] * np.exp(-tres / tau[i])
-    fac = 1 / f # Scale factor.
+    eigs, w = scl.ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
+    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
+
     ipdf = np.zeros(points)
     for i in range(points):
-        t[i] = tmin * pow(10, (i * step))
         ipdf[i] = t[i] * scl.ideal_dwell_time_pdf(t[i],
             mec.QFF, qml.phiF(mec)) * fac
 
     # Asymptotic pdf
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
-    #areas = scl.asymptotic_areas(self.mec, self.tres, roots, open)
     areas = scl.asymptotic_areas(tres, roots,
         mec.QFF, mec.QAA, mec.QFA, mec.QAF,
         mec.kF, mec.kA, GFA, GAF)
@@ -360,8 +343,7 @@ def subset_time_pdf(mec, tres, state1, state2,
         tau, area = scl.ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
 
     tmax = tau.max() * 20
-    step = (np.log10(tmax) - np.log10(tmin)) / (points - 1)
-    t = np.zeros(points)
+    t = np.logspace(math.log10(tmin), math.log10(tmax), points)
 
     # Ideal pdf.
     f = 0.0
@@ -371,8 +353,6 @@ def subset_time_pdf(mec, tres, state1, state2,
     ipdf = np.zeros(points)
     spdf = np.zeros(points)
     for i in range(points):
-        t[i] = tmin * pow(10, (i * step))
-        #ipdf[i] = t[i] * scl.pdf_shut_time(self.mec, t[i]) * fac
         ipdf[i] = t[i] * scl.ideal_dwell_time_pdf(t[i],
             mec.QFF, qml.phiF(mec)) * fac
         spdf[i] = t[i] * scl.ideal_subset_time_pdf(mec.Q,
