@@ -7,6 +7,7 @@ __date__ ="$07-Dec-2010 23:01:09$"
 
 import sys
 import math
+import time
 
 import numpy as np
 try:
@@ -42,7 +43,7 @@ def Popen(mec, tres):
         Ideal open probability.
     """
 
-    iEC50 = popen.EC50(mec, 0)   # in mikroM
+    iEC50 = popen.EC50(mec, 0)
 
     # Plot ideal and corrected Popen curves.
     cmin = iEC50 / 20
@@ -58,7 +59,7 @@ def Popen(mec, tres):
         pe[i] = popen.Popen(mec, tres, c[i])
         pi[i] = popen.Popen(mec, 0, c[i])
 
-    c = c * 1000000
+    c = c * 1000000 # x axis in microM
 
     return c, pe, pi
 
@@ -89,10 +90,7 @@ def burst_length_pdf(mec, conditional=False, tmin=0.00001, tmax=1000, points=512
     eigs, w = scburst.length_pdf_components(mec)
     tmax = 20 / min(eigs)
     t = np.logspace(math.log10(tmin), math.log10(tmax), points)
-
-    fbst = np.zeros(points)
-    for i in range(points):
-        fbst[i] = t[i] * scburst.length_pdf(mec, t[i])
+    fbst = t * pdfs.expPDF(t, 1 / eigs, w / eigs)
 
     if conditional:
         cfbst = np.zeros((points, mec.kA))
@@ -219,20 +217,14 @@ def open_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
     # Ideal pdf.
     eigs, w = scl.ideal_dwell_time_pdf_components(mec.QAA, qml.phiA(mec))
     fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
-    ipdf = np.zeros(points)
-    for i in range(points):
-        ipdf[i] = t[i] * scl.ideal_dwell_time_pdf(t[i],
-            mec.QAA, qml.phiA(mec)) * fac
+    ipdf = t * pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
 
     # Asymptotic pdf
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
     areas = scl.asymptotic_areas(tres, roots,
         mec.QAA, mec.QFF, mec.QAF, mec.QFA,
         mec.kA, mec.kF, GAF, GFA)
-
-    apdf = np.zeros(points)
-    for i in range(points):
-        apdf[i] = t[i] * pdfs.expPDF(t[i] - tres, -1 / roots, areas)
+    apdf = scl.asymptotic_pdf(t, tres, -1 / roots, areas)
 
     # Exact pdf
     eigvals, gamma00, gamma10, gamma11 = scl.exact_GAMAxx(mec,
@@ -283,20 +275,14 @@ def shut_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
     # Ideal pdf.
     eigs, w = scl.ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
     fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
-
-    ipdf = np.zeros(points)
-    for i in range(points):
-        ipdf[i] = t[i] * scl.ideal_dwell_time_pdf(t[i],
-            mec.QFF, qml.phiF(mec)) * fac
+    ipdf = t * pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
 
     # Asymptotic pdf
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
     areas = scl.asymptotic_areas(tres, roots,
         mec.QFF, mec.QAA, mec.QFA, mec.QAF,
         mec.kF, mec.kA, GFA, GAF)
-    apdf = np.zeros(points)
-    for i in range(points):
-        apdf[i] = t[i] * pdfs.expPDF(t[i] - tres, -1 / roots, areas)
+    apdf = scl.asymptotic_pdf(t, tres, -1 / roots, areas)
 
     # Exact pdf
     eigvals, gamma00, gamma10, gamma11 = scl.exact_GAMAxx(mec, tres, open)

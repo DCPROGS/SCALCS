@@ -183,6 +183,32 @@ def ideal_mean_latency_given_start_state(mec, state):
 
     return mean
 
+def asymptotic_pdf(t, tres, tau, area):
+    """
+    Calculate asymptotic probabolity density function.
+
+    Parameters
+    ----------
+    t : ndarray.
+        Time.
+    tres : float
+        Time resolution.
+    tau : ndarray, shape(k, 1)
+        Time constants.
+    area : ndarray, shape(k, 1)
+        Component relative area.
+
+    Returns
+    -------
+    apdf : ndarray.
+    """
+    t1 = np.extract(t[:] < tres, t)
+    t2 = np.extract(t[:] >= tres, t)
+    apdf2 = t2 * pdfs.expPDF(t2 - tres, tau, area)
+    apdf = np.append(t1 * 0.0, apdf2)
+
+    return apdf
+
 def asymptotic_roots(tres, QAA, QFF, QAF, QFA, kA, kF):
     """
     Find roots for the asymptotic probability density function (Eqs. 52-58,

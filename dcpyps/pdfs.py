@@ -1,4 +1,5 @@
-import math, sys
+import math
+import sys
 
 import numpy as np
 
@@ -8,7 +9,7 @@ def expPDF(t, tau, area):
 
     Parameters
     ----------
-    t : float
+    t : float or ndarray.
         Time.
     tau : ndarray, shape(k, 1)
         Time constants.
@@ -17,12 +18,15 @@ def expPDF(t, tau, area):
 
     Returns
     -------
-    f : float
+    f : float or ndarray.
     """
 
-    f = 0
-    if t >= 0:
+    if tau.shape[0] == 1:
         f = np.sum((area / tau) * np.exp(-t / tau))
+    else:
+        f = np.zeros(t.shape)
+        for i in range(tau.shape[0]):
+            f += (area[i] / tau[i]) * np.exp(-t / tau[i])
     return f
 
 def expPDF_mean_sd(tau, area):
