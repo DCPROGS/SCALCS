@@ -71,6 +71,27 @@ def expPDF_printout(eigs, ampl, output=sys.stdout):
         '\tSD =\t {0:.3f}'.format(sd * 1000) +
         '\tSD/mean =\t {0:.3f}'.format(sd / mean))
 
+def expPDF_misclassified(tcrit, tau, area, comp):
+    """
+    Calculate number and fraction of misclassified events after division into
+    bursts by critical time, tcrit.
+    """
+
+    tfast = tau[:comp]
+    tslow = tau[comp:]
+    afast = area[:comp]
+    aslow = area[comp:]
+
+    # Number of misclassified.
+    enf = np.sum(afast * np.exp(-tcrit / tfast))
+    ens = np.sum(aslow * (1 - np.exp(-tcrit / tslow)))
+
+    # Fraction misclassified.
+    pf = enf / np.sum(afast)
+    ps = ens / np.sum(aslow)
+
+    return enf, ens, pf, ps
+
 def geometricPDF_mean_sd(rho, w):
     """
     Calculate mean and standard deviation for geometric PDF.

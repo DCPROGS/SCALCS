@@ -528,7 +528,7 @@ class QMatGUI(QMainWindow):
         self.txtPltBox.append('Ideal pdf- blue solid line.')
 
         self.mec.set_eff('c', self.conc)
-        scburst.printout(self.mec, output=self.log)
+        scburst.printout_pdfs(self.mec, output=self.log)
         t, fbrst = scpl.burst_length_pdf(self.mec)
         
         self.axes.clear()

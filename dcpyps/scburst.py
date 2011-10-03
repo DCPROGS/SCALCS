@@ -12,6 +12,7 @@ from numpy import linalg as nplin
 
 import qmatlib as qml
 import pdfs
+import scalcslib as scl
 
 def phiBurst(mec):
     """
@@ -497,7 +498,7 @@ def first_opening_length_pdf_components(mec):
 
     return eigs, w
 
-def printout(mec, output=sys.stdout):
+def printout_pdfs(mec, output=sys.stdout):
     """
     Output burst calculations into selected device (sys.stdout, printer, file,
     text field.
@@ -594,4 +595,24 @@ def printout(mec, output=sys.stdout):
         'mean gap between burst) = {0:.4f} \n'.format(tpop))
     output.write('*******************************************\n')
 
-    
+def printout_tcrit(mec, output=sys.stdout):
+    """
+    Output calculations based on division into bursts by critical time (tcrit).
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    output : output device
+        Default device: sys.stdout
+    """
+
+    # Ideal shut time pdf
+    eigs, w = scl.ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
+    output.write('\n\n\nIDEAL SHUT TIME DISTRIBUTION')
+    pdfs.expPDF_printout(eigs, w, output)
+
+    output.write('\nCritical time between components 1 and 2')
+
+
+

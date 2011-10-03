@@ -121,7 +121,7 @@ def console_demo(demomec):
     #     BURST CALCULATIONS
     sys.stdout.write('\n\nCalculating burst properties:')
     sys.stdout.write('\nAgonist concentration = %e M' %conc)
-    scburst.printout(demomec)
+    scburst.printout_pdfs(demomec)
 
     t, fbst = scpl.burst_length_pdf(demomec)
     plt.subplot(222)
