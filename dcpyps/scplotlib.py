@@ -7,7 +7,6 @@ __date__ ="$07-Dec-2010 23:01:09$"
 
 import sys
 import math
-import time
 
 import numpy as np
 try:
@@ -162,13 +161,11 @@ def burst_length_versus_conc_plot(mec, cmin, cmax):
     """
 
     points = 100
-    step = (cmax - cmin)/(points - 1)
-    c = np.zeros(points)
+    c = np.linspace(cmin, cmax, points)
     br = np.zeros(points)
     brblk = np.zeros(points)
 
     for i in range(points):
-        c[i] = cmin + step * i
         mec.set_eff('c', c[i])
         br[i] = scburst.length_mean(mec)
         if mec.fastblk:
@@ -324,23 +321,19 @@ def subset_time_pdf(mec, tres, state1, state2,
 
     open = False
     if open:
-        tau, area = scl.ideal_dwell_time_pdf_components(mec.QAA, qml.phiA(mec))
+        eigs, w = scl.ideal_dwell_time_pdf_components(mec.QAA, qml.phiA(mec))
     else:
-        tau, area = scl.ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
+        eigs, w = scl.ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
 
     tmax = tau.max() * 20
     t = np.logspace(math.log10(tmin), math.log10(tmax), points)
 
     # Ideal pdf.
-    f = 0.0
-    for i in range(mec.kF):
-        f += area[i] * np.exp(-tres / tau[i])
-    fac = 1 / f # Scale factor.
-    ipdf = np.zeros(points)
+    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
+    ipdf = t * pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
+
     spdf = np.zeros(points)
     for i in range(points):
-        ipdf[i] = t[i] * scl.ideal_dwell_time_pdf(t[i],
-            mec.QFF, qml.phiF(mec)) * fac
         spdf[i] = t[i] * scl.ideal_subset_time_pdf(mec.Q,
             state1, state2, t[i]) * fac
 
