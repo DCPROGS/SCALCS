@@ -96,7 +96,7 @@ def expPDF_misclassified_printout(tcrit, enf, ens, pf, ps, output=sys.stdout):
     """
     """
 
-    output.write('\n\ntcrit = {0:.6f} ms'.format(tcrit * 1000))
+    output.write('\ntcrit = {0:.6f} ms'.format(tcrit * 1000))
     output.write('\n% misclassified: short = {0:.3f};'.format(pf * 100) +
         ' long = {0:.3f}'.format(ps * 100) +
         '\n# misclassified (out of 100): short = {0:.3f};'.format(enf * 100) +

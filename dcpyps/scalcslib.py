@@ -34,12 +34,14 @@ __date__ ="$07-Dec-2010 20:29:14$"
 import sys
 import math
 
+import scipy.optimize as so
 import numpy as np
 from numpy import linalg as nplin
 
 import qmatlib as qml
 import bisectHJC
 import pdfs
+import optimize
 
 def ideal_dwell_time_pdf(t, QAA, phiA):
     """
@@ -441,7 +443,8 @@ def printout_occupancies(mec, output=sys.stdout):
     """
     """
 
-    output.write('\n\nOpen\tEquilibrium\tMean life\tMean latency (ms)')
+    output.write('\n\n\n*******************************************\n')
+    output.write('\nOpen\tEquilibrium\tMean life\tMean latency (ms)')
     output.write('\nstate\toccupancy\t(ms)\tto next shutting')
     output.write('\n\t\t\tgiven start in this state')
 
@@ -480,13 +483,14 @@ def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
 
     """
 
+    output.write('\n\n\n*******************************************\n')
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
     # OPEN TIME DISTRIBUTIONS
     open = True
     # Ideal pdf
     eigs, w = ideal_dwell_time_pdf_components(mec.QAA,
         qml.phiA(mec))
-    output.write('\n\nIDEAL OPEN TIME DISTRIBUTION')
+    output.write('\nIDEAL OPEN TIME DISTRIBUTION')
     pdfs.expPDF_printout(eigs, w, output)
 
     # Asymptotic pdf
@@ -526,12 +530,12 @@ def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
         '\t{0:.3f}'.format(gamma10[i]) +
         '\t{0:.3f}'.format(gamma11[i]))
 
-
+    output.write('\n\n\n*******************************************\n')
     # SHUT TIME DISTRIBUTIONS
     open = False
     # Ideal pdf
     eigs, w = ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
-    output.write('\n\n\nIDEAL SHUT TIME DISTRIBUTION')
+    output.write('\nIDEAL SHUT TIME DISTRIBUTION')
     pdfs.expPDF_printout(eigs, w, output)
 
     # Asymptotic pdf
@@ -570,3 +574,59 @@ def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
         '\t{0:.3f}'.format(gamma00[i]) +
         '\t{0:.3f}'.format(gamma10[i]) +
         '\t{0:.3f}'.format(gamma11[i]))
+
+def printout_tcrit(mec, output=sys.stdout):
+    """
+    Output calculations based on division into bursts by critical time (tcrit).
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    output : output device
+        Default device: sys.stdout
+    """
+
+    output.write('\n\n\n*******************************************\n')
+    output.write('CALCULATIONS BASED ON DIVISION INTO BURSTS BY' +
+    ' tcrit- CRITICAL TIME.\n')
+    # Ideal shut time pdf
+    eigs, w = ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
+    output.write('\nIDEAL SHUT TIME DISTRIBUTION')
+    pdfs.expPDF_printout(eigs, w, output)
+    taus = 1 / eigs
+    areas = w /eigs
+    taus, areas = optimize.sortShell2(taus, areas)
+
+    comps = taus.shape[0]-1
+    tcrits = np.empty((3, comps))
+    for i in range(comps):
+        output.write('\n\nCritical time between components {0:d} and {1:d}'.
+            format(i+1, i+2))
+        output.write('\n\nEqual % misclassified (DC criterion)')
+        tcrit = so.bisect(pdfs.expPDF_tcrit_DC,
+            taus[i], taus[i+1], args=(taus, areas, i+1))
+        tcrits[0, i] = tcrit
+        enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, 1)
+        pdfs.expPDF_misclassified_printout(tcrit, enf, ens, pf, ps, output)
+        output.write('\nEqual # misclassified (Clapham & Neher criterion)')
+        tcrit = so.bisect(pdfs.expPDF_tcrit_CN,
+            taus[i], taus[i+1], args=(taus, areas, i+1))
+        tcrits[1, i] = tcrit
+        enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, 1)
+        pdfs.expPDF_misclassified_printout(tcrit, enf, ens, pf, ps, output)
+        output.write('\nMinimum total # misclassified (Jackson et al criterion)')
+        tcrit = so.bisect(pdfs.expPDF_tcrit_Jackson,
+            taus[i], taus[i+1], args=(taus, areas, i+1))
+        tcrits[2, i] = tcrit
+        enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, 1)
+        pdfs.expPDF_misclassified_printout(tcrit, enf, ens, pf, ps, output)
+
+    output.write('\n\nSUMMARY of tcrit values:')
+    output.write('\nComponents  DC\tC&N\tJackson\n')
+    for i in range(comps):
+        output.write('{0:d} to {1:d} '.format(i+1, i+2) +
+            '\t{0:.3f}'.format(tcrits[0, i] * 1000) +
+            '\t{0:.3f}'.format(tcrits[1, i] * 1000) +
+            '\t{0:.3f}\n'.format(tcrits[2, i] * 1000))
+

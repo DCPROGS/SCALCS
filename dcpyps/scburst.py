@@ -5,16 +5,12 @@ __author__="R.Lape, University College London"
 __date__ ="$07-Dec-2010 20:29:14$"
 
 import sys
-import math
 
-import scipy.optimize as so
 import numpy as np
 from numpy import linalg as nplin
 
 import qmatlib as qml
 import pdfs
-import scalcslib as scl
-import optimize
 
 def phiBurst(mec):
     """
@@ -595,33 +591,3 @@ def printout_pdfs(mec, output=sys.stdout):
     tpop = mop / (mbl + msh)
     output.write('Total Popen = (open time/bst)/(bst_length + ' +
         'mean gap between burst) = {0:.4f} \n'.format(tpop))
-    output.write('*******************************************\n')
-
-def printout_tcrit(mec, output=sys.stdout):
-    """
-    Output calculations based on division into bursts by critical time (tcrit).
-
-    Parameters
-    ----------
-    mec : dcpyps.Mechanism
-        The mechanism to be analysed.
-    output : output device
-        Default device: sys.stdout
-    """
-
-    output.write('\n\nCALCULATIONS BASED ON DIVISION INTO BURSTS BY' +
-    ' tcrit- CRITICAL TIME.\n')
-    # Ideal shut time pdf
-    eigs, w = scl.ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
-    output.write('\nIDEAL SHUT TIME DISTRIBUTION')
-    pdfs.expPDF_printout(eigs, w, output)
-    taus = 1 / eigs
-    areas = w /eigs
-    taus, areas = optimize.sortShell2(taus, areas)
-
-    output.write('\n\nCritical time between components 1 and 2')
-    output.write('\nEqual % misclassified (DC criterion)')
-    tcrit = so.bisect(pdfs.expPDF_tcrit_DC,
-        taus[0], taus[1], args=(taus, areas, 1))
-    enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, 1)
-    pdfs.expPDF_misclassified_printout(tcrit, enf, ens, pf, ps)

@@ -508,6 +508,7 @@ class QMatGUI(QMainWindow):
         self.txtPltBox.append('Asymptotic pdf- green solid line.')
 
         self.mec.set_eff('c', self.conc)
+        scl.printout_tcrit(self.mec, output=self.log)
         t, ipdf, epdf, apdf = scpl.shut_time_pdf(self.mec, self.tres)
 
         self.axes.clear()
