@@ -92,6 +92,47 @@ def expPDF_misclassified(tcrit, tau, area, comp):
 
     return enf, ens, pf, ps
 
+def expPDF_misclassified_printout(tcrit, enf, ens, pf, ps, output=sys.stdout):
+    """
+    """
+
+    output.write('\n\ntcrit = {0:.6f} ms'.format(tcrit * 1000))
+    output.write('\n% misclassified: short = {0:.3f};'.format(pf * 100) +
+        ' long = {0:.3f}'.format(ps * 100) +
+        '\n# misclassified (out of 100): short = {0:.3f};'.format(enf * 100) +
+        ' long = {0:.3f}'.format(ens * 100) +
+        '\nTotal # misclassified (out of 100) = {0:.3f}\n'
+        .format((enf + ens) * 100))
+
+def expPDF_tcrit_DC(tcrit, tau, area, comp):
+    """
+    """
+
+    enf, ens, pf, ps = expPDF_misclassified(tcrit, tau, area, comp)
+    return ps - pf
+
+def expPDF_tcrit_CN(tcrit, tau, area, comp):
+    """
+    """
+
+    enf, ens, pf, ps = expPDF_misclassified(tcrit, tau, area, comp)
+    return ens - enf
+
+def expPDF_tcrit_Jackson(tcrit, tau, area, comp):
+    """
+    """
+
+    tfast = tau[:comp]
+    tslow = tau[comp:]
+    afast = area[:comp]
+    aslow = area[comp:]
+
+    # Number of misclassified.
+    enf = np.sum((afast / tfast) * np.exp(-tcrit / tfast))
+    ens = np.sum((aslow / tslow) * (1 - np.exp(-tcrit / tslow)))
+
+    return ens - enf
+
 def geometricPDF_mean_sd(rho, w):
     """
     Calculate mean and standard deviation for geometric PDF.

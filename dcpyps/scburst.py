@@ -7,12 +7,14 @@ __date__ ="$07-Dec-2010 20:29:14$"
 import sys
 import math
 
+import scipy.optimize as so
 import numpy as np
 from numpy import linalg as nplin
 
 import qmatlib as qml
 import pdfs
 import scalcslib as scl
+import optimize
 
 def phiBurst(mec):
     """
@@ -607,12 +609,19 @@ def printout_tcrit(mec, output=sys.stdout):
         Default device: sys.stdout
     """
 
+    output.write('\n\nCALCULATIONS BASED ON DIVISION INTO BURSTS BY' +
+    ' tcrit- CRITICAL TIME.\n')
     # Ideal shut time pdf
     eigs, w = scl.ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
-    output.write('\n\n\nIDEAL SHUT TIME DISTRIBUTION')
+    output.write('\nIDEAL SHUT TIME DISTRIBUTION')
     pdfs.expPDF_printout(eigs, w, output)
+    taus = 1 / eigs
+    areas = w /eigs
+    taus, areas = optimize.sortShell2(taus, areas)
 
-    output.write('\nCritical time between components 1 and 2')
-
-
-
+    output.write('\n\nCritical time between components 1 and 2')
+    output.write('\nEqual % misclassified (DC criterion)')
+    tcrit = so.bisect(pdfs.expPDF_tcrit_DC,
+        taus[0], taus[1], args=(taus, areas, 1))
+    enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, 1)
+    pdfs.expPDF_misclassified_printout(tcrit, enf, ens, pf, ps)

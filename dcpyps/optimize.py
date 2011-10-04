@@ -164,6 +164,27 @@ def sortShell(vals, simp):
          gap //= 2
     return vals, simp
 
+def sortShell2(vals, simp):
+    """
+    Shell sort using Shell's (original) gap sequence: n/2, n/4, ..., 1.
+    """
+    n = np.size(vals)
+    gap = n // 2
+    while gap > 0:
+         # do the insertion sort
+         for i in range(gap, n):
+             val = vals[i]
+             tsimp = simp[i]
+             j = i
+             while j >= gap and vals[j - gap] > val:
+                 vals[j] = vals[j - gap]
+                 simp[j] = simp[j - gap]
+                 j -= gap
+             vals[j] = val
+             simp[j] = tsimp
+         gap //= 2
+    return vals, simp
+
 def simplexHJC(theta, data, func, opts, verbose=0):
     """
     Python implementation of DC's SIMPHJC.FOR subroutine used in HJCFIT.
