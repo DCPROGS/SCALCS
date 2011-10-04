@@ -607,19 +607,19 @@ def printout_tcrit(mec, output=sys.stdout):
         tcrit = so.bisect(pdfs.expPDF_tcrit_DC,
             taus[i], taus[i+1], args=(taus, areas, i+1))
         tcrits[0, i] = tcrit
-        enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, 1)
+        enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, i+1)
         pdfs.expPDF_misclassified_printout(tcrit, enf, ens, pf, ps, output)
         output.write('\nEqual # misclassified (Clapham & Neher criterion)')
         tcrit = so.bisect(pdfs.expPDF_tcrit_CN,
             taus[i], taus[i+1], args=(taus, areas, i+1))
         tcrits[1, i] = tcrit
-        enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, 1)
+        enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, i+1)
         pdfs.expPDF_misclassified_printout(tcrit, enf, ens, pf, ps, output)
         output.write('\nMinimum total # misclassified (Jackson et al criterion)')
         tcrit = so.bisect(pdfs.expPDF_tcrit_Jackson,
             taus[i], taus[i+1], args=(taus, areas, i+1))
         tcrits[2, i] = tcrit
-        enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, 1)
+        enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, i+1)
         pdfs.expPDF_misclassified_printout(tcrit, enf, ens, pf, ps, output)
 
     output.write('\n\nSUMMARY of tcrit values:')

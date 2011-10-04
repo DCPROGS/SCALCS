@@ -129,9 +129,9 @@ def expPDF_tcrit_Jackson(tcrit, tau, area, comp):
 
     # Number of misclassified.
     enf = np.sum((afast / tfast) * np.exp(-tcrit / tfast))
-    ens = np.sum((aslow / tslow) * (1 - np.exp(-tcrit / tslow)))
+    ens = np.sum((aslow / tslow) * np.exp(-tcrit / tslow))
 
-    return ens - enf
+    return enf - ens
 
 def geometricPDF_mean_sd(rho, w):
     """
