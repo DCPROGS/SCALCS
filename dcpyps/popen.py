@@ -276,14 +276,14 @@ def printout(mec, tres, output=sys.stdout, eff='c'):
     emaxPopen, econc = maxPopen(mec, tres)
     eEC50 = EC50(mec, tres)
     enH = nH(mec, tres)
-    output.write('\n\nHJC Popen curve:\nmaxPopen = {0:.3f}; '
-        .format(emaxPopen) + ' EC50 = {0:.3f} mikroM; '
-        .format(eEC50 * 1000000) + ' nH = {0:.3f}'.format(enH))
+    output.write('\n\nHJC Popen curve:\nmaxPopen = {0:.5g}; '
+        .format(emaxPopen) + ' EC50 = {0:.5g} mikroM; '
+        .format(eEC50 * 1000000) + ' nH = {0:.5g}'.format(enH))
 
     # Calculate EC50, nH and maxPopen for ideal Popen curve.
     imaxPopen, iconc = maxPopen(mec, 0)
     iEC50 = EC50(mec, 0)
     inH = nH(mec, 0)
-    output.write('\n\nIdeal Popen curve:\nmaxPopen = {0:.3f}; '
-        .format(imaxPopen) + ' EC50 = {0:.3f} mikroM; '
-        .format(iEC50 * 1000000) + ' nH = {0:.3f}\n'.format(inH))
+    output.write('\n\nIdeal Popen curve:\nmaxPopen = {0:.5g}; '
+        .format(imaxPopen) + ' EC50 = {0:.5g} mikroM; '
+        .format(iEC50 * 1000000) + ' nH = {0:.5g}\n'.format(inH))

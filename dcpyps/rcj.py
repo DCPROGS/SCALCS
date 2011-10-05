@@ -372,7 +372,7 @@ def printout(mec, jpar, output=sys.stdout, eff='c'):
     output.write('\n\nEquilibrium occupancies before t=0, at concentration = 0.0:')
     for i in range(mec.k):
         output.write('\np00({0:d}) = '.format(i+1) +
-            '{0:.3e}'.format(P0[i]))
+            '{0:.5g}'.format(P0[i]))
     
     mec.set_eff(eff, jpar['peak_conc'])
     Pinf = qml.pinf(mec.Q)
@@ -380,30 +380,30 @@ def printout(mec, jpar, output=sys.stdout, eff='c'):
     Ainf = mec.A
     w_on = coefficient_calc(mec.k, Ainf, P0)
 
-    output.write('\n\nEquilibrium occupancies at maximum concentration = {0:.3f} mM:'
+    output.write('\n\nEquilibrium occupancies at maximum concentration = {0:.5g} mM:'
         .format(jpar['peak_conc'] * 1000))
     for i in range(mec.k):
         output.write('\npinf({0:d}) = '.format(i+1) +
-            '{0:.3e}'.format(Pinf[i]))
+            '{0:.5g}'.format(Pinf[i]))
             
     Pt = np.zeros((mec.k))
     for i in range(mec.k):
         for ju, eg in zip(w_on[:, i], eigsInf):
             Pt[i] += np.dot(ju, np.exp(eg * jpar['pulse_width'] * 1e-6))
             
-    output.write('\n\nOccupancies at the end of {0:.3f} ms pulse:'.
+    output.write('\n\nOccupancies at the end of {0:.5g} ms pulse:'.
         format(jpar['pulse_width'] * 0.001))
     for i in range(mec.k):
         output.write('\npt({0:d}) = '.format(i+1) +
-            '{0:.3e}'.format(Pt[i]))
+            '{0:.5g}'.format(Pt[i]))
             
     output.write('\n\nON-RELAXATION for ideal step:')
     output.write('\nTime course for current')
     output.write('\n\nComp\tEigen\t\tTau(ms)')
     for i in range(mec.k-1):
         output.write('\n{0:d}\t'.format(i+1) +
-            '{0:.3e}\t\t'.format(eigsInf[i]) +
-            '{0:.3e}\t'.format(-1000 / eigsInf[i])) # convert to ms
+            '{0:.5g}\t\t'.format(eigsInf[i]) +
+            '{0:.5g}\t'.format(-1000 / eigsInf[i])) # convert to ms
         
     ampl_on = np.zeros((mec.k))
     for i in range(mec.k):
@@ -417,22 +417,22 @@ def printout(mec, jpar, output=sys.stdout, eff='c'):
     output.write('\n\nAmpl.(t=0,pA)\tRel.ampl.\t\tArea(pC)')
     for i in range(mec.k-1):
         area_on[i] = -1000 * cur_on[i] / eigsInf[i]
-        output.write('\n{0:.6f}\t\t'.format(cur_on[i]) +
-            '{0:.6f}\t\t'.format(rel_ampl_on[i]) +
-            '{0:.3e}\t'.format(area_on[i]))
+        output.write('\n{0:.5g}\t\t'.format(cur_on[i]) +
+            '{0:.5g}\t\t'.format(rel_ampl_on[i]) +
+            '{0:.5g}\t'.format(area_on[i]))
         
-    output.write('\n\nTotal current at t=0 (pA) = {0:.3e}'.
+    output.write('\n\nTotal current at t=0 (pA) = {0:.5g}'.
         format(np.sum(cur_on)))
-    output.write('\nTotal current at equilibrium (pA) = {0:.6f}'.
+    output.write('\nTotal current at equilibrium (pA) = {0:.5g}'.
         format(cur_on[-1]))
-    output.write('\nTotal area (pC) = {0:.6f}'.
+    output.write('\nTotal area (pC) = {0:.5g}'.
         format(np.sum(area_on)))
         
     #TODO: Current at the end of pulse
     ct = cur_on[:-1] * np.exp(jpar['pulse_width'] * 1e-6 * eigsInf[:-1])
     
-    output.write('\nCurrent at the end of {0:.3f}'.format(jpar['pulse_width']
-        * 0.001) + ' ms pulse = {0:.6f}'.format(np.sum(ct) + cur_on[-1]))
+    output.write('\nCurrent at the end of {0:.5g}'.format(jpar['pulse_width']
+        * 0.001) + ' ms pulse = {0:.5g}'.format(np.sum(ct) + cur_on[-1]))
 
     # Calculate off- relaxation.
     output.write('\n\nOFF-RELAXATION for ideal step:')
@@ -440,8 +440,8 @@ def printout(mec, jpar, output=sys.stdout, eff='c'):
     output.write('\n\nComp\tEigen\t\tTau(ms)')
     for i in range(mec.k-1):
         output.write('\n{0:d}\t'.format(i+1) +
-            '{0:.3e}\t\t'.format(eigs0[i]) +
-            '{0:.3e}\t'.format(-1000 / eigs0[i]))
+            '{0:.5g}\t\t'.format(eigs0[i]) +
+            '{0:.5g}\t'.format(-1000 / eigs0[i]))
     
     w_off = coefficient_calc(mec.k, A0, Pt)
     ampl_off = np.zeros((mec.k))
@@ -456,13 +456,13 @@ def printout(mec, jpar, output=sys.stdout, eff='c'):
     output.write('\n\nAmpl.(t=0,pA)\tRel.ampl.\t\tArea(pC)')
     for i in range(mec.k-1):
         area_off[i] = -1000 * cur_off[i] / eigs0[i]
-        output.write('\n{0:.6f}\t\t'.format(cur_off[i]) +
-            '{0:.6f}\t\t'.format(rel_ampl_off[i]) +
-            '{0:.3e}\t'.format(area_off[i]))
+        output.write('\n{0:.5g}\t\t'.format(cur_off[i]) +
+            '{0:.5g}\t\t'.format(rel_ampl_off[i]) +
+            '{0:.5g}\t'.format(area_off[i]))
         
-    output.write('\n\nTotal current at t=0 (pA) = {0:.3e}'.
+    output.write('\n\nTotal current at t=0 (pA) = {0:.5g}'.
         format(np.sum(cur_off)))
-    output.write('\nTotal current at equilibrium (pA) = {0:.6f}'.
+    output.write('\nTotal current at equilibrium (pA) = {0:.5g}'.
         format(cur_off[-1]))
-    output.write('\nTotal area (pC) = {0:.6f}'.
+    output.write('\nTotal area (pC) = {0:.5g}'.
         format(np.sum(area_off)))

@@ -33,6 +33,7 @@ __date__ ="$07-Dec-2010 20:29:14$"
 
 import sys
 import math
+from decimal import*
 
 import scipy.optimize as so
 import numpy as np
@@ -439,7 +440,7 @@ def exact_GAMAxx(mec, tres, open):
 
     return eigen, np.array(gama00), np.array(gama10), np.array(gama11)
 
-def printout_occupancies(mec, output=sys.stdout):
+def printout_occupancies(mec, tres, output=sys.stdout):
     """
     """
 
@@ -454,8 +455,8 @@ def printout_occupancies(mec, output=sys.stdout):
         if i == 0:
             mean_life_A = ideal_subset_mean_life_time(mec.Q, 1, mec.kA)
             output.write('\nSubset A ' +
-                '\t{0:.6f}'.format(np.sum(pinf[:mec.kA])) +
-                '\t{0:.6f}'.format(mean_life_A * 1000) +
+                '\t{0:.5g}'.format(np.sum(pinf[:mec.kA])) +
+                '\t{0:.5g}'.format(mean_life_A * 1000) +
                 '\n')
         if i == mec.kA:
             mean_life_B = ideal_subset_mean_life_time(mec.Q, mec.kA + 1, mec.kA + mec.kB)
@@ -463,20 +464,36 @@ def printout_occupancies(mec, output=sys.stdout):
             output.write('\nstate\toccupancy\t(ms)\tto next opening')
             output.write('\n\t\t\tgiven start in this state')
             output.write('\nSubset B ' +
-                '\t{0:.6f}'.format(np.sum(pinf[mec.kA:mec.kA+mec.kB])) +
-                '\t{0:.6f}'.format(mean_life_B * 1000) +
+                '\t{0:.5g}'.format(np.sum(pinf[mec.kA:mec.kA+mec.kB])) +
+                '\t{0:.5g}'.format(mean_life_B * 1000) +
                 '\n')
         if i == mec.kE:
             mean_life_C = ideal_subset_mean_life_time(mec.Q, mec.kA + mec.kB + 1, mec.k)
             output.write('\n\nSubset C ' +
-                '\t{0:.6f}'.format(np.sum(pinf[mec.kA+mec.kB:mec.k])) +
-                '\t{0:.6f}'.format(mean_life_C * 1000) +
+                '\t{0:.5g}'.format(np.sum(pinf[mec.kA+mec.kB:mec.k])) +
+                '\t{0:.5g}'.format(mean_life_C * 1000) +
                 '\n')
         mean = ideal_mean_latency_given_start_state(mec, i+1)
         output.write('\n{0:d}'.format(i+1) +
-            '\t{0:.6f}'.format(pinf[i]) +
-            '\t{0:.6f}'.format(-1 / mec.Q[i,i] * 1000) +
-            '\t{0:.6f}'.format(mean * 1000))
+            '\t{0:.5g}'.format(pinf[i]) +
+            '\t{0:.5g}'.format(-1 / mec.Q[i,i] * 1000) +
+            '\t{0:.5g}'.format(mean * 1000))
+
+    expQFF = qml.expQt(mec.QFF, tres)
+    expQAA = qml.expQt(mec.QAA, tres)
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
+    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
+    phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
+    phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
+
+    output.write('\n\n\nInitial HJC vector for openings phiOp =\n')
+    for i in range(phiA.shape[0]):
+        output.write('\t{0:.5g}'.format(phiA[i]))
+    output.write('\n\nInitial HJC vector for shuttings phiSh =\n')
+    for i in range(phiF.shape[0]):
+        output.write('\t{0:.5g}'.format(phiF[i]))
+
 
 def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
     """
@@ -504,9 +521,9 @@ def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
     output.write('\nterm\ttau (ms)\tarea (%)\trate const (1/sec)')
     for i in range(mec.kA):
         output.write('\n{0:d}'.format(i+1) +
-        '\t{0:.3f}'.format(-1.0 / roots[i] * 1000) +
-        '\t{0:.3f}'.format(areas[i] * 100) +
-        '\t{0:.3f}'.format(- roots[i]))
+        '\t{0:.5g}'.format(-1.0 / roots[i] * 1000) +
+        '\t{0:.5g}'.format(areas[i] * 100) +
+        '\t{0:.5g}'.format(- roots[i]))
     areast0 = np.zeros(mec.kA)
     for i in range(mec.kA):
         areast0[i] = areas[i] * np.exp(- tres * roots[i])
@@ -515,20 +532,20 @@ def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
     infinity (and sum=1), so areas can be compared with ideal pdf.')
     for i in range(mec.kA):
         output.write('\n{0:d}'.format(i+1) +
-        '\t{0:.3f}'.format(areast0[i] * 100))
+        '\t{0:.5g}'.format(areast0[i] * 100))
     mean = exact_mean_time(tres,
             mec.QAA, mec.QFF, mec.QAF, mec.kA, mec.kF, GAF, GFA)
-    output.write('\nMean open time (ms) = {0:.6f}'.format(mean * 1000))
+    output.write('\nMean open time (ms) = {0:.5g}'.format(mean * 1000))
 
     # Exact pdf
     eigvals, gamma00, gamma10, gamma11 = exact_GAMAxx(mec, tres, open)
     output.write('\n\nEXACT OPEN TIME DISTRIBUTION')
     output.write('\neigen\tg00(m)\tg10(m)\tg11(m)')
     for i in range(mec.k):
-        output.write('\n{0:.3f}'.format(eigvals[i]) +
-        '\t{0:.3f}'.format(gamma00[i]) +
-        '\t{0:.3f}'.format(gamma10[i]) +
-        '\t{0:.3f}'.format(gamma11[i]))
+        output.write('\n{0:.5g}'.format(eigvals[i]) +
+        '\t{0:.5g}'.format(gamma00[i]) +
+        '\t{0:.5g}'.format(gamma10[i]) +
+        '\t{0:.5g}'.format(gamma11[i]))
 
     output.write('\n\n\n*******************************************\n')
     # SHUT TIME DISTRIBUTIONS
@@ -549,9 +566,9 @@ def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
     output.write('\nterm\ttau (ms)\tarea (%)\trate const (1/sec)')
     for i in range(mec.kF):
         output.write('\n{0:d}'.format(i+1) +
-        '\t{0:.3f}'.format(-1.0 / roots[i] * 1000) +
-        '\t{0:.3f}'.format(areas[i] * 100) +
-        '\t{0:.3f}'.format(- roots[i]))
+        '\t{0:.5g}'.format(-1.0 / roots[i] * 1000) +
+        '\t{0:.5g}'.format(areas[i] * 100) +
+        '\t{0:.5g}'.format(- roots[i]))
     areast0 = np.zeros(mec.kF)
     for i in range(mec.kF):
         areast0[i] = areas[i] * np.exp(- tres * roots[i])
@@ -560,7 +577,7 @@ def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
     infinity (and sum=1), so areas can be compared with ideal pdf.')
     for i in range(mec.kF):
         output.write('\n{0:d}'.format(i+1) +
-        '\t{0:.3f}'.format(areast0[i] * 100))
+        '\t{0:.5g}'.format(areast0[i] * 100))
     mean = exact_mean_time(tres,
             mec.QFF, mec.QAA, mec.QFA, mec.kF, mec.kA, GFA, GAF)
     output.write('\nMean shut time (ms) = {0:.6f}'.format(mean * 1000))
@@ -570,10 +587,10 @@ def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
     output.write('\n\nEXACT SHUT TIME DISTRIBUTION')
     output.write('\neigen\tg00(m)\tg10(m)\tg11(m)')
     for i in range(mec.k):
-        output.write('\n{0:.3f}'.format(eigvals[i]) +
-        '\t{0:.3f}'.format(gamma00[i]) +
-        '\t{0:.3f}'.format(gamma10[i]) +
-        '\t{0:.3f}'.format(gamma11[i]))
+        output.write('\n{0:.5g}'.format(eigvals[i]) +
+        '\t{0:.5g}'.format(gamma00[i]) +
+        '\t{0:.5g}'.format(gamma10[i]) +
+        '\t{0:.5g}'.format(gamma11[i]))
 
 def printout_tcrit(mec, output=sys.stdout):
     """
@@ -626,7 +643,7 @@ def printout_tcrit(mec, output=sys.stdout):
     output.write('\nComponents  DC\tC&N\tJackson\n')
     for i in range(comps):
         output.write('{0:d} to {1:d} '.format(i+1, i+2) +
-            '\t{0:.3f}'.format(tcrits[0, i] * 1000) +
-            '\t{0:.3f}'.format(tcrits[1, i] * 1000) +
-            '\t{0:.3f}\n'.format(tcrits[2, i] * 1000))
+            '\t{0:.5g}'.format(tcrits[0, i] * 1000) +
+            '\t{0:.5g}'.format(tcrits[1, i] * 1000) +
+            '\t{0:.5g}\n'.format(tcrits[2, i] * 1000))
 

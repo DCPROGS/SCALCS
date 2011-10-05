@@ -389,11 +389,11 @@ class QMatGUI(QMainWindow):
         self.txtPltBox.append('Concentration profile- green solid line.')
         self.txtPltBox.append('Relaxation- blue solid line.')
         self.txtPltBox.append('\nConcentration pulse profile:')
-        self.txtPltBox.append('Concentration = {0:.3f} mM'
+        self.txtPltBox.append('Concentration = {0:.5g} mM'
             .format(jpar['peak_conc'] * 1000))
-        self.txtPltBox.append('10- 90% rise time = {0:.0f} microsec'
+        self.txtPltBox.append('10- 90% rise time = {0:.5g} microsec'
             .format(jpar['rise_time']))
-        self.txtPltBox.append('Pulse width = {0:.1f} millisec'
+        self.txtPltBox.append('Pulse width = {0:.5g} millisec'
             .format(jpar['pulse_width'] * 0.001))
         self.txtPltBox.append("---\n")
         
@@ -422,7 +422,7 @@ class QMatGUI(QMainWindow):
 
         self.txtPltBox.clear()
         self.txtPltBox.append('\t===== Popen PLOT =====')
-        self.txtPltBox.append('Resolution = {0:.2f} mikrosec'.
+        self.txtPltBox.append('Resolution = {0:.5g} mikrosec'.
             format(self.tres * 1000000))
         self.txtPltBox.append('Ideal curve- red dashed line.')
         self.txtPltBox.append('HJC curve- blue solid line.')
@@ -443,9 +443,9 @@ class QMatGUI(QMainWindow):
         """
         self.txtPltBox.clear()
         self.txtPltBox.append('\t===== OPEN TIME PDF =====')
-        self.txtPltBox.append('Agonist concentration = {0:.6f} mikroM'.
+        self.txtPltBox.append('Agonist concentration = {0:.5g} mikroM'.
             format(self.conc * 1000000))
-        self.txtPltBox.append('Resolution = {0:.2f} mikrosec'.
+        self.txtPltBox.append('Resolution = {0:.5g} mikrosec'.
             format(self.tres * 1000000))
         self.txtPltBox.append('Ideal pdf- red dashed line.')
         self.txtPltBox.append('Exact pdf- blue solid line.')
@@ -453,7 +453,7 @@ class QMatGUI(QMainWindow):
 
         self.mec.set_eff('c', self.conc)
 
-        scl.printout_occupancies(self.mec, output=self.log)
+        scl.printout_occupancies(self.mec, self.tres, output=self.log)
         scl.printout_distributions(self.mec, self.tres, output=self.log)
         
         t, ipdf, epdf, apdf = scpl.open_time_pdf(self.mec, self.tres)
@@ -471,9 +471,9 @@ class QMatGUI(QMainWindow):
 
         self.txtPltBox.clear()
         self.txtPltBox.append('\t===== SUBSET TIME PDF =====')
-        self.txtPltBox.append('Agonist concentration = {0:.6f} mikroM'.
+        self.txtPltBox.append('Agonist concentration = {0:.5g} mikroM'.
             format(self.conc * 1000000))
-        self.txtPltBox.append('Resolution = {0:.2f} mikrosec'.
+        self.txtPltBox.append('Resolution = {0:.5g} mikrosec'.
             format(self.tres * 1000000))
         self.txtPltBox.append('Ideal pdf- red dashed line.')
         self.txtPltBox.append('Subset life time pdf- blue solid line.')
@@ -499,9 +499,9 @@ class QMatGUI(QMainWindow):
 
         self.txtPltBox.clear()
         self.txtPltBox.append('\t===== SHUT TIME PDF =====')
-        self.txtPltBox.append('Agonist concentration = {0:.6f} mikroM'.
+        self.txtPltBox.append('Agonist concentration = {0:.5g} mikroM'.
             format(self.conc * 1000000))
-        self.txtPltBox.append('Resolution = {0:.2f} mikrosec'.
+        self.txtPltBox.append('Resolution = {0:.5g} mikrosec'.
             format(self.tres * 1000000))
         self.txtPltBox.append('Ideal pdf- red dashed line.')
         self.txtPltBox.append('Exact pdf- blue solid line.')
@@ -524,7 +524,7 @@ class QMatGUI(QMainWindow):
         """
         self.txtPltBox.clear()
         self.txtPltBox.append('\t===== BURST LENGTH PDF =====')
-        self.txtPltBox.append('Agonist concentration = {0:.6f} microM'.
+        self.txtPltBox.append('Agonist concentration = {0:.5g} microM'.
             format(self.conc * 1000000))
         self.txtPltBox.append('Ideal pdf- blue solid line.')
 
@@ -546,7 +546,7 @@ class QMatGUI(QMainWindow):
         self.txtPltBox.clear()
         self.txtPltBox.append('===== BURST LENGTH PDF ' +
             '\nCONDITIONAL ON STARTING STATE =====')
-        self.txtPltBox.append('Agonist concentration = {0:.6f} microM'.
+        self.txtPltBox.append('Agonist concentration = {0:.5g} microM'.
             format(self.conc * 1000000))
         self.txtPltBox.append('Ideal pdf- blue solid line.')
 

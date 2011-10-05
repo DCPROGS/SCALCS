@@ -61,15 +61,15 @@ def expPDF_printout(eigs, ampl, output=sys.stdout):
     output.write('\nterm\tw\trate (1/sec)\ttau (ms)\tarea (%)')
     for i in range(eigs.shape[0]):
         output.write('\n{0:d}'.format(i+1) +
-            '\t{0:.3f}'.format(ampl[i]) +
-            '\t{0:.1f}'.format(eigs[i]) +
-            '\t{0:.3f}'.format(1000 / eigs[i]) +
-            '\t{0:.3f}'.format(100 * ampl[i] / eigs[i]))
+            '\t{0:.5g}'.format(ampl[i]) +
+            '\t{0:.5g}'.format(eigs[i]) +
+            '\t{0:.5g}'.format(1000 / eigs[i]) +
+            '\t{0:.5g}'.format(100 * ampl[i] / eigs[i]))
 
     mean, sd = expPDF_mean_sd(1 / eigs, ampl / eigs)
-    output.write('\nMean (ms) =\t {0:.3f}'.format(mean * 1000) +
-        '\tSD =\t {0:.3f}'.format(sd * 1000) +
-        '\tSD/mean =\t {0:.3f}'.format(sd / mean))
+    output.write('\nMean (ms) =\t {0:.5g}'.format(mean * 1000) +
+        '\tSD =\t {0:.5g}'.format(sd * 1000) +
+        '\tSD/mean =\t {0:.5g}'.format(sd / mean))
 
 def expPDF_misclassified(tcrit, tau, area, comp):
     """
@@ -96,12 +96,12 @@ def expPDF_misclassified_printout(tcrit, enf, ens, pf, ps, output=sys.stdout):
     """
     """
 
-    output.write('\ntcrit = {0:.6f} ms'.format(tcrit * 1000))
-    output.write('\n% misclassified: short = {0:.3f};'.format(pf * 100) +
-        ' long = {0:.3f}'.format(ps * 100) +
-        '\n# misclassified (out of 100): short = {0:.3f};'.format(enf * 100) +
-        ' long = {0:.3f}'.format(ens * 100) +
-        '\nTotal # misclassified (out of 100) = {0:.3f}\n'
+    output.write('\ntcrit = {0:.5g} ms'.format(tcrit * 1000))
+    output.write('\n% misclassified: short = {0:.5g};'.format(pf * 100) +
+        ' long = {0:.5g}'.format(ps * 100) +
+        '\n# misclassified (out of 100): short = {0:.5g};'.format(enf * 100) +
+        ' long = {0:.5g}'.format(ens * 100) +
+        '\nTotal # misclassified (out of 100) = {0:.5g}\n'
         .format((enf + ens) * 100))
 
 def expPDF_tcrit_DC(tcrit, tau, area, comp):
@@ -167,13 +167,13 @@ def geometricPDF_printout(rho, w, output=sys.stdout):
     output.write('\nterm\tw\trho\tarea(%)\tNorm mean')
     for i in range(rho.shape[0]):
         output.write('\n{0:d}'.format(i+1) +
-            '\t{0:.6f}'.format(w[i]) +
-            '\t{0:.6f}'.format(rho[i]) +
-            '\t{0:.3f}'.format(w[i] * norm[i] * 100) +
-            '\t{0:.3f}'.format(norm[i]))
+            '\t{0:.5g}'.format(w[i]) +
+            '\t{0:.5g}'.format(rho[i]) +
+            '\t{0:.5g}'.format(w[i] * norm[i] * 100) +
+            '\t{0:.5g}'.format(norm[i]))
 
     mean, sd = geometricPDF_mean_sd(rho, w)
-    output.write('\nMean number of openings per burst =\t {0:.3f}'.format(mean) +
-        '\n\tSD =\t {0:.3f}'.format(sd) +
-        '\tSD/mean =\t {0:.3f}'.format(sd / mean))
+    output.write('\nMean number of openings per burst =\t {0:.5g}'.format(mean) +
+        '\n\tSD =\t {0:.5g}'.format(sd) +
+        '\tSD/mean =\t {0:.5g}'.format(sd / mean))
 

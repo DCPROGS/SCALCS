@@ -222,14 +222,14 @@ class Mechanism(object):
         for rate in self.Rates:
             str_repr += ('From ' + rate.State1.name + '\tto ' +
                          rate.State2.name + '\t' + rate.name +
-                         '\t{0:.3f}'.format(rate.unit_rate()) +
+                         '\t{0:.5g}'.format(rate.unit_rate()) +
                          '\n')
 
         str_repr += '\n'
         for state in self.States:
             if state.statetype=='A':
                 str_repr += ('Conductance of state ' + state.name + ' (pS)  = ' +
-                         '     {0:.3f}'.format(state.conductance * 1e12) +
+                         '     {0:.5g}'.format(state.conductance * 1e12) +
                          '\n')
 
         str_repr += ('\nNumber of open states = {0:d}'.format(self.kA))

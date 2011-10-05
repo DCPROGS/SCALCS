@@ -142,8 +142,9 @@ def console_demo(demomec):
 
     #     OPEN TIME DISTRIBUTION
     sys.stdout.write('\n\nCalculating open and shut time distributions:')
-    scl.printout_occupancies(demomec)
+    scl.printout_occupancies(demomec, tres)
     scl.printout_distributions(demomec, tres)
+    scl.printout_tcrit(demomec)
     t, ipdf, epdf, apdf = scpl.open_time_pdf(demomec, tres)
 
     plt.subplot(223)
