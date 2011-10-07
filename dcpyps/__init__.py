@@ -45,7 +45,7 @@ from mechanism import * # this should really be in the namespace
                         # numpy.array
 import pdfs
 import popen
-import qmatgui
+# import qmatgui
 import qmatlib
 import rcj
 import scalcslib

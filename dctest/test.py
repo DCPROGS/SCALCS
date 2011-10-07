@@ -19,8 +19,8 @@ class TestDC_PyPs(unittest.TestCase):
         self.mec.set_eff('c', self.conc)
         self.tres = 0.0001 # 100 microsec
 
-    def runTest(self):
-        pass
+    # def runTest(self):
+    #     pass
 
     def test_burst(self):
         sys.stdout.write('\n%s' % self.mec)
@@ -168,6 +168,3 @@ class TestDC_PyPs(unittest.TestCase):
         popen.printout(self.mec, tres)
         c, pe, pi = scpl.Popen(self.mec, tres)
         self.assertTrue(pi[-1]>0.967 and pi[-1]<0.969)
-
-if __name__ == '__main__':
-    unittest.main()
