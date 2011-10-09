@@ -62,7 +62,8 @@ def Popen(mec, tres):
 
     return c, pe, pi
 
-def burst_length_pdf(mec, conditional=False, tmin=0.00001, tmax=1000, points=512):
+def burst_length_pdf(mec, multicomp=False, conditional=False,
+    tmin=0.00001, tmax=1000, points=512):
     """
     Calculate the mean burst length and data for burst length distribution.
 
@@ -90,6 +91,12 @@ def burst_length_pdf(mec, conditional=False, tmin=0.00001, tmax=1000, points=512
     tmax = 20 / min(eigs)
     t = np.logspace(math.log10(tmin), math.log10(tmax), points)
     fbst = t * pdfs.expPDF(t, 1 / eigs, w / eigs)
+
+    if multicomp:
+        mfbst = np.zeros((mec.kE, points))
+        for i in range(mec.kE):
+             mfbst[i] = t * pdfs.expPDF(t, 1 / eigs[i], w[i] / eigs[i])
+        return t * 1000, fbst, mfbst
 
     if conditional:
         cfbst = np.zeros((points, mec.kA))

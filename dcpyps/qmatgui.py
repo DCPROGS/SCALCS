@@ -527,13 +527,16 @@ class QMatGUI(QMainWindow):
         self.txtPltBox.append('Agonist concentration = {0:.5g} microM'.
             format(self.conc * 1000000))
         self.txtPltBox.append('Ideal pdf- blue solid line.')
+        self.txtPltBox.append('Individual components- blue dashed lines.')
 
         self.mec.set_eff('c', self.conc)
         scburst.printout_pdfs(self.mec, output=self.log)
-        t, fbrst = scpl.burst_length_pdf(self.mec)
+        t, fbrst, mfbrst = scpl.burst_length_pdf(self.mec, multicomp=True)
         
         self.axes.clear()
         self.axes.semilogx(t, fbrst, 'b-')
+        for i in range(self.mec.kE):
+            self.axes.semilogx(t, mfbrst[i], 'b--')
         self.axes.set_yscale('sqrtscale')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')

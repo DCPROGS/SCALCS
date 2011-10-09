@@ -21,12 +21,12 @@ def expPDF(t, tau, area):
     f : float or ndarray.
     """
 
-    if tau.shape[0] == 1:
-        f = np.sum((area / tau) * np.exp(-t / tau))
-    else:
+    if type(tau) == type(np.array(())):
         f = np.zeros(t.shape)
         for i in range(tau.shape[0]):
             f += (area[i] / tau[i]) * np.exp(-t / tau[i])
+    else:
+        f = (area / tau) * np.exp(-t / tau)
     return f
 
 def expPDF_mean_sd(tau, area):
