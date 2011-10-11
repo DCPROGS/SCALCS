@@ -32,6 +32,7 @@ __author__="R.Lape, University College London"
 __date__ ="$07-Dec-2010 20:29:14$"
 
 import sys
+import time
 import math
 from decimal import*
 
@@ -240,10 +241,13 @@ def asymptotic_roots(tres, QAA, QFF, QAF, QFA, kA, kF):
     sbs = -0.0001
     sro = bisectHJC.bisection_intervals(sas, sbs, tres,
         QAA, QFF, QAF, QFA, kA, kF)
+        
     roots = np.zeros(kA)
     for i in range(kA):
-        roots[i] = bisectHJC.bisect(sro[i,0], sro[i,1], tres,
-            QAA, QFF, QAF, QFA, kA, kF)
+        roots[i] = so.bisect(qml.detW, sro[i,0], sro[i,1],
+            args=(tres, QAA, QFF, QAF, QFA, kA, kF))
+#        roots[i] = bisectHJC.bisect(sro[i,0], sro[i,1], tres,
+#            QAA, QFF, QAF, QFA, kA, kF)
     return roots
 
 def asymptotic_areas(tres, roots, QAA, QFF, QAF, QFA, kA, kF, GAF, GFA):
@@ -401,44 +405,34 @@ def exact_GAMAxx(mec, tres, open):
 
     Returns
     -------
-    eigen : array_like, shape (k,)
+    eigen : ndarray, shape (k,)
         Eigenvalues of -Q matrix.
-    gama00, gama10, gama11 : lists of floats
+    gama00, gama10, gama11 : ndarrays
         Constants for the exact open/shut time pdf.
     """
 
-    k = mec.Q.shape[0]
     expQFF = qml.expQt(mec.QFF, tres)
     expQAA = qml.expQt(mec.QAA, tres)
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
     eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
     eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
 
-    gama00 = []
-    gama10 = []
-    gama11 = []
-
     if open:
-        phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
+        phi = qml.phiHJC(eGAF, eGFA, mec.kA)
         eigen, Z00, Z10, Z11 = qml.Zxx(mec.Q, mec.kA,
             mec.QFF, mec.QAF, mec.QFA, expQFF, open)
-        uF = np.ones((mec.kF,1))
-        for i in range(k):
-            gama00.append(np.dot(np.dot(phiA, Z00[i]), uF)[0])
-            gama10.append(np.dot(np.dot(phiA, Z10[i]), uF)[0])
-            gama11.append(np.dot(np.dot(phiA, Z11[i]), uF)[0])
-
+        u = np.ones((mec.kF,1))
     else:
-        phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
+        phi = qml.phiHJC(eGFA, eGAF, mec.kF)
         eigen, Z00, Z10, Z11 = qml.Zxx(mec.Q, mec.kA,
             mec.QAA, mec.QFA, mec.QAF, expQAA, open)
-        uA = np.ones((mec.kA, 1))
-        for i in range(k):
-            gama00.append(np.dot(np.dot(phiF, Z00[i]), uA)[0])
-            gama10.append(np.dot(np.dot(phiF, Z10[i]), uA)[0])
-            gama11.append(np.dot(np.dot(phiF, Z11[i]), uA)[0])
+        u = np.ones((mec.kA, 1))
 
-    return eigen, np.array(gama00), np.array(gama10), np.array(gama11)
+    gama00 = (np.dot(np.dot(phi, Z00), u)).T[0]
+    gama10 = (np.dot(np.dot(phi, Z10), u)).T[0]
+    gama11 = (np.dot(np.dot(phi, Z11), u)).T[0]
+
+    return eigen, gama00, gama10, gama11
 
 def printout_occupancies(mec, tres, output=sys.stdout):
     """

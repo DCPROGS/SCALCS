@@ -365,6 +365,34 @@ def W(s, tres, QAA, QFF, QAF, QFA, kA, kF):
     W = s * IA - H(s, tres, QAA, QFF, QAF, QFA, kF)
     return W
 
+def detW(s, tres, QAA, QFF, QAF, QFA, kA, kF):
+    """
+    Calculate determinant of WAA(s).
+    To evaluate WFF(s) exhange A by F and F by A in function call.
+
+    Parameters
+    ----------
+    s : float
+        Laplace transform argument.
+    tres : float
+        Time resolution (dead time).
+    QAA : array_like, shape (kA, kA)
+    QFF : array_like, shape (kF, kF)
+    QAF : array_like, shape (kA, kF)
+    QFA : array_like, shape (kF, kA)
+        QAA, QFF, QAF, QFA - submatrices of Q.
+    kA : int
+        A number of open states in kinetic scheme.
+    kF : int
+        A number of shut states in kinetic scheme.
+
+    Returns
+    -------
+    detWAA : float
+    """
+
+    return nplin.det(W(s, tres, QAA, QFF, QAF, QFA, kA, kF))
+
 def dW(s, tres, QAF, QFF, QFA, kA, kF):
     """
     Evaluate the derivative with respect to s of the matrix W(s) at the root s
