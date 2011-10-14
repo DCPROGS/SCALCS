@@ -25,6 +25,8 @@ try:
 except:
     raise ImportError("matplotlib module is missing")
 
+import numpy as np
+
 import scalcslib as scl
 import rcj
 import scburst
@@ -49,6 +51,7 @@ class QMatGUI(QMainWindow):
         self.tres = 0.0001
         self.rec1 = None
         self.my_colour = ["r", "g", "b", "m", "c", "y"]
+        self.present_plot = None
 
         loadMenu = self.menuBar().addMenu('&Load')
         loadDemoAction = self.createAction("&Demo", self.onLoadDemo,
@@ -81,13 +84,18 @@ class QMatGUI(QMainWindow):
             "&Burst length vs concentration", self.onPlotBrstLenConc)
         plotJumpAction = self.createAction(
             "&Realistic concentration jump", self.onPlotCJump)
-        self.addActions(plotMenu, (plotPopenAction,
-            plotOpenTimePDFAction, plotShutTimePDFAction,
+        plotSaveASCII = self.createAction(
+            "&Save current plot as ASCII file", self.onPlotSaveASCII)
+        self.addActions(plotMenu, (plotOpenTimePDFAction, plotShutTimePDFAction,
             # setDisabled(False) to activate plotting the subset time distributions
             plotSubsetTimePDFAction.setDisabled(True),
             plotBurstLenPDFAction, plotBurstLenPDFActionCond,
             plotBurstOpeningDistrAction, plotBurstOpeningDistrActionCond,
-            plotBurstLenVConcAction, plotJumpAction))
+            plotBurstLenVConcAction,
+            plotJumpAction, plotPopenAction,
+            plotSaveASCII))
+        plotMenu.insertSeparator(plotJumpAction)
+        plotMenu.insertSeparator(plotSaveASCII)
 
         printOutMenu = self.menuBar().addMenu('&Printout')
         printOutSaveAction = self.createAction("&Save", self.onPrintOutSave)
@@ -406,6 +414,7 @@ class QMatGUI(QMainWindow):
         maxR = max(relax)
         maxJ = max(cjump)
         cjump1 = (cjump / maxJ) * 0.2 * maxR + 1.02* maxR
+        self.present_plot = np.vstack((t, relax, cjump1))
 
         self.axes.clear()
         self.axes.plot(t * 0.001, relax,'b-', t * 0.001, cjump1, 'g-')
@@ -429,6 +438,7 @@ class QMatGUI(QMainWindow):
 
         popen.printout(self.mec, self.tres, output=self.log)
         c, pe, pi = scpl.Popen(self.mec, self.tres)
+        self.present_plot = np.vstack((c, pe, pi))
 
         self.axes.clear()
         self.axes.semilogx(c, pe, 'b-', c , pi, 'r--')
@@ -457,6 +467,7 @@ class QMatGUI(QMainWindow):
         scl.printout_distributions(self.mec, self.tres, output=self.log)
         
         t, ipdf, epdf, apdf = scpl.open_time_pdf(self.mec, self.tres)
+        self.present_plot = np.vstack((t, ipdf, epdf, apdf))
 
         self.axes.clear()
         self.axes.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
@@ -484,6 +495,7 @@ class QMatGUI(QMainWindow):
         state2 = 10
 
         t, ipdf, spdf = scpl.subset_time_pdf(self.mec, self.tres, state1, state2)
+        self.present_plot = np.vstack((t, ipdf, s))
 
         self.axes.clear()
         self.axes.semilogx(t, spdf, 'b-', t, ipdf, 'r--')
@@ -510,6 +522,7 @@ class QMatGUI(QMainWindow):
         self.mec.set_eff('c', self.conc)
         scl.printout_tcrit(self.mec, output=self.log)
         t, ipdf, epdf, apdf = scpl.shut_time_pdf(self.mec, self.tres)
+        self.present_plot = np.vstack((t, ipdf, epdf, apdf))
 
         self.axes.clear()
         self.axes.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
@@ -532,6 +545,7 @@ class QMatGUI(QMainWindow):
         self.mec.set_eff('c', self.conc)
         scburst.printout_pdfs(self.mec, output=self.log)
         t, fbrst, mfbrst = scpl.burst_length_pdf(self.mec, multicomp=True)
+        self.present_plot = np.vstack((t, fbrst, mfbrst))
         
         self.axes.clear()
         self.axes.semilogx(t, fbrst, 'b-')
@@ -556,6 +570,7 @@ class QMatGUI(QMainWindow):
         self.mec.set_eff('c', self.conc)
 
         t, fbst, cfbst = scpl.burst_length_pdf(self.mec, conditional=True)
+        self.present_plot = np.vstack((t, fbst, cfbst))
         self.axes.clear()
 
         # TODO: only 6 colours are available now.        
@@ -583,6 +598,7 @@ class QMatGUI(QMainWindow):
         # TODO: need dialog to enter n
         n = 10
         r, Pr = scpl.burst_openings_pdf(self.mec, n)
+        self.present_plot = np.vstack((r, Pr))
 
         self.axes.clear()
         self.axes.plot(r, Pr,'ro')
@@ -603,6 +619,7 @@ class QMatGUI(QMainWindow):
         self.mec.set_eff('c', self.conc)
         n = 10
         r, Pr, cPr = scpl.burst_openings_pdf(self.mec, n, conditional=True)
+        self.present_plot = np.vstack((r, Pr, cPr))
 
         self.axes.clear()
         # TODO: only 6 colours are available now.
@@ -629,6 +646,7 @@ class QMatGUI(QMainWindow):
         cmin = 10e-9
         cmax = 0.1
         c, br, brblk = scpl.burst_length_versus_conc_plot(self.mec, cmin, cmax)
+        self.present_plot = np.vstack((c, br, brblk))
 
         self.axes.clear()
         self.axes.plot(c, br,'r-', c, brblk, 'r--')
@@ -652,6 +670,19 @@ class QMatGUI(QMainWindow):
         self.txtPltBox.clear()
         self.txtPltBox.append('Saved printout file:')
         self.txtPltBox.append(printOutFilename)
+
+    def onPlotSaveASCII(self):
+
+        savePlotTXTFilename = QFileDialog.getSaveFileName(self,
+                "Save as TXT file...", ".txt",
+                "TXT files (*.txt)")
+
+        fout = open(savePlotTXTFilename,'w')
+        for i in range(self.present_plot.shape[1]):
+            for j in range(self.present_plot.shape[0]):
+                fout.write('{0:.6e}\t'.format(self.present_plot[j, i]))
+            fout.write('\n')
+        fout.close()
 
     def onHelpAbout(self):
         """
@@ -728,7 +759,7 @@ class CJumpParDlg(QDialog):
         layout = QHBoxLayout()
         layout.addWidget(QLabel("Sampling interval (microsec):"))
         self.stepEdit = QLineEdit(unicode(8))
-        self.stepEdit.setMaxLength(6)
+        self.stepEdit.setMaxLength(12)
         self.connect(self.stepEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
         layout.addWidget(self.stepEdit)
@@ -737,7 +768,7 @@ class CJumpParDlg(QDialog):
         layout = QHBoxLayout()
         layout.addWidget(QLabel("Pulse centre position (microsec):"))
         self.centreEdit = QLineEdit(unicode(10000))
-        self.centreEdit.setMaxLength(6)
+        self.centreEdit.setMaxLength(12)
         self.connect(self.centreEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
         layout.addWidget(self.centreEdit)
@@ -746,7 +777,7 @@ class CJumpParDlg(QDialog):
         layout = QHBoxLayout()
         layout.addWidget(QLabel("Pulse 10-90% rise time (microsec):"))
         self.riseEdit = QLineEdit(unicode(250))
-        self.riseEdit.setMaxLength(6)
+        self.riseEdit.setMaxLength(12)
         self.connect(self.riseEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
         layout.addWidget(self.riseEdit)
@@ -755,7 +786,7 @@ class CJumpParDlg(QDialog):
         layout = QHBoxLayout()
         layout.addWidget(QLabel("Concentration pulse width (microsec):"))
         self.widthEdit = QLineEdit(unicode(10000))
-        self.widthEdit.setMaxLength(6)
+        self.widthEdit.setMaxLength(12)
         self.connect(self.widthEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
         layout.addWidget(self.widthEdit)
@@ -764,7 +795,7 @@ class CJumpParDlg(QDialog):
         layout = QHBoxLayout()
         layout.addWidget(QLabel("Record length (microsec):"))
         self.reclengthEdit = QLineEdit(unicode(50000))
-        self.reclengthEdit.setMaxLength(6)
+        self.reclengthEdit.setMaxLength(12)
         self.connect(self.reclengthEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
         layout.addWidget(self.reclengthEdit)
@@ -773,7 +804,7 @@ class CJumpParDlg(QDialog):
         layout = QHBoxLayout()
         layout.addWidget(QLabel("Pulse concentration (mM):"))
         self.concEdit = QLineEdit(unicode(0.01))
-        self.concEdit.setMaxLength(6)
+        self.concEdit.setMaxLength(12)
         self.connect(self.concEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
         layout.addWidget(self.concEdit)
