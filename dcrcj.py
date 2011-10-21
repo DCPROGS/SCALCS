@@ -35,7 +35,7 @@ if __name__ == "__main__":
         jump, relax = rcj.rcj_single(mec, P_copy)
         
         # rlx contains Popen trace only
-        t, cjmp, rlx = rcj.convert_to_arrays(jump, relax, mec.kA)
+        t, cjmp, rlx = rcj.convert_to_arrays_Popen(jump, relax, mec.kA)
 
         plt.subplot(211)
         plt.plot(t * 0.001, cjmp * 1000, 'b-')

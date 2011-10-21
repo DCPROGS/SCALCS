@@ -477,9 +477,9 @@ def mod_load(file):
     # TODO: get cycles from mod file.
     f = open(file, 'r')	# open the .mec file as read only
     cl = f.readline().strip("\n")
-    print cl
+    #print cl
     modtitle = f.readline().strip("\n")
-    print modtitle
+    #print modtitle
 
     while True:
         try:
@@ -695,7 +695,7 @@ def mod_load(file):
                         name='k'+str(newstates.index(newstates[i]+5))+str(i),
                         eff=bound))
 
-    return dcpyps.Mechanism(RateList, ncyc=None)
+    return dcpyps.Mechanism(RateList, ncyc=None), modtitle
 
 def scn_read_header (fname):
     """

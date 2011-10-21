@@ -485,6 +485,7 @@ class QMatGUI(QMainWindow):
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
 
+        self.present_plot = np.vstack((t, relax, cjump1, mrelax))
         rcj.printout(self.mec, jpar, output=self.log)
 
 
@@ -798,7 +799,8 @@ class QMatGUI(QMainWindow):
             "Open MOD File...", "", "Channel Lab MOD Files (*.mod *.MOD)")
         self.textBox.append("\nFile to read: " + os.path.split(str(filename))[1])
 
-        self.mec = dcio.mod_load(filename)
+        self.mec, title = dcio.mod_load(filename)
+        self.textBox.append("\n" + title + "\n")
         self.mec.printout(self.log)
 
 class PrintLog:
