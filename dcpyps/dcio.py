@@ -584,8 +584,6 @@ def mod_load(file):
     newstates.extend(statesB)
     newstates.extend(statesC)
     k = len(newstates)
-    print 'newstates=', newstates
-    print 'max=', max(newstates)
 
     for i in range(k):
             if stateonoff[newstates[i], 1] == 1:
@@ -605,7 +603,6 @@ def mod_load(file):
 
         bound = None
         if newstates[i] != max(newstates):
-            print 'i=', i
             if (newstates[i] > 14) and (newstates[i] < 19):
                 # States 16-19.
                 ri = 9 * li + ci - 1
