@@ -56,13 +56,16 @@ class QMatGUI(QMainWindow):
         loadMenu = self.menuBar().addMenu('&Load')
         loadDemoAction = self.createAction("&Demo", self.onLoadDemo,
             None, "loaddemo", "Load Demo mec")
-        loadFromMecFileAction = self.createAction("&From Mec File...",
+        loadFromMecFileAction = self.createAction("&From DCprogs MEC File...",
             self.onLoadMecFile,
             None, "loadfrommecfile", "Load from Mec file")
+        loadFromModFileAction = self.createAction("&From ChannelLab MOD File...",
+            self.onLoadModFile,
+            None, "loadfrommodfile", "Load from ChannelLab Mod file")
         quitAction = self.createAction("&Quit", self.close,
             "Ctrl+Q", "appquit", "Close the application")
         self.addActions(loadMenu, (loadDemoAction,
-            loadFromMecFileAction, quitAction))
+            loadFromMecFileAction, loadFromModFileAction, quitAction))
 
         plotMenu = self.menuBar().addMenu('&Plot')
         plotPopenAction = self.createAction("&Popen curve", self.onPlotPopen)
@@ -766,10 +769,10 @@ class QMatGUI(QMainWindow):
     def onLoadMecFile(self):
         """
         Load a mechanism and rates from DC's mec file.
-        Called from menu Load|From Mec File...
+        Called from menu Load|From DCPROGS .MEC File...
         """
         filename = QFileDialog.getOpenFileName(self,
-            "Open Mec File...", "", "DC Mec Files (*.mec)")
+            "Open Mec File...", "", "DC Mec Files (*.mec *.MEC)")
         self.textBox.append("\nFile to read: " + os.path.split(str(filename))[1])
 
         version, meclist, max_mecnum = dcio.mec_get_list(filename)
@@ -784,6 +787,18 @@ class QMatGUI(QMainWindow):
 
         self.textBox.append("Loaded mec: " + meclist[nrate][2])
         self.textBox.append("Loaded rates: " + meclist[nrate][3] + "\n")
+        self.mec.printout(self.log)
+
+    def onLoadModFile(self):
+        """
+        Load a mechanism and rates from Channel Lab .mod file.
+        Called from menu Load|From Channel Lab .MOD File...
+        """
+        filename = QFileDialog.getOpenFileName(self,
+            "Open MOD File...", "", "Channel Lab MOD Files (*.mod *.MOD)")
+        self.textBox.append("\nFile to read: " + os.path.split(str(filename))[1])
+
+        self.mec = dcio.mod_load(filename)
         self.mec.printout(self.log)
 
 class PrintLog:

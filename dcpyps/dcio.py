@@ -461,6 +461,245 @@ def mec_load(mecfile, start):
 
     return dcpyps.Mechanism(RateList, ncyc=ncyc)
 
+def mod_load(file):
+    """
+    Load mechanism from Channel Lab .mod file.
+
+    Parameters
+    ----------
+    file : filename
+
+    Returns
+    -------
+    mec.Mechanism(RateList, StateList, ncyc) : instance of Mechanism class.
+    """
+
+    # TODO: get cycles from mod file.
+    f = open(file, 'r')	# open the .mec file as read only
+    cl = f.readline().strip("\n")
+    print cl
+    modtitle = f.readline().strip("\n")
+    print modtitle
+
+    while True:
+        try:
+            line = f.readline()
+            #print 'line:', line
+            if line == '':
+                break
+            line = line.strip("\r\n")
+        except EOFError:
+            print('MOD reading finished.')
+
+        if line == '[State1-20: labels]':
+            statelabels = []
+            for i in range(20):
+                statelabels.append(f.readline().strip("\r\n"))
+#            print statelabels
+
+        if line == '[State1-20: onoff]':
+            stateonoff = np.empty((20, 4))
+            for i in range(20):
+                onoff = f.readline().strip("\r\n")
+                values = onoff.split(' ')
+                stateonoff[i, 0] = int(values[0])
+                stateonoff[i, 1] = int(values[1])
+                stateonoff[i, 2] = float(values[2])
+                stateonoff[i, 3] = float(values[3])
+#            print stateonoff
+
+        if line == '[Drug dependence labels]':
+            druglabels = []
+            for i in range(6):
+                druglabels.append(f.readline().strip("\r\n"))
+#            print druglabels
+
+        if line == '[K1-31on]':
+            kon = np.empty(31)
+            for i in range(31):
+                kon[i] = float(f.readline().strip("\r\n"))
+#            print kon
+
+        if line == '[K1-31off]':
+            koff = np.empty(31)
+            for i in range(31):
+                koff[i] = float(f.readline().strip("\r\n"))
+#            print koff
+
+        if line == '[Kon concentration/voltage dependent]':
+            konconc = np.empty((31, 7))
+            for i in range(31):
+                onconc = f.readline().strip("\r\n")
+                values = onconc.split(' ')
+                for j in range(7):
+                    konconc[i, j] = int(values[j])
+#            print konconc
+
+        if line == '[Koff concentration/voltage dependent]':
+            koffconc = np.empty((31, 7))
+            for i in range(31):
+                offconc = f.readline().strip("\r\n")
+                values = offconc.split(' ')
+                for j in range(7):
+                    koffconc[i, j] = int(values[j])
+#            print koffconc
+
+        # [Rate constants for transitions between all states]
+        # [Constraints for rate constants for transitions]
+        # [Loop Constraints for rate constants for transitions]
+
+        # [Kon steepness of voltage dependence]
+        # [Kon activation range for voltage dependence]
+        # [Koff steepness of voltage dependence]
+        # [Koff activation range for voltage dependence]
+        # [QMatrixMonteCarlo,#passes,#pts,#start,#channels,openstate,startstate,pApS,mVmM]
+        # [extra storage space]
+        # [adinterval,conductance,voltage,vrev,valence,kzero]
+        # [Stimulus: Mode,AutoStep,ManualStep,Exp,Fc,pole,autofilt]
+        # [Analysis: pksrch,pkave,basepts,basepos,startpos,risebeg,riseend]
+        # [Analysis: expmodel,parse,numfitpts,numiter,numrestarts,tol,dual,startpts]
+        # [Analysis: Fit limits hi,lo for vertex 1-72]
+        # [Analysis: Fixed fit params for vertex 1-72]
+        # [Analysis: Seeds for vertex 1-72, fitlims,autoseed,fixfree]
+        # [FitWaveforms: start, stop positions for fit]
+        # [Multi-stimulus file voltage / concentration parameters]
+        # 20 [TState1-20: labels]
+
+    f.close()
+
+    StateList = []
+    statesA = []
+    statesB = []
+    statesC = []
+    for i in range(stateonoff.shape[0]):
+        if stateonoff[i, 0] == 1:
+            if stateonoff[i, 1] == 1:
+                statesA.append(i)
+            elif stateonoff[i, 3] == 1:
+                statesC.append(i)
+            else:
+                statesB.append(i)
+    newstates = []
+    newstates.extend(statesA)
+    newstates.extend(statesB)
+    newstates.extend(statesC)
+    k = len(newstates)
+    print 'newstates=', newstates
+    print 'max=', max(newstates)
+
+    for i in range(k):
+            if stateonoff[newstates[i], 1] == 1:
+                StateList.append(dcpyps.State('A',
+                    statelabels[newstates[i]], stateonoff[newstates[i], 2]))
+            elif stateonoff[newstates[i], 3] == 1:
+                StateList.append(dcpyps.State('C',
+                    statelabels[newstates[i]], 0))
+            else:
+                StateList.append(dcpyps.State('B',
+                    statelabels[newstates[i]], 0))
+
+    RateList = []
+    for i in range(k):
+        li = (newstates[i]+1) // 5
+        ci = (newstates[i]+1) % 5
+
+        bound = None
+        if newstates[i] != max(newstates):
+            print 'i=', i
+            if (newstates[i] > 14) and (newstates[i] < 19):
+                # States 16-19.
+                ri = 9 * li + ci - 1
+                if (kon[ri] != 0) or (koff[ri] != 0):
+                    if konconc[ri1, 0] == 1:
+                        bound = 'c'
+                    else:
+                        bound = None
+                    RateList.append(dcpyps.Rate(kon[ri1],
+                        StateList[i],
+                        StateList[newstates.index(newstates[i]+1)],
+                        name='k'+str(i)+str(newstates.index(newstates[i]+1)),
+                        eff=bound))
+                    if koffconc[ri1, 0] == 1:
+                        bound = 'c'
+                    else:
+                        bound = None
+                    RateList.append(dcpyps.Rate(koff[ri1],
+                        StateList[newstates.index(newstates[i]+1)],
+                        StateList[i],
+                        name='k'+str(newstates.index(newstates[i]+1))+str(i),
+                        eff=bound))
+
+            elif ci == 0:
+                # States 5, 10, 15
+                ri = 9 * li + ci + 4 - 1
+                if (kon[ri] != 0) or (koff[ri] != 0):
+                    if konconc[ri, 0] == 1:
+                        bound = 'c'
+                    else:
+                        bound = None
+                    RateList.append(dcpyps.Rate(kon[ri],
+                        StateList[i],
+                        StateList[newstates.index(newstates[i]+5)],
+                        name='k'+str(i)+str(newstates.index(newstates[i]+5)),
+                        eff=bound))
+                    if koffconc[ri, 0] == 1:
+                        bound = 'c'
+                    else:
+                        bound = None
+                    RateList.append(dcpyps.Rate(koff[ri],
+                        StateList[newstates.index(newstates[i]+5)],
+                        StateList[i],
+                        name='k'+str(newstates.index(newstates[i]+5))+str(i),
+                        eff=bound))
+
+            else:
+                # States 1-4, 6-9, 11-14
+                ri1 = 9 * li + ci - 1
+                ri2 = 9 * li + ci + 4 - 1
+
+                if (kon[ri1] != 0) or (koff[ri1] != 0):
+                    if konconc[ri1, 0] == 1:
+                        bound = 'c'
+                    else:
+                        bound = None
+                    RateList.append(dcpyps.Rate(kon[ri1],
+                        StateList[i],
+                        StateList[newstates.index(newstates[i]+1)],
+                        name='k'+str(i)+str(newstates.index(newstates[i]+1)),
+                        eff=bound))
+                    if koffconc[ri1, 0] == 1:
+                        bound = 'c'
+                    else:
+                        bound = None
+                    RateList.append(dcpyps.Rate(koff[ri1],
+                        StateList[newstates.index(newstates[i]+1)],
+                        StateList[i],
+                        name='k'+str(newstates.index(newstates[i]+1))+str(i),
+                        eff=bound))
+
+                if (((kon[ri2] != 0) or (koff[ri2] != 0)) and
+                    ((newstates[i]+5) <= max(newstates))):
+                    if konconc[ri2, 0] == 1:
+                        bound = 'c'
+                    else:
+                        bound = None
+                    RateList.append(dcpyps.Rate(kon[ri2],
+                        StateList[i],
+                        StateList[newstates.index(newstates[i]+5)],
+                        name='k'+str(i)+str(newstates.index(newstates[i]+5)),
+                        eff=bound))
+                    if koffconc[ri2, 0] == 1:
+                        bound = 'c'
+                    else:
+                        bound = None
+                    RateList.append(dcpyps.Rate(koff[ri2],
+                        StateList[newstates.index(newstates[i]+5)],
+                        StateList[i],
+                        name='k'+str(newstates.index(newstates[i]+5))+str(i),
+                        eff=bound))
+
+    return dcpyps.Mechanism(RateList, ncyc=None)
+
 def scn_read_header (fname):
     """
     Read SCN file header. SCN files are generated by SCAN program (DCprogs) and

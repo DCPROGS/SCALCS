@@ -292,7 +292,7 @@ def phiHJC(eGAF, eGFA, kA):
     """
 
     if kA == 1:
-        phi = 1
+        phi = np.array([1])
 
     else:
         Qsub = np.eye(kA) - np.dot(eGAF, eGFA)
