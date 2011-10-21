@@ -82,8 +82,11 @@ class QMatGUI(QMainWindow):
             "&Conditional burst openings distribution", self.onPlotBrstOpDistrCond)
         plotBurstLenVConcAction = self.createAction(
             "&Burst length vs concentration", self.onPlotBrstLenConc)
-        plotJumpAction = self.createAction(
-            "&Realistic concentration jump", self.onPlotCJump)
+        plotJumpPopenAction = self.createAction(
+            "&Realistic concentration jump: Popen", self.onPlotCJumpPopen)
+        plotJumpOccupanciesAction = self.createAction(
+            "&Realistic concentration jump: occupancies",
+            self.onPlotCJumpOccupancies)
         plotSaveASCII = self.createAction(
             "&Save current plot as ASCII file", self.onPlotSaveASCII)
         self.addActions(plotMenu, (plotOpenTimePDFAction, plotShutTimePDFAction,
@@ -92,9 +95,9 @@ class QMatGUI(QMainWindow):
             plotBurstLenPDFAction, plotBurstLenPDFActionCond,
             plotBurstOpeningDistrAction, plotBurstOpeningDistrActionCond,
             plotBurstLenVConcAction,
-            plotJumpAction, plotPopenAction,
+            plotJumpPopenAction, plotJumpOccupanciesAction, plotPopenAction,
             plotSaveASCII))
-        plotMenu.insertSeparator(plotJumpAction)
+        plotMenu.insertSeparator(plotJumpPopenAction)
         plotMenu.insertSeparator(plotSaveASCII)
 
         printOutMenu = self.menuBar().addMenu('&Printout')
@@ -383,7 +386,7 @@ class QMatGUI(QMainWindow):
 #        self.axes.yaxis.set_ticks_position('left')
 #        self.canvas.draw()
 
-    def onPlotCJump(self):
+    def onPlotCJumpPopen(self):
         """
         Display realistic concentration jump.
         """
@@ -410,7 +413,7 @@ class QMatGUI(QMainWindow):
         jumpd, relaxd = rcj.rcj_single(self.mec, jpar)
 
         # TODO: relaxed contains Popen trace only. Need to plot occupancies too.
-        t, cjump, relax = rcj.convert_to_arrays(jumpd, relaxd, self.mec.kA)
+        t, cjump, relax = rcj.convert_to_arrays_Popen(jumpd, relaxd, self.mec.kA)
         maxR = max(relax)
         maxJ = max(cjump)
         cjump1 = (cjump / maxJ) * 0.2 * maxR + 1.02* maxR
@@ -423,6 +426,64 @@ class QMatGUI(QMainWindow):
         self.canvas.draw()
         
         rcj.printout(self.mec, jpar, output=self.log)
+
+    def onPlotCJumpOccupancies(self):
+        """
+        Display realistic concentration jump.
+        """
+
+        dialog = CJumpParDlg(self)
+        if dialog.exec_():
+            jpar = dialog.return_par()
+
+        self.txtPltBox.clear()
+        self.txtPltBox.append('===== REALISTIC CONCENTRATION JUMP =====')
+        self.txtPltBox.append('Concentration profile- black solid line on top.')
+        self.txtPltBox.append('Popen relaxation- black solid line.')
+        self.txtPltBox.append('Occupancies of open states- red dashed lines.')
+        self.txtPltBox.append('Occupancies of shortlived shut states- green dashed lines.')
+        self.txtPltBox.append('Occupancies of longlived shut states- blue dashed lines.')
+
+        self.txtPltBox.append('\nConcentration pulse profile:')
+        self.txtPltBox.append('Concentration = {0:.5g} mM'
+            .format(jpar['peak_conc'] * 1000))
+        self.txtPltBox.append('10- 90% rise time = {0:.5g} microsec'
+            .format(jpar['rise_time']))
+        self.txtPltBox.append('Pulse width = {0:.5g} millisec'
+            .format(jpar['pulse_width'] * 0.001))
+        self.txtPltBox.append("---\n")
+
+        # TODO: get slowest relaxation tau and automaticaly calculate
+        # record length.
+        jumpd, relaxd = rcj.rcj_single(self.mec, jpar)
+
+        # TODO: relaxed contains Popen trace only. Need to plot occupancies too.
+        t, cjump, mrelax = rcj.convert_to_arrays_all(jumpd, relaxd, self.mec.k)
+        t, cjump, relax = rcj.convert_to_arrays_Popen(jumpd, relaxd, self.mec.kA)
+
+        maxR = max(relax)
+        maxJ = max(cjump)
+        cjump1 = (cjump / maxJ) * 0.2 * maxR + 1.02* maxR
+        maxC = max(cjump1)
+
+        self.axes.clear()
+        self.axes.plot(t * 0.001, cjump1, 'k-')
+        self.axes.semilogy(t * 0.001, relax, 'k-')
+        for i in range (0, self.mec.kA):
+            self.axes.semilogy(t * 0.001, mrelax[i], 'r--')
+        for i in range (self.mec.kA, self.mec.kA + self.mec.kB):
+            self.axes.semilogy(t * 0.001, mrelax[i], 'g--')
+        for i in range (self.mec.kA + self.mec.kB, self.mec.k):
+            self.axes.semilogy(t * 0.001, mrelax[i], 'b--')
+        self.axes.set_ylim(0.01, maxC * 1.01)
+        #self.axes.set_xlim(5, 30)
+
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
+
+        rcj.printout(self.mec, jpar, output=self.log)
+
 
     def onPlotPopen(self):
         """

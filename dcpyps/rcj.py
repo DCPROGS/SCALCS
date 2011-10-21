@@ -314,7 +314,7 @@ def compose_rcj_out (cjump, relax, kA, offset=1.2, output_option=2):
         lines.append(line)
     return lines
 
-def convert_to_arrays(cjump, relax, kA):
+def convert_to_arrays_Popen(cjump, relax, kA):
     """
     Convert concentration profile and relaxation dictionaries into arrays.
 
@@ -350,6 +350,45 @@ def convert_to_arrays(cjump, relax, kA):
         #Open Probability
         for o in range(kA):
             rl[index] += relax[time_key][o]
+        index +=1
+
+    return t, cj, rl
+
+def convert_to_arrays_all(cjump, relax, k):
+    """
+    Convert concentration profile and relaxation dictionaries into arrays.
+
+    Parameters
+    ----------
+    cjump : dictionary
+        Time sample point (microsec)- concentration (Molar) pairs.
+    relax : dictionary
+        Time sample point (microsec)- P pairs. P is numpy array (k, 1) which
+        elements are state occupancies.
+    k : int
+        Number of states in mechanism.
+
+    Returns
+    -------
+    t : ndarray, shape(dict length, 1)
+        Time points in microsec.
+    cj : ndarray, shape(dict length, 1)
+        Concentration profile in Molar.
+    rl : ndarray, shape(dict length, 1)
+        Open probaility relaxation.
+    """
+
+    t = np.zeros(len(cjump))
+    cj = np.zeros(len(cjump))
+    rl = np.zeros((k, len(cjump)))
+    index = 0
+
+    for time_key in sorted(relax):
+        t[index] = time_key
+        cj[index] = cjump[time_key] * 1.01
+
+        for o in range(k):
+            rl[o, index] = relax[time_key][o]
         index +=1
 
     return t, cj, rl
