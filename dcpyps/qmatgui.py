@@ -90,6 +90,8 @@ class QMatGUI(QMainWindow):
         plotJumpOccupanciesAction = self.createAction(
             "&Realistic concentration jump: occupancies",
             self.onPlotCJumpOccupancies)
+        plotJump2PopenAction = self.createAction(
+            "&Instant rise and exponential decay concentration jump: Popen", self.onPlotCJump2Popen)
         plotSaveASCII = self.createAction(
             "&Save current plot as ASCII file", self.onPlotSaveASCII)
         self.addActions(plotMenu, (plotOpenTimePDFAction, plotShutTimePDFAction,
@@ -98,7 +100,9 @@ class QMatGUI(QMainWindow):
             plotBurstLenPDFAction, plotBurstLenPDFActionCond,
             plotBurstOpeningDistrAction, plotBurstOpeningDistrActionCond,
             plotBurstLenVConcAction,
-            plotJumpPopenAction, plotJumpOccupanciesAction, plotPopenAction,
+            plotJumpPopenAction, plotJumpOccupanciesAction,
+            plotJump2PopenAction,
+            plotPopenAction,
             plotSaveASCII))
         plotMenu.insertSeparator(plotJumpPopenAction)
         plotMenu.insertSeparator(plotSaveASCII)
@@ -488,6 +492,45 @@ class QMatGUI(QMainWindow):
         self.present_plot = np.vstack((t, relax, cjump1, mrelax))
         rcj.printout(self.mec, jpar, output=self.log)
 
+    def onPlotCJump2Popen(self):
+        """
+        """
+
+        dialog = CJump2ParDlg(self)
+        if dialog.exec_():
+            jpar = dialog.return_par()
+
+        self.txtPltBox.clear()
+        self.txtPltBox.append('===== INSTANT RISE AND EXPONENTIAL DECAY CONCENTRATION JUMP =====')
+        self.txtPltBox.append('Concentration profile- green solid line.')
+        self.txtPltBox.append('Relaxation- blue solid line.')
+        self.txtPltBox.append('\nConcentration pulse profile:')
+        self.txtPltBox.append('Peak concentration = {0:.5g} mM'
+            .format(jpar['peak_conc'] * 1000))
+        self.txtPltBox.append('Decay time constant = {0:.5g} millisec'
+            .format(jpar['decay_time'] * 1000))
+        self.txtPltBox.append('Background concentration = {0:.5g} mM'
+            .format(jpar['bckgr_conc'] * 1000))
+        self.txtPltBox.append("---\n")
+
+        t, c, P, Popen = rcj.solve_jump(self.mec, jpar)
+        maxJ = max(c)
+        c1 = (c / maxJ) * 0.15 + 1
+
+        self.present_plot = np.vstack((t, c, P, Popen))
+
+        self.axes.clear()
+        self.axes.plot(t * 1000, Popen,'b-', t * 1000, c1, 'g-')
+        self.axes.set_ylim(0, 1.2)
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
+
+        self.textBox.append('\n\nCalculated response to an instantan jump to {0:.5g} mM '.
+            format(jpar['peak_conc'] * 1000) + 
+            'concentration with an exponential decay tau of {0:.5g} ms: '.
+            format(jpar['decay_time'] * 1000) +
+            'maximal Popen- {0:.5g}'.format(max(Popen)))
 
     def onPlotPopen(self):
         """
@@ -918,6 +961,111 @@ class CJumpParDlg(QDialog):
         Return parameter dictionary on exit.
         """
         return self.par
+
+class CJump2ParDlg(QDialog):
+    """
+    Dialog to input instant rise and exponential decay concentration pulse
+    parameters.
+    """
+    def __init__(self, parent=None):
+        super(CJump2ParDlg, self).__init__(parent)
+
+        self.step = 5 # The sample step (us)
+        self.reclength = 50 # Total length of record (ms)
+        self.prepulse = self.reclength / 10.0 # Time before pulse starts (ms)
+        self.bckgrconc = 0.0 # Background concentration (mM)
+        self.peakconc = 2.0 # Peak concentration (mM)
+        self.tdec = 2.5 # Decay time constant (ms)
+
+        #self.conc = 10e-6 # in molar
+
+        layoutMain = QVBoxLayout()
+        layoutMain.addWidget(QLabel("Concentration pulse profile:"))
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Sampling interval (microsec):"))
+        self.stepEdit = QLineEdit(unicode(5))
+        self.stepEdit.setMaxLength(12)
+        self.connect(self.stepEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.stepEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Record length (millisec):"))
+        self.reclengthEdit = QLineEdit(unicode(50))
+        self.reclengthEdit.setMaxLength(12)
+        self.connect(self.reclengthEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.reclengthEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Time before pulse (millisec):"))
+        self.prepulseEdit = QLineEdit(unicode(self.prepulse))
+        self.prepulseEdit.setMaxLength(12)
+        self.connect(self.prepulseEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.prepulseEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Background concentration (mM):"))
+        self.bckgrconcEdit = QLineEdit(unicode(0.0))
+        self.bckgrconcEdit.setMaxLength(12)
+        self.connect(self.bckgrconcEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.bckgrconcEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Peak concentration (mM):"))
+        self.peakconcEdit = QLineEdit(unicode(2.0))
+        self.peakconcEdit.setMaxLength(12)
+        self.connect(self.peakconcEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.peakconcEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Decay time constant (ms):"))
+        self.decayEdit = QLineEdit(unicode(2.5))
+        self.decayEdit.setMaxLength(12)
+        self.connect(self.decayEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.decayEdit)
+        layoutMain.addLayout(layout)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+
+        self.setLayout(layoutMain)
+        #self.resize(1000, 500)
+        self.setWindowTitle("Design concentration pulse...")
+
+    def on_par_changed(self):
+        """
+        """
+
+        self.par = {}
+        self.par['step_size'] = float(self.stepEdit.text()) * 0.000001
+        self.par['record_length'] = float(self.reclengthEdit.text()) * 0.001
+        self.par['prepulse'] = float(self.prepulseEdit.text()) * 0.001
+        self.par['peak_conc'] = float(self.peakconcEdit.text()) * 0.001
+        self.par['bckgr_conc'] = float(self.bckgrconcEdit.text()) * 0.001
+        self.par['decay_time'] = float(self.decayEdit.text()) * 0.001
+
+    def return_par(self):
+        """
+        Return parameter dictionary on exit.
+        """
+        return self.par
+
 
 class BurstPlotDlg(QDialog):
     """

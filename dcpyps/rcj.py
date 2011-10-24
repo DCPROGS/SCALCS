@@ -8,8 +8,81 @@ from math import*
 
 import numpy as np
 from scipy.special import erf
+import scipy.integrate as scpi
 
 import qmatlib as qml
+
+def dPdt(P, t, mec, func, args):
+    """
+
+    """
+    conc = func(t, args)
+    mec.set_eff('c', conc)
+
+    return np.dot(P, mec.Q)
+
+def pulse_instexp(t, (prepulse, cmax, tdec, xb)):
+    """
+    """
+
+    if type(t) == type(np.array(())):
+        t1 = np.extract(t[:] < prepulse, t)
+        t2 = np.extract(t[:] >= prepulse, t)
+        conc2 = cmax * np.exp(-t2 / tdec)
+        conct = np.append(t1 * 0.0, conc2)
+
+    else:
+        if t <= prepulse:
+            conct = 0.0
+        else:
+            conct = cmax * exp(-t / tdec)
+
+    conct = conct + xb
+    return conct
+
+def pulse_square(t, (prepulse, pulse, cmax, cb)):
+    """
+    """
+
+    if (t > prepulse) and (t <= pulse):
+        conct = cmax
+    else:
+        conct = 0.0
+
+    conct = conct + cb
+    return conct
+
+def solve_jump(mec, pars):
+    """
+    """
+
+    reclen = pars['record_length']
+    step = pars['step_size']
+    prepulse = pars['prepulse']
+    t = np.arange(0, reclen, step)
+
+    cmax = pars['peak_conc']
+    tdec = pars['decay_time']
+    cb = pars['bckgr_conc']
+    mec.set_eff('c', cb)
+    P0 = qml.pinf(mec.Q)
+
+    abserr = 1.0e-8
+    relerr = 1.0e-6
+
+    Pt = scpi.odeint(dPdt, P0, t,
+        args=(mec, pulse_instexp, (prepulse, cmax, tdec, cb)),
+        atol=abserr,rtol=relerr)
+
+    P = Pt.transpose()
+
+    Popen = np.zeros(t.shape)
+    for i in range(mec.kA):
+        Popen += P[i]
+
+    c =  pulse_instexp(t, (prepulse, cmax, tdec, cb))
+
+    return t, c, P, Popen
 
 def erf_pulse(pulse_width, pulse_conc, rise_t, pulse_centre, t_step):
     """
