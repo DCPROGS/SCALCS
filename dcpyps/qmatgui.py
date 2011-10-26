@@ -517,7 +517,7 @@ class QMatGUI(QMainWindow):
         maxJ = max(c)
         c1 = (c / maxJ) * 0.15 + 1
 
-        self.present_plot = np.vstack((t, c, P, Popen))
+        #self.present_plot = np.vstack((t, c, P, Popen))
 
         self.axes.clear()
         self.axes.plot(t * 1000, Popen,'b-', t * 1000, c1, 'g-')

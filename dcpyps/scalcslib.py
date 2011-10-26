@@ -615,24 +615,38 @@ def printout_tcrit(mec, output=sys.stdout):
         output.write('\n\nCritical time between components {0:d} and {1:d}'.
             format(i+1, i+2))
         output.write('\n\nEqual % misclassified (DC criterion)')
-        tcrit = so.bisect(pdfs.expPDF_tcrit_DC,
-            taus[i], taus[i+1], args=(taus, areas, i+1))
+        try:
+            tcrit = so.bisect(pdfs.expPDF_tcrit_DC,
+                taus[i], taus[i+1], args=(taus, areas, i+1))
+            enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, i+1)
+            pdfs.expPDF_misclassified_printout(tcrit, enf, ens, pf, ps, output)
+        except:
+            output.write('\nBisection with DC criterion failed.')
+            tcrit = None
         tcrits[0, i] = tcrit
-        enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, i+1)
-        pdfs.expPDF_misclassified_printout(tcrit, enf, ens, pf, ps, output)
+        
         output.write('\nEqual # misclassified (Clapham & Neher criterion)')
-        tcrit = so.bisect(pdfs.expPDF_tcrit_CN,
-            taus[i], taus[i+1], args=(taus, areas, i+1))
+        try:
+            tcrit = so.bisect(pdfs.expPDF_tcrit_CN,
+                taus[i], taus[i+1], args=(taus, areas, i+1))
+            enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, i+1)
+            pdfs.expPDF_misclassified_printout(tcrit, enf, ens, pf, ps, output)
+        except:
+            output.write('\nBisection with Clapham & Neher criterion failed.')
+            tcrit = None
         tcrits[1, i] = tcrit
-        enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, i+1)
-        pdfs.expPDF_misclassified_printout(tcrit, enf, ens, pf, ps, output)
+        
         output.write('\nMinimum total # misclassified (Jackson et al criterion)')
-        tcrit = so.bisect(pdfs.expPDF_tcrit_Jackson,
-            taus[i], taus[i+1], args=(taus, areas, i+1))
+        try:
+            tcrit = so.bisect(pdfs.expPDF_tcrit_Jackson,
+                taus[i], taus[i+1], args=(taus, areas, i+1))
+            enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, i+1)
+            pdfs.expPDF_misclassified_printout(tcrit, enf, ens, pf, ps, output)
+        except:
+            output.write('\nBisection with Jackson et al criterion failed.')
+            tcrit = None
         tcrits[2, i] = tcrit
-        enf, ens, pf, ps = pdfs.expPDF_misclassified(tcrit, taus, areas, i+1)
-        pdfs.expPDF_misclassified_printout(tcrit, enf, ens, pf, ps, output)
-
+        
     output.write('\n\nSUMMARY of tcrit values:')
     output.write('\nComponents  DC\tC&N\tJackson\n')
     for i in range(comps):
