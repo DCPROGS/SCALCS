@@ -12,19 +12,57 @@ import scipy.integrate as scpi
 
 import qmatlib as qml
 
-def dPdt(P, t, mec, func, args):
+def dPdt(P, t, mec, cfunc, cargs):
     """
+    Calculate derivativ of occupancies.
+    dP/dt = P * Q
 
+    Parameters
+    ----------
+    P : ndarray
+        Occupancies.
+    t : float
+        Time.
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    cfunc : function
+        Concentration profile.
+    cargs : tuple
+        Arguments for cfunc(t, cargs).
+
+    Returns
+    -------
+    dpdt : ndarray
+        Derivative of each state occupancy.
     """
-    conc = func(t, args)
+    
+    conc = cfunc(t, cargs)
     mec.set_eff('c', conc)
-    return np.dot(P, mec.Q)
+    dpdt = np.dot(P, mec.Q)
+    return dpdt
 
 def pulse_instexp(t, (cmax, cb, prepulse, tdec)):
     """
     Generate concentration pulse with instantaneous rise to maximal current
     and exponential decay.
+    
+    Parameters
+    ----------
+    t : ndarray or float
+        Time samples.
+    cmax : float
+        Peak concentration.
+    cb : float
+        background concentration.
+    prepulse : float
+        Time before pulse starts.
+    tdec : float
+        Decay time constant.
 
+    Returns
+    -------
+    c : ndarray
+        Concentration profile.
     """
 
     if np.isscalar(t):
@@ -43,7 +81,29 @@ def pulse_instexp(t, (cmax, cb, prepulse, tdec)):
 
 def pulse_erf(t, (cmax, cb, centre, width, rise, decay)):
     """
+    Generate realistic concentration pulse with rise and fall from error function.
 
+    Parameters
+    ----------
+    t : ndarray or float
+        Time samples.
+    cmax : float
+        Peak concentration.
+    cb : float
+        background concentration.
+    prepulse : float
+        Time before pulse starts.
+    width : float
+        Pulse half width.
+    rise : float
+        Rise time constant for error function.
+    decay : float
+        Decay time constant for error function.
+
+    Returns
+    -------
+    c : ndarray
+        Concentration profile.
     """
 
     conc = (cmax * 0.5 *
@@ -54,6 +114,25 @@ def pulse_erf(t, (cmax, cb, centre, width, rise, decay)):
 
 def pulse_square(t, (cmax, cb, prepulse, pulse)):
     """
+    Generate square pulse.
+
+    Parameters
+    ----------
+    t : ndarray or float
+        Time samples.
+    cmax : float
+        Peak concentration.
+    cb : float
+        background concentration.
+    centre : float
+        Time moment of the pulse centre.
+    pulse : float
+        Pulse half width.
+
+    Returns
+    -------
+    c : ndarray
+        Concentration profile.
     """
 
     if np.isscalar(t):
@@ -72,12 +151,37 @@ def pulse_square(t, (cmax, cb, prepulse, pulse)):
     conc = conc + cb
     return conc
 
-def solve_jump(mec, reclen, step, c0, cfunc, cargs):
+def solve_jump(mec, reclen, step, cfunc, cargs):
     """
+    Calculate response to a concentration pulse by integration.
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    reclen : float
+        Trace length.
+    step : float
+        Sampling time interval.
+    cfunc : function
+        Concentration profile.
+    cargs : tuple
+        Arguments for cfunc(t, cargs).
+
+    Returns
+    -------
+    t : ndarray
+        Time samples.
+    c : ndarray
+        Concentration profile.
+    P : ndarray
+        All state occupancies.
+    Popen : ndarray
+        Open probability.
     """
 
     t = np.arange(0, reclen, step)
-    mec.set_eff('c', c0)
+    mec.set_eff('c', cargs[1])
     P0 = qml.pinf(mec.Q)
 
     abserr = 1.0e-8
@@ -94,22 +198,33 @@ def solve_jump(mec, reclen, step, c0, cfunc, cargs):
     c =  cfunc(t, cargs)
     return t, c, P, Popen
 
-def calc_jump (mec, reclen, step, c0, cfunc, cargs):
+def calc_jump (mec, reclen, step, cfunc, cargs):
     """
+    Calculate response to a concentration pulse directly from Q matrix.
+
     Parameters
     ----------
-    cjump : dictionary
-        Time sample point (microsec)- concentration (Molar) pairs.
     mec : dcpyps.Mechanism
         The mechanism to be analysed.
-    paras : dictionary
-        Parameters describing concentration pulse.
+    reclen : float
+        Trace length.
+    step : float
+        Sampling time interval.
+    cfunc : function
+        Concentration profile.
+    cargs : tuple
+        Arguments for cfunc(t, cargs).
 
     Returns
     -------
-    relax : dictionary
-        Time sample point (microsec)- P pairs. P is numpy array (k, 1) which
-        elements are state occupancies.
+    t : ndarray
+        Time samples.
+    c : ndarray
+        Concentration profile.
+    P : ndarray
+        All state occupancies.
+    Popen : ndarray
+        Open probability.
     """
 
     t = np.arange(0, reclen, step)

@@ -3,6 +3,7 @@ from dcpyps import samples
 from dcpyps import popen
 from dcpyps import pdfs
 from dcpyps import scburst
+from dcpyps import cjumps
 from dcpyps import scalcslib as scl
 from dcpyps import scplotlib as scpl
 from dcpyps import qmatlib as qml
@@ -109,7 +110,15 @@ class TestDC_PyPs(unittest.TestCase):
         self.assertAlmostEqual(gamma11[2], 3.39701, 5)
         self.assertAlmostEqual(gamma11[3], -7.81406, 5)
         self.assertAlmostEqual(gamma11[4], -1.99149e+06, 0)
-        
+
+    def test_cjumps(self):
+
+        t, c, P, Popen = cjumps.solve_jump(self.mec, 0.05, 0.000005,
+            cjumps.pulse_instexp, (0.00001, 0.0, 0.005, 0.0025))
+        maxP = max(Popen)
+        self.assertAlmostEqual(maxP, 0.49656, 3)
+        #TODO: add test of relaxation coefficients
+
     def test_popen(self):
 
         self.mec.fastBlk = False

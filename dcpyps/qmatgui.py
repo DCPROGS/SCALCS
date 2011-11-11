@@ -435,10 +435,10 @@ class QMatGUI(QMainWindow):
 
         if profile == 'square':
             t, c, P, Popen = cjumps.calc_jump(self.mec, reclen, step,
-                cargs[1], cfunc, cargs)
+                cfunc, cargs)
         else:
             t, c, P, Popen = cjumps.solve_jump(self.mec, reclen, step,
-                cargs[1], cfunc, cargs)
+                cfunc, cargs)
         maxP = max(Popen)
         maxC = max(c)
         c1 = (c / maxC) * 0.2 * maxP + 1.02 * maxP
@@ -502,10 +502,10 @@ class QMatGUI(QMainWindow):
 
         if profile == 'square':
             t, c, P, Popen = cjumps.calc_jump(self.mec, reclen, step,
-                cargs[1], cfunc, cargs)
+                cfunc, cargs)
         else:
             t, c, P, Popen = cjumps.solve_jump(self.mec, reclen, step,
-                cargs[1], cfunc, cargs)
+                cfunc, cargs)
         maxP = max(Popen)
         maxC = max(c)
         c1 = (c / maxC) * 0.2 * maxP + 1.02 * maxP
