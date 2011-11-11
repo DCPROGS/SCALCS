@@ -94,6 +94,51 @@ def solve_jump(mec, reclen, step, c0, cfunc, cargs):
     c =  cfunc(t, cargs)
     return t, c, P, Popen
 
+def calc_jump (mec, reclen, step, c0, cfunc, cargs):
+    """
+    Parameters
+    ----------
+    cjump : dictionary
+        Time sample point (microsec)- concentration (Molar) pairs.
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    paras : dictionary
+        Parameters describing concentration pulse.
+
+    Returns
+    -------
+    relax : dictionary
+        Time sample point (microsec)- P pairs. P is numpy array (k, 1) which
+        elements are state occupancies.
+    """
+
+    t = np.arange(0, reclen, step)
+    c =  cfunc(t, cargs)
+    
+    mec.set_eff('c', cargs[1])
+    pi = qml.pinf(mec.Q)
+    Pt = np.array([pi.copy()])
+
+    for i in range(1, t.shape[0]):
+
+        mec.set_eff('c', c[i])
+        w = coefficient_calc(mec.k, mec.A, pi)
+        #loop over states to get occupancy of each
+        for s in range(mec.k):
+            # r is a running total over contributions of all components
+            r = 0
+            for ju, k in zip(w[:, s], mec.eigenvals):
+                r += ju * np.exp(k * step)
+            pi[s] = r
+        Pt = np.append(Pt, [pi.copy()], axis=0)
+
+    P = Pt.transpose()
+    Popen = np.zeros(t.shape)
+    for i in range(mec.kA):
+        Popen += P[i]
+        
+    return t, c, P, Popen
+
 def coefficient_calc(k, A, p_occup):
     """
     Calculate weighted components for relaxation for each state p * An.

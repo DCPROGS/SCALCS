@@ -433,8 +433,12 @@ class QMatGUI(QMainWindow):
 
         self.txtPltBox.append("---\n")
 
-        t, c, P, Popen = cjumps.solve_jump(self.mec, reclen, step,
-            cargs[1], cfunc, cargs)
+        if profile == 'square':
+            t, c, P, Popen = cjumps.calc_jump(self.mec, reclen, step,
+                cargs[1], cfunc, cargs)
+        else:
+            t, c, P, Popen = cjumps.solve_jump(self.mec, reclen, step,
+                cargs[1], cfunc, cargs)
         maxP = max(Popen)
         maxC = max(c)
         c1 = (c / maxC) * 0.2 * maxP + 1.02 * maxP
@@ -451,7 +455,7 @@ class QMatGUI(QMainWindow):
                 'concentration with an exponential decay tau of {0:.5g} ms: '.
                 format(cargs[3] * 1000) +
                 'maximal Popen- {0:.5g}'.format(maxP))
-        elif profile == 'rcj':
+        elif ((profile == 'rcj') or (profile == 'square')):
             cjumps.printout(self.mec, cargs[1], cargs[3], output=self.log)
         self.present_plot = np.vstack((t, c, P, Popen))
 
@@ -496,8 +500,12 @@ class QMatGUI(QMainWindow):
                 .format(cargs[3] * 1000))
         self.txtPltBox.append("---\n")
 
-        t, c, P, Popen = cjumps.solve_jump(self.mec, reclen, step,
-            cargs[1], cfunc, cargs)
+        if profile == 'square':
+            t, c, P, Popen = cjumps.calc_jump(self.mec, reclen, step,
+                cargs[1], cfunc, cargs)
+        else:
+            t, c, P, Popen = cjumps.solve_jump(self.mec, reclen, step,
+                cargs[1], cfunc, cargs)
         maxP = max(Popen)
         maxC = max(c)
         c1 = (c / maxC) * 0.2 * maxP + 1.02 * maxP
@@ -1051,7 +1059,7 @@ class ConcProfileDlg(QDialog):
         self.realisticRB = QRadioButton("&Realistic pulse")
         self.realisticRB.setChecked(True)
         self.instexpRB = QRadioButton("&Instantaneous rise and exponentials decay")
-#        layoutMain.addWidget(self.squareRB)
+        layoutMain.addWidget(self.squareRB)
         layoutMain.addWidget(self.realisticRB)
         layoutMain.addWidget(self.instexpRB)
 
