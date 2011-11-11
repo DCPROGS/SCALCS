@@ -29,6 +29,7 @@ import numpy as np
 
 import scalcslib as scl
 import rcj
+import cjumps
 import scburst
 import popen
 import dcio
@@ -86,12 +87,12 @@ class QMatGUI(QMainWindow):
         plotBurstLenVConcAction = self.createAction(
             "&Burst length vs concentration", self.onPlotBrstLenConc)
         plotJumpPopenAction = self.createAction(
-            "&Realistic concentration jump: Popen", self.onPlotCJumpPopen)
+            "&Concentration jump: Popen", self.onPlotCJumpPopen)
         plotJumpOccupanciesAction = self.createAction(
-            "&Realistic concentration jump: occupancies",
+            "&Concentration jump: occupancies",
             self.onPlotCJumpOccupancies)
-        plotJump2PopenAction = self.createAction(
-            "&Instant rise and exponential decay concentration jump: Popen", self.onPlotCJump2Popen)
+#        plotJump2PopenAction = self.createAction(
+#            "&Instant rise and exponential decay concentration jump: Popen", self.onPlotCJump2Popen)
         plotSaveASCII = self.createAction(
             "&Save current plot as ASCII file", self.onPlotSaveASCII)
         self.addActions(plotMenu, (plotOpenTimePDFAction, plotShutTimePDFAction,
@@ -101,7 +102,7 @@ class QMatGUI(QMainWindow):
             plotBurstOpeningDistrAction, plotBurstOpeningDistrActionCond,
             plotBurstLenVConcAction,
             plotJumpPopenAction, plotJumpOccupanciesAction,
-            plotJump2PopenAction,
+#            plotJump2PopenAction,
             plotPopenAction,
             plotSaveASCII))
         plotMenu.insertSeparator(plotJumpPopenAction)
@@ -395,53 +396,77 @@ class QMatGUI(QMainWindow):
 
     def onPlotCJumpPopen(self):
         """
-        Display realistic concentration jump.
+        Display concentration jump.
         """
 
-        dialog = CJumpParDlg(self)
+
+        dialog1 = ConcProfileDlg(self)
+        if dialog1.exec_():
+            profile = dialog1.return_par()
+
+        dialog = CJumpParDlg(self, profile)
         if dialog.exec_():
-            jpar = dialog.return_par()
+            reclen, step, cfunc, cargs = dialog.return_par()
             
         self.txtPltBox.clear()
-        self.txtPltBox.append('===== REALISTIC CONCENTRATION JUMP =====')
+        self.txtPltBox.append('===== CONCENTRATION JUMP =====')
         self.txtPltBox.append('Concentration profile- green solid line.')
         self.txtPltBox.append('Relaxation- blue solid line.')
         self.txtPltBox.append('\nConcentration pulse profile:')
-        self.txtPltBox.append('Concentration = {0:.5g} mM'
-            .format(jpar['peak_conc'] * 1000))
-        self.txtPltBox.append('10- 90% rise time = {0:.5g} microsec'
-            .format(jpar['rise_time']))
-        self.txtPltBox.append('Pulse width = {0:.5g} millisec'
-            .format(jpar['pulse_width'] * 0.001))
+        self.txtPltBox.append('Peak concentration = {0:.5g} mM'
+            .format(cargs[0] * 1000))
+        self.txtPltBox.append('Background concentration = {0:.5g} mM'
+            .format(cargs[1] * 1000))
+        if profile == 'rcj':
+            self.txtPltBox.append('10- 90% rise time = {0:.5g} microsec'
+                .format(cargs[4] * 1e+6))
+            self.txtPltBox.append('90- 10% decay time = {0:.5g} microsec'
+                .format(cargs[5] * 1e+6))
+            self.txtPltBox.append('Pulse width = {0:.5g} millisec'
+                .format(cargs[3] * 1000))
+        elif profile == 'instexp':
+            self.txtPltBox.append('Decay time constant = {0:.5g} millisec'
+                .format(cargs[3] * 1000))
+        elif profile == 'square':
+            self.txtPltBox.append('Pulse width = {0:.5g} millisec'
+                .format(cargs[3] * 1000))
+
         self.txtPltBox.append("---\n")
+
+        t, c, P, Popen = cjumps.solve_jump(self.mec, reclen, step,
+            cargs[1], cfunc, cargs)
+        maxP = max(Popen)
+        maxC = max(c)
+        c1 = (c / maxC) * 0.2 * maxP + 1.02 * maxP
         
-        # TODO: get slowest relaxation tau and automaticaly calculate
-        # record length.
-        jumpd, relaxd = rcj.rcj_single(self.mec, jpar)
-
-        # TODO: relaxed contains Popen trace only. Need to plot occupancies too.
-        t, cjump, relax = rcj.convert_to_arrays_Popen(jumpd, relaxd, self.mec.kA)
-        maxR = max(relax)
-        maxJ = max(cjump)
-        cjump1 = (cjump / maxJ) * 0.2 * maxR + 1.02* maxR
-        self.present_plot = np.vstack((t, relax, cjump1))
-
         self.axes.clear()
-        self.axes.plot(t * 0.001, relax,'b-', t * 0.001, cjump1, 'g-')
+        self.axes.plot(t * 1000, Popen,'b-', t * 1000, c1, 'g-')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
-        
-        rcj.printout(self.mec, jpar, output=self.log)
+
+        if profile == 'instexp':
+            self.textBox.append('\n\nCalculated response to an instantan jump to {0:.5g} mM '.
+                format(cargs[1] * 1000) +
+                'concentration with an exponential decay tau of {0:.5g} ms: '.
+                format(cargs[3] * 1000) +
+                'maximal Popen- {0:.5g}'.format(maxP))
+        elif profile == 'rcj':
+            cjumps.printout(self.mec, cargs[1], cargs[3], output=self.log)
+        self.present_plot = np.vstack((t, c, P, Popen))
 
     def onPlotCJumpOccupancies(self):
         """
         Display realistic concentration jump.
         """
 
-        dialog = CJumpParDlg(self)
+        dialog1 = ConcProfileDlg(self)
+        if dialog1.exec_():
+            profile = dialog1.return_par()
+
+        dialog = CJumpParDlg(self, profile)
         if dialog.exec_():
-            jpar = dialog.return_par()
+            reclen, step, cfunc, cargs = dialog.return_par()
 
         self.txtPltBox.clear()
         self.txtPltBox.append('===== REALISTIC CONCENTRATION JUMP =====')
@@ -452,85 +477,49 @@ class QMatGUI(QMainWindow):
         self.txtPltBox.append('Occupancies of longlived shut states- blue dashed lines.')
 
         self.txtPltBox.append('\nConcentration pulse profile:')
-        self.txtPltBox.append('Concentration = {0:.5g} mM'
-            .format(jpar['peak_conc'] * 1000))
-        self.txtPltBox.append('10- 90% rise time = {0:.5g} microsec'
-            .format(jpar['rise_time']))
-        self.txtPltBox.append('Pulse width = {0:.5g} millisec'
-            .format(jpar['pulse_width'] * 0.001))
+        self.txtPltBox.append('Peak concentration = {0:.5g} mM'
+            .format(cargs[0] * 1000))
+        self.txtPltBox.append('Background concentration = {0:.5g} mM'
+            .format(cargs[1] * 1000))
+        if profile == 'rcj':
+            self.txtPltBox.append('10- 90% rise time = {0:.5g} microsec'
+                .format(cargs[4] * 1e+6))
+            self.txtPltBox.append('90- 10% decay time = {0:.5g} microsec'
+                .format(cargs[5] * 1e+6))
+            self.txtPltBox.append('Pulse width = {0:.5g} millisec'
+                .format(cargs[3] * 1000))
+        elif profile == 'instexp':
+            self.txtPltBox.append('Decay time constant = {0:.5g} millisec'
+                .format(cargs[3] * 1000))
+        elif profile == 'square':
+            self.txtPltBox.append('Pulse width = {0:.5g} millisec'
+                .format(cargs[3] * 1000))
         self.txtPltBox.append("---\n")
 
-        # TODO: get slowest relaxation tau and automaticaly calculate
-        # record length.
-        jumpd, relaxd = rcj.rcj_single(self.mec, jpar)
-
-        # TODO: relaxed contains Popen trace only. Need to plot occupancies too.
-        t, cjump, mrelax = rcj.convert_to_arrays_all(jumpd, relaxd, self.mec.k)
-        t, cjump, relax = rcj.convert_to_arrays_Popen(jumpd, relaxd, self.mec.kA)
-
-        maxR = max(relax)
-        maxJ = max(cjump)
-        cjump1 = (cjump / maxJ) * 0.2 * maxR + 1.02* maxR
-        maxC = max(cjump1)
+        t, c, P, Popen = cjumps.solve_jump(self.mec, reclen, step,
+            cargs[1], cfunc, cargs)
+        maxP = max(Popen)
+        maxC = max(c)
+        c1 = (c / maxC) * 0.2 * maxP + 1.02 * maxP
 
         self.axes.clear()
-        self.axes.plot(t * 0.001, cjump1, 'k-')
-        self.axes.semilogy(t * 0.001, relax, 'k-')
+        self.axes.plot(t * 1000, c1, 'k-')
+        self.axes.plot(t * 1000, Popen, 'k-')
         for i in range (0, self.mec.kA):
-            self.axes.semilogy(t * 0.001, mrelax[i], 'r--')
+            self.axes.plot(t * 1000, P[i], 'r--')
         for i in range (self.mec.kA, self.mec.kA + self.mec.kB):
-            self.axes.semilogy(t * 0.001, mrelax[i], 'g--')
+            self.axes.plot(t * 1000, P[i], 'g--')
         for i in range (self.mec.kA + self.mec.kB, self.mec.k):
-            self.axes.semilogy(t * 0.001, mrelax[i], 'b--')
-        self.axes.set_ylim(0.01, maxC * 1.01)
+            self.axes.plot(t * 1000, P[i], 'b--')
+#        self.axes.set_ylim(0.01, maxC * 1.01)
         #self.axes.set_xlim(5, 30)
 
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
 
-        self.present_plot = np.vstack((t, relax, cjump1, mrelax))
-        rcj.printout(self.mec, jpar, output=self.log)
-
-    def onPlotCJump2Popen(self):
-        """
-        """
-
-        dialog = CJump2ParDlg(self)
-        if dialog.exec_():
-            jpar = dialog.return_par()
-
-        self.txtPltBox.clear()
-        self.txtPltBox.append('===== INSTANT RISE AND EXPONENTIAL DECAY CONCENTRATION JUMP =====')
-        self.txtPltBox.append('Concentration profile- green solid line.')
-        self.txtPltBox.append('Relaxation- blue solid line.')
-        self.txtPltBox.append('\nConcentration pulse profile:')
-        self.txtPltBox.append('Peak concentration = {0:.5g} mM'
-            .format(jpar['peak_conc'] * 1000))
-        self.txtPltBox.append('Decay time constant = {0:.5g} millisec'
-            .format(jpar['decay_time'] * 1000))
-        self.txtPltBox.append('Background concentration = {0:.5g} mM'
-            .format(jpar['bckgr_conc'] * 1000))
-        self.txtPltBox.append("---\n")
-
-        t, c, P, Popen = rcj.solve_jump(self.mec, jpar)
-        maxJ = max(c)
-        c1 = (c / maxJ) * 0.15 + 1
-
-        #self.present_plot = np.vstack((t, c, P, Popen))
-
-        self.axes.clear()
-        self.axes.plot(t * 1000, Popen,'b-', t * 1000, c1, 'g-')
-        self.axes.set_ylim(0, 1.2)
-        self.axes.xaxis.set_ticks_position('bottom')
-        self.axes.yaxis.set_ticks_position('left')
-        self.canvas.draw()
-
-        self.textBox.append('\n\nCalculated response to an instantan jump to {0:.5g} mM '.
-            format(jpar['peak_conc'] * 1000) + 
-            'concentration with an exponential decay tau of {0:.5g} ms: '.
-            format(jpar['decay_time'] * 1000) +
-            'maximal Popen- {0:.5g}'.format(max(Popen)))
+        self.present_plot = np.vstack((t, c, P, Popen))
+#        rcj.printout(self.mec, jpar, output=self.log)
 
     def onPlotPopen(self):
         """
@@ -864,58 +853,31 @@ class CJumpParDlg(QDialog):
     """
     Dialog to input realistic concentration pulse parameters.
     """
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, profile='realistic'):
         super(CJumpParDlg, self).__init__(parent)
 
-        self.step = 8 # The sample step. All time params in microseconds.
-        self.centre = 10000
-        self.rise = 250 # list of 10-90% rise times for error functions
-        self.width = 10000
-        self.reclength = 50000
-        self.conc = 10e-6 # in molar
+        self.profile = profile
+
+        # Default values
+        self.reclength = 50 # Record length in ms.
+        self.step = 5 # The sample step in microsec.
+        self.cmax = 1 # in mM.
+        self.cb = 0.0 # Background concentration in mM.
+        # 'rcj' profile.
+        self.centre = 10 # Pulse centre in ms.
+        self.rise = 200 # 10-90% rise time for error function in microsec.
+        self.decay = 200 # 90-10% decay time for error function in microsec.
+        self.width = 10 # Pulse halfwidth in ms.
+        # 'instexp' profile
+        self.prepulse = self.reclength / 10.0 # Time before pulse starts (ms)
+        self.tdec = 2.5 # Decay time constant (ms)
 
         layoutMain = QVBoxLayout()
         layoutMain.addWidget(QLabel("Concentration pulse profile:"))
 
         layout = QHBoxLayout()
-        layout.addWidget(QLabel("Sampling interval (microsec):"))
-        self.stepEdit = QLineEdit(unicode(8))
-        self.stepEdit.setMaxLength(12)
-        self.connect(self.stepEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.stepEdit)
-        layoutMain.addLayout(layout)
-
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Pulse centre position (microsec):"))
-        self.centreEdit = QLineEdit(unicode(10000))
-        self.centreEdit.setMaxLength(12)
-        self.connect(self.centreEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.centreEdit)
-        layoutMain.addLayout(layout)
-
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Pulse 10-90% rise time (microsec):"))
-        self.riseEdit = QLineEdit(unicode(250))
-        self.riseEdit.setMaxLength(12)
-        self.connect(self.riseEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.riseEdit)
-        layoutMain.addLayout(layout)
-
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Concentration pulse width (microsec):"))
-        self.widthEdit = QLineEdit(unicode(10000))
-        self.widthEdit.setMaxLength(12)
-        self.connect(self.widthEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.widthEdit)
-        layoutMain.addLayout(layout)
-
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Record length (microsec):"))
-        self.reclengthEdit = QLineEdit(unicode(50000))
+        layout.addWidget(QLabel("Record length (millisec):"))
+        self.reclengthEdit = QLineEdit(unicode(self.reclength))
         self.reclengthEdit.setMaxLength(12)
         self.connect(self.reclengthEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
@@ -923,118 +885,109 @@ class CJumpParDlg(QDialog):
         layoutMain.addLayout(layout)
 
         layout = QHBoxLayout()
+        layout.addWidget(QLabel("Sampling interval (microsec):"))
+        self.stepEdit = QLineEdit(unicode(self.step))
+        self.stepEdit.setMaxLength(12)
+        self.connect(self.stepEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.stepEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
         layout.addWidget(QLabel("Pulse concentration (mM):"))
-        self.concEdit = QLineEdit(unicode(0.01))
+        self.concEdit = QLineEdit(unicode(self.cmax))
         self.concEdit.setMaxLength(12)
         self.connect(self.concEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
         layout.addWidget(self.concEdit)
         layoutMain.addLayout(layout)
 
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
-            QDialogButtonBox.Cancel)
-        self.connect(buttonBox, SIGNAL("accepted()"),
-            self, SLOT("accept()"))
-        self.connect(buttonBox, SIGNAL("rejected()"),
-            self, SLOT("reject()"))
-        layoutMain.addWidget(buttonBox)
-
-        self.setLayout(layoutMain)
-        #self.resize(1000, 500)
-        self.setWindowTitle("Design realistic concentration pulse...")
-
-    def on_par_changed(self):
-        """
-        """
-
-        self.par = {}
-        self.par['step_size'] = int(self.stepEdit.text())
-        self.par['pulse_centre'] = int(self.centreEdit.text())
-        self.par['rise_time'] = float(self.riseEdit.text())
-        self.par['pulse_width'] = int(self.widthEdit.text())
-        self.par['record_length'] = int(self.reclengthEdit.text())
-        # Concentration convert from mM to M
-        self.par['peak_conc'] = float(self.concEdit.text()) * 0.001
-
-    def return_par(self):
-        """
-        Return parameter dictionary on exit.
-        """
-        return self.par
-
-class CJump2ParDlg(QDialog):
-    """
-    Dialog to input instant rise and exponential decay concentration pulse
-    parameters.
-    """
-    def __init__(self, parent=None):
-        super(CJump2ParDlg, self).__init__(parent)
-
-        self.step = 5 # The sample step (us)
-        self.reclength = 50 # Total length of record (ms)
-        self.prepulse = self.reclength / 10.0 # Time before pulse starts (ms)
-        self.bckgrconc = 0.0 # Background concentration (mM)
-        self.peakconc = 2.0 # Peak concentration (mM)
-        self.tdec = 2.5 # Decay time constant (ms)
-
-        #self.conc = 10e-6 # in molar
-
-        layoutMain = QVBoxLayout()
-        layoutMain.addWidget(QLabel("Concentration pulse profile:"))
-
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Sampling interval (microsec):"))
-        self.stepEdit = QLineEdit(unicode(5))
-        self.stepEdit.setMaxLength(12)
-        self.connect(self.stepEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.stepEdit)
-        layoutMain.addLayout(layout)
-
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Record length (millisec):"))
-        self.reclengthEdit = QLineEdit(unicode(50))
-        self.reclengthEdit.setMaxLength(12)
-        self.connect(self.reclengthEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.reclengthEdit)
-        layoutMain.addLayout(layout)
-
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Time before pulse (millisec):"))
-        self.prepulseEdit = QLineEdit(unicode(self.prepulse))
-        self.prepulseEdit.setMaxLength(12)
-        self.connect(self.prepulseEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.prepulseEdit)
-        layoutMain.addLayout(layout)
-
         layout = QHBoxLayout()
         layout.addWidget(QLabel("Background concentration (mM):"))
-        self.bckgrconcEdit = QLineEdit(unicode(0.0))
+        self.bckgrconcEdit = QLineEdit(unicode(self.cb))
         self.bckgrconcEdit.setMaxLength(12)
         self.connect(self.bckgrconcEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
         layout.addWidget(self.bckgrconcEdit)
         layoutMain.addLayout(layout)
 
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Peak concentration (mM):"))
-        self.peakconcEdit = QLineEdit(unicode(2.0))
-        self.peakconcEdit.setMaxLength(12)
-        self.connect(self.peakconcEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.peakconcEdit)
-        layoutMain.addLayout(layout)
+        if self.profile == 'rcj':
 
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Decay time constant (ms):"))
-        self.decayEdit = QLineEdit(unicode(2.5))
-        self.decayEdit.setMaxLength(12)
-        self.connect(self.decayEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.decayEdit)
-        layoutMain.addLayout(layout)
+            layout = QHBoxLayout()
+            layout.addWidget(QLabel("Pulse centre position (millisec):"))
+            self.centreEdit = QLineEdit(unicode(self.centre))
+            self.centreEdit.setMaxLength(12)
+            self.connect(self.centreEdit, SIGNAL("editingFinished()"),
+                self.on_par_changed)
+            layout.addWidget(self.centreEdit)
+            layoutMain.addLayout(layout)
+
+            layout = QHBoxLayout()
+            layout.addWidget(QLabel("Pulse 10-90% rise time (microsec):"))
+            self.riseEdit = QLineEdit(unicode(self.rise))
+            self.riseEdit.setMaxLength(12)
+            self.connect(self.riseEdit, SIGNAL("editingFinished()"),
+                self.on_par_changed)
+            layout.addWidget(self.riseEdit)
+            layoutMain.addLayout(layout)
+
+            layout = QHBoxLayout()
+            layout.addWidget(QLabel("Pulse 90-10% decay time (microsec):"))
+            self.decayEdit = QLineEdit(unicode(self.decay))
+            self.decayEdit.setMaxLength(12)
+            self.connect(self.decayEdit, SIGNAL("editingFinished()"),
+                self.on_par_changed)
+            layout.addWidget(self.decayEdit)
+            layoutMain.addLayout(layout)
+
+            layout = QHBoxLayout()
+            layout.addWidget(QLabel("Concentration pulse width (millisec):"))
+            self.widthEdit = QLineEdit(unicode(self.width))
+            self.widthEdit.setMaxLength(12)
+            self.connect(self.widthEdit, SIGNAL("editingFinished()"),
+                self.on_par_changed)
+            layout.addWidget(self.widthEdit)
+            layoutMain.addLayout(layout)
+
+        elif self.profile == 'instexp':
+
+            layout = QHBoxLayout()
+            layout.addWidget(QLabel("Time before pulse (ms):"))
+            self.prepulseEdit = QLineEdit(unicode(self.prepulse))
+            self.prepulseEdit.setMaxLength(12)
+            self.connect(self.prepulseEdit, SIGNAL("editingFinished()"),
+                self.on_par_changed)
+            layout.addWidget(self.prepulseEdit)
+            layoutMain.addLayout(layout)
+
+            layout = QHBoxLayout()
+            layout.addWidget(QLabel("Decay time constant (ms):"))
+            self.decayEdit = QLineEdit(unicode(self.tdec))
+            self.decayEdit.setMaxLength(12)
+            self.connect(self.decayEdit, SIGNAL("editingFinished()"),
+                self.on_par_changed)
+            layout.addWidget(self.decayEdit)
+            layoutMain.addLayout(layout)
+
+        elif self.profile == 'square':
+
+            layout = QHBoxLayout()
+            layout.addWidget(QLabel("Time before pulse (ms):"))
+            self.prepulseEdit = QLineEdit(unicode(self.prepulse))
+            self.prepulseEdit.setMaxLength(12)
+            self.connect(self.prepulseEdit, SIGNAL("editingFinished()"),
+                self.on_par_changed)
+            layout.addWidget(self.prepulseEdit)
+            layoutMain.addLayout(layout)
+
+            layout = QHBoxLayout()
+            layout.addWidget(QLabel("Concentration pulse width (millisec):"))
+            self.widthEdit = QLineEdit(unicode(self.width))
+            self.widthEdit.setMaxLength(12)
+            self.connect(self.widthEdit, SIGNAL("editingFinished()"),
+                self.on_par_changed)
+            layout.addWidget(self.widthEdit)
+            layoutMain.addLayout(layout)
 
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
             QDialogButtonBox.Cancel)
@@ -1045,27 +998,82 @@ class CJump2ParDlg(QDialog):
         layoutMain.addWidget(buttonBox)
 
         self.setLayout(layoutMain)
-        #self.resize(1000, 500)
         self.setWindowTitle("Design concentration pulse...")
 
     def on_par_changed(self):
         """
         """
 
-        self.par = {}
-        self.par['step_size'] = float(self.stepEdit.text()) * 0.000001
-        self.par['record_length'] = float(self.reclengthEdit.text()) * 0.001
-        self.par['prepulse'] = float(self.prepulseEdit.text()) * 0.001
-        self.par['peak_conc'] = float(self.peakconcEdit.text()) * 0.001
-        self.par['bckgr_conc'] = float(self.bckgrconcEdit.text()) * 0.001
-        self.par['decay_time'] = float(self.decayEdit.text()) * 0.001
+        self.step = float(self.stepEdit.text()) * 1e-6
+        self.reclength = float(self.reclengthEdit.text()) * 0.001
+        self.cmax = float(self.concEdit.text()) * 0.001
+        self.cb = float(self.bckgrconcEdit.text()) * 0.001
+
+        if self.profile == 'rcj':
+            self.centre = float(self.centreEdit.text()) * 0.001
+            self.rise = float(self.riseEdit.text()) * 1e-6
+            self.decay = float(self.decayEdit.text()) * 1e-6
+            self.width = float(self.widthEdit.text()) * 0.001
+        elif self.profile == 'instexp':
+            self.prepulse = float(self.prepulseEdit.text()) * 0.001
+            self.tdec = float(self.decayEdit.text()) * 0.001
+        elif self.profile == 'square':
+            self.prepulse = float(self.prepulseEdit.text()) * 0.001
+            self.width = float(self.widthEdit.text()) * 0.001
 
     def return_par(self):
         """
         Return parameter dictionary on exit.
         """
-        return self.par
 
+        if self.profile == 'rcj':
+            cargs = (self.cmax, self.cb, self.centre, self.width,
+                self.rise, self.decay)
+            cfunc = cjumps.pulse_erf
+        elif self.profile == 'instexp':
+            cargs = (self.cmax, self.cb, self.prepulse, self.tdec)
+            cfunc = cjumps.pulse_instexp
+        elif self.profile == 'square':
+            cargs = (self.cmax, self.cb, self.prepulse, self.width)
+            cfunc = cjumps.pulse_square
+        return self.reclength, self.step, cfunc, cargs
+
+class ConcProfileDlg(QDialog):
+    """
+    """
+    def __init__(self, parent=None):
+        super(ConcProfileDlg, self).__init__(parent)
+
+        layoutMain = QVBoxLayout()
+        layoutMain.addWidget(QLabel("Concentration pulse profile:"))
+
+        self.squareRB = QRadioButton("&Square pulse")
+        self.realisticRB = QRadioButton("&Realistic pulse")
+        self.realisticRB.setChecked(True)
+        self.instexpRB = QRadioButton("&Instantaneous rise and exponentials decay")
+#        layoutMain.addWidget(self.squareRB)
+        layoutMain.addWidget(self.realisticRB)
+        layoutMain.addWidget(self.instexpRB)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+
+        self.setLayout(layoutMain)
+        self.setWindowTitle("Choose concentration pulse...")
+
+    def return_par(self):
+        if self.instexpRB.isChecked():
+            profile = 'instexp'
+        elif self.realisticRB.isChecked():
+            profile = 'rcj'
+        elif self.squareRB.isChecked():
+            profile = 'square'
+        return profile
 
 class BurstPlotDlg(QDialog):
     """
