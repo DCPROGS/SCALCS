@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import dctest.test as tt
+import dcpyps.test as tt
 import unittest
 
 if __name__ == '__main__':
