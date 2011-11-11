@@ -433,12 +433,8 @@ class QMatGUI(QMainWindow):
 
         self.txtPltBox.append("---\n")
 
-        if profile == 'square':
-            t, c, P, Popen = cjumps.calc_jump(self.mec, reclen, step,
-                cfunc, cargs)
-        else:
-            t, c, P, Popen = cjumps.solve_jump(self.mec, reclen, step,
-                cfunc, cargs)
+        t, c, P, Popen = cjumps.solve_jump(self.mec, reclen, step,
+            cfunc, cargs)
         maxP = max(Popen)
         maxC = max(c)
         c1 = (c / maxC) * 0.2 * maxP + 1.02 * maxP
@@ -500,12 +496,8 @@ class QMatGUI(QMainWindow):
                 .format(cargs[3] * 1000))
         self.txtPltBox.append("---\n")
 
-        if profile == 'square':
-            t, c, P, Popen = cjumps.calc_jump(self.mec, reclen, step,
-                cfunc, cargs)
-        else:
-            t, c, P, Popen = cjumps.solve_jump(self.mec, reclen, step,
-                cfunc, cargs)
+        t, c, P, Popen = cjumps.solve_jump(self.mec, reclen, step,
+            cfunc, cargs)
         maxP = max(Popen)
         maxC = max(c)
         c1 = (c / maxC) * 0.2 * maxP + 1.02 * maxP

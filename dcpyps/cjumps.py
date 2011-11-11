@@ -136,7 +136,7 @@ def pulse_square(t, (cmax, cb, prepulse, pulse)):
     """
 
     if np.isscalar(t):
-        if (t > prepulse) and (t <= pulse):
+        if (t > prepulse) and (t <= (prepulse + pulse)):
             conc = cmax
         else:
             conc = 0.0

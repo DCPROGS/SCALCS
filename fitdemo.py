@@ -57,7 +57,7 @@ def main():
     # Maximum likelihood fit.
     print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
-    newrates, loglik = optimize.simplexHJC(rates, rec1.bursts, scl.HJClik,
+    newrates, loglik = optimize.simplexHJC(rates, rec1.bursts, optimize.HJClik,
         opts, verbose=0)
     print ("\nFitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])

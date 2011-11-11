@@ -3,6 +3,9 @@
 import numpy as np
 from math import*
 
+import qmatlib  as qml
+import scalcslib as scl
+
 def ini_vectors(mec, eGFA, eGAF, expQFF, XFA,
         roots, tres, tcrit, is_chsvec=False):
     """
@@ -34,21 +37,30 @@ def ini_vectors(mec, eGFA, eGAF, expQFF, XFA,
 #    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
     uA = np.ones((mec.kA, 1))
 
+    print 'Froots=', roots
+    print 'Ftaus=', -1/roots
+
     if is_chsvec:
 #        roots = asymptotic_roots(mec, tres, False)
         HFA = np.zeros((mec.kF, mec.kA))
 #        XFA = qml.XAF(tres, roots, mec.QFF, mec.QAA, mec.QFA,
 #            mec.QAF, expQFF)
         for i in range(mec.kF):
-            coeff = -math.exp(roots[i] * (tcrit - tres)) / roots[i]
+            coeff = -exp(roots[i] * (tcrit - tres)) / roots[i]
             HFA += coeff * XFA[i]
+
+        print 'HFA=', HFA
         phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
+        print 'phiF=', phiF
 
         startB = np.dot(phiF, HFA) / np.dot(np.dot(phiF, HFA), uA)
         endB = np.dot(HFA, uA)
     else:
         startB = qml.phiHJC(eGAF, eGFA, mec.kA)
         endB = np.ones((mec.kF, 1))
+
+    print 'startB=', startB
+    print 'endB=', endB
 
     return startB, endB
 
@@ -109,12 +121,14 @@ def HJClik(theta, bursts, opts):
 
 
     Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(mec.Q, mec.kA, mec.QFF,
-        mec.QAF, mec.QFA, expQFF)
-    Aroots = asymptotic_roots(mec, tres, True)
+        mec.QAF, mec.QFA, expQFF, True)
+    Aroots = scl.asymptotic_roots(tres,
+        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
     Axaf = qml.XAF(tres, Aroots, mec.QAA, mec.QFF, mec.QAF, mec.QFA, expQFF)
     Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(mec.Q, mec.kA, mec.QAA,
-        mec.QFA, mec.QAF, expQAA)
-    Froots = asymptotic_roots(mec, tres, False)
+        mec.QFA, mec.QAF, expQAA, False)
+    Froots = scl.asymptotic_roots(tres,
+        mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
     Fxaf = qml.XAF(tres, Froots, mec.QFF, mec.QAA, mec.QFA, mec.QAF, expQAA)
     startB, endB = ini_vectors(mec, eGFA, eGAF, expQAA, Fxaf, Froots,
         tres, tcrit, is_chsvec)
@@ -138,7 +152,7 @@ def HJClik(theta, bursts, opts):
                 grouplik = grouplik * 1e-100
                 print 'grouplik was scaled down'
         grouplik = np.dot(grouplik, endB)
-        loglik += math.log(grouplik[0])
+        loglik += log(grouplik[0])
     return -loglik, np.log(mec.unit_rates())
 
 def sortShell(vals, simp):

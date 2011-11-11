@@ -9,6 +9,7 @@ from dcpyps import scplotlib as scpl
 from dcpyps import qmatlib as qml
 
 import sys
+import time
 import unittest
 import numpy as np
 
@@ -113,11 +114,35 @@ class TestDC_PyPs(unittest.TestCase):
 
     def test_cjumps(self):
 
+        start = time.time()
         t, c, P, Popen = cjumps.solve_jump(self.mec, 0.05, 0.000005,
             cjumps.pulse_instexp, (0.00001, 0.0, 0.005, 0.0025))
-        maxP = max(Popen)
-        self.assertAlmostEqual(maxP, 0.49656, 3)
-        #TODO: add test of relaxation coefficients
+        elapsed1 = time.time() - start
+        maxP1 = max(Popen)
+        start = time.time()
+        t, c, P, Popen = cjumps.calc_jump(self.mec, 0.05, 0.000005,
+            cjumps.pulse_instexp, (0.00001, 0.0, 0.005, 0.0025))
+        elapsed2 = time.time() - start
+        print ('\ntesting jump calculation...' +
+            '\ndirect matrix calculation took {0:.6f} s'.format(elapsed2) +
+            '\nintegration took {0:.6f} s'.format(elapsed1))
+        maxP2 = max(Popen)
+        self.assertAlmostEqual(maxP1, maxP2, 3)
+
+        start = time.time()
+        t, c, P, Popen = cjumps.solve_jump(self.mec, 0.05, 0.000005,
+            cjumps.pulse_erf, (0.000001, 0.0, 0.01, 0.01, 0.0002, 0.0002))
+        elapsed1 = time.time() - start
+        maxP1 = max(Popen)
+        start = time.time()
+        t, c, P, Popen = cjumps.calc_jump(self.mec, 0.05, 0.000005,
+            cjumps.pulse_erf, (0.000001, 0.0, 0.01, 0.01, 0.0002, 0.0002))
+        elapsed2 = time.time() - start
+        print ('\ntesting jump calculation...' +
+            '\ndirect matrix calculation took {0:.6f} s'.format(elapsed2) +
+            '\nintegration took {0:.6f} s'.format(elapsed1))
+        maxP2 = max(Popen)
+        self.assertAlmostEqual(maxP1, maxP2, 3)
 
     def test_popen(self):
 
