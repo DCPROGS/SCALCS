@@ -283,24 +283,29 @@ def asymptotic_areas(tres, roots, QAA, QFF, QAF, QFA, kA, kF, GAF, GFA):
     eGAF = qml.eGs(GAF, GFA, kA, kF, expQFF)
     eGFA = qml.eGs(GFA, GAF, kF, kA, expQAA)
     phiA = qml.phiHJC(eGAF, eGFA, kA)
-
+    R = qml.AR(roots, tres, QAA, QFF, QAF, QFA, kA, kF)
+    uF = np.ones((kF,1))
     areas = np.zeros(kA)
-    rowA = np.zeros((kA,kA))
-    colA = np.zeros((kA,kA))
     for i in range(kA):
-        WA = qml.W(roots[i], tres,
-            QAA, QFF, QAF, QFA, kA, kF)
-        rowA[i] = qml.pinf(WA)
-        AW = np.transpose(WA)
-        colA[i] = qml.pinf(AW)
+        areas[i] = ((-1 / roots[i]) *
+            np.dot(phiA, np.dot(np.dot(R[i], np.dot(QAF, expQFF)), uF)))
 
-    for i in range(kA):
-        uF = np.ones((kF,1))
-        nom = np.dot(np.dot(np.dot(np.dot(np.dot(phiA, colA[i]), rowA[i]),
-            QAF), expQFF), uF)
-        W1A = qml.dW(roots[i], tres, QAF, QFF, QFA, kA, kF)
-        denom = -roots[i] * np.dot(np.dot(rowA[i], W1A), colA[i])
-        areas[i] = nom / denom
+#    rowA = np.zeros((kA,kA))
+#    colA = np.zeros((kA,kA))
+#    for i in range(kA):
+#        WA = qml.W(roots[i], tres,
+#            QAA, QFF, QAF, QFA, kA, kF)
+#        rowA[i] = qml.pinf(WA)
+#        AW = np.transpose(WA)
+#        colA[i] = qml.pinf(AW)
+#
+#    for i in range(kA):
+#        uF = np.ones((kF,1))
+#        nom = np.dot(np.dot(np.dot(np.dot(np.dot(phiA, colA[i]), rowA[i]),
+#            QAF), expQFF), uF)
+#        W1A = qml.dW(roots[i], tres, QAF, QFF, QFA, kA, kF)
+#        denom = -roots[i] * np.dot(np.dot(rowA[i], W1A), colA[i])
+#        areas[i] = nom / denom
 
     return areas
 

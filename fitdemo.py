@@ -4,18 +4,11 @@ Maximum likelihood fit demo.
 """
 
 import sys
-import time
-
 import numpy as np
-
-from dcpyps import scalcslib as scl
-from dcpyps import optimize
-from dcpyps import dataset
-from dcpyps import dcio
-from dcpyps import samples
-
-# profiler 
 import cProfile
+
+from dcpyps import optimize
+from dcpyps import samples
 
 def main():
     # Load demo mechanism (C&H82 numerical example).
@@ -37,35 +30,37 @@ def main():
     # Here should go initial guesses. Now using rate constants from example.
     rates = np.log(mec.unit_rates())
 
-    # Load data.
-    filename = "./dcpyps/samples/CH82.scn"
-    ioffset, nint, calfac, header = dcio.scn_read_header(filename)
-    tint, iampl, iprops = dcio.scn_read_data(filename, ioffset, nint, calfac)
-    rec1 = dataset.TimeSeries(filename, header, tint, iampl, iprops)
+    optimize.test_CHS(rates, opts)
 
-    # Impose resolution, get open/shut times and bursts.
-    rec1.impose_resolution(tres)
-    rec1.get_open_shut_periods()
-    rec1.get_bursts(tcrit)
-    print('\nNumber of bursts = {0:d}'.format(len(rec1.bursts)))
-    blength = rec1.get_burst_length_list()
-    print('Average = {0:.3f} millisec'.format(np.average(blength)))
-    print('Range: {0:.3f}'.format(min(blength)) +
-            ' to {0:.3f} millisec'.format(max(blength)))
-    #rec1.print_bursts()
-
-    # Maximum likelihood fit.
-    print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"
-            %time.localtime()[0:6])
-    newrates, loglik = optimize.simplexHJC(rates, rec1.bursts, optimize.HJClik,
-        opts, verbose=0)
-    print ("\nFitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
-            %time.localtime()[0:6])
-    newrates = np.exp(newrates)
-    mec.set_rateconstants(newrates)
-    print "\n Final rate constants:"
-    mec.printout(sys.stdout)
-    print ('\n Final log-likelihood = {0:.6f}'.format(-loglik))
+#    # Load data.
+#    filename = "./dcpyps/samples/CH82.scn"
+#    ioffset, nint, calfac, header = dcio.scn_read_header(filename)
+#    tint, iampl, iprops = dcio.scn_read_data(filename, ioffset, nint, calfac)
+#    rec1 = dataset.TimeSeries(filename, header, tint, iampl, iprops)
+#
+#    # Impose resolution, get open/shut times and bursts.
+#    rec1.impose_resolution(tres)
+#    rec1.get_open_shut_periods()
+#    rec1.get_bursts(tcrit)
+#    print('\nNumber of bursts = {0:d}'.format(len(rec1.bursts)))
+#    blength = rec1.get_burst_length_list()
+#    print('Average = {0:.3f} millisec'.format(np.average(blength)))
+#    print('Range: {0:.3f}'.format(min(blength)) +
+#            ' to {0:.3f} millisec'.format(max(blength)))
+#    #rec1.print_bursts()
+#
+#    # Maximum likelihood fit.
+#    print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"
+#            %time.localtime()[0:6])
+#    newrates, loglik = optimize.simplexHJC(rates, rec1.bursts, optimize.HJClik,
+#        opts, verbose=0)
+#    print ("\nFitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
+#            %time.localtime()[0:6])
+#    newrates = np.exp(newrates)
+#    mec.set_rateconstants(newrates)
+#    print "\n Final rate constants:"
+#    mec.printout(sys.stdout)
+#    print ('\n Final log-likelihood = {0:.6f}'.format(-loglik))
 
 try:
     cProfile.run('main()')

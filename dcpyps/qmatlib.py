@@ -35,6 +35,7 @@ Phil Trans R Soc Lond A 354, 2555-2590.
 
 import numpy as np
 from numpy import linalg as nplin
+import math
 
 #import dcpypsrc
 
@@ -503,7 +504,67 @@ def dARSdS(tres, QAA, QFF, GAF, GFA, expQFF, kA, kF):
 
     return DARS
 
-def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):
+def AR(roots, tres, QAA, QFF, QAF, QFA, kA, kF):
+    """
+    """
+
+    R = np.zeros((kA, kA, kA))
+    row = np.zeros((kA, kA))
+    col1 = np.zeros((kA, kA))
+    for i in range(kA):
+        WA = W(roots[i], tres, QAA, QFF, QAF, QFA, kA, kF)
+        row[i] = pinf(WA)
+        AW = np.transpose(WA)
+        col1[i] = pinf(AW)
+    col = col1.transpose()
+
+    for i in range(kA):
+        nom = np.dot(col[:,i].reshape((kA, 1)), row[i,:].reshape((1, kA)))
+        W1A = dW(roots[i], tres, QAF, QFF, QFA, kA, kF)
+        denom = np.dot(np.dot(row[i,:].reshape((1, kA)), W1A),
+            col[:,i].reshape((kA, 1)))
+        R[i] = nom / denom
+
+    return R
+
+def HAF(roots, tres, tcrit, QFF, QAF, kA, kF, R):
+    """
+    """
+
+    expQFF = expQt(QFF, tres)
+    coeff = -np.exp(roots * (tcrit - tres)) / roots
+    HAF = np.zeros((kA, kF))
+    for i in range(kA):
+        HAF += np.dot(R[i], np.dot(QAF, expQFF)) * coeff[i]
+    return HAF
+
+def CHSvec(roots, tres, tcrit, QAA, QFF, QAF, QFA, kA, kF, phiF):
+    """
+    Calculate initial and final CHS vectors for HJC likelihood function
+    (Eqs. 5.5 or 5.7, CHS96).
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    start : ndarray, shape (1, kA)
+        CHS start vector (Eq. 5.11, CHS96).
+    end : ndarray, shape (kF, 1)
+        CHS end vector (Eq. 5.8, CHS96).
+    """
+
+    R = AR(roots, tres, QFF, QAA, QFA, QAF, kF, kA)
+    H = HAF(roots, tres, tcrit, QAA, QFA, kF, kA, R)
+
+    u = np.ones((kA, 1))
+    start = np.dot(phiF, H) / np.dot(np.dot(phiF, H), u)
+    end = np.dot(H, u)
+
+    return start, end
+
+def eGAF(t, tres, eigvals, Z00, Z10, Z11, roots, QAA, QFF, QAF, QFA, kA, kF, expQFF):
+    #TODO: update documentation
     """
     Calculate transition density eGAF(t) for exact (Eq. 3.2, HJC90) and
     asymptotic (Eq. 3.24, HJC90) distribution.
@@ -527,7 +588,7 @@ def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):
     eGAFt : array_like, shape(kA, kA, kF)
     """
 
-    #eGAFt = np.zeros(XAF[0].shape)
+    eGAFt = np.empty((kA, kF))
     if t < tres * 3: # exact
         if t < tres * 2:
             eGAFt = f0((t - tres), eigvals, Z00)
@@ -537,50 +598,15 @@ def eGAF(t, tres, roots, XAF, eigvals, Z00, Z10, Z11):
     else: # asymptotic
 #        for i in range(len(roots)):
 #            eGAFt += XAF[i] * math.exp(roots[i] * (t - tres))
-        eGAFt = np.sum(XAF * np.exp(roots *
-            (t - tres)).reshape(XAF.shape[0],1,1), axis=0)
+        R = AR(roots, (t-tres), QAA, QFF, QAF, QFA, kA, kF)
+        for i in range(len(roots)):
+            eGAFt += np.dot(np.dot(R[i], QAF), expQFF) * math.exp(roots[i] * (t - tres))
+
+#        eGAFt = np.sum(XAF * np.exp(roots *
+#            (t - tres)).reshape(XAF.shape[0],1,1), axis=0)
 
     return eGAFt
 
-def XAF(tres, roots, QAA, QFF, QAF, QFA, expQFF):
-    """
-    Calculate coefficients for asymptotic eGAF(t) (Eq. 3.2 HJC90):
-    AR(tres) * QAF * exp(QFF * tres)
-
-    Parameters
-    ----------
-    tres : float
-        Time resolution (dead time).
-    roots : array_like, shape (1, kA)
-        Roots of the asymptotic open time pdf.
-    QAA, QFF, QAF, QFA : array_like
-        Submatrices of Q.
-
-    Returns
-    -------
-    X : array_like, shape(kA, kA, kF)
-    """
-
-    kA = QAA.shape[0]
-    kF = QFF.shape[0]
-    X = np.zeros((kA, kA, kF))
-    rowA = np.zeros((kA, kA))
-    colA = np.zeros((kA, kA))
-    for i in range(kA):
-        WAA = W(roots[i], tres, QFF, QAA, QFA, QAF, kF, kA)
-        rowA[i] = pinf(WAA)[0]
-        TrWAA = np.transpose(WAA)
-        colA[i] = pinf(TrWAA)[0]
-    colA = np.transpose(colA)
-
-    for i in range(kA):
-        nom = np.dot(np.dot(np.dot(colA[:,i].reshape((kA, 1)),
-            rowA[i,:].reshape((1, kA))), QAF), expQFF)
-        W1A = dW(roots[i], tres, QAF, QFF, QFA, kA, kF)
-        denom = np.dot(np.dot(rowA[i,:].reshape((1, kA)), W1A),
-            colA[:,i].reshape((kA, 1)))
-        X[i] = nom / denom
-    return X
 
 def f0(u, eigvals, Z00):
     """

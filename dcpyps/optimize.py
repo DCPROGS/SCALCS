@@ -6,63 +6,53 @@ from math import*
 import qmatlib  as qml
 import scalcslib as scl
 
-def ini_vectors(mec, eGFA, eGAF, expQFF, XFA,
-        roots, tres, tcrit, is_chsvec=False):
-    """
-    Get initial and final vectors, startB and endB, for HJC likelihood
-    calculation (Eqs. 5.5 or 5.7, CHS96).
+def test_CHS(theta, opts):
 
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    tres : float
-        Time resolution (dead time).
-    tcrit : float
-        Critical gap length (critical shut time).
-    is_chsvec : bool
-        True if CHS vectors should be used (Eq. 5.7, CHS96).
+    mec = opts['mec']
+    conc = opts['conc']
+    tres = opts['tres']
+    tcrit = opts['tcrit']
+    is_chsvec = opts['isCHS']
 
-    Returns
-    -------
-    startB : ndarray, shape (1, kA)
-        Initial vector for openings or initial CHS vector (Eq. 5.11, CHS96).
-    endB : ndarray, shape (kF, 1)
-        Column of 1's or final CHS vector (Eq. 5.8, CHS96).
-    """
+    mec.set_rateconstants(np.exp(theta))
+    mec.set_eff('c', conc)
 
-#    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
-#    expQFF = qml.expQt(mec.QFF, tres)
-#    expQAA = qml.expQt(mec.QAA, tres)
-#    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
-#    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
-    uA = np.ones((mec.kA, 1))
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+    expQFF = qml.expQt(mec.QFF, tres)
+    expQAA = qml.expQt(mec.QAA, tres)
+    print 'expQAA=', expQAA
+    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
+    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
+    phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
+    startB = qml.phiHJC(eGAF, eGFA, mec.kA)
+    endB = np.ones((mec.kF, 1))
 
-    print 'Froots=', roots
-    print 'Ftaus=', -1/roots
+    Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(mec.Q, mec.kA, mec.QFF,
+        mec.QAF, mec.QFA, expQFF, True)
+    Aroots = scl.asymptotic_roots(tres,
+        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
+    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(mec.Q, mec.kA, mec.QAA,
+        mec.QFA, mec.QAF, expQAA, False)
+    Froots = scl.asymptotic_roots(tres,
+        mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
 
-    if is_chsvec:
-#        roots = asymptotic_roots(mec, tres, False)
-        HFA = np.zeros((mec.kF, mec.kA))
-#        XFA = qml.XAF(tres, roots, mec.QFF, mec.QAA, mec.QFA,
-#            mec.QAF, expQFF)
-        for i in range(mec.kF):
-            coeff = -exp(roots[i] * (tcrit - tres)) / roots[i]
-            HFA += coeff * XFA[i]
-
-        print 'HFA=', HFA
-        phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
-        print 'phiF=', phiF
-
-        startB = np.dot(phiF, HFA) / np.dot(np.dot(phiF, HFA), uA)
-        endB = np.dot(HFA, uA)
-    else:
-        startB = qml.phiHJC(eGAF, eGFA, mec.kA)
-        endB = np.ones((mec.kF, 1))
-
+    startB, endB = qml.CHSvec(Froots, tres, tcrit,
+        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF, phiF)
     print 'startB=', startB
     print 'endB=', endB
 
-    return startB, endB
+    t = 0.0010134001973
+    print '\n\n opening t = ', t
+    eGAFt = qml.eGAF(t, tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
+        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF, expQFF)
+    print 'eGAFt=', eGAFt
+
+    t = 0.0001
+    print '\n\n shutting t = ', t
+    eGAFt = qml.eGAF(t, tres, Feigvals, FZ00, FZ10, FZ11, Froots,
+        mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA, expQAA)
+    print 'eGAFt=', eGAFt
+
 
 def HJClik(theta, bursts, opts):
     #HJClik(bursts, mec, tres, tcrit, is_chsvec=False):
@@ -118,22 +108,22 @@ def HJClik(theta, bursts, opts):
     expQAA = qml.expQt(mec.QAA, tres)
     eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
     eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
-
+    phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
+    startB = qml.phiHJC(eGAF, eGFA, mec.kA)
+    endB = np.ones((mec.kF, 1))
 
     Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(mec.Q, mec.kA, mec.QFF,
         mec.QAF, mec.QFA, expQFF, True)
     Aroots = scl.asymptotic_roots(tres,
         mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
-    Axaf = qml.XAF(tres, Aroots, mec.QAA, mec.QFF, mec.QAF, mec.QFA, expQFF)
     Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(mec.Q, mec.kA, mec.QAA,
         mec.QFA, mec.QAF, expQAA, False)
     Froots = scl.asymptotic_roots(tres,
         mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
-    Fxaf = qml.XAF(tres, Froots, mec.QFF, mec.QAA, mec.QFA, mec.QAF, expQAA)
-    startB, endB = ini_vectors(mec, eGFA, eGAF, expQAA, Fxaf, Froots,
-        tres, tcrit, is_chsvec)
-#    print 'startB=', startB
-#    print 'endB=', endB
+
+    if is_chsvec:
+        startB, endB = qml.CHSvec(Froots, tres, tcrit,
+            mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF, phiF)
 
     loglik = 0
     for ind in bursts:
@@ -143,10 +133,14 @@ def HJClik(theta, bursts, opts):
             t = burst[i] * 0.001
             if i % 2 == 0: # open time
                 #eGAFt = np.zeros(Axaf[0].shape)
-                eGAFt = qml.eGAF(t, tres, Aroots, Axaf, Aeigvals, AZ00, AZ10, AZ11)
+                eGAFt = qml.eGAF(t, tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
+                    mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF, expQFF)
+                #eGAFt = qml.eGAF(t, tres, Aroots, Axaf, Aeigvals, AZ00, AZ10, AZ11)
             else: # shut
                 #eGAFt = np.zeros(Fxaf[0].shape)
-                eGAFt = qml.eGAF(t, tres, Froots, Fxaf, Feigvals, FZ00, FZ10, FZ11)
+                eGAFt = qml.eGAF(t, tres, Feigvals, FZ00, FZ10, FZ11, Froots,
+                    mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA, expQAA)
+                #eGAFt = qml.eGAF(t, tres, Froots, Fxaf, Feigvals, FZ00, FZ10, FZ11)
             grouplik = np.dot(grouplik, eGAFt)
             if grouplik.max() > 1e50:
                 grouplik = grouplik * 1e-100
