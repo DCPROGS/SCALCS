@@ -115,12 +115,12 @@ class TestDC_PyPs(unittest.TestCase):
     def test_cjumps(self):
 
         start = time.time()
-        t, c, P, Popen = cjumps.solve_jump(self.mec, 0.05, 0.000005,
+        t, c, Popen, P = cjumps.solve_jump(self.mec, 0.05, 0.000005,
             cjumps.pulse_instexp, (0.00001, 0.0, 0.005, 0.0025))
         elapsed1 = time.time() - start
         maxP1 = max(Popen)
         start = time.time()
-        t, c, P, Popen = cjumps.calc_jump(self.mec, 0.05, 0.000005,
+        t, c, Popen, P = cjumps.calc_jump(self.mec, 0.05, 0.000005,
             cjumps.pulse_instexp, (0.00001, 0.0, 0.005, 0.0025))
         elapsed2 = time.time() - start
         print ('\ntesting jump calculation...' +
@@ -130,12 +130,12 @@ class TestDC_PyPs(unittest.TestCase):
         self.assertAlmostEqual(maxP1, maxP2, 3)
 
         start = time.time()
-        t, c, P, Popen = cjumps.solve_jump(self.mec, 0.05, 0.000005,
+        t, c, Popen, P  = cjumps.solve_jump(self.mec, 0.05, 0.000005,
             cjumps.pulse_erf, (0.000001, 0.0, 0.01, 0.01, 0.0002, 0.0002))
         elapsed1 = time.time() - start
         maxP1 = max(Popen)
         start = time.time()
-        t, c, P, Popen = cjumps.calc_jump(self.mec, 0.05, 0.000005,
+        t, c, Popen, P = cjumps.calc_jump(self.mec, 0.05, 0.000005,
             cjumps.pulse_erf, (0.000001, 0.0, 0.01, 0.01, 0.0002, 0.0002))
         elapsed2 = time.time() - start
         print ('\ntesting jump calculation...' +

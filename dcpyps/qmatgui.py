@@ -433,7 +433,7 @@ class QMatGUI(QMainWindow):
 
         self.txtPltBox.append("---\n")
 
-        t, c, P, Popen = cjumps.solve_jump(self.mec, reclen, step,
+        t, c, Popen, P  = cjumps.solve_jump(self.mec, reclen, step,
             cfunc, cargs)
         maxP = max(Popen)
         maxC = max(c)
@@ -447,13 +447,13 @@ class QMatGUI(QMainWindow):
 
         if profile == 'instexp':
             self.textBox.append('\n\nCalculated response to an instantan jump to {0:.5g} mM '.
-                format(cargs[1] * 1000) +
+                format(cargs[0] * 1000) +
                 'concentration with an exponential decay tau of {0:.5g} ms: '.
                 format(cargs[3] * 1000) +
                 'maximal Popen- {0:.5g}'.format(maxP))
         elif ((profile == 'rcj') or (profile == 'square')):
             cjumps.printout(self.mec, cargs[1], cargs[3], output=self.log)
-        self.present_plot = np.vstack((t, c, P, Popen))
+        self.present_plot = np.vstack((t, c, Popen, P))
 
     def onPlotCJumpOccupancies(self):
         """
@@ -496,7 +496,7 @@ class QMatGUI(QMainWindow):
                 .format(cargs[3] * 1000))
         self.txtPltBox.append("---\n")
 
-        t, c, P, Popen = cjumps.solve_jump(self.mec, reclen, step,
+        t, c, Popen, P = cjumps.solve_jump(self.mec, reclen, step,
             cfunc, cargs)
         maxP = max(Popen)
         maxC = max(c)
@@ -518,7 +518,7 @@ class QMatGUI(QMainWindow):
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
 
-        self.present_plot = np.vstack((t, c, P, Popen))
+        self.present_plot = np.vstack((t, c, Popen, P))
 #        rcj.printout(self.mec, jpar, output=self.log)
 
     def onPlotPopen(self):

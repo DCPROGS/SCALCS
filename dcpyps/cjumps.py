@@ -196,7 +196,7 @@ def solve_jump(mec, reclen, step, cfunc, cargs):
         Popen += P[i]
 
     c =  cfunc(t, cargs)
-    return t, c, P, Popen
+    return t, c, Popen, P
 
 def calc_jump (mec, reclen, step, cfunc, cargs):
     """
@@ -252,7 +252,7 @@ def calc_jump (mec, reclen, step, cfunc, cargs):
     for i in range(mec.kA):
         Popen += P[i]
         
-    return t, c, P, Popen
+    return t, c, Popen, P
 
 def coefficient_calc(k, A, p_occup):
     """
