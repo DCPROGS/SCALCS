@@ -506,6 +506,21 @@ def dARSdS(tres, QAA, QFF, GAF, GFA, expQFF, kA, kF):
 
 def AR(roots, tres, QAA, QFF, QAF, QFA, kA, kF):
     """
+    
+    Parameters
+    ----------
+    roots : array_like, shape (1, kA)
+        Roots of the asymptotic pdf.
+    tres : float
+        Time resolution (dead time).
+    QAA, QFF, QAF, QFA : array_like
+        Submatrices of Q.
+    kA, kF : ints
+        Number of open and shut states.
+
+    Returns
+    -------
+    R : ndarray, shape(kA, kA, kA)
     """
 
     R = np.zeros((kA, kA, kA))
@@ -527,24 +542,49 @@ def AR(roots, tres, QAA, QFF, QAF, QFA, kA, kF):
 
     return R
 
-def HAF(roots, tres, tcrit, QFF, QAF, kA, kF, R):
+def HAF(roots, tres, tcrit, QAF, expQFF, R):
     """
+    Parameters
+    ----------
+    roots : array_like, shape (1, kA)
+        Roots of the asymptotic pdf.
+    tres : float
+        Time resolution (dead time).
+    tcrit : float
+        Critical time.
+    QAF : array_like, shape(kA, kF)
+    expQFF : array_like, shape(kF, kF)
+    R : array_like, shape(kA, kA, kA)
+
+    Returns
+    -------
+    HAF : ndarray, shape(kA, kF)
     """
 
-    expQFF = expQt(QFF, tres)
     coeff = -np.exp(roots * (tcrit - tres)) / roots
-    HAF = np.zeros((kA, kF))
-    for i in range(kA):
-        HAF += np.dot(R[i], np.dot(QAF, expQFF)) * coeff[i]
+    temp = np.sum(R * coeff.reshape(R.shape[0],1,1), axis=0)
+    HAF = np.dot(np.dot(temp, QAF), expQFF)
+
     return HAF
 
-def CHSvec(roots, tres, tcrit, QAA, QFF, QAF, QFA, kA, kF, phiF):
+def CHSvec(roots, tres, tcrit, QFA, kA, expQAA, phiF, R):
     """
     Calculate initial and final CHS vectors for HJC likelihood function
     (Eqs. 5.5 or 5.7, CHS96).
 
     Parameters
     ----------
+    roots : array_like, shape (1, kA)
+        Roots of the asymptotic pdf.
+    tres : float
+        Time resolution (dead time).
+    tcrit : float
+        Critical time.
+    QFA : array_like, shape(kF, kA)
+    kA : int
+    expQAA : array_like, shape(kA, kA)
+    phiF : array_like, shape(1, kF)
+    R : array_like, shape(kF, kF, kF)
 
     Returns
     -------
@@ -554,16 +594,14 @@ def CHSvec(roots, tres, tcrit, QAA, QFF, QAF, QFA, kA, kF, phiF):
         CHS end vector (Eq. 5.8, CHS96).
     """
 
-    R = AR(roots, tres, QFF, QAA, QFA, QAF, kF, kA)
-    H = HAF(roots, tres, tcrit, QAA, QFA, kF, kA, R)
-
+    H = HAF(roots, tres, tcrit, QFA, expQAA, R)
     u = np.ones((kA, 1))
     start = np.dot(phiF, H) / np.dot(np.dot(phiF, H), u)
     end = np.dot(H, u)
 
     return start, end
 
-def eGAF(t, tres, eigvals, Z00, Z10, Z11, roots, QAA, QFF, QAF, QFA, kA, kF, expQFF):
+def eGAF(t, tres, eigvals, Z00, Z10, Z11, roots, R, QAF, expQFF):
     #TODO: update documentation
     """
     Calculate transition density eGAF(t) for exact (Eq. 3.2, HJC90) and
@@ -575,38 +613,32 @@ def eGAF(t, tres, eigvals, Z00, Z10, Z11, roots, QAA, QFF, QAF, QFA, kA, kF, exp
         Time interval.
     tres : float
         Time resolution (dead time).
-    roots : array_like, shape (1, kA)
-        Roots of the asymptotic pdf.
-    XAF : array_like, shape(kA, kA, kF)
     eigvals : array_like, shape (1, k)
         Eigenvalues of -Q matrix.
     Z00, Z10, Z11 : array_like, shape (k, kA, kF)
         Z constants for the exact open time pdf.
+    roots : array_like, shape (1, kA)
+        Roots of the asymptotic pdf.
+    R : array_like, shape(kA, kA, kA)
+    QAF : array_like, shape(kA, kF)
+    expQFF : array_like, shape(kF, kF)
 
     Returns
     -------
-    eGAFt : array_like, shape(kA, kA, kF)
+    eGAFt : array_like, shape(kA, kF)
     """
 
-    eGAFt = np.empty((kA, kF))
-    if t < tres * 3: # exact
-        if t < tres * 2:
-            eGAFt = f0((t - tres), eigvals, Z00)
-        else:
-            eGAFt = (f0((t - tres), eigvals, Z00) -
-                f1((t - 2 * tres), eigvals, Z10, Z11))
+    if t < tres * 2: # exact
+        eGAFt = f0((t - tres), eigvals, Z00)
+    elif (t >= tres * 2) and (t < tres * 3):
+        eGAFt = (f0((t - tres), eigvals, Z00) -
+            f1((t - 2 * tres), eigvals, Z10, Z11))
     else: # asymptotic
-#        for i in range(len(roots)):
-#            eGAFt += XAF[i] * math.exp(roots[i] * (t - tres))
-        R = AR(roots, (t-tres), QAA, QFF, QAF, QFA, kA, kF)
-        for i in range(len(roots)):
-            eGAFt += np.dot(np.dot(R[i], QAF), expQFF) * math.exp(roots[i] * (t - tres))
-
-#        eGAFt = np.sum(XAF * np.exp(roots *
-#            (t - tres)).reshape(XAF.shape[0],1,1), axis=0)
+        temp = np.sum(R * np.exp(roots *
+            (t - tres)).reshape(R.shape[0],1,1), axis=0)
+        eGAFt = np.dot(np.dot(temp, QAF), expQFF)
 
     return eGAFt
-
 
 def f0(u, eigvals, Z00):
     """

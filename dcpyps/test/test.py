@@ -20,6 +20,7 @@ class TestDC_PyPs(unittest.TestCase):
         self.conc = 100e-9 # 100 nM
         self.mec.set_eff('c', self.conc)
         self.tres = 0.0001 # 100 microsec
+        self.tcrit = 0.004
 
     def test_burst(self):
 
@@ -123,7 +124,7 @@ class TestDC_PyPs(unittest.TestCase):
         t, c, Popen, P = cjumps.calc_jump(self.mec, 0.05, 0.000005,
             cjumps.pulse_instexp, (0.00001, 0.0, 0.005, 0.0025))
         elapsed2 = time.time() - start
-        print ('\ntesting jump calculation...' +
+        print ('\ntesting jump calculation speed...' +
             '\ndirect matrix calculation took {0:.6f} s'.format(elapsed2) +
             '\nintegration took {0:.6f} s'.format(elapsed1))
         maxP2 = max(Popen)
@@ -138,11 +139,81 @@ class TestDC_PyPs(unittest.TestCase):
         t, c, Popen, P = cjumps.calc_jump(self.mec, 0.05, 0.000005,
             cjumps.pulse_erf, (0.000001, 0.0, 0.01, 0.01, 0.0002, 0.0002))
         elapsed2 = time.time() - start
-        print ('\ntesting jump calculation...' +
+        print ('\ntesting jump calculation speed...' +
             '\ndirect matrix calculation took {0:.6f} s'.format(elapsed2) +
             '\nintegration took {0:.6f} s'.format(elapsed1))
         maxP2 = max(Popen)
         self.assertAlmostEqual(maxP1, maxP2, 3)
+
+    def test_likelihood(self):
+
+        GAF, GFA = qml.iGs(self.mec.Q, self.mec.kA, self.mec.kF)
+        expQFF = qml.expQt(self.mec.QFF, self.tres)
+        expQAA = qml.expQt(self.mec.QAA, self.tres)
+        eGAF = qml.eGs(GAF, GFA, self.mec.kA, self.mec.kF, expQFF)
+        eGFA = qml.eGs(GFA, GAF, self.mec.kF, self.mec.kA, expQAA)
+        phiF = qml.phiHJC(eGFA, eGAF, self.mec.kF)
+
+        Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(self.mec.Q, self.mec.kA,
+            self.mec.QFF, self.mec.QAF, self.mec.QFA, expQFF, True)
+        Aroots = scl.asymptotic_roots(self.tres, self.mec.QAA, self.mec.QFF,
+            self.mec.QAF, self.mec.QFA, self.mec.kA, self.mec.kF)
+        AR = qml.AR(Aroots, self.tres, self.mec.QAA, self.mec.QFF,
+            self.mec.QAF, self.mec.QFA, self.mec.kA, self.mec.kF)
+        Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(self.mec.Q, self.mec.kA,
+            self.mec.QAA, self.mec.QFA, self.mec.QAF, expQAA, False)
+        Froots = scl.asymptotic_roots(self.tres, self.mec.QFF, self.mec.QAA,
+            self.mec.QFA, self.mec.QAF, self.mec.kF, self.mec.kA)
+        FR = qml.AR(Froots, self.tres, self.mec.QFF, self.mec.QAA,
+            self.mec.QFA, self.mec.QAF, self.mec.kF, self.mec.kA)
+
+        startB, endB = qml.CHSvec(Froots, self.tres, self.tcrit,
+            self.mec.QFA, self.mec.kA, expQAA, phiF, FR)
+        self.assertAlmostEqual(startB[0], 0.22041811, 6)
+        self.assertAlmostEqual(startB[1], 0.77958189, 6)
+        self.assertAlmostEqual(endB[0, 0], 0.97485171, 6)
+        self.assertAlmostEqual(endB[1, 0], 0.21346049, 6)
+        self.assertAlmostEqual(endB[2, 0], 0.99917949, 6)
+
+        t = 0.0010134001973
+        # Open time. Asymptotic solution.
+        eGAFt = qml.eGAF(t, self.tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
+            AR, self.mec.QAF, expQFF)
+        self.assertAlmostEqual(eGAFt[0,0], 152.44145644, 6)
+        self.assertAlmostEqual(eGAFt[0,1], 1.51526687, 6)
+        self.assertAlmostEqual(eGAFt[0,2], 33.72923718, 6)
+        self.assertAlmostEqual(eGAFt[1,0], 67.29121672, 6)
+        self.assertAlmostEqual(eGAFt[1,1], 63.80986196, 6)
+        self.assertAlmostEqual(eGAFt[1,2], 9.27940684, 6)
+        # Shut time. Asymptotic solution.
+        eGAFt = qml.eGAF(t, self.tres, Feigvals, FZ00, FZ10, FZ11, Froots,
+            FR, self.mec.QFA, expQAA)
+        self.assertAlmostEqual(eGAFt[0,0], 1.73048864, 6)
+        self.assertAlmostEqual(eGAFt[0,1], 6.9056438, 6)
+        self.assertAlmostEqual(eGAFt[1,0], 0.42762192, 6)
+        self.assertAlmostEqual(eGAFt[1,1], 1.70926206, 6)
+        self.assertAlmostEqual(eGAFt[2,0], 0.04548765, 6)
+        self.assertAlmostEqual(eGAFt[2,1], 0.15704816, 6)
+
+        t = 0.0001
+        # Open time. Exact solution.
+        eGAFt = qml.eGAF(t, self.tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
+            AR, self.mec.QAF, expQFF)
+        self.assertAlmostEqual(eGAFt[0,0], 2442.03379283, 6)
+        self.assertAlmostEqual(eGAFt[0,1], 5.88221827, 6)
+        self.assertAlmostEqual(eGAFt[0,2], 541.9589599, 6)
+        self.assertAlmostEqual(eGAFt[1,0], 78.429577, 5)
+        self.assertAlmostEqual(eGAFt[1,1], 74.92749546, 6)
+        self.assertAlmostEqual(eGAFt[1,2], 10.76602524, 6)
+        # Shut time. Exact solution.
+        eGAFt = qml.eGAF(t, self.tres, Feigvals, FZ00, FZ10, FZ11, Froots,
+            FR, self.mec.QFA, expQAA)
+        self.assertAlmostEqual(eGAFt[0,0], 1.10568526e+01, 6)
+        self.assertAlmostEqual(eGAFt[0,1], 6.29701830e-02, 6)
+        self.assertAlmostEqual(eGAFt[1,0], 8.39602440e-01, 6)
+        self.assertAlmostEqual(eGAFt[1,1], 1.42674924e+04, 4)
+        self.assertAlmostEqual(eGAFt[2,0], 5.06525702e-18, 15)
+        self.assertAlmostEqual(eGAFt[2,1], -9.02489888e-15, 12)
 
     def test_popen(self):
 

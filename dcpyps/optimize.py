@@ -31,26 +31,37 @@ def test_CHS(theta, opts):
         mec.QAF, mec.QFA, expQFF, True)
     Aroots = scl.asymptotic_roots(tres,
         mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
+    AR = qml.AR(Aroots, tres, mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
     Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(mec.Q, mec.kA, mec.QAA,
         mec.QFA, mec.QAF, expQAA, False)
     Froots = scl.asymptotic_roots(tres,
         mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
+    FR = qml.AR(Froots, tres, mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
 
     startB, endB = qml.CHSvec(Froots, tres, tcrit,
-        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF, phiF)
+        mec.QFA, mec.kA, expQAA, phiF, FR)
     print 'startB=', startB
     print 'endB=', endB
 
     t = 0.0010134001973
     print '\n\n opening t = ', t
     eGAFt = qml.eGAF(t, tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
-        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF, expQFF)
+        AR, mec.QAF, expQFF)
     print 'eGAFt=', eGAFt
-
-    t = 0.0001
     print '\n\n shutting t = ', t
     eGAFt = qml.eGAF(t, tres, Feigvals, FZ00, FZ10, FZ11, Froots,
-        mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA, expQAA)
+        FR, mec.QFA, expQAA)
+    print 'eGAFt=', eGAFt
+
+
+    t = 0.0001
+    print '\n\n opening t = ', t
+    eGAFt = qml.eGAF(t, tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
+        AR, mec.QAF, expQFF)
+    print 'eGAFt=', eGAFt
+    print '\n\n shutting t = ', t
+    eGAFt = qml.eGAF(t, tres, Feigvals, FZ00, FZ10, FZ11, Froots,
+        FR, mec.QFA, expQAA)
     print 'eGAFt=', eGAFt
 
 
@@ -116,14 +127,16 @@ def HJClik(theta, bursts, opts):
         mec.QAF, mec.QFA, expQFF, True)
     Aroots = scl.asymptotic_roots(tres,
         mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
+    AR = qml.AR(Aroots, tres, mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
     Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(mec.Q, mec.kA, mec.QAA,
         mec.QFA, mec.QAF, expQAA, False)
     Froots = scl.asymptotic_roots(tres,
         mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
+    FR = qml.AR(Froots, tres, mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
 
     if is_chsvec:
         startB, endB = qml.CHSvec(Froots, tres, tcrit,
-            mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF, phiF)
+            mec.QFA, mec.kA, expQAA, phiF, FR)
 
     loglik = 0
     for ind in bursts:
@@ -132,15 +145,11 @@ def HJClik(theta, bursts, opts):
         for i in range(len(burst)):
             t = burst[i] * 0.001
             if i % 2 == 0: # open time
-                #eGAFt = np.zeros(Axaf[0].shape)
                 eGAFt = qml.eGAF(t, tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
-                    mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF, expQFF)
-                #eGAFt = qml.eGAF(t, tres, Aroots, Axaf, Aeigvals, AZ00, AZ10, AZ11)
+                    AR, mec.QAF, expQFF)
             else: # shut
-                #eGAFt = np.zeros(Fxaf[0].shape)
                 eGAFt = qml.eGAF(t, tres, Feigvals, FZ00, FZ10, FZ11, Froots,
-                    mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA, expQAA)
-                #eGAFt = qml.eGAF(t, tres, Froots, Fxaf, Feigvals, FZ00, FZ10, FZ11)
+                    FR, mec.QFA, expQAA)
             grouplik = np.dot(grouplik, eGAFt)
             if grouplik.max() > 1e50:
                 grouplik = grouplik * 1e-100
