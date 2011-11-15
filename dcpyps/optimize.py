@@ -65,7 +65,7 @@ def test_CHS(theta, opts):
     print 'eGAFt=', eGAFt
 
 
-def HJClik(theta, (bursts, opts)):
+def HJClik(theta, bursts, opts):
     #HJClik(bursts, mec, tres, tcrit, is_chsvec=False):
 
     """
