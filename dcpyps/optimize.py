@@ -64,6 +64,9 @@ def test_CHS(theta, opts):
         FR, mec.QFA, expQAA)
     print 'eGAFt=', eGAFt
 
+def printit(xk):
+    print np.exp(xk)
+
 
 def HJClik(theta, bursts, opts):
     #HJClik(bursts, mec, tres, tcrit, is_chsvec=False):

@@ -58,20 +58,21 @@ def main():
     print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
 
-    full_out = so.fmin(optimize.HJClik, rates, args=(rec1.bursts, opts)) #,
-#        full_output=1, maxiter=10000, maxfun=10000)
+    xopt, fopt, iter, funcalls, warnflag, allvecs = so.fmin(optimize.HJClik, rates, args=(rec1.bursts, opts),
+        full_output=1, maxiter=10000, maxfun=10000, retall=1,
+        callback=optimize.printit)
 
 #    newrates, loglik = optimize.simplexHJC(rates, rec1.bursts, optimize.HJClik,
 #        opts, verbose=0)
     print ("\nFitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
 
-    print 'full_output: ', full_out
-#    newrates = np.exp(newrates)
-#    mec.set_rateconstants(newrates)
-#    print "\n Final rate constants:"
-#    mec.printout(sys.stdout)
-#    print ('\n Final log-likelihood = {0:.6f}'.format(-loglik))
+
+    newrates = np.exp(xopt)
+    mec.set_rateconstants(newrates)
+    print "\n Final rate constants:"
+    mec.printout(sys.stdout)
+    print ('\n Final log-likelihood = {0:.6f}'.format(-fopt))
 
 try:
     cProfile.run('main()')

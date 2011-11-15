@@ -237,11 +237,11 @@ def asymptotic_roots(tres, QAA, QFF, QAF, QFA, kA, kF):
     roots : array_like, shape (1, kA)
     """
 
-    sas = -100000
-    sbs = -0.0001
+    sas = -1000000
+    sbs = -0.0000001
     sro = bisectHJC.bisection_intervals(sas, sbs, tres,
         QAA, QFF, QAF, QFA, kA, kF)
-        
+
     roots = np.zeros(kA)
     for i in range(kA):
         roots[i] = so.bisect(qml.detW, sro[i,0], sro[i,1],
