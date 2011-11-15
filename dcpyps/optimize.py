@@ -65,7 +65,7 @@ def test_CHS(theta, opts):
     print 'eGAFt=', eGAFt
 
 
-def HJClik(theta, args):
+def HJClik(theta, (bursts, opts)):
     #HJClik(bursts, mec, tres, tcrit, is_chsvec=False):
 
     """
@@ -101,7 +101,6 @@ def HJClik(theta, args):
         Log-likelihood.
     """
 
-    bursts, opts = args
     mec = opts['mec']
     conc = opts['conc']
     tres = opts['tres']
