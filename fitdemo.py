@@ -8,6 +8,8 @@ import time
 import numpy as np
 import cProfile
 
+from scipy import optimize as so
+
 from dcpyps import optimize
 from dcpyps import samples
 from dcpyps import dcio
@@ -55,15 +57,21 @@ def main():
     # Maximum likelihood fit.
     print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
-    newrates, loglik = optimize.simplexHJC(rates, rec1.bursts, optimize.HJClik,
-        opts, verbose=0)
+
+    full_out = so.fmin(optimize.HJClik, rates, args=(rec1.bursts, opts)) #,
+#        full_output=1, maxiter=10000, maxfun=10000)
+
+#    newrates, loglik = optimize.simplexHJC(rates, rec1.bursts, optimize.HJClik,
+#        opts, verbose=0)
     print ("\nFitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
-    newrates = np.exp(newrates)
-    mec.set_rateconstants(newrates)
-    print "\n Final rate constants:"
-    mec.printout(sys.stdout)
-    print ('\n Final log-likelihood = {0:.6f}'.format(-loglik))
+
+    print 'full_output: ', full_out
+#    newrates = np.exp(newrates)
+#    mec.set_rateconstants(newrates)
+#    print "\n Final rate constants:"
+#    mec.printout(sys.stdout)
+#    print ('\n Final log-likelihood = {0:.6f}'.format(-loglik))
 
 try:
     cProfile.run('main()')

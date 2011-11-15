@@ -65,7 +65,7 @@ def test_CHS(theta, opts):
     print 'eGAFt=', eGAFt
 
 
-def HJClik(theta, bursts, opts):
+def HJClik(theta, args):
     #HJClik(bursts, mec, tres, tcrit, is_chsvec=False):
 
     """
@@ -101,6 +101,7 @@ def HJClik(theta, bursts, opts):
         Log-likelihood.
     """
 
+    bursts, opts = args
     mec = opts['mec']
     conc = opts['conc']
     tres = opts['tres']
@@ -156,7 +157,7 @@ def HJClik(theta, bursts, opts):
                 print 'grouplik was scaled down'
         grouplik = np.dot(grouplik, endB)
         loglik += log(grouplik[0])
-    return -loglik, np.log(mec.unit_rates())
+    return -loglik #, np.log(mec.unit_rates())
 
 def sortShell(vals, simp):
     """
