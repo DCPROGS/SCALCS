@@ -54,7 +54,7 @@ class QMatGUI(QMainWindow):
         self.my_colour = ["r", "g", "b", "m", "c", "y"]
         self.present_plot = None
 
-        loadMenu = self.menuBar().addMenu('&Load')
+        loadMenu = self.menuBar().addMenu('&Mechanims')
         loadDemoAction = self.createAction("&Demo", self.onLoadDemo,
             None, "loaddemo", "Load Demo mec")
         loadFromMecFileAction = self.createAction("&From DCprogs MEC File...",
@@ -63,10 +63,13 @@ class QMatGUI(QMainWindow):
         loadFromModFileAction = self.createAction("&From ChannelLab MOD File...",
             self.onLoadModFile,
             None, "loadfrommodfile", "Load from ChannelLab Mod file")
+        modifyMecAction = self.createAction("&Modify", self.onModifyMec,
+            None, "modifymec", "Modify mec")
         quitAction = self.createAction("&Quit", self.close,
             "Ctrl+Q", "appquit", "Close the application")
         self.addActions(loadMenu, (loadDemoAction,
-            loadFromMecFileAction, loadFromModFileAction, quitAction))
+            loadFromMecFileAction, loadFromModFileAction,
+            modifyMecAction, quitAction))
 
         plotMenu = self.menuBar().addMenu('&Plot')
         plotPopenAction = self.createAction("&Popen curve", self.onPlotPopen)
@@ -835,6 +838,13 @@ class QMatGUI(QMainWindow):
         self.textBox.append("\n" + title + "\n")
         self.mec.printout(self.log)
 
+    def onModifyMec(self):
+        """
+        """
+        table = RateTableDlg(self, self.mec)
+        if table.exec_():
+            print 'table closed'
+
 class PrintLog:
     """
     Write stdout to a QTextEdit.
@@ -848,6 +858,94 @@ class PrintLog:
         self.out1.insertPlainText(text)
         if self.out2:
             self.out2.write(text)
+
+class RateTableDlg(QDialog):
+    """
+    """
+    def __init__(self, parent=None, mec=None):
+        super(RateTableDlg, self).__init__(parent)
+        self.mec = mec
+
+        layoutMain = QVBoxLayout()
+        self.table = RateTable(self.mec)
+        self.table.display_data()
+        self.connect(self.table,
+                SIGNAL("cellChanged(int, int)"),
+                self.tableItemChanged)
+        layoutMain.addWidget(self.table)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+
+        self.setLayout(layoutMain)
+        self.setGeometry(100,100,750,550)
+        self.setWindowTitle("View and modify rate constants...")
+
+    def tableItemChanged(self, row, column):
+        # TODO: update mechanism if anything changed in table
+        print ('Cell in row {0:d} column {0:d} was changed.'.
+            format(row, column) + '\nIts current value is ' +
+            self.table.item(row, column).text())
+
+class RateTable(QTableWidget):
+    """ Creates a custom table widget """
+    def __init__(self, mec=None, *args):
+        QTableWidget.__init__(self, *args)
+        self.setSelectionMode(self.ContiguousSelection)
+        self.setGeometry(0,0,700,400)
+        self.setShowGrid(False)
+        self.mec = mec
+
+    def display_data(self):
+        """ Reads in data as a 2D list and formats and displays it in
+            the table """
+
+        header = ['From State', 'To State', 'Rate name', 'Rate value',
+            'Conc depend', 'Fixed',
+            'Lower limit', 'Higher limit']
+
+        nrows = len(self.mec.Rates)
+        ncols = len(header)
+        self.setRowCount(nrows)
+        self.setColumnCount(ncols)
+        self.setHorizontalHeaderLabels(header)
+
+        for i in xrange(nrows):
+            cell = QTableWidgetItem(self.mec.Rates[i].State1.name)
+            self.setItem(i, 0, cell)
+            cell = QTableWidgetItem(self.mec.Rates[i].State2.name)
+            self.setItem(i, 1, cell)
+            cell = QTableWidgetItem(self.mec.Rates[i].name)
+            self.setItem(i, 2, cell)
+            cell = QTableWidgetItem(str(self.mec.Rates[i].unit_rate()))
+            self.setItem(i, 3, cell)
+
+            if self.mec.Rates[i].eff is None:
+                eff = ''
+            else:
+                eff = self.mec.Rates[i].eff
+            cell = QTableWidgetItem(eff)
+            self.setItem(i, 4, cell)
+
+            if len(self.mec.Rates[i].limits) == 0:
+                if eff == '':
+                    limits = [[1e-15,1e+7]]
+                else:
+                    limits = [[1e-15,1e+10]]
+            else:
+                limits = self.mec.Rates[i].limits
+            cell = QTableWidgetItem(str(limits[0][0]))
+            self.setItem(i, 6, cell)
+            cell = QTableWidgetItem(str(limits[0][1]))
+            self.setItem(i, 7, cell)
+
+        self.resizeColumnsToContents()
+        self.resizeRowsToContents()
 
 class CJumpParDlg(QDialog):
     """

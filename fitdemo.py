@@ -58,7 +58,8 @@ def main():
     print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
 
-    xopt, fopt, iter, funcalls, warnflag, allvecs = so.fmin(optimize.HJClik, rates, args=(rec1.bursts, opts),
+    xopt, fopt, iter, funcalls, warnflag, allvecs = so.fmin(optimize.HJClik,
+        rates, args=(rec1.bursts, opts),
         full_output=1, maxiter=10000, maxfun=10000, retall=1,
         callback=optimize.printit)
 
@@ -73,6 +74,9 @@ def main():
     print "\n Final rate constants:"
     mec.printout(sys.stdout)
     print ('\n Final log-likelihood = {0:.6f}'.format(-fopt))
+    print ('\n {0:d} iterations and {1:d} function calls.\n'.format(iter, funcalls))
+    print 'warnflag=', warnflag
+    print '\n\n'
 
 try:
     cProfile.run('main()')

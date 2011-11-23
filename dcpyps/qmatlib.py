@@ -630,7 +630,7 @@ def eGAF(t, tres, eigvals, Z00, Z10, Z11, roots, R, QAF, expQFF):
 
     if t < tres * 2: # exact
         eGAFt = f0((t - tres), eigvals, Z00)
-    elif (t >= tres * 2) and (t < tres * 3):
+    elif t < tres * 3:
         eGAFt = (f0((t - tres), eigvals, Z00) -
             f1((t - 2 * tres), eigvals, Z10, Z11))
     else: # asymptotic
