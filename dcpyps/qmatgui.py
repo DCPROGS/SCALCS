@@ -843,7 +843,9 @@ class QMatGUI(QMainWindow):
         """
         table = RateTableDlg(self, self.mec)
         if table.exec_():
-            print 'table closed'
+            self.mec = table.return_mec()
+        self.textBox.append("\nMec changed:\n")
+        self.mec.printout(self.log)
 
 class PrintLog:
     """
@@ -888,9 +890,18 @@ class RateTableDlg(QDialog):
 
     def tableItemChanged(self, row, column):
         # TODO: update mechanism if anything changed in table
-        print ('Cell in row {0:d} column {0:d} was changed.'.
-            format(row, column) + '\nIts current value is ' +
-            self.table.item(row, column).text())
+
+        if column == 3:
+            newratecon = float(self.table.item(row, column).text())
+            self.mec.Rates[row].set_new_rateconstants(newratecon)
+
+        if column == 6 or column == 7:
+            newlimits = [float(self.table.item(row, 6).text()),
+                float(self.table.item(row, 7).text())]
+            self.mec.Rates[row].set_new_limits(newlimits)
+
+    def return_mec(self):
+        return self.mec
 
 class RateTable(QTableWidget):
     """ Creates a custom table widget """

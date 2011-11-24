@@ -106,6 +106,12 @@ class Rate(object):
     def unit_rate(self):
         return self._func(self._rateconstants, 1.0)
 
+    def set_new_rateconstants(self, newrateconstants):
+        self.rateconstants = newrateconstants
+
+    def set_new_limits(self, newlimits):
+        self.limits = newlimits
+
     def _lim_check(self):
         if self.limits != []:
             for nr in range(len(self._rateconstants)):
