@@ -893,12 +893,12 @@ class RateTableDlg(QDialog):
 
         if column == 3:
             newratecon = float(self.table.item(row, column).text())
-            self.mec.Rates[row].set_new_rateconstants(newratecon)
+            self.mec.Rates[row].rates = newratecon
 
         if column == 6 or column == 7:
             newlimits = [float(self.table.item(row, 6).text()),
                 float(self.table.item(row, 7).text())]
-            self.mec.Rates[row].set_new_limits(newlimits)
+            self.mec.Rates[row].limits = newlimits
 
     def return_mec(self):
         return self.mec

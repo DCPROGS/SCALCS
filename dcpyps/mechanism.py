@@ -64,7 +64,7 @@ class Rate(object):
 
         self.name = name
 
-        self._set_rateconstants(rateconstants, lim_check=False)
+        self._set_rateconstants(rateconstants, check=False)
 
         if not isinstance(State1, State) or not isinstance(State2, State):
             raise TypeError("DCPYPS: States have to be of class State")
@@ -79,26 +79,9 @@ class Rate(object):
         self.mr = mr # for future expansion (set by microscopic reversibility)
         self._func = func # f(ratepars, amount of effector); "Rate equation" if you wish
 
-        self.limits = limits
-        # sanity check for rate constant limits:
-        if len(self.limits):
-            # There must be as many limits as rate constants, except if there's only
-            # one rate constant:
-            if len(self._rateconstants)==1:
-                err = "DCPYPS: If there's only one rate constant, limits\n"
-                err += "can either be a list with upper and lower bounds\n"
-                err += "(i.e. [lower, upper]) or a list of lists\n"
-                err += "(i.e. [[lower, upper]]).\n"
-                if len(self.limits)==2:
-                    self.limits = [self.limits,]
-                if len(self.limits) > 2:
-                    raise RuntimeError(err)
-                if len(self.limits)==1 and len(self.limits[0]) != 2:
-                    raise RuntimeError(err)
-            elif len(self.limits) != len(self._rateconstants):
-                err = "DCPYPS: limits has to contain as many limit pairs as there are rate constants.\n"
-                raise RuntimeError(err)
-        self._lim_check()
+        self._limits = limits
+        self._check_limits()
+        self._check_rateconstants()
 
     def calc(self, val):
         return self._func(self._rateconstants, val)
@@ -106,23 +89,17 @@ class Rate(object):
     def unit_rate(self):
         return self._func(self._rateconstants, 1.0)
 
-    def set_new_rateconstants(self, newrateconstants):
-        self.rateconstants = newrateconstants
-
-    def set_new_limits(self, newlimits):
-        self.limits = newlimits
-
-    def _lim_check(self):
-        if self.limits != []:
+    def _check_rateconstants(self):
+        if self._limits != []:
             for nr in range(len(self._rateconstants)):
-                if self._rateconstants[nr] < self.limits[nr][0]:
-                    self.rateconstants[nr] = self.limits[nr][0]
+                if self._rateconstants[nr] < self._limits[nr][0]:
+                    self.rateconstants[nr] = self._limits[nr][0]
                     sys.stderr.write("DCPYPS: Warning: Corrected out-of-range rate constant\n")
-                if self._rateconstants[nr] > self.limits[nr][1]:
-                    self.rateconstants[nr] = self.limits[nr][1]
+                if self._rateconstants[nr] > self._limits[nr][1]:
+                    self.rateconstants[nr] = self._limits[nr][1]
                     sys.stderr.write("DCPYPS: Warning: Corrected out-of-range rate constant\n")
                 
-    def _set_rateconstants(self, rateconstants, lim_check=True):
+    def _set_rateconstants(self, rateconstants, check=True):
         try:
             # test whether rateconstants is a sequence:
             it = iter(rateconstants)
@@ -136,13 +113,43 @@ class Rate(object):
             # if not, convert to single-itemed list:
             self._rateconstants = np.array([rateconstants,])
 
-        if lim_check:
-            self._lim_check()
+        if check:
+            self._check_rateconstants()
 
     def _get_rateconstants(self):
         return self._rateconstants
 
     rateconstants = property(_get_rateconstants, _set_rateconstants)
+
+    def _check_limits(self):
+        # sanity check for rate constant limits:
+        if len(self._limits):
+            # There must be as many limits as rate constants, except if there's only
+            # one rate constant:
+            if len(self._rateconstants)==1:
+                err = "DCPYPS: If there's only one rate constant, limits\n"
+                err += "can either be a list with upper and lower bounds\n"
+                err += "(i.e. [lower, upper]) or a list of lists\n"
+                err += "(i.e. [[lower, upper]]).\n"
+                if len(self._limits)==2:
+                    self._limits = [self._limits,]
+                if len(self._limits) > 2:
+                    raise RuntimeError(err)
+                if len(self._limits)==1 and len(self._limits[0]) != 2:
+                    raise RuntimeError(err)
+            elif len(self._limits) != len(self._rateconstants):
+                err = "DCPYPS: limits has to contain as many limit pairs as there are rate constants.\n"
+                raise RuntimeError(err)
+
+    def _set_limits(self, limits, check=True):
+        self._limits = limits
+        if check:
+            self._check_limits()
+
+    def _get_limits(self):
+        return self._limits
+
+    limits = property(_get_limits, _set_limits)
 
 def initQ(Rates, States):
     Q = np.zeros((len(States), len(States)), dtype=np.float64)
