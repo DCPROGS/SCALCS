@@ -275,9 +275,15 @@ class Mechanism(object):
         if eff not in self.efflist:
             sys.stderr.write("DCPYPS: None of the rates depends on effector %s\n" % eff)
  
-        # find rates that are effector-dependent:
+        # find rates that are effector-dependent, 
+        # and update effector-independent rates:
+        # This is probably not the final word:
+        # It will fail if more than one effector is used.
+        # We'll probably have to keep track of the current
+        # concentration of each effector so that we can
+        # update Q whenever the rate constants are changed
         for Rate in self.Rates:
-            if Rate.eff == eff:
+            if Rate.eff == eff or Rate.eff is None:
                 self.Q[Rate.State1.no, Rate.State2.no] = \
                     Rate.calc(val)
 
