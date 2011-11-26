@@ -151,22 +151,6 @@ class Rate(object):
 
     limits = property(_get_limits, _set_limits)
 
-def initQ(Rates, States):
-    Q = np.zeros((len(States), len(States)), dtype=np.float64)
-
-    # find rate that describes i->j (if any):
-    for Rate in Rates:
-        i = Rate.State1.no
-        j = Rate.State2.no
-        # check range:
-        if i<0 or i>=Q.shape[0]:
-            raise IndexError("DCPYPS: Rate.state1 is out of range")
-        if j<0 or j>=Q.shape[1]:
-            raise IndexError("DCPYPS: Rate.state2 is out of range")
-        Q[i,j] = Rate.unit_rate()
-
-    return Q
-
 class Mechanism(object):
     '''
     Represents a kinetic mechanism / scheme.
@@ -177,14 +161,15 @@ class Mechanism(object):
         self.Rates = Rates
         # construct States end effectors from Rates:
         self.States = []
-        self.efflist = []
+        # dictionary of effectors: {"name":concentration}
+        self.effdict = {}
         for rate in self.Rates:
             if rate.State1 not in self.States:
                 self.States.append(rate.State1)
             if rate.State2 not in self.States:
                 self.States.append(rate.State2)
-            if rate.eff not in self.efflist:
-                self.efflist.append(rate.eff)
+            if rate.eff not in self.effdict.keys():
+                self.effdict[rate.eff] = 1.0
 
         # REMIS: please check whether this makes sense
         # sort States according to state type:
@@ -216,7 +201,7 @@ class Mechanism(object):
 
         self.Q = np.zeros((len(self.States), len(self.States)), dtype=np.float64)
 
-        for eff in self.efflist:
+        for eff in self.effdict.iterkeys():
             # find rates that are effector-dependent:
             for Rate in self.Rates:
                 if Rate.eff == eff:
@@ -272,24 +257,15 @@ class Mechanism(object):
         return u_rates
 
     def set_eff(self, eff, val):
-        if eff not in self.efflist:
+        if eff not in self.effdict.keys():
             sys.stderr.write("DCPYPS: None of the rates depends on effector %s\n" % eff)
- 
-        # find rates that are effector-dependent, 
-        # and update effector-independent rates:
-        # This is probably not the final word:
-        # It will fail if more than one effector is used.
-        # We'll probably have to keep track of the current
-        # concentration of each effector so that we can
-        # update Q whenever the rate constants are changed
-        for Rate in self.Rates:
-            if Rate.eff == eff: #or Rate.eff is None:
-                self.Q[Rate.State1.no, Rate.State2.no] = \
-                    Rate.calc(val)
-            else:
-                self.Q[Rate.State1.no, Rate.State2.no] = \
-                    Rate.calc(1.)
+        
+        self.effdict[eff] = val
 
+        for Rate in self.Rates:
+            self.Q[Rate.State1.no, Rate.State2.no] = \
+                Rate.calc(self.effdict[Rate.eff])
+            
         # Update diagonal elements
         for d in range(self.Q.shape[0]):
             self.Q[d,d] = 0
