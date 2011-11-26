@@ -798,6 +798,7 @@ class QMatGUI(QMainWindow):
         Load demo mechanism (C&H82 numerical example).
         Called from menu Load|Demo.
         """
+
         self.mec = samples.CH82()
         self.textBox.append("\nLoaded Demo.\n")
         self.mec.printout(self.log)
@@ -844,8 +845,6 @@ class QMatGUI(QMainWindow):
         table = RateTableDlg(self, self.mec)
         if table.exec_():
             self.mec = table.return_mec()
-        self.textBox.append("\nMec changed:\n")
-        self.mec.printout(self.log)
 
 class PrintLog:
     """
@@ -893,7 +892,7 @@ class RateTableDlg(QDialog):
 
         if column == 3:
             newratecon = float(self.table.item(row, column).text())
-            self.mec.Rates[row].rates = newratecon
+            self.mec.Rates[row].rateconstants = newratecon
 
         if column == 6 or column == 7:
             newlimits = [float(self.table.item(row, 6).text()),

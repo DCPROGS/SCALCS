@@ -283,9 +283,12 @@ class Mechanism(object):
         # concentration of each effector so that we can
         # update Q whenever the rate constants are changed
         for Rate in self.Rates:
-            if Rate.eff == eff or Rate.eff is None:
+            if Rate.eff == eff: #or Rate.eff is None:
                 self.Q[Rate.State1.no, Rate.State2.no] = \
                     Rate.calc(val)
+            else:
+                self.Q[Rate.State1.no, Rate.State2.no] = \
+                    Rate.calc(1.)
 
         # Update diagonal elements
         for d in range(self.Q.shape[0]):
