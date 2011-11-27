@@ -20,24 +20,46 @@ import numpy as np
 
 import qmatlib as qml
 
-def multiply(rate, value):
+def identity(rate, effdict):
     """
-    Multiply rate and value. Used as default rate function.
+    Return rate[0]. Used as default rate function if
+    the rate doesn't depend on an effector.
 
     Parameters
     ----------
     rate : float
         Current rate in Q matrix.
-    value : float
-        Effector value (typically, concentration or voltage).
+    effdict : dictionary
+        Effector and effector value (typically, concentration or voltage).
+        e.g. {'c' : 200}
+
+    Returns
+    -------
+    identity : float
+        rate[0]
+    """
+    return rate[0]
+
+def multiply(rate, effdict):
+    """
+    Multiply rate and effector value. Used as default rate function if
+    the rate depends on a single effector.
+
+    Parameters
+    ----------
+    rate : float
+        Current rate in Q matrix.
+    effdict : dictionary
+        Effector and effector value (typically, concentration or voltage).
+        e.g. {'c' : 200}
 
     Returns
     -------
     product : float
-        Product of rate and value.
+        Product of rate[0] and value.
     """
     
-    return rate[0]*value
+    return rate[0]*effdict.values()[0]
 
 class State(object):
     """
@@ -59,8 +81,8 @@ class Rate(object):
     Describes a rate between two states.
     """
 
-    def __init__(self, rateconstants, State1, State2, name='', eff=None, fixed=False,
-                 mr=False, func=multiply, limits=[]):
+    def __init__(self, rateconstants, State1, State2, name='', eff=None, 
+                 fixed=False, mr=False, func=None, limits=[]):
 
         self.name = name
 
@@ -71,23 +93,67 @@ class Rate(object):
         self.State1 = State1
         self.State2 = State2
 
-        self.eff = eff # Effector; e.g. 'c' or 'v'; or even 'Glu', 'ACh', etc.
-                       # We might need to expand this to a list if a rate
-                       # depends on more than one effector.
+        # Effector of list of effectors
+        # Examples: 
+        # 'c'
+        # 'v'
+        # ['Glu', 'Gly']
+        self._set_effectors(eff)
         
         self.fixed = fixed # for future expansion (fixed while fitting)
         self.mr = mr # for future expansion (set by microscopic reversibility)
-        self._func = func # f(ratepars, amount of effector); "Rate equation" if you wish
 
         self._limits = limits
         self._check_limits()
         self._check_rateconstants()
 
-    def calc(self, val):
-        return self._func(self._rateconstants, val)
+        if func is None:
+            # No function provided, set up a default function
+
+            # Default functions only work for single rate constant
+            if len(self._rateconstants) != 1:
+                errmsg = "DCPYPS: More than one rate constant provided. " % self.name
+                errmsg += "Can't use default rate function; please provide one.\n"
+                raise RuntimeError(errmsg)
+
+            if self._effectors[0] is not None:
+                # single effector, use simple multiplication
+                if len(self._effectors) == 1:
+                    self._func = multiply
+                else:
+                    errmsg = "DCPYPS: Rate %s depends on more than one effector. " % self.name
+                    errmsg += "Can't use default rate function; please provide one.\n"
+                    raise RuntimeError(errmsg)
+            # effector-independent, return rate[0]
+            else:
+                self._func = identity
+        else:
+            # TODO: sanity check of func
+            self._func = func # f(ratepars, amount of effector); "Rate equation" if you wish
+
+    def calc(self, effdict):
+        return self._func(self._rateconstants, effdict)
 
     def unit_rate(self):
-        return self._func(self._rateconstants, 1.0)
+        # Set up a dictionary with all effectors set to 1:
+        unitdict = {}
+        for eff in self._effectors:
+            unitdict[eff] = 1.0
+        return self._func(self._rateconstants, unitdict)
+
+    def _set_effectors(self, effectors):
+        try:
+            # test whether effector is a sequence:
+            it = iter(effectors)
+            self._effectors = effectors
+        except TypeError:
+            # if not, convert to single-itemed list:
+            self._effectors = [effectors,]
+
+    def _get_effectors(self):
+        return self._effectors
+
+    effectors = property(_get_effectors, _set_effectors)
 
     def _check_rateconstants(self):
         if self._limits != []:
@@ -162,14 +228,17 @@ class Mechanism(object):
         # construct States end effectors from Rates:
         self.States = []
         # dictionary of effectors: {"name":concentration}
-        self.effdict = {}
+        self._effdict = {}
         for rate in self.Rates:
             if rate.State1 not in self.States:
                 self.States.append(rate.State1)
             if rate.State2 not in self.States:
                 self.States.append(rate.State2)
-            if rate.eff not in self.effdict.keys():
-                self.effdict[rate.eff] = 1.0
+            # build up a dictionary of effectors and their values
+            # according to the rates:
+            for eff in rate.effectors:
+                if eff not in self._effdict.keys() and eff is not None:
+                    self._effdict[eff] = 1.0
 
         # REMIS: please check whether this makes sense
         # sort States according to state type:
@@ -201,17 +270,15 @@ class Mechanism(object):
 
         self.Q = np.zeros((len(self.States), len(self.States)), dtype=np.float64)
 
-        for eff in self.effdict.iterkeys():
-            # find rates that are effector-dependent:
-            for Rate in self.Rates:
-                if Rate.eff == eff:
-                    self.Q[Rate.State1.no, Rate.State2.no] = \
-                        Rate.unit_rate()
+        # Initialize all rates:
+        for Rate in self.Rates:
+            self.Q[Rate.State1.no, Rate.State2.no] = \
+                Rate.unit_rate()
 
-            # Calc diagonal elements
-            for d in range(self.Q.shape[0]):
-                self.Q[d,d] = 0
-                self.Q[d,d] = -np.sum(self.Q[d])
+        # Update diagonal elements:
+        for d in range(self.Q.shape[0]):
+            self.Q[d,d] = 0
+            self.Q[d,d] = -np.sum(self.Q[d])
 
     def __repr__(self):
         #TODO: need nice table format
@@ -249,29 +316,17 @@ class Mechanism(object):
             self.Rates[nr].rateconstants = newrates[nr]
 
     def unit_rates(self):
-        it = 0
-        u_rates = np.empty((len(self.Rates)))
-        for rate in self.Rates:
-            u_rates[it] = rate.unit_rate()
-            it += 1
-        return u_rates
+        return np.array([rate.unit_rate() for rate in self.Rates])
 
-    def set_eff(self, eff, val):
-        if eff not in self.effdict.keys():
-            sys.stderr.write("DCPYPS: None of the rates depends on effector %s\n" % eff)
-        
-        self.effdict[eff] = val
-
+    def update_submat(self):
         for Rate in self.Rates:
             self.Q[Rate.State1.no, Rate.State2.no] = \
-                Rate.calc(self.effdict[Rate.eff])
+                Rate.calc(self._effdict)
             
         # Update diagonal elements
         for d in range(self.Q.shape[0]):
             self.Q[d,d] = 0
             self.Q[d,d] = -np.sum(self.Q[d])
-
-        # print self.Q
 
         self.eigenvals, self.A = qml.eigs(self.Q)
         self.GAB, self.GBA = qml.iGs(self.Q, self.kA, self.kB)
@@ -287,3 +342,17 @@ class Mechanism(object):
         self.QAC = self.Q[:self.kA, self.kE:]
         self.QCB = self.Q[self.kE:, self.kA:self.kE]
         self.QCA = self.Q[self.kE:, :self.kA]
+
+    def set_eff(self, eff, val):
+        self.set_effdict({eff:val})
+
+    def set_effdict(self, effdict):
+        # check dictionary sanity:
+        for effname, effvalue in effdict.iteritems():
+            if effname not in self._effdict.keys():
+                errmsg = "DCPYPS: None of the rates depends on effector %s\n" % eff
+                raise RuntimeError(errmsg)
+            else:
+                self._effdict[effname] = effvalue
+            
+        self.update_submat()
