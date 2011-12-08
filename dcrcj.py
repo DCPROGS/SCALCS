@@ -7,6 +7,7 @@ import sys
 import matplotlib.pyplot as plt
 from dcpyps import samples
 from dcpyps import rcj
+from dcpyps import cjumps
 
 if __name__ == "__main__":
 
@@ -27,7 +28,7 @@ if __name__ == "__main__":
 
         print '\nCalculating jump with %s microsec rise...' %(rise)
         
-        rcj.printout(mec, jump_params)
+        cjumps.printout(mec, jump_params['peak_conc'], jump_params['pulse_width'])
 
         P_copy = jump_params.copy()
         P_copy['rise_time'] = rise

@@ -800,6 +800,7 @@ class QMatGUI(QMainWindow):
         """
 
         self.mec = samples.CH82()
+#        self.mec = samples.CCO()
         self.textBox.append("\nLoaded Demo.\n")
         self.mec.printout(self.log)
 
@@ -842,9 +843,10 @@ class QMatGUI(QMainWindow):
     def onModifyMec(self):
         """
         """
-        table = RateTableDlg(self, self.mec)
+        table = RateTableDlg(self, self.mec, self.log)
         if table.exec_():
             self.mec = table.return_mec()
+            
 
 class PrintLog:
     """
@@ -863,9 +865,11 @@ class PrintLog:
 class RateTableDlg(QDialog):
     """
     """
-    def __init__(self, parent=None, mec=None):
+    def __init__(self, parent=None, mec=None, log=None):
         super(RateTableDlg, self).__init__(parent)
         self.mec = mec
+        self.changed = False
+        self.log = log
 
         layoutMain = QVBoxLayout()
         self.table = RateTable(self.mec)
@@ -899,7 +903,12 @@ class RateTableDlg(QDialog):
                 float(self.table.item(row, 7).text())]
             self.mec.Rates[row].limits = newlimits
 
+        self.changed = True
+
     def return_mec(self):
+        if self.changed:
+            self.log.write("\n\nMechanism modified:\n")
+            self.mec.printout(self.log)
         return self.mec
 
 class RateTable(QTableWidget):
@@ -935,10 +944,10 @@ class RateTable(QTableWidget):
             cell = QTableWidgetItem(str(self.mec.Rates[i].unit_rate()))
             self.setItem(i, 3, cell)
 
-            if self.mec.Rates[i].eff is None:
+            if self.mec.Rates[i].effectors[0] is None:
                 eff = ''
             else:
-                eff = self.mec.Rates[i].eff
+                eff = self.mec.Rates[i].effectors[0]
             cell = QTableWidgetItem(eff)
             self.setItem(i, 4, cell)
 

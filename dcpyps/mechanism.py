@@ -350,8 +350,9 @@ class Mechanism(object):
         # check dictionary sanity:
         for effname, effvalue in effdict.iteritems():
             if effname not in self._effdict.keys():
-                errmsg = "DCPYPS: None of the rates depends on effector %s\n" % eff
-                raise RuntimeError(errmsg)
+                sys.stderr.write("DCPYPS: Warning: None of the rates depends on effector %s\n" % effname)
+#                errmsg = "DCPYPS: None of the rates depends on effector %s\n" % effname
+#                raise RuntimeError(errmsg)
             else:
                 self._effdict[effname] = effvalue
             

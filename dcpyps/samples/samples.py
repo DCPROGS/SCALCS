@@ -26,3 +26,30 @@ def CH82():
     KBlk = 0.001
 
     return  dcpyps.Mechanism(RateList, ncyc) #, fastblk, KBlk)
+
+def CCO():
+
+    ARS  = dcpyps.State('A', 'AR*', 50e-12)
+    AR   = dcpyps.State('B', 'AR', 0.0)
+    R    = dcpyps.State('C', 'R', 0.0)
+
+    RateList = [
+         dcpyps.Rate(20.0, AR, ARS, name='beta', limits=[1e-15,1e+7]),
+         dcpyps.Rate(50.0, ARS, AR, name='alpha', limits=[1e-15,1e+7]),
+         dcpyps.Rate(5.0, AR, R, name='koff', limits=[1e-15,1e+7]),
+         dcpyps.Rate(1.0e06, R, AR, name='kon', eff='c', limits=[1e-15,1e+10]),
+         ]
+
+    return  dcpyps.Mechanism(RateList)
+
+def CO():
+
+    RS  = dcpyps.State('A', 'O', 50e-12)
+    R   = dcpyps.State('B', 'C', 0.0)
+
+    RateList = [
+         dcpyps.Rate(20.0, R, RS, name='beta', limits=[1e-15,1e+7]),
+         dcpyps.Rate(50.0, RS, R, name='alpha', limits=[1e-15,1e+7]),
+         ]
+
+    return  dcpyps.Mechanism(RateList)

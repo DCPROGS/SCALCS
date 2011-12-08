@@ -77,7 +77,7 @@ def bisection_intervals(sa, sb, tres, Q11, Q22, Q12, Q21, k1, k2):
         sb = sb / 4
 
     sr = np.zeros((k1, 2))
-    sv = np.empty((100, 4))
+    sv = np.empty((101, 4))
     sv[0,0] = sa
     sv[0,1] = sb
     sv[0,2] = nga

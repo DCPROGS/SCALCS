@@ -17,11 +17,13 @@ from dcpyps import dataset
 
 def main():
     # Load demo mechanism (C&H82 numerical example).
-    mec = samples.CH82()
+    mec = samples.CO()
     mec.printout(sys.stdout)
 
     tres = 0.0001
+    tres = 0.000001 # 1 microsec
     tcrit = 0.004
+    tcrit = 1000000
     conc = 100e-9
 
     # Prepare parameter dict for simplex
@@ -30,15 +32,19 @@ def main():
     opts['conc'] = conc
     opts['tres'] = tres
     opts['tcrit'] = tcrit
-    opts['isCHS'] = True
+    opts['isCHS'] = False # True
 
     # Here should go initial guesses. Now using rate constants from example.
     rates = np.log(mec.unit_rates())
 
+    #rates = [1000, 30000, 10000, 100, 1000, 1000, 1e+7, 5e+7, 6e+7, 10]
+    rates = [20, 50]
+
 #    optimize.test_CHS(rates, opts)
 
     # Load data.
-    filename = "./dcpyps/samples/CH82.scn"
+    #filename = "./dcpyps/samples/CH82.scn"
+    filename = "./dcpyps/samples/CO.SCN"
     ioffset, nint, calfac, header = dcio.scn_read_header(filename)
     tint, iampl, iprops = dcio.scn_read_data(filename, ioffset, nint, calfac)
     rec1 = dataset.TimeSeries(filename, header, tint, iampl, iprops)
@@ -50,8 +56,8 @@ def main():
     print('\nNumber of bursts = {0:d}'.format(len(rec1.bursts)))
     blength = rec1.get_burst_length_list()
     print('Average = {0:.3f} millisec'.format(np.average(blength)))
-    print('Range: {0:.3f}'.format(min(blength)) +
-            ' to {0:.3f} millisec'.format(max(blength)))
+#    print('Range: {0:.3f}'.format(min(blength)) +
+#            ' to {0:.3f} millisec'.format(max(blength)))
     #rec1.print_bursts()
 
     # Maximum likelihood fit.
