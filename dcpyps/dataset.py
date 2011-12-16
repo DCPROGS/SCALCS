@@ -24,6 +24,14 @@ class TimeSeries(object):
         for i in range(len(self.itint)):
             print i, self.itint[i], self.iampl[i], self.iprops[i]
 
+    def print_resolved_intervals(self):
+        print('\n#########\nList of resolved intervals:\n')
+        for i in range(len(self.rtint)):
+            print i, self.rtint[i], self.rampl[i], self.rprops[i]
+            if (self.rampl[i] == 0) and (self.rtint > (self.tcrit * 1000)):
+                print ('\n')
+        print('\n###################\n\n')
+            
     def impose_resolution(self, tres):
         """
         Impose time resolution.
@@ -213,7 +221,12 @@ class TimeSeries(object):
 
         #defaultdef = True # True if default burst definition accepted.
         #badend = True # True if unusable shut time is valid end of burst.
+
         firstgapfound = False
+        i = 0
+#        firstgapfound = True
+#        i = 1
+
         #gap1 = 0
         bursts = {}
         burstsopts = {}
@@ -225,7 +238,6 @@ class TimeSeries(object):
         #else:
         #    print("Unusable shut time aborts a burst.")
 
-        i = 0
 
         while i < len(self.rtint) and not firstgapfound:
             if self.rampl[i] == 0 and self.rtint[i] > tcrit:
@@ -243,6 +255,7 @@ class TimeSeries(object):
         openburst = 0 # open time per burst
         burstlen = 0 # burst len
         openinglength = 0
+        openings = 0
 
         while i < len(self.rtint):
             if self.rampl[i] != 0:
@@ -278,6 +291,7 @@ class TimeSeries(object):
                     if self.rprops[i] >= 8:
                         badburst = True
                     burst.append(openinglength)
+                    openings += 1
                     burst.append(self.rtint[i])
                     openinglength = 0
 
@@ -288,12 +302,15 @@ class TimeSeries(object):
                         badburst = True
                     burstopt.append(badburst) # 4th position- bad burst
                     burstopt.append(meanamp) # 5th position- mean ampl
-                    burstopt.append(openburst) #6thpos- opentime per burst
+                    burstopt.append(openburst) #6th pos- opentime per burst
+                    openings += 1
+                    burstopt.append(openings) #7th pos- number of openings
                     newburst = True
                     badburst = False
                     meanamp = 0 # mean amplitude of burst
                     openburst = 0 # open time per burst
                     burstlen = 0 # burst len
+                    openings = 0
                     burst.append(openinglength)
                     openinglength = 0
                     # TODO: bad/unusable gap
@@ -314,10 +331,20 @@ class TimeSeries(object):
             blength.append(self.burstsopts[ind][2])
         return blength
 
+    def get_openings_burst_list(self):
+        n = len(self.bursts)
+        openings = []
+        for ind in range(n):
+            openings.append(self.burstsopts[ind][6])
+        return openings
+
     def print_bursts(self):
+        print('\n#####\nList of bursts:\n')
         n = len(self.bursts)
         for ind in range(n):
-            print self.bursts[ind]
+            print '{0:d} '.format(ind), self.bursts[ind]
+        print('\n###############\n\n')
+
 
 def false_events(tres, fc, rms, amp):
     """

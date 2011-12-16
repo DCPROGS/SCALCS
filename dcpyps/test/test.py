@@ -7,6 +7,8 @@ from dcpyps import cjumps
 from dcpyps import scalcslib as scl
 from dcpyps import scplotlib as scpl
 from dcpyps import qmatlib as qml
+from dcpyps import dcio
+from dcpyps import dataset
 
 import sys
 import time
@@ -175,45 +177,70 @@ class TestDC_PyPs(unittest.TestCase):
         self.assertAlmostEqual(endB[1, 0], 0.21346049, 6)
         self.assertAlmostEqual(endB[2, 0], 0.99917949, 6)
 
-        t = 0.0010134001973
-        # Open time. Asymptotic solution.
-        eGAFt = qml.eGAF(t, self.tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
-            AR, self.mec.QAF, expQFF)
-        self.assertAlmostEqual(eGAFt[0,0], 152.44145644, 6)
-        self.assertAlmostEqual(eGAFt[0,1], 1.51526687, 6)
-        self.assertAlmostEqual(eGAFt[0,2], 33.72923718, 6)
-        self.assertAlmostEqual(eGAFt[1,0], 67.29121672, 6)
-        self.assertAlmostEqual(eGAFt[1,1], 63.80986196, 6)
-        self.assertAlmostEqual(eGAFt[1,2], 9.27940684, 6)
-        # Shut time. Asymptotic solution.
-        eGAFt = qml.eGAF(t, self.tres, Feigvals, FZ00, FZ10, FZ11, Froots,
-            FR, self.mec.QFA, expQAA)
-        self.assertAlmostEqual(eGAFt[0,0], 1.73048864, 6)
-        self.assertAlmostEqual(eGAFt[0,1], 6.9056438, 6)
-        self.assertAlmostEqual(eGAFt[1,0], 0.42762192, 6)
-        self.assertAlmostEqual(eGAFt[1,1], 1.70926206, 6)
-        self.assertAlmostEqual(eGAFt[2,0], 0.04548765, 6)
-        self.assertAlmostEqual(eGAFt[2,1], 0.15704816, 6)
+#        t = 0.0010134001973
+#        # Open time. Asymptotic solution.
+#        eGAFt = qml.eGAF(t, self.tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
+#            AR, self.mec.QAF, expQFF)
+#        self.assertAlmostEqual(eGAFt[0,0], 152.44145644, 6)
+#        self.assertAlmostEqual(eGAFt[0,1], 1.51526687, 6)
+#        self.assertAlmostEqual(eGAFt[0,2], 33.72923718, 6)
+#        self.assertAlmostEqual(eGAFt[1,0], 67.29121672, 6)
+#        self.assertAlmostEqual(eGAFt[1,1], 63.80986196, 6)
+#        self.assertAlmostEqual(eGAFt[1,2], 9.27940684, 6)
+#        # Shut time. Asymptotic solution.
+#        eGAFt = qml.eGAF(t, self.tres, Feigvals, FZ00, FZ10, FZ11, Froots,
+#            FR, self.mec.QFA, expQAA)
+#        self.assertAlmostEqual(eGAFt[0,0], 1.73048864, 6)
+#        self.assertAlmostEqual(eGAFt[0,1], 6.9056438, 6)
+#        self.assertAlmostEqual(eGAFt[1,0], 0.42762192, 6)
+#        self.assertAlmostEqual(eGAFt[1,1], 1.70926206, 6)
+#        self.assertAlmostEqual(eGAFt[2,0], 0.04548765, 6)
+#        self.assertAlmostEqual(eGAFt[2,1], 0.15704816, 6)
+#
+#        t = 0.0001
+#        # Open time. Exact solution.
+#        eGAFt = qml.eGAF(t, self.tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
+#            AR, self.mec.QAF, expQFF)
+#        self.assertAlmostEqual(eGAFt[0,0], 2442.03379283, 6)
+#        self.assertAlmostEqual(eGAFt[0,1], 5.88221827, 6)
+#        self.assertAlmostEqual(eGAFt[0,2], 541.9589599, 6)
+#        self.assertAlmostEqual(eGAFt[1,0], 78.429577, 5)
+#        self.assertAlmostEqual(eGAFt[1,1], 74.92749546, 6)
+#        self.assertAlmostEqual(eGAFt[1,2], 10.76602524, 6)
+#        # Shut time. Exact solution.
+#        eGAFt = qml.eGAF(t, self.tres, Feigvals, FZ00, FZ10, FZ11, Froots,
+#            FR, self.mec.QFA, expQAA)
+#        self.assertAlmostEqual(eGAFt[0,0], 1.10568526e+01, 6)
+#        self.assertAlmostEqual(eGAFt[0,1], 6.29701830e-02, 6)
+#        self.assertAlmostEqual(eGAFt[1,0], 8.39602440e-01, 6)
+#        self.assertAlmostEqual(eGAFt[1,1], 1.42674924e+04, 4)
+#        self.assertAlmostEqual(eGAFt[2,0], 5.06525702e-18, 15)
+#        self.assertAlmostEqual(eGAFt[2,1], -9.02489888e-15, 12)
 
-        t = 0.0001
-        # Open time. Exact solution.
-        eGAFt = qml.eGAF(t, self.tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
-            AR, self.mec.QAF, expQFF)
-        self.assertAlmostEqual(eGAFt[0,0], 2442.03379283, 6)
-        self.assertAlmostEqual(eGAFt[0,1], 5.88221827, 6)
-        self.assertAlmostEqual(eGAFt[0,2], 541.9589599, 6)
-        self.assertAlmostEqual(eGAFt[1,0], 78.429577, 5)
-        self.assertAlmostEqual(eGAFt[1,1], 74.92749546, 6)
-        self.assertAlmostEqual(eGAFt[1,2], 10.76602524, 6)
-        # Shut time. Exact solution.
-        eGAFt = qml.eGAF(t, self.tres, Feigvals, FZ00, FZ10, FZ11, Froots,
-            FR, self.mec.QFA, expQAA)
-        self.assertAlmostEqual(eGAFt[0,0], 1.10568526e+01, 6)
-        self.assertAlmostEqual(eGAFt[0,1], 6.29701830e-02, 6)
-        self.assertAlmostEqual(eGAFt[1,0], 8.39602440e-01, 6)
-        self.assertAlmostEqual(eGAFt[1,1], 1.42674924e+04, 4)
-        self.assertAlmostEqual(eGAFt[2,0], 5.06525702e-18, 15)
-        self.assertAlmostEqual(eGAFt[2,1], -9.02489888e-15, 12)
+        filename = "./dcpyps/samples/CH82.scn"
+        ioffset, nint, calfac, header = dcio.scn_read_header(filename)
+        tint, iampl, iprops = dcio.scn_read_data(filename, ioffset, nint, calfac)
+        rec1 = dataset.TimeSeries(filename, header, tint, iampl, iprops)
+        rec1.impose_resolution(self.tres)
+        rec1.get_open_shut_periods()
+        rec1.get_bursts(self.tcrit)
+
+        # Check if burst separation is done right.
+        self.assertEqual(len(rec1.bursts), 572)
+        blength = rec1.get_burst_length_list()
+        self.assertAlmostEqual(np.average(blength), 8.425049335, 8)
+        openings = rec1.get_openings_burst_list()
+        self.assertAlmostEqual(np.average(openings), 1.461538462, 8)
+
+        opts = {}
+        opts['mec'] = self.mec
+        opts['conc'] = self.conc
+        opts['tres'] = self.tres
+        opts['tcrit'] = self.tcrit
+        opts['isCHS'] = True
+        rates = np.log(self.mec.unit_rates())
+        lik, theta = scl.HJClik(rates, rec1.bursts, opts)
+        self.assertAlmostEqual(-lik, 5265.970940, 5)
 
     def test_popen(self):
 

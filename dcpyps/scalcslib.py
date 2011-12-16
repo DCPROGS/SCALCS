@@ -32,8 +32,7 @@ __author__="R.Lape, University College London"
 __date__ ="$07-Dec-2010 20:29:14$"
 
 import sys
-import time
-import math
+from math import*
 from decimal import*
 
 import scipy.optimize as so
@@ -438,6 +437,103 @@ def exact_GAMAxx(mec, tres, open):
     gama11 = (np.dot(np.dot(phi, Z11), u)).T[0]
 
     return eigen, gama00, gama10, gama11
+
+def HJClik(theta, bursts, opts):
+    """
+    Calculate likelihood for a series of open and shut times using HJC missed
+    events probability density functions (first two dead time intervals- exact
+    solution, then- asymptotic).
+
+    Lik = phi * eGAF(t1) * eGFA(t2) * eGAF(t3) * ... * eGAF(tn) * uF
+    where t1, t3,..., tn are open times; t2, t4,..., t(n-1) are shut times.
+
+    Gaps > tcrit are treated as unusable (e.g. contain double or bad bit of
+    record, or desens gaps that are not in the model, or gaps so long that
+    next opening may not be from the same channel). However this calculation
+    DOES assume that all the shut times predicted by the model are present
+    within each group. The series of multiplied likelihoods is terminated at
+    the end of the opening before an unusable gap. A new series is then
+    started, using appropriate initial vector to give Lik(2), ... At end
+    these are multiplied to give final likelihood.
+
+    Parameters
+    ----------
+    theta : array_like
+        Guesses.
+    bursts : dictionary
+        A dictionary containing lists of open and shut intervals.
+    opts : dictionary
+        opts['mec'] : instance of type Mechanism
+        opts['tres'] : float
+            Time resolution (dead time).
+        opts['tcrit'] : float
+            Ctritical time interval.
+        opts['isCHS'] : bool
+            True if CHS vectors should be used (Eq. 5.7, CHS96).
+
+    Returns
+    -------
+    loglik : float
+        Log-likelihood.
+    newrates : array_like
+        Updated rates/guesses.
+    """
+    # TODO: Errors.
+
+    mec = opts['mec']
+    conc = opts['conc']
+    tres = opts['tres']
+    tcrit = opts['tcrit']
+    is_chsvec = opts['isCHS']
+
+    mec.set_rateconstants(np.exp(theta))
+    mec.set_eff('c', conc)
+
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+    expQFF = qml.expQt(mec.QFF, tres)
+    expQAA = qml.expQt(mec.QAA, tres)
+    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
+    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
+    phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
+    startB = qml.phiHJC(eGAF, eGFA, mec.kA)
+    endB = np.ones((mec.kF, 1))
+
+    Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(mec.Q, mec.kA, mec.QFF,
+        mec.QAF, mec.QFA, expQFF, True)
+    Aroots = asymptotic_roots(tres,
+        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
+    AR = qml.AR(Aroots, tres, mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
+    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(mec.Q, mec.kA, mec.QAA,
+        mec.QFA, mec.QAF, expQAA, False)
+    Froots = asymptotic_roots(tres,
+        mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
+    FR = qml.AR(Froots, tres, mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
+
+    if is_chsvec:
+        startB, endB = qml.CHSvec(Froots, tres, tcrit,
+            mec.QFA, mec.kA, expQAA, phiF, FR)
+
+    loglik = 0
+    for ind in bursts:
+        burst = bursts[ind]
+        grouplik = startB
+        for i in range(len(burst)):
+            t = burst[i] * 0.001
+            if i % 2 == 0: # open time
+                eGAFt = qml.eGAF(t, tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
+                    AR, mec.QAF, expQFF)
+            else: # shut
+                eGAFt = qml.eGAF(t, tres, Feigvals, FZ00, FZ10, FZ11, Froots,
+                    FR, mec.QFA, expQAA)
+            grouplik = np.dot(grouplik, eGAFt)
+            if grouplik.max() > 1e50:
+                grouplik = grouplik * 1e-100
+                print 'grouplik was scaled down'
+        grouplik = np.dot(grouplik, endB)
+        loglik += log(grouplik[0])
+
+    newrates = np.log(mec.unit_rates())
+    return -loglik, newrates
 
 def printout_occupancies(mec, tres, output=sys.stdout):
     """

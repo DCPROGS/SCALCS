@@ -3,163 +3,8 @@
 import numpy as np
 from math import*
 
-import qmatlib  as qml
-import scalcslib as scl
-
-def test_CHS(theta, opts):
-
-    mec = opts['mec']
-    conc = opts['conc']
-    tres = opts['tres']
-    tcrit = opts['tcrit']
-    is_chsvec = opts['isCHS']
-
-    mec.set_rateconstants(np.exp(theta))
-    mec.set_eff('c', conc)
-
-    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
-    expQFF = qml.expQt(mec.QFF, tres)
-    expQAA = qml.expQt(mec.QAA, tres)
-    print 'expQAA=', expQAA
-    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
-    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
-    phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
-    startB = qml.phiHJC(eGAF, eGFA, mec.kA)
-    endB = np.ones((mec.kF, 1))
-
-    Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(mec.Q, mec.kA, mec.QFF,
-        mec.QAF, mec.QFA, expQFF, True)
-    Aroots = scl.asymptotic_roots(tres,
-        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
-    AR = qml.AR(Aroots, tres, mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
-    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(mec.Q, mec.kA, mec.QAA,
-        mec.QFA, mec.QAF, expQAA, False)
-    Froots = scl.asymptotic_roots(tres,
-        mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
-    FR = qml.AR(Froots, tres, mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
-
-    startB, endB = qml.CHSvec(Froots, tres, tcrit,
-        mec.QFA, mec.kA, expQAA, phiF, FR)
-    print 'startB=', startB
-    print 'endB=', endB
-
-    t = 0.0010134001973
-    print '\n\n opening t = ', t
-    eGAFt = qml.eGAF(t, tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
-        AR, mec.QAF, expQFF)
-    print 'eGAFt=', eGAFt
-    print '\n\n shutting t = ', t
-    eGAFt = qml.eGAF(t, tres, Feigvals, FZ00, FZ10, FZ11, Froots,
-        FR, mec.QFA, expQAA)
-    print 'eGAFt=', eGAFt
-
-
-    t = 0.0001
-    print '\n\n opening t = ', t
-    eGAFt = qml.eGAF(t, tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
-        AR, mec.QAF, expQFF)
-    print 'eGAFt=', eGAFt
-    print '\n\n shutting t = ', t
-    eGAFt = qml.eGAF(t, tres, Feigvals, FZ00, FZ10, FZ11, Froots,
-        FR, mec.QFA, expQAA)
-    print 'eGAFt=', eGAFt
-
 def printit(xk):
     print np.exp(xk)
-
-
-def HJClik(theta, bursts, opts):
-    #HJClik(bursts, mec, tres, tcrit, is_chsvec=False):
-
-    """
-    Calculate likelihood for a series of open and shut times using HJC missed
-    events probability density functions (first two dead time intervals- exact
-    solution, then- asymptotic).
-
-    Lik = phi * eGAF(t1) * eGFA(t2) * eGAF(t3) * ... * eGAF(tn) * uF
-    where t1, t3,..., tn are open times; t2, t4,..., t(n-1) are shut times.
-
-    Gaps > tcrit are treated as unusable (e.g. contain double or bad bit of
-    record, or desens gaps that are not in the model, or gaps so long that
-    next opening may not be from the same channel). However this calculation
-    DOES assume that all the shut times predicted by the model are present
-    within each group. The series of multiplied likelihoods is terminated at
-    the end of the opening before an unusable gap. A new series is then
-    started, using appropriate initial vector to give Lik(2), ... At end
-    these are multiplied to give final likelihood.
-
-    Parameters
-    ----------
-    bursts : dictionary
-        A dictionary containing lists of open and shut intervals.
-    mec : instance of type Mechanism
-    tres : float
-        Time resolution (dead time).
-    is_chsvec : bool
-        True if CHS vectors should be used (Eq. 5.7, CHS96).
-
-    Returns
-    -------
-    loglik : float
-        Log-likelihood.
-    """
-
-    mec = opts['mec']
-    conc = opts['conc']
-    tres = opts['tres']
-    tcrit = opts['tcrit']
-    is_chsvec = opts['isCHS']
-
-    mec.set_rateconstants(np.exp(theta))
-    mec.set_eff('c', conc)
-
-    # TODO: Here reset rates which reached limit or are negative.
-    # TODO: Make new Q from theta.
-    # TODO: Errors.
-
-    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
-    expQFF = qml.expQt(mec.QFF, tres)
-    expQAA = qml.expQt(mec.QAA, tres)
-    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
-    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
-    phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
-    startB = qml.phiHJC(eGAF, eGFA, mec.kA)
-    endB = np.ones((mec.kF, 1))
-
-    Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(mec.Q, mec.kA, mec.QFF,
-        mec.QAF, mec.QFA, expQFF, True)
-    Aroots = scl.asymptotic_roots(tres,
-        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
-    AR = qml.AR(Aroots, tres, mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
-    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(mec.Q, mec.kA, mec.QAA,
-        mec.QFA, mec.QAF, expQAA, False)
-    Froots = scl.asymptotic_roots(tres,
-        mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
-    FR = qml.AR(Froots, tres, mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
-
-    if is_chsvec:
-        startB, endB = qml.CHSvec(Froots, tres, tcrit,
-            mec.QFA, mec.kA, expQAA, phiF, FR)
-
-    loglik = 0
-    for ind in bursts:
-        burst = bursts[ind]
-        grouplik = startB
-        for i in range(len(burst)):
-            t = burst[i] * 0.001
-            if i % 2 == 0: # open time
-                eGAFt = qml.eGAF(t, tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
-                    AR, mec.QAF, expQFF)
-            else: # shut
-                eGAFt = qml.eGAF(t, tres, Feigvals, FZ00, FZ10, FZ11, Froots,
-                    FR, mec.QFA, expQAA)
-            grouplik = np.dot(grouplik, eGAFt)
-            if grouplik.max() > 1e50:
-                grouplik = grouplik * 1e-100
-                print 'grouplik was scaled down'
-        grouplik = np.dot(grouplik, endB)
-        loglik += log(grouplik[0])
-    return -loglik #, np.log(mec.unit_rates())
 
 def sortShell(vals, simp):
     """
@@ -184,28 +29,7 @@ def sortShell(vals, simp):
          gap //= 2
     return vals, simp
 
-def sortShell2(vals, simp):
-    """
-    Shell sort using Shell's (original) gap sequence: n/2, n/4, ..., 1.
-    """
-    n = np.size(vals)
-    gap = n // 2
-    while gap > 0:
-         # do the insertion sort
-         for i in range(gap, n):
-             val = vals[i]
-             tsimp = simp[i]
-             j = i
-             while j >= gap and vals[j - gap] > val:
-                 vals[j] = vals[j - gap]
-                 simp[j] = simp[j - gap]
-                 j -= gap
-             vals[j] = val
-             simp[j] = tsimp
-         gap //= 2
-    return vals, simp
-
-def simplexHJC(theta, data, func, opts, verbose=0):
+def simplexHJC(func, theta, data, opts, verbose=0):
     """
     Python implementation of DC's SIMPHJC.FOR subroutine used in HJCFIT.
     Search for a function minimum using modified Nelder-Mead method.
@@ -250,18 +74,18 @@ def simplexHJC(theta, data, func, opts, verbose=0):
     fac = (sqrt(n) - 1.0) / (k * sqrt(2.0))
 
     neval = 0    # counts function evaluations
-    nevalmax = 1000
+    nevalmax = 100000
     niter = 0
     nrestartmax = 3    # max number of restarts
     nrestart = 0    # counts restarts
     L = 0
     niter = 0
-    nitermax = 1000
+    nitermax = 10000
 
     while nrestart < nrestartmax and L <= 1:
 
         fval[0], theta = func(theta, data, opts)
-        print "Starting likelihood =", -fval[0]
+        print ("Starting likelihood = {0:.6f}".format(-fval[0]))
         neval += 1
         simp[0] = theta
         
@@ -305,7 +129,7 @@ def simplexHJC(theta, data, func, opts, verbose=0):
                 absmin = fnew
                 thmin = pnew
             neval += 1
-            print 'reflection'
+#            print 'reflection'
 
             if fnew < fval[0]:
                 # ----- new vertex is better than previous best so extend it
@@ -315,7 +139,7 @@ def simplexHJC(theta, data, func, opts, verbose=0):
                     absmin = fnew1
                     thmin = pnew1
                 neval += 1
-                print 'extention'
+#                print 'extention'
 
                 if fnew1 < fnew:     # ----- still better
                     simp[-1] = pnew1
@@ -342,7 +166,7 @@ def simplexHJC(theta, data, func, opts, verbose=0):
                         absmin = fnew1
                         thmin = pnew1
                     neval += 1
-                    print 'contraction'
+#                    print 'contraction'
 
                     # ----- is contracted vertex better than the worst vertex
                     if fnew1 <= fval[-1]:
@@ -356,7 +180,7 @@ def simplexHJC(theta, data, func, opts, verbose=0):
                                     simp[i,j] = simp[0,j] + confac * (simp[i,j] - simp[0,j])
                             fval[i], simp[i] = func(simp[i], data, opts)
                             neval += 1
-                            print 'reduction'
+#                            print 'reduction'
 
             fval, simp = sortShell(fval, simp)
             if fval[0] < absmin:
@@ -377,7 +201,8 @@ def simplexHJC(theta, data, func, opts, verbose=0):
 #            diff = simp[-1] - simp[0]
 #            if np.any(np.less_equal(diff, np.fabs(crtstp))): L = 0
 
-            print 'iter#', niter, 'f=', -fval[0], 'theta', np.exp(simp[0])
+            if (niter % 10) == 0:
+                print 'iter#', niter, 'f=', -fval[0], 'theta', np.exp(simp[0])
         # end of iteration (while L == 0:)
 
         # ----- convergence attained. Options for ending in this version are:
@@ -457,6 +282,6 @@ def simplexHJC(theta, data, func, opts, verbose=0):
 
         nrestart += 1
 
-    return np.exp(simp[0]), fval[0]
+    return simp[0], fval[0]
 
 

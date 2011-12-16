@@ -86,41 +86,46 @@ def bisection_intervals(sa, sb, tres, Q11, Q22, Q12, Q21, k1, k2):
     ndone = 0
     nsplit = 0
 
-    while (ndone < k1) and (nsplit < 100):
+    while (ndone < k1) and (nsplit < 1000):
         sa = sv[ntodo, 0]
         sb = sv[ntodo, 1]
         nga = sv[ntodo, 2]
         ngb = sv[ntodo, 3]
-        sa1, sb1, sa2, sb2, nga1, ngb1, nga2, ngb2 = split(sa, sb,
+        sa1, sc, sb2, nga1, ngc, ngb2 = split(sa, sb,
             nga, ngb, tres, Q11, Q22, Q12, Q21, k1, k2)
         nsplit = nsplit + 1
         ntodo = ntodo - 1
 
         # Check if either or both of the two subintervals output from
         # SPLIT contain only one root?
-        if (ngb1 - nga1) == 1:
+        if (ngc - nga1) == 1:
             sr[ndone, 0] = sa1
-            sr[ndone, 1] = sb1
+            sr[ndone, 1] = sc
             ndone = ndone + 1
+            if ndone == k1:
+                break
         else:
             ntodo = ntodo + 1
             sv[ntodo, 0] = sa1
-            sv[ntodo, 1] = sb1
+            sv[ntodo, 1] = sc
             sv[ntodo, 2] = nga1
-            sv[ntodo, 3] = ngb1
-        if (ngb2 - nga2) == 1:
-            sr[ndone, 0] = sa2
+            sv[ntodo, 3] = ngc
+        if (ngb2 - ngc) == 1:
+            sr[ndone, 0] = sc
             sr[ndone, 1] = sb2
             ndone = ndone + 1
         else:
             ntodo = ntodo + 1
-            sv[ntodo, 0] = sa2
+            sv[ntodo, 0] = sc
             sv[ntodo, 1] = sb2
-            sv[ntodo, 2] = nga2
+            sv[ntodo, 2] = ngc
             sv[ntodo, 3] = ngb2
 
     if ndone < k1:
-        print ('Only', ndone, 'roots out of', k1, 'were located')
+        sys.stderr.write(
+            "bisectHJC: Warning: Only {0:d} roots out of {1:d} were located.".
+            format(ndone, k1))
+
     return sr
 
 def split(sa, sb, nga, ngb, tres, Q11, Q22, Q12, Q21, k1, k2):
@@ -146,13 +151,13 @@ def split(sa, sb, nga, ngb, tres, Q11, Q22, Q12, Q21, k1, k2):
 
     Returns
     -------
-    sa1, sb1, sa2, sb2 : floats
+    sa, sc, sb : floats
         Limits of s value intervals.
-    nga1, ngb1, nga2, ngb2 : ints
+    nga, ngc, ngb : ints
         Number of eigenvalues below corresponding s values.
     """
 
-    ntrymax = 100
+    ntrymax = 1000
     ntry = 0
     #nerrs = False
     end = False
@@ -165,20 +170,11 @@ def split(sa, sb, nga, ngb, tres, Q11, Q22, Q12, Q21, k1, k2):
         else:
             end = True
         ntry += 1
-#        if ntry > ntrymax:
-#            print ('ERROR: unable to split interval in BALL_ROOT')
-#            end = True
+    if not end:
+        sys.stderr.write(
+        "bisectHJC: Warning: unable to split intervals for bisection.")
 
-        sa1 = sa
-        sb1 = sc
-        sa2 = sc
-        sb2 = sb
-        nga1 = nga
-        ngb1 = ngc
-        nga2 = ngc
-        ngb2 = ngb
-
-    return sa1, sb1, sa2, sb2, nga1, ngb1, nga2, ngb2
+    return sa, sc, sb, nga, ngc, ngb
 
 def bisect(s1, s2, tres, Q11, Q22, Q12, Q21, k1, k2):
     """
