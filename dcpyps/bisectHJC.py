@@ -1,5 +1,6 @@
 """dc-pyps functions related to HJC root search."""
 
+import sys
 import math
 
 import numpy as np

@@ -37,8 +37,8 @@ def main():
     opts['isCHS'] = True
 
     # Here should go initial guesses. Now using rate constants from example.
-    rates = np.log(mec.unit_rates())
-#    rates = np.log([1000, 30000, 10000, 100, 1000, 1000, 1e+7, 5e+7, 6e+7, 10])
+#    rates = np.log(mec.unit_rates())
+    rates = np.log([1000, 30000, 10000, 100, 1000, 1000, 1e+7, 5e+7, 6e+7, 10])
 #    rates = np.log([20, 50])
 #    rates = np.log([10, 60, 2, 2e+06])
 
