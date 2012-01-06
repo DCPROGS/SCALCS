@@ -127,7 +127,9 @@ class TraceGUI(QMainWindow):
         self.srate = 1 / (self.h['fADCSampleInterval'] * self.h['nADCNumChannels'])
         self.sample = self.h['fADCSampleInterval'] * self.h['nADCNumChannels'] / 1e6
         self.calfac = (1 /
-            (6553.6 * self.h['fInstrumentScaleFactor'][self.h['nADCSamplingSeq'][0]]))
+            #(6553.6
+            ((self.h['IADCResolution'] / self.h['fADCRange']) * self.h['fTelegraphAdditGain'][self.h['nADCSamplingSeq'][0]] *
+            self.h['fInstrumentScaleFactor'][self.h['nADCSamplingSeq'][0]]))
         self.ffilter = float(self.h['fSignalLowpassFilter'][self.h['nADCSamplingSeq'][0]])
 
         self.file_type = 'abf'
@@ -259,6 +261,7 @@ class TraceGUI(QMainWindow):
         page_points = line_points * self.page_lines
         line_points_draw = int(line_points / self.point_every)
         self.pages = self.points_total / page_points
+        average = np.average(self.trace[:line_points])
 
         page_str = (self.filename + "; Page " + str(self.page) + " of " +
             str(self.pages))
@@ -277,8 +280,8 @@ class TraceGUI(QMainWindow):
         xMinDbl = float(0)
         xMaxDbl = float(self.line_length)
         yMinDbl = float(0)
-        yMaxDbl = float(self.page_lines + 1) * self.line_separ
-        yStartDbl = float(self.page_lines * self.line_separ)
+        yMaxDbl = float(self.page_lines + 2) * self.line_separ
+        yStartDbl = float((self.page_lines +1) * self.line_separ)
 
         xScaleDbl = float(xMaxPix - xMinPix) / float(xMaxDbl - xMinDbl)
         yScaleDbl = float(yMaxPix - yMinPix) / float(yMaxDbl - yMinDbl)
@@ -290,11 +293,11 @@ class TraceGUI(QMainWindow):
 
         for j in range(self.page_lines):
             xDbl1 = 0
-            yDbl1 = self.trace[0 + page_points*(self.page-1) + line_points * j] * self.calfac + yStartDbl - (j+1)*self.line_separ
+            yDbl1 = (self.trace[0 + page_points*(self.page-1) + line_points * j] - average) * self.calfac + yStartDbl - (j+1)*self.line_separ
             for i in range (line_points_draw):
 
                 xDbl2 = float((i+1) * self.sample * self.point_every)
-                yDbl2 = float(self.trace[0 + page_points*(self.page-1) + line_points * j + (i+1)*self.point_every] * self.calfac + yStartDbl - (j+1)*self.line_separ)
+                yDbl2 = float((self.trace[0 + page_points*(self.page-1) + line_points * j + (i+1)*self.point_every] - average) * self.calfac + yStartDbl - (j+1)*self.line_separ)
                 xPix1 = xMinPix + int((xDbl1 - xMinDbl) * xScaleDbl)
                 yPix1 = yMinPix + int((yDbl1 - yMinDbl) * yScaleDbl)
                 xPix2 = xMinPix + int((xDbl2 - xMinDbl) * xScaleDbl)

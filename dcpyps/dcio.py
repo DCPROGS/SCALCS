@@ -1337,7 +1337,7 @@ def scn_read_data(fname, ioffset, nint, calfac2):
 
     return tint, iampl, iprops
 
-def abf_read_header (filename):
+def abf_read_header (filename, debug=1):
     """
     Read Axon abf file header. Works only for version < 2.0. Read only 
     information required for gap-free data reading.
@@ -1356,34 +1356,38 @@ def abf_read_header (filename):
     h['IFileSignature'] = fid.read(4)
     floats.fromfile(fid, 1)
     h['fFileVersionNumber'] = round(floats.pop() * 10) * 0.1
-#    print 'File signature: ', h['IFileSignature'], h['fFileVersionNumber']
+    if debug:
+        print 'File signature: ', h['IFileSignature'], h['fFileVersionNumber']
 
     shorts.fromfile(fid, 1)
     h['nOperationMode'] = shorts.pop()
-#    if h['nOperationMode'] == 1:
-#        print("Operation mode 1: event-driven, variable length")
-#    elif h['nOperationMode'] == 2:
-#        print("Operation mode 2: oscilloscope, loss free")
-#    elif h['nOperationMode'] == 3:
-#        print("Operation mode 3: gap-free")
-#    elif h['nOperationMode'] == 4:
-#        print("Operation mode 4: oscilloscope, high-speed")
-#    elif h['nOperationMode'] == 5:
-#        print("Operation mode 5: episodic stimulation")
-#    else:
-#        print("Operation mode undefined!")
+    if debug:
+        if h['nOperationMode'] == 1:
+            print("Operation mode 1: event-driven, variable length")
+        elif h['nOperationMode'] == 2:
+            print("Operation mode 2: oscilloscope, loss free")
+        elif h['nOperationMode'] == 3:
+            print("Operation mode 3: gap-free")
+        elif h['nOperationMode'] == 4:
+            print("Operation mode 4: oscilloscope, high-speed")
+        elif h['nOperationMode'] == 5:
+            print("Operation mode 5: episodic stimulation")
+        else:
+            print("Operation mode undefined!")
 
     ints.fromfile(fid, 1)
     h['IActualAcqLength'] = ints.pop()
-#    print("Actual number of ADC samples = {0:d}".format(h['IActualAcqLength']))
+    if debug:
+        print("Actual number of ADC samples = {0:d}".format(h['IActualAcqLength']))
 
     fid.seek(20)
     ints.fromfile(fid, 1)
     h['IFileStartDate'] = str(ints.pop())
     ints.fromfile(fid, 1)
     h['IFileStartTime'] = str(ints.pop())
-#    print("Experiment date: " + h['IFileStartDate'])
-#    print("Experiment time: " + h['IFileStartTime'])
+    if debug:
+        print("Experiment date: " + h['IFileStartDate'])
+        print("Experiment time: " + h['IFileStartTime'])
 
     fid.seek(40)
     ints.fromfile(fid, 1)
@@ -1391,38 +1395,44 @@ def abf_read_header (filename):
     fid.seek(100)
     shorts.fromfile(fid, 1)
     h['nDataFormat'] = shorts.pop()
-#    print("Block number of start of Data section = {0:d}".
-#        format(h['IDataSectionPtr']))
-#    offset = h['IDataSectionPtr'] * 512
-#    print("     offset = {0:d}".format(offset))
-#    print("Data representation (0- short int; 1- float): {0:d}".
-#        format(h['nDataFormat']))
+    if debug:
+        print("Block number of start of Data section = {0:d}".
+            format(h['IDataSectionPtr']))
+        offset = h['IDataSectionPtr'] * 512
+        print("     offset = {0:d}".format(offset))
+        print("Data representation (0- short int; 1- float): {0:d}".
+            format(h['nDataFormat']))
 
     fid.seek(120)
     shorts.fromfile(fid, 1)
     h['nADCNumChannels'] = shorts.pop()
-#    print("Number of analog input channels sampled = {0:d}".
-#        format(h['nADCNumChannels']))
+    if debug:
+        print("Number of analog input channels sampled = {0:d}".
+            format(h['nADCNumChannels']))
 
     floats.fromfile(fid, 1)
     h['fADCSampleInterval'] = floats.pop()
-#    print("Sampling interval = {0:.1f} microsec".
-#        format(h['fADCSampleInterval'] * h['nADCNumChannels']))
+    if debug:
+        print("Sampling interval = {0:.1f} microsec".
+            format(h['fADCSampleInterval'] * h['nADCNumChannels']))
 
     fid.seek(244)
     floats.fromfile(fid, 1)
     h['fADCRange'] = floats.pop()
-#    print("ADC voltage range = {0:.1f} V".format(h['fADCRange']))
+    if debug:
+        print("ADC voltage range = {0:.1f} V".format(h['fADCRange']))
     fid.seek(252)
     ints.fromfile(fid, 1)
     h['IADCResolution'] = ints.pop()
-#    print("Number of ADC counts = {0:d}".format(h['IADCResolution']))
+    if debug:
+        print("Number of ADC counts = {0:d}".format(h['IADCResolution']))
 
     fid.seek(260)
     shorts.fromfile(fid, 1)
     h['nExperimentType'] = shorts.pop()
-#    print("Experiment type (0- Voltage-clamp; 1- Current-clamp): {0:d}".
-#        format(h['nExperimentType']))
+    if debug:
+        print("Experiment type (0- Voltage-clamp; 1- Current-clamp): {0:d}".
+            format(h['nExperimentType']))
 
     fid.seek(410)
     h['nADCSamplingSeq'] = []
@@ -1454,24 +1464,39 @@ def abf_read_header (filename):
         floats.fromfile(fid, 1)
         h['fInstrumentScaleFactor'].append(floats.pop())
 
-#    print("Sampled ADC channels, names, units, gain:")
-#    for i in range(h['nADCNumChannels']):
-#        print("Channel # {0:d}\t".format(h['nADCSamplingSeq'][i]) +
-#            h['sADCChannelName'][h['nADCSamplingSeq'][i]] + "\t" +
-#            h['sADCUnits'][h['nADCSamplingSeq'][i]] + "\t" +
-#            #"{0:.3f}".format(fADCProgramableGain[nADCSamplingSeq[i]]) + "\t" +
-#            #"{0:.3f}".format(fADCDisplayAmplification[nADCSamplingSeq[i]]) + "\t" +
-#            #"{0:.3f}".format(fADCDisplayOffset[nADCSamplingSeq[i]]) + "\t" +
-#            "{0:.3f}".format(h['fInstrumentScaleFactor'][h['nADCSamplingSeq'][i]]) + " V/" +
-#            h['sADCUnits'][h['nADCSamplingSeq'][i]])
+    if debug:
+        print("Sampled ADC channels, names, units, gain:")
+        for i in range(h['nADCNumChannels']):
+            print("Channel # {0:d}\t".format(h['nADCSamplingSeq'][i]) +
+                h['sADCChannelName'][h['nADCSamplingSeq'][i]] + "\t" +
+                h['sADCUnits'][h['nADCSamplingSeq'][i]] + "\t" +
+                #"{0:.3f}".format(fADCProgramableGain[nADCSamplingSeq[i]]) + "\t" +
+                #"{0:.3f}".format(fADCDisplayAmplification[nADCSamplingSeq[i]]) + "\t" +
+                #"{0:.3f}".format(fADCDisplayOffset[nADCSamplingSeq[i]]) + "\t" +
+                "{0:.3f}".format(h['fInstrumentScaleFactor'][h['nADCSamplingSeq'][i]]) + " V/" +
+                h['sADCUnits'][h['nADCSamplingSeq'][i]])
 
     fid.seek(1178)
     h['fSignalLowpassFilter'] = []
     for i in range(16):
         floats.fromfile(fid, 1)
         h['fSignalLowpassFilter'].append(floats.pop())
-#    print("Lowpass filter = {0:.1f} Hz".
-#        format(h['fSignalLowpassFilter'][h['nADCSamplingSeq'][0]]))
+    if debug:
+        print("Lowpass filter = {0:.1f} Hz".
+            format(h['fSignalLowpassFilter'][h['nADCSamplingSeq'][0]]))
+
+    fid.seek(4576)
+    h['fTelegraphAdditGain'] = []
+    for i in range(16):
+        floats.fromfile(fid, 1)
+        h['fTelegraphAdditGain'].append(floats.pop())
+    if debug:
+        print("Additional gain :  {0:.1f}".
+            format(h['fTelegraphAdditGain'][h['nADCSamplingSeq'][0]]))
+        calfac = (1 / ((h['IADCResolution'] / h['fADCRange'])
+            * h['fTelegraphAdditGain'][h['nADCSamplingSeq'][0]] *
+            h['fInstrumentScaleFactor'][h['nADCSamplingSeq'][0]]))
+        print("Final calfac = {0:.6f}".format(calfac))
 
     fid.close()
     
