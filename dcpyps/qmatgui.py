@@ -898,6 +898,13 @@ class RateTableDlg(QDialog):
             newratecon = float(self.table.item(row, column).text())
             self.mec.Rates[row].rateconstants = newratecon
 
+        if column == 5:
+            value = False
+            if self.table.item(row, column).checkState() > 0:
+                value = True
+            self.mec.Rates[row].fixed = value
+            print 'fixed value=', value
+
         if column == 6 or column == 7:
             newlimits = [float(self.table.item(row, 6).text()),
                 float(self.table.item(row, 7).text())]
@@ -951,6 +958,13 @@ class RateTable(QTableWidget):
             cell = QTableWidgetItem(eff)
             self.setItem(i, 4, cell)
 
+            check = QTableWidgetItem()
+            value = 0
+            if self.mec.Rates[i].fixed > 0:
+                value = 2
+            check.setCheckState(value)
+            self.setItem(i, 5, check)
+
             if len(self.mec.Rates[i].limits) == 0:
                 if eff == '':
                     limits = [[1e-15,1e+7]]
@@ -962,6 +976,7 @@ class RateTable(QTableWidget):
             self.setItem(i, 6, cell)
             cell = QTableWidgetItem(str(limits[0][1]))
             self.setItem(i, 7, cell)
+            
 
         self.resizeColumnsToContents()
         self.resizeRowsToContents()

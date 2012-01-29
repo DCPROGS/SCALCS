@@ -28,21 +28,7 @@ def main():
 #    tcrit = 1000000
     conc = 100e-9
 
-    # Prepare parameter dict for simplex
-    opts = {}
-    opts['mec'] = mec
-    opts['conc'] = conc
-    opts['tres'] = tres
-    opts['tcrit'] = tcrit
-    opts['isCHS'] = True
-
-    # Here should go initial guesses. Now using rate constants from example.
-#    rates = np.log(mec.unit_rates())
-    rates = np.log([1000, 30000, 10000, 100, 1000, 1000, 1e+7, 5e+7, 6e+7, 10])
-#    rates = np.log([20, 50])
-#    rates = np.log([10, 60, 2, 2e+06])
-
-#    optimize.test_CHS(rates, opts)
+    
 
     # Load data.
     filename = "./dcpyps/samples/CH82.scn"
@@ -56,6 +42,7 @@ def main():
     rec1.get_open_shut_periods()
     rec1.get_bursts(tcrit)
 
+    print('\nNumber of resolved intervals = {0:d}'.format(len(rec1.rtint)))
     print('\nNumber of bursts = {0:d}'.format(len(rec1.bursts)))
     blength = rec1.get_burst_length_list()
     print('Average length = {0:.9f} millisec'.format(np.average(blength)))
@@ -71,6 +58,31 @@ def main():
 #    mll, rts = scl.HJClik(rates, rec1.bursts, opts)
 #    print ("\nStarting likelihood = {0:.6f}\n".format(mll))
 
+    # Here should go initial guesses. Now using rate constants from example.
+    rates = np.log(mec.unit_rates())
+#    rates = np.log([1000, 30000, 10000, 100, 1000, 1000, 1e+7, 5e+7, 6e+7, 10])
+    mec.set_rateconstants(np.exp(rates))
+
+    fixed = np.array([False, False, False, False, False, False, True, True, True, False])
+    if fixed.size == len(mec.Rates):
+        for i in range(len(mec.Rates)):
+            mec.Rates[i].fixed = fixed[i]
+
+    theta = mec.theta()
+    print 'theta=', theta
+
+#    rates = np.log([20, 50])
+#    rates = np.log([10, 60, 2, 2e+06])
+#    optimize.test_CHS(rates, opts)
+
+# Prepare parameter dict for simplex
+    opts = {}
+    opts['mec'] = mec
+    opts['conc'] = conc
+    opts['tres'] = tres
+    opts['tcrit'] = tcrit
+    opts['isCHS'] = True
+
     # Maximum likelihood fit.
     print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
@@ -80,17 +92,19 @@ def main():
 #        full_output=1, maxiter=10000, maxfun=10000, retall=1,
 #        callback=optimize.printit)
 
-    xopt, fopt = optimize.simplexHJC(scl.HJClik, rates, rec1.bursts, opts)
+    theta, fopt, neval = optimize.simplexHJC(scl.HJClik, np.log(theta), rec1.bursts, opts)
 
 
     print ("\nFitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
 
-    newrates = np.exp(xopt)
-    mec.set_rateconstants(newrates)
+#    newrates = np.exp(xopt)
+#    mec.set_rateconstants(newrates)
+    mec.theta_unsqueeze(np.exp(theta))
     print "\n Final rate constants:"
     mec.printout(sys.stdout)
     print ('\n Final log-likelihood = {0:.6f}'.format(-fopt))
+    print ('\n Number of evaluations = {0:d}'.format(neval))
 #    print ('\n {0:d} iterations and {1:d} function calls.\n'.format(iter, funcalls))
 #    print 'warnflag=', warnflag
     print '\n\n'

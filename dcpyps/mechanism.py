@@ -357,3 +357,20 @@ class Mechanism(object):
                 self._effdict[effname] = effvalue
             
         self.update_submat()
+
+    def theta(self):
+
+        list = []
+        for rate in self.Rates:
+            if not rate.fixed:
+                list.append(rate.unit_rate())
+        return np.array(list)
+
+    def theta_unsqueeze(self, theta):
+        
+        iter = 0
+        for i in range(len(self.Rates)):
+            if not self.Rates[i].fixed:
+                self.Rates[i].rateconstants = theta[iter]
+                iter += 1
+

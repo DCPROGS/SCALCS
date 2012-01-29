@@ -486,7 +486,8 @@ def HJClik(theta, bursts, opts):
     tcrit = opts['tcrit']
     is_chsvec = opts['isCHS']
 
-    mec.set_rateconstants(np.exp(theta))
+    #mec.set_rateconstants(np.exp(theta))
+    mec.theta_unsqueeze(np.exp(theta))
     mec.set_eff('c', conc)
 
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
@@ -532,7 +533,8 @@ def HJClik(theta, bursts, opts):
         grouplik = np.dot(grouplik, endB)
         loglik += log(grouplik[0])
 
-    newrates = np.log(mec.unit_rates())
+    #newrates = np.log(mec.unit_rates())
+    newrates = np.log(mec.theta())
     return -loglik, newrates
 
 def printout_occupancies(mec, tres, output=sys.stdout):

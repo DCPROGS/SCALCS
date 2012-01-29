@@ -59,7 +59,7 @@ def simplexHJC(func, theta, data, opts, verbose=0):
     """
 
     #TODO: these might come as parameters
-    errfac = 1.e-2
+    errfac = 1.e-3
     stpfac= 5   # 5 for logfit; initial step size factor; 1.01 < stpfac < 20
     stpfac = log(stpfac)
     reffac = 1.0    # reflection coeff => 1
@@ -91,8 +91,8 @@ def simplexHJC(func, theta, data, opts, verbose=0):
 
     while nrestart < nrestartmax and L < 1:
 
+        restart = False
         fval[0], theta = func(theta, data, opts)
-        fsav = fval[0]
         neval += 1
         print ("Starting likelihood = {0:.6f}".format(-fval[0]))
         simp[0] = theta
@@ -110,7 +110,7 @@ def simplexHJC(func, theta, data, opts, verbose=0):
         fval, simp = sortShell(fval, simp)
         absmin, thmin = find_min(fval[0], simp[0], absmin, thmin)
 
-        while L == 0 and niter < nitermax:
+        while L == 0 and niter < nitermax and restart == False:
             niter += 1
             if neval > nevalmax:
                 print '\n No convergence after', neval, 'evaluations.'
@@ -181,8 +181,9 @@ def simplexHJC(func, theta, data, opts, verbose=0):
             fval, simp = sortShell(fval, simp)
             absmin, thmin = find_min(fval[0], simp[0], absmin, thmin)
 
-            L, theta, val, step = simplexHJC_converge(simp, fval, thmin,
-                absmin, fsav, k, data, func, opts, crtstp, step, resfac)
+            L, theta, val, step, restart = simplexHJC_converge(simp, fval, thmin,
+                absmin, k, data, func, opts, crtstp, step, resfac,
+                nrestart, nrestartmax)
 
             if (niter % 10) == 0:
                 print ('iter# {0:d}\tlik= {1:f}'.format(niter, -fval[0]))
@@ -191,10 +192,10 @@ def simplexHJC(func, theta, data, opts, verbose=0):
 
         nrestart += 1
 
-    return simp[0], fval[0]
+    return simp[0], fval[0], neval
 
-def simplexHJC_converge(simp, fval, thmin, absmin, fsav, k,
-    data, func, opts, crtstp, step, resfac):
+def simplexHJC_converge(simp, fval, thmin, absmin, k,
+    data, func, opts, crtstp, step, resfac, nrestart, nrestartmax):
     """
     Check simplexHJC convergence. This version uses difference between
     highest and lowest value of parameter of the n values that define a vertex.
@@ -214,14 +215,15 @@ def simplexHJC_converge(simp, fval, thmin, absmin, fsav, k,
     """
 
     L = 1    #  conv via crtstp
-    for j in range(k):     # test each parameter
-        if(simp[-1,j] - simp[0,j]) > fabs(crtstp[j]): L = 0 # not conv
-#            diff = simp[-1] - simp[0]
-#            if np.any(np.less_equal(diff, np.fabs(crtstp))): L = 0
+    restart = False
+    for i in range(k):
+        if (simp[:,i].max() - simp[:,i].min() > fabs(crtstp[i])) : L = 0
+
     theta = simp[0]
     val = fval[0]
 
     if L == 1:
+        
         exvals = np.empty((5))
         exvals[0] = fval[0]
 
@@ -257,31 +259,25 @@ def simplexHJC_converge(simp, fval, thmin, absmin, fsav, k,
         # Test which is best.
         case = exvals.argmin()
         if case == 0:
-            if fsav == fval[0]:
-                print '\n Returned with best vertex'
-            else:
-                L = 0
+            print '\n Returned with best vertex'
 
         elif case == 1:
-            if fsav == fvalav:
-                print '\n Returned with averaged vertices'
-                theta = pnew
-                val = fvalav
-            else:
-                L = 0
-                theta = pnew
+            print '\n Returned with averaged vertices'
+            theta = pnew
+            val = fvalav
 
         elif case == 2:
-            if fsav == absmin:
+            if nrestart >= nrestartmax:
                 print '\n Returned with absolut minimum'
                 theta = thmin
                 val = absmin
             else:
                 L = 0
                 theta = thmin
+                restart = True
 
         elif case == 3:
-            if fsav == fval1:
+            if nrestart >= nrestartmax:
                 print '\n Returned with result of local search minimum'
                 theta = pnew1
                 val = fval1
@@ -289,14 +285,16 @@ def simplexHJC_converge(simp, fval, thmin, absmin, fsav, k,
                 L = 0
                 theta = pnew1
                 step = resfac * crtstp
+                restart = True
 
         else:
-            if fsav == frand:
+            if nrestart >= nrestartmax:
                 print '\n Returned with result of random perturbation.'
                 theta = ranth
                 val = frand
             else:
                 L = 0
                 theta = ranth
+                restart = True
 
-    return L, theta, val, step
+    return L, theta, val, step, restart
