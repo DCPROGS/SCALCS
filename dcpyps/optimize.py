@@ -114,7 +114,7 @@ def simplexHJC(func, theta, data, opts, verbose=0):
             niter += 1
             if neval > nevalmax:
                 print '\n No convergence after', neval, 'evaluations.'
-                return simp[0], fval[0]
+                return simp[0], fval[0], neval, niter
 
             # ----- compute centroid of all vertices except the worst
 #            centre = np.zeros((k))
@@ -170,10 +170,10 @@ def simplexHJC(func, theta, data, opts, verbose=0):
                         fval[-1] = fnew1
                     else:
                         #  ----- no, it is still bad, shrink whole simplex towards best vertex
-                        for i in range(n):
+                        for i in range(1, n):
                             for j in range(k):
                                 if j != i:
-                                    simp[i,j] = simp[0,j] + confac * (simp[i,j] - simp[0,j])
+                                    simp[i,j] = simp[0, j] + confac * (simp[i,j] - simp[0,j])
                             fval[i], simp[i] = func(simp[i], data, opts)
                             neval += 1
 #                            print 'reduction'
@@ -181,18 +181,17 @@ def simplexHJC(func, theta, data, opts, verbose=0):
             fval, simp = sortShell(fval, simp)
             absmin, thmin = find_min(fval[0], simp[0], absmin, thmin)
 
-            L, theta, val, step, restart = simplexHJC_converge(simp, fval, thmin,
+            L, theta, fval[0], step, restart = simplexHJC_converge(simp, fval, thmin,
                 absmin, k, data, func, opts, crtstp, step, resfac,
                 nrestart, nrestartmax)
 
             if (niter % 10) == 0:
                 print ('iter# {0:d}\tlik= {1:f}'.format(niter, -fval[0]))
                 print 'theta=', np.exp(simp[0])
-        # end of iteration (while L == 0:)
 
         nrestart += 1
 
-    return simp[0], fval[0], neval
+    return simp[0], fval[0], neval, niter
 
 def simplexHJC_converge(simp, fval, thmin, absmin, k,
     data, func, opts, crtstp, step, resfac, nrestart, nrestartmax):

@@ -61,6 +61,14 @@ def multiply(rate, effdict):
     
     return rate[0]*effdict.values()[0]
 
+def constrain_rate_multiple(rate, factor):
+    """
+    Constrain a rate constant to be a multiple of another rate constant.
+    """
+    
+    return rate * factor
+
+
 class State(object):
     """
     Describes a state.
@@ -82,7 +90,8 @@ class Rate(object):
     """
 
     def __init__(self, rateconstants, State1, State2, name='', eff=None, 
-                 fixed=False, mr=False, func=None, limits=[]):
+                 fixed=False, mr=False, func=None, limits=[],
+                 is_constrained=False, constrain_func=None, constrain_args=None):
 
         self.name = name
 
@@ -102,6 +111,10 @@ class Rate(object):
         
         self.fixed = fixed # for future expansion (fixed while fitting)
         self.mr = mr # for future expansion (set by microscopic reversibility)
+
+        self.is_constrained = is_constrained
+        self.constrain_func = constrain_func
+        self.constrain_args = constrain_args
 
         self._limits = limits
         self._check_limits()
@@ -217,6 +230,12 @@ class Rate(object):
 
     limits = property(_get_limits, _set_limits)
 
+    def _set_constrain(self, is_constrained, func, args):
+        self.is_constrained = is_constrained
+        self.constrain_func = func
+        self.constrain_args = args
+
+
 class Mechanism(object):
     '''
     Represents a kinetic mechanism / scheme.
@@ -322,7 +341,7 @@ class Mechanism(object):
         for Rate in self.Rates:
             self.Q[Rate.State1.no, Rate.State2.no] = \
                 Rate.calc(self._effdict)
-            
+
         # Update diagonal elements
         for d in range(self.Q.shape[0]):
             self.Q[d,d] = 0
@@ -362,15 +381,23 @@ class Mechanism(object):
 
         list = []
         for rate in self.Rates:
-            if not rate.fixed:
+            if not rate.fixed and not rate.is_constrained:
                 list.append(rate.unit_rate())
         return np.array(list)
 
     def theta_unsqueeze(self, theta):
-        
+
         iter = 0
         for i in range(len(self.Rates)):
-            if not self.Rates[i].fixed:
+            if not self.Rates[i].fixed and not self.Rates[i].is_constrained:
                 self.Rates[i].rateconstants = theta[iter]
                 iter += 1
+        self.update_constrains()
 
+    def update_constrains(self):
+
+        for i in range(len(self.Rates)):
+            if self.Rates[i].is_constrained:
+                args = self.Rates[i].constrain_args
+                func = self.Rates[i].constrain_func
+                self.Rates[i].rateconstants = func(self.Rates[args[0]].rateconstants, args[1])
