@@ -438,7 +438,7 @@ def exact_GAMAxx(mec, tres, open):
 
     return eigen, gama00, gama10, gama11
 
-def HJClik(theta, bursts, opts):
+def HJClik(theta, opts):
     """
     Calculate likelihood for a series of open and shut times using HJC missed
     events probability density functions (first two dead time intervals- exact
@@ -485,6 +485,7 @@ def HJClik(theta, bursts, opts):
     tres = opts['tres']
     tcrit = opts['tcrit']
     is_chsvec = opts['isCHS']
+    bursts = opts['data']
 
     #mec.set_rateconstants(np.exp(theta))
     mec.theta_unsqueeze(np.exp(theta))
@@ -689,6 +690,27 @@ def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
         '\t{0:.5g}'.format(gamma10[i]) +
         '\t{0:.5g}'.format(gamma11[i]))
 
+def sortShell2(vals, simp):
+    """
+    Shell sort using Shell's (original) gap sequence: n/2, n/4, ..., 1.
+    """
+    n = np.size(vals)
+    gap = n // 2
+    while gap > 0:
+         # do the insertion sort
+         for i in range(gap, n):
+             val = vals[i]
+             tsimp = simp[i]
+             j = i
+             while j >= gap and vals[j - gap] > val:
+                 vals[j] = vals[j - gap]
+                 simp[j] = simp[j - gap]
+                 j -= gap
+             vals[j] = val
+             simp[j] = tsimp
+         gap //= 2
+    return vals, simp
+
 def printout_tcrit(mec, output=sys.stdout):
     """
     Output calculations based on division into bursts by critical time (tcrit).
@@ -710,7 +732,7 @@ def printout_tcrit(mec, output=sys.stdout):
     pdfs.expPDF_printout(eigs, w, output)
     taus = 1 / eigs
     areas = w /eigs
-    taus, areas = optimize.sortShell2(taus, areas)
+    taus, areas = sortShell2(taus, areas)
 
     comps = taus.shape[0]-1
     tcrits = np.empty((3, comps))

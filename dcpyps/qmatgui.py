@@ -456,7 +456,7 @@ class QMatGUI(QMainWindow):
                 'maximal Popen- {0:.5g}'.format(maxP))
         elif ((profile == 'rcj') or (profile == 'square')):
             cjumps.printout(self.mec, cargs[1], cargs[3], output=self.log)
-        self.present_plot = np.vstack((t, c, Popen, P))
+        self.present_plot = np.vstack((t, Popen, c, P))
 
     def onPlotCJumpOccupancies(self):
         """
@@ -521,7 +521,7 @@ class QMatGUI(QMainWindow):
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
 
-        self.present_plot = np.vstack((t, c, Popen, P))
+        self.present_plot = np.vstack((t, Popen, c, P))
 #        rcj.printout(self.mec, jpar, output=self.log)
 
     def onPlotPopen(self):
