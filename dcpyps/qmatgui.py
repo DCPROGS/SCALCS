@@ -55,19 +55,21 @@ class QMatGUI(QMainWindow):
         self.present_plot = None
 
         loadMenu = self.menuBar().addMenu('&Mechanims')
-        loadDemoAction = self.createAction("&Demo", self.onLoadDemo,
+        loadDemo1Action = self.createAction("&Load demo: CH82", self.onLoadDemo_CH82,
             None, "loaddemo", "Load Demo mec")
-        loadFromMecFileAction = self.createAction("&From DCprogs MEC File...",
+        loadDemo2Action = self.createAction("&Load demo: dC-K", self.onLoadDemo_dCK,
+            None, "loaddemo", "Load Demo mec")
+        loadFromMecFileAction = self.createAction("&Load from DCprogs MEC File...",
             self.onLoadMecFile,
             None, "loadfrommecfile", "Load from Mec file")
-        loadFromModFileAction = self.createAction("&From ChannelLab MOD File...",
+        loadFromModFileAction = self.createAction("&Load from ChannelLab MOD File...",
             self.onLoadModFile,
             None, "loadfrommodfile", "Load from ChannelLab Mod file")
-        modifyMecAction = self.createAction("&Modify", self.onModifyMec,
+        modifyMecAction = self.createAction("&Modify loaded mec", self.onModifyMec,
             None, "modifymec", "Modify mec")
         quitAction = self.createAction("&Quit", self.close,
             "Ctrl+Q", "appquit", "Close the application")
-        self.addActions(loadMenu, (loadDemoAction,
+        self.addActions(loadMenu, (loadDemo1Action, loadDemo2Action,
             loadFromMecFileAction, loadFromModFileAction,
             modifyMecAction, quitAction))
 
@@ -793,15 +795,24 @@ class QMatGUI(QMainWindow):
         if dialog.exec_():
             pass
 
-    def onLoadDemo(self):
+    def onLoadDemo_CH82(self):
         """
         Load demo mechanism (C&H82 numerical example).
         Called from menu Load|Demo.
         """
 
         self.mec = samples.CH82()
-#        self.mec = samples.CCO()
-        self.textBox.append("\nLoaded Demo.\n")
+        self.textBox.append("\nLoaded Colquhoun&Hawkes 82 numerical example.\n")
+        self.mec.printout(self.log)
+
+    def onLoadDemo_dCK(self):
+        """
+        Load del Castillo - Katz mechanism.
+        Called from menu Load|Demo.
+        """
+
+        self.mec = samples.CCO()
+        self.textBox.append("\nLoaded del Castillo-Katz mechanism.\n")
         self.mec.printout(self.log)
 
     def onLoadMecFile(self):
