@@ -1,11 +1,9 @@
 """A collection of some HJCFit related functions."""
 
 import random
+import sys
 import numpy as np
 from math import*
-
-def printit(xk):
-    print np.exp(xk)
 
 def find_min(fval, theta, absmin, thmin):
     """
@@ -327,7 +325,8 @@ def simplex_sort(fval, simp):
 def simplex_shrink(fval, simp, shrfac, func, args):
     n = np.size(fval)
     for j in range(1, n):
-        ar = simp[0] + shrfac * (simp[j] - simp[0])
+        #ar = simp[0] + shrfac * (simp[j] - simp[0])
+        ar = shrfac * (simp[j] + simp[0])
         fval[j], th = func(ar, args)
         simp[j] = th
     return fval, simp
@@ -357,25 +356,31 @@ def simplex_limits(theta, perfac, args):
             id += 1
     return np.log(th)
 
+def simplex_transform(theta, centre, trfactor, func, args, fcalls):
+
+    xtr = centre + trfactor * (centre - theta)
+    fxtr, xtr = func(xtr, args)
+    fcalls += 1
+    return fxtr, xtr, fcalls
+
 def simplex(func, theta, args=None,
-    stpfac=5, reffac=1.0, extfac=2.0, confac=0.5,
+    stpfac=10, reffac=1.0, extfac=2.0, confac=-0.5,
     shrfac=0.2, resfac=10.0, perfac=0.1,
     errpar=1e-3, errfunc=1e-3,
     maxiter=10000, maxeval=100000,
     display=False):
     """
     Minimize a function using the Nelder-Mead simplex algorithm to find the
-    minimum of function of one or more variables.
-    Adapted from scipy.optimize.fmin.
+    minimum of function.
 
     Parameters
     ----------
-    func : callable func(x,*args)
+    func : callable func(x, args)
         The objective function to be minimized.
     theta : ndarray
         Initial guess.
     args : dictionary
-        Extra arguments passed to func, i.e. ``f(x,*args)``.
+        Extra arguments passed to func.
 
     errpar : float
         Relative error in xopt acceptable for convergence.
@@ -407,7 +412,6 @@ def simplex(func, theta, args=None,
 
     
     fval, simp = simplex_make(theta, stpfac, func, args)
-    print ("Starting likelihood = {0:.6f}".format(-fval[0]))
     fval, simp = simplex_sort(fval, simp)
 
     iterations = 1
@@ -454,23 +458,21 @@ def simplex(func, theta, args=None,
 #                simp[0] = xrd
 #                errpar = resfac * errpar
 
-        centre = np.add.reduce(simp[:-1], 0) / k
+        centre = np.sum(simp[:-1,:], axis=0) / float(k)
         # Reflect
-        xr = (1 + reffac) * centre - reffac * simp[-1]
-        ##xr = centre - reffac * (simp[-1] - centre)
-        #TODO: check for limits
-        #xr = np.copy(simplex_limits(xr, perfac, args))
-        fxr, xr = func(xr, args)
-        fcalls += 1
+        fxr, xr, fcalls = simplex_transform(simp[-1], centre, reffac,
+            func, args, fcalls)
+#        xr = centre + reffac * (centre - simp[-1])
+#        fxr, xr = func(xr, args)
+#        fcalls += 1
 
         if fxr < fval[0]:
             # Extend
-            xe = (1 + reffac * extfac) * centre - reffac * extfac * simp[-1]
-            ##xe = centre + extfac * (xr - centre)
-            #TODO: check for limits
-            #xe = simplex_limits(xe, perfac, args)
-            fxe, xe = func(xe, args)
-            fcalls += 1
+            fxe, xe, fcalls = simplex_transform(simp[-1], centre, extfac,
+                func, args, fcalls)
+#            xe = centre + extfac * (centre - simp[-1])
+#            fxe, xe = func(xe, args)
+#            fcalls += 1
 
             if fxe < fxr:
                 simp[-1] = xe
@@ -488,34 +490,18 @@ def simplex(func, theta, args=None,
                     simp[-1] = xr
                     fval[-1] = fxr
 
-                    xc = (1 + confac * reffac) * centre - confac * reffac * simp[-1]
-                    ##xc = centre + confac * (simp[-1] - centre)
-                    #TODO: check for limits
-                    #xc = simplex_limits(xc, perfac, args)
-                    fxc, xc = func(xc, args)
-                    fcalls += 1
+                fxc, xc, fcalls = simplex_transform(simp[-1], centre, confac,
+                    func, args, fcalls)
+#                xc = centre + confac * (centre - simp[-1])
+#                fxc, xc = func(xc, args)
+#                fcalls += 1
 
-                    if fxc <= fxr:
-                        simp[-1] = xc
-                        fval[-1] = fxc
-                    else:
-                        fval, simp = simplex_shrink(fval, simp, shrfac, func, args)
-                        fcalls += k
+                if fxc <= fxr:
+                    simp[-1] = xc
+                    fval[-1] = fxc
                 else:
-                    # Perform an inside contraction
-                    xcc = (1 - confac) * centre + confac * simp[-1]
-                    ##xcc = centre - confac * (simp[-1] + centre)
-                    #TODO: check for limits
-                    #xcc = simplex_limits(xcc, perfac, args)
-                    fxcc, xcc = func(xcc, args)
-                    fcalls += 1
-
-                    if fxcc < fval[-1]:
-                        simp[-1] = xcc
-                        fval[-1] = fxcc
-                    else: # shrink
-                        fval, simp = simplex_shrink(fval, simp, shrfac, func, args)
-                        fcalls += k
+                    fval, simp = simplex_shrink(fval, simp, shrfac, func, args)
+                    fcalls += k
 
         fval, simp = simplex_sort(fval, simp)
         iterations += 1
