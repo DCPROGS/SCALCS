@@ -91,6 +91,8 @@ def main():
     opts['data'] = rec1.bursts
 
     # MAXIMUM LIKELIHOOD FIT.
+    start_lik, th = scl.HJClik(np.log(theta), opts)
+    print ("Starting likelihood = {0:.6f}".format(-start_lik))
     print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
     #xout, fopt, neval, niter = optimize.simplexHJC(scl.HJClik,

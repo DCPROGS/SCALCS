@@ -224,8 +224,8 @@ class TimeSeries(object):
 
         firstgapfound = False
         i = 0
-#        firstgapfound = True
-#        i = 1
+        if self.rampl[0] != 0:
+            firstgapfound = True
 
         #gap1 = 0
         bursts = {}

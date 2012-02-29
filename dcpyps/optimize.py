@@ -358,8 +358,8 @@ def simplex_limits(theta, perfac, args):
     return np.log(th)
 
 def simplex(func, theta, args=None,
-    stpfac=10, reffac=1.0, extfac=2.0, confac=0.5,
-    shrfac=0.5, resfac=10.0, perfac=0.1,
+    stpfac=5, reffac=1.0, extfac=2.0, confac=0.5,
+    shrfac=0.2, resfac=10.0, perfac=0.1,
     errpar=1e-3, errfunc=1e-3,
     maxiter=10000, maxeval=100000,
     display=False):

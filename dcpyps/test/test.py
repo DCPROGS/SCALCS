@@ -109,11 +109,11 @@ class TestDC_PyPs(unittest.TestCase):
         self.assertAlmostEqual(gamma10[2], -5.49855, 4)
         self.assertAlmostEqual(gamma10[3], 0.671548, 6)
         self.assertAlmostEqual(gamma10[4], -99.9617, 4)
-        self.assertAlmostEqual(gamma11[0], 0.787344, 6)
-        self.assertAlmostEqual(gamma11[1], 42275.7, 1)
-        self.assertAlmostEqual(gamma11[2], 3.39701, 5)
-        self.assertAlmostEqual(gamma11[3], -7.81406, 5)
-        self.assertAlmostEqual(gamma11[4], -1.99149e+06, 0)
+        self.assertAlmostEqual(gamma11[0], 0.885141, 6)
+        self.assertAlmostEqual(gamma11[1], 43634.99, 1)
+        self.assertAlmostEqual(gamma11[2], 718.068, 3)
+        self.assertAlmostEqual(gamma11[3], -39.7437, 3)
+        self.assertAlmostEqual(gamma11[4], -1.9832288e+06, 0)
 
     def test_cjumps(self):
 
@@ -238,9 +238,11 @@ class TestDC_PyPs(unittest.TestCase):
         opts['tres'] = self.tres
         opts['tcrit'] = self.tcrit
         opts['isCHS'] = True
+        opts['data'] = rec1.bursts
         rates = np.log(self.mec.unit_rates())
-        lik, theta = scl.HJClik(rates, rec1.bursts, opts)
-        self.assertAlmostEqual(-lik, 5265.970940, 5)
+        lik, theta = scl.HJClik(rates, opts)
+        print 'lik=', lik
+        self.assertAlmostEqual(-lik, 5265.9536156, 5)
 
     def test_popen(self):
 

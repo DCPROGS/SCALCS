@@ -628,9 +628,9 @@ def eGAF(t, tres, eigvals, Z00, Z10, Z11, roots, R, QAF, expQFF):
     eGAFt : array_like, shape(kA, kF)
     """
 
-    if t < tres * 2: # exact
+    if t < (tres * 2): # exact
         eGAFt = f0((t - tres), eigvals, Z00)
-    elif t < tres * 3:
+    elif t < (tres * 3):
         eGAFt = (f0((t - tres), eigvals, Z00) -
             f1((t - 2 * tres), eigvals, Z10, Z11))
     else: # asymptotic
@@ -740,7 +740,11 @@ def Zxx(Q, kopen, QFF, QAF, QFA, expQFF, open):
         A1 = A[:, kopen:, :kopen]
     D = np.dot(np.dot(A1, expQFF), QFA)
 
-    C11 = D * C00
+    C11 = np.empty((k, kA, kA))
+    #TODO: try to remove 'for' cycles
+    for i in range(k):
+        C11[i] = np.dot(D[i], C00[i])
+
     C10 = np.empty((k, kA, kA))
     #TODO: try to remove 'for' cycles
     for i in range(k):
