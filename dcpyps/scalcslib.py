@@ -238,7 +238,7 @@ def asymptotic_roots(tres, QAA, QFF, QAF, QFA, kA, kF):
 
     sas = -1000000
     sbs = -0.0000001
-    sro = bisectHJC.bisection_intervals(sas, sbs, tres,
+    sro = optimize.bisect_intervals(sas, sbs, tres,
         QAA, QFF, QAF, QFA, kA, kF)
 
     roots = np.zeros(kA)
