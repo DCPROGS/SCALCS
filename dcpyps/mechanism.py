@@ -84,6 +84,18 @@ class State(object):
         self.no = None # will be assigned in Mechanism.__init__
                        # This is now ZERO-based!
 
+
+class Cycle(object):
+    """
+    Describes a cycle.
+    """
+
+    def __init__(self, states, mrconstr=[]):
+
+        self.states = states
+        self.mrconstr = mrconstr
+
+
 class Rate(object):
     """
     Describes a rate between two states.
@@ -241,9 +253,12 @@ class Mechanism(object):
     Represents a kinetic mechanism / scheme.
     '''
 
-    def __init__(self, Rates, ncyc=0, fastblk=False, KBlk=None):
+    def __init__(self, Rates, Cycles=[], fastblk=False, KBlk=None):
 
         self.Rates = Rates
+        # TODO: construct cycles from Rates list
+        self.Cycles = Cycles
+#        self.check_mr()
         # construct States end effectors from Rates:
         self.States = []
         # dictionary of effectors: {"name":concentration}
@@ -283,7 +298,7 @@ class Mechanism(object):
         self.kE = self.kA + self.kB
         self.k = self.kA + self.kB + self.kC + self.kD
 
-        self.ncyc = ncyc   # number of cycles; could be deduced from the rates!
+#        self.ncyc = ncyc   # number of cycles; could be deduced from the rates!
         self.fastblk = fastblk
         self.KBlk = KBlk
 
@@ -323,6 +338,15 @@ class Mechanism(object):
             .format(self.kC))
         str_repr += ('\nNumber of desensitised states = {0:d}'.format(self.kD) +
             '\n')
+
+        str_repr += ('\nNumber of cycles = {0:d}'.format(len(self.Cycles)))
+        for i in range(len(self.Cycles)):
+            str_repr += ('\nCycle {0:d} is formed of states: '.format(i+1))
+            for j in range(len(self.Cycles[i].states)):
+                str_repr += (self.Cycles[i].states[j] + '  ')
+            fprod, bprod = self.check_mr(self.Cycles[i])
+            str_repr += ('\n\tforward product = {0:.9e}'.format(fprod))
+            str_repr += ('\n\tbackward product = {0:.9e}'.format(bprod))
 
         return str_repr
 
@@ -401,3 +425,22 @@ class Mechanism(object):
                 args = self.Rates[i].constrain_args
                 func = self.Rates[i].constrain_func
                 self.Rates[i].rateconstants = func(self.Rates[args[0]].rateconstants, args[1])
+
+    def check_mr(self, cycle):
+
+        fprod = 1
+        bprod = 1
+        states1 = cycle.states[:]
+        states2 = cycle.states[:]
+        states2.append(states2.pop(0))
+
+        for j in range(len(states1)):
+            for rate in self.Rates:
+                if ((states1[j] == rate.State1.name) and
+                        (states2[j] == rate.State2.name)):
+                    fprod = fprod * rate.rateconstants
+                if ((states1[j] == rate.State2.name) and
+                        (states2[j] == rate.State1.name)):
+                    bprod *= rate.rateconstants
+
+        return fprod[0], bprod[0]

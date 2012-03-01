@@ -22,11 +22,13 @@ def CH82():
          dcpyps.Rate(0.66667, A2RS, ARS, name='2k*(-2)', limits=[1e-15,1e+7])
          ]
 
-    ncyc = 1
+
+    CycleList = [dcpyps.Cycle(['A2R*', 'AR*', 'AR', 'A2R'], ['A2R', 'A2R*'])]
+
     fastblk = False
     KBlk = 0.001
 
-    return  dcpyps.Mechanism(RateList, ncyc) #, fastblk, KBlk)
+    return  dcpyps.Mechanism(RateList, CycleList) #, fastblk, KBlk)
 
 def CCO():
 

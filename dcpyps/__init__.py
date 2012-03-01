@@ -37,7 +37,8 @@ and maximum likelihood fitting of mechanisms.
 Phil Trans R Soc Lond A 354, 2555-2590.
 """
 
-import bisectHJC
+#import bisectHJC
+import optimize
 import dcio
 import dcpypsrc
 from mechanism import * # this should really be in the namespace

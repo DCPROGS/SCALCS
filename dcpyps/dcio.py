@@ -412,7 +412,7 @@ def mec_load(mecfile, start):
     statenames = []
     for i in range(0, kstat):
         statename = f.read(10)
-        statenames.append(statename)
+        statenames.append(statename.split()[0])
         #print "State name:", statename
     print "\n"
 
@@ -459,7 +459,15 @@ def mec_load(mecfile, start):
         RateList.append(dcpyps.Rate(rate, StateList[irate[i]-1],
             StateList[jrate[i]-1], name=ratename[i], eff=bound))
 
-    return dcpyps.Mechanism(RateList, ncyc=ncyc)
+    CycleList = []
+    for i in range(ncyc):
+        mrconstrained = False
+        CycleStates = []
+        for j in range(nsc[i]):
+            CycleStates.append(statenames[im[i, j]])
+        CycleList.append(dcpyps.Cycle(CycleStates))
+
+    return dcpyps.Mechanism(RateList, CycleList)
 
 def mod_load(file):
     """

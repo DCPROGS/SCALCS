@@ -40,7 +40,7 @@ import numpy as np
 from numpy import linalg as nplin
 
 import qmatlib as qml
-import bisectHJC
+#import bisectHJC
 import pdfs
 import optimize
 
