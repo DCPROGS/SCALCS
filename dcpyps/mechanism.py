@@ -122,6 +122,8 @@ class Rate(object):
         self._set_effectors(eff)
         
         self.fixed = fixed # for future expansion (fixed while fitting)
+
+#        self.cycle = cycle
         self.mr = mr # for future expansion (set by microscopic reversibility)
 
         self.is_constrained = is_constrained
@@ -256,9 +258,14 @@ class Mechanism(object):
     def __init__(self, Rates, Cycles=[], fastblk=False, KBlk=None):
 
         self.Rates = Rates
+
         # TODO: construct cycles from Rates list
+#        self.ncyc = ncyc   # number of cycles; could be deduced from the rates!
         self.Cycles = Cycles
-#        self.check_mr()
+        #self.check_mr()
+        
+        self.update_mr()
+
         # construct States end effectors from Rates:
         self.States = []
         # dictionary of effectors: {"name":concentration}
@@ -298,7 +305,6 @@ class Mechanism(object):
         self.kE = self.kA + self.kB
         self.k = self.kA + self.kB + self.kC + self.kD
 
-#        self.ncyc = ncyc   # number of cycles; could be deduced from the rates!
         self.fastblk = fastblk
         self.KBlk = KBlk
 
@@ -425,6 +431,60 @@ class Mechanism(object):
                 args = self.Rates[i].constrain_args
                 func = self.Rates[i].constrain_func
                 self.Rates[i].rateconstants = func(self.Rates[args[0]].rateconstants, args[1])
+
+    def update_mr(self):
+        #TODO: check for consistency between cycle.mrconstr and rate.mr.
+
+        ids = []
+        for cycle in self.Cycles:
+            if cycle.mrconstr:
+                # check if constrain is correct: should be just one rate per cycle
+                # and between two connected states which are in cycle.
+                if len(cycle.mrconstr) != 2:
+                    sys.stderr.write("DCPYPS: Warning: MR: Only rate between TWO neighboring states can be constrained.")
+
+                states1 = cycle.states[:]
+                states2 = cycle.states[:]
+                states2.append(states2.pop(0))
+                exist = False
+                for i in range(len(states1)):
+                    if (((cycle.mrconstr[0] == states1[i]) and
+                            (cycle.mrconstr[1] == states2[i])) or
+                        ((cycle.mrconstr[1] == states1[i]) and
+                            (cycle.mrconstr[0] == states2[i]))):
+                                exist = True
+
+                if not exist:
+                    sys.stderr.write("DCPYPS: Warning: MR: Proposed rate to be constrained is not in the cycle.")
+
+                prod = 1
+                id = None
+                forward = False
+                for j in range(len(states1)):
+                    icount = 0
+                    for rate in self.Rates:
+                        if ((states1[j] == rate.State1.name) and
+                                (states2[j] == rate.State2.name)):
+                            if ((cycle.mrconstr[0] == states1[j]) and
+                                (cycle.mrconstr[1] == states2[j])):
+                                id = icount
+                                forward = True
+                            else:
+                                prod = prod * rate.rateconstants
+                        if ((states1[j] == rate.State2.name) and
+                                (states2[j] == rate.State1.name)):
+                            if ((cycle.mrconstr[1] == states1[j]) and
+                                (cycle.mrconstr[0] == states2[j])):
+                                id = icount
+                            else:
+                                prod = prod / rate.rateconstants
+                        icount += 1
+                if forward:
+                    prod = 1 / prod
+                self.Rates[id].rateconstants = prod
+                ids.append(id)
+
+        return ids
 
     def check_mr(self, cycle):
 

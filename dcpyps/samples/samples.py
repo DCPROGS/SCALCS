@@ -19,11 +19,11 @@ def CH82():
          dcpyps.Rate(5.0e08, ARS, A2RS, name='k*(+2)', eff='c', limits=[1e-15,1e+10]),
          dcpyps.Rate(5.0e08, AR, A2R, name='k(+2)', eff='c', limits=[1e-15,1e+10]),
          #dcpyps.Rate(2 * 1.0 / 3.0, A2RS, ARS, name='k*(-2)', limits=[1e-15,1e+7])
-         dcpyps.Rate(0.66667, A2RS, ARS, name='2k*(-2)', limits=[1e-15,1e+7])
+         dcpyps.Rate(0.66667, A2RS, ARS, name='2k*(-2)', mr=True, limits=[1e-15,1e+7])
          ]
 
 
-    CycleList = [dcpyps.Cycle(['A2R*', 'AR*', 'AR', 'A2R'], ['A2R', 'A2R*'])]
+    CycleList = [dcpyps.Cycle(['A2R*', 'AR*', 'AR', 'A2R'], ['A2R*', 'AR*'])]
 
     fastblk = False
     KBlk = 0.001
