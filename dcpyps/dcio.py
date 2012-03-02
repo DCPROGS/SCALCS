@@ -703,7 +703,7 @@ def mod_load(file):
                         name='k'+str(newstates.index(newstates[i]+5))+str(i),
                         eff=bound))
 
-    return dcpyps.Mechanism(RateList, ncyc=None), modtitle
+    return dcpyps.Mechanism(RateList), modtitle
 
 def scn_read_header (fname):
     """
