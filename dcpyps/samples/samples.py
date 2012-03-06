@@ -56,3 +56,57 @@ def CO():
          ]
 
     return  dcpyps.Mechanism(RateList)
+
+def six_cycles_mec():
+
+    A = dcpyps.State('A', 'A', 60e-12)
+    B = dcpyps.State('A', 'B', 60e-12)
+    C = dcpyps.State('A', 'C', 60e-12)
+    D = dcpyps.State('B', 'D', 60e-12)
+    E = dcpyps.State('B', 'E', 0.0)
+    F = dcpyps.State('B', 'F', 0.0)
+    G = dcpyps.State('B', 'G', 0.0)
+    H = dcpyps.State('B', 'H', 0.0)
+    I = dcpyps.State('B', 'I', 0.0)
+    J = dcpyps.State('B', 'J', 0.0)
+    K = dcpyps.State('B', 'K', 0.0)
+    L = dcpyps.State('C', 'L', 0.0)
+
+    RateList = [
+         dcpyps.Rate(15.0, A, B, name='ab'),
+         dcpyps.Rate(25.0, B, A, name='ba'),
+         dcpyps.Rate(15.0, A, E, name='ae'),
+         dcpyps.Rate(25.0, E, A, name='ea'),
+         dcpyps.Rate(15.0, B, C, name='bc'),
+         dcpyps.Rate(25.0, C, B, name='cb'),
+         dcpyps.Rate(15.0, B, F, name='bf'),
+         dcpyps.Rate(25.0, F, B, name='fb'),
+         dcpyps.Rate(15.0, C, D, name='cd'),
+         dcpyps.Rate(25.0, D, C, name='dc'),
+         dcpyps.Rate(15.0, C, G, name='cg'),
+         dcpyps.Rate(25.0, G, C, name='gc'),
+         dcpyps.Rate(15.0, D, H, name='dh'),
+         dcpyps.Rate(25.0, H, D, name='hd'),
+         dcpyps.Rate(15.0, E, F, name='ef'),
+         dcpyps.Rate(25.0, F, E, name='fe'),
+         dcpyps.Rate(15.0, E, I, name='ei'),
+         dcpyps.Rate(25.0, I, E, name='ie'),
+         dcpyps.Rate(15.0, F, G, name='fg'),
+         dcpyps.Rate(25.0, G, F, name='gf'),
+         dcpyps.Rate(15.0, F, J, name='fj'),
+         dcpyps.Rate(25.0, J, F, name='jf'),
+         dcpyps.Rate(15.0, G, H, name='gh'),
+         dcpyps.Rate(25.0, H, G, name='hg'),
+         dcpyps.Rate(15.0, G, K, name='gk'),
+         dcpyps.Rate(25.0, K, G, name='kg'),
+         dcpyps.Rate(15.0, H, L, name='hl'),
+         dcpyps.Rate(25.0, L, H, name='lh'),
+         dcpyps.Rate(15.0, I, J, name='ij'),
+         dcpyps.Rate(25.0, J, I, name='ji'),
+         dcpyps.Rate(15.0, J, K, name='jk'),
+         dcpyps.Rate(25.0, K, J, name='kj'),
+         dcpyps.Rate(15.0, K, L, name='kl'),
+         dcpyps.Rate(25.0, L, K, name='lk')
+        ]
+
+    return  dcpyps.Mechanism(RateList)

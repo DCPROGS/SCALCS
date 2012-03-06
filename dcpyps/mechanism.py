@@ -249,6 +249,165 @@ class Rate(object):
         self.constrain_func = func
         self.constrain_args = args
 
+class Graph(object):
+    """
+    Represents a kinetic mechanism as a graph.
+    """
+    def __init__(self, Rates):
+        self.Rates = Rates
+        self.graph = {}
+        for rate in self.Rates:
+            if rate.State1.name not in self.graph:
+                self.graph[rate.State1.name] = [rate.State2.name]
+            if rate.State1.name in self.graph:
+                if rate.State2.name not in self.graph[rate.State1.name]:
+                    self.graph[rate.State1.name].append(rate.State2.name)
+
+    def make_graph(self, nodes, edges):
+        """
+        Prepare a graph from given nodes and edges.
+        """
+        graph = {}
+        for node in nodes:
+            graph[node] = []
+            for edge in edges:
+                if node in edge:
+                    graph[node].append(edge[edge.index(node)-1])
+        return graph
+
+    def adjacency(self, graph):
+        """
+        Construct adjacency matrix of a graph.
+        """
+        nodes = graph.keys()
+        M = np.zeros((len(nodes), len(nodes)))
+        for node in nodes:
+            for adj in graph[node]:
+                M[nodes.index(node), nodes.index(adj)] = 1
+        return M
+
+    def nodes_edges(self, graph):
+        """
+        Prepare list of nodes and list of edges.
+        """
+        nodes = graph.keys()
+        edges = []
+        for node in nodes:
+            for next in graph[node]:
+                edge = [node, next]
+                if (edge not in edges) and (edge.reverse() not in edges):
+                    edges.append(edge)
+        return nodes, edges
+
+    def incidence(self, graph):
+        """
+        Construct incidence matrix of a graph.
+        """
+        nodes, edges = self.nodes_edges(graph)
+        M = np.zeros((len(nodes), len(edges)))
+        for node in nodes:
+            for edge in edges:
+                if node in edge:
+                    M[nodes.index(node), edges.index(edge)] = 1
+        return M
+
+    def degree(self, graph):
+        """
+        Construct degree matrix of a graph.
+        """
+        nodes, edges = self.nodes_edges(graph)
+        M = np.zeros((len(nodes), len(nodes)))
+        for node in nodes:
+            for edge in edges:
+                if node in edge:
+                    M[nodes.index(node), nodes.index(node)] += 1
+        return M
+
+    def degree_list(self, graph):
+        """
+        Construct degree list.
+        """
+        nodes, edges = self.nodes_edges(graph)
+        L = [0] * len(nodes)
+        for node in nodes:
+            for edge in edges:
+                if node in edge:
+                    L[nodes.index(node)] += 1
+        return L
+
+    def laplacian(self, graph):
+        """
+        Construct Laplacian matrix of a graph.
+        """
+        deg = self.degree(graph)
+        adj = self.adjacency(graph)
+        M = deg - adj
+        return M
+
+    def remove_node(self, nodes, edges, degrees):
+        """
+        Remove nodes with 1 or 0 edges.
+        """
+        nodes_to_remove = []
+        for ind, dgr in enumerate(degrees):
+            if dgr == 1 or dgr == 0:
+                nodes_to_remove.append(nodes[ind])
+                edges_to_remove = []
+                for id, edge in enumerate(edges):
+                    if nodes[ind] in edge:
+                        edges_to_remove.append(edge)
+                for edge in edges_to_remove:
+                    edges.pop(edges.index(edge))
+        for node in nodes_to_remove:
+            degrees.pop(nodes.index(node))
+            nodes.pop(nodes.index(node))
+        return nodes, edges, degrees
+
+    def find_cycles(self, graph):
+        """
+        Find all cycles in a graph.
+        """
+        nodes, edges = self.nodes_edges(graph)
+        degree = self.degree_list(graph)
+        todo = nodes[:]
+        todo_degree = degree[:]
+        todo_edges = edges[:]
+        cycles = []
+        todo, todo_edges, todo_degree = self.remove_node(todo, todo_edges, todo_degree)
+        while todo and len(todo) >= 4:
+            new_graph = self.make_graph(todo, todo_edges)
+            todo_degree = self.degree_list(new_graph)
+            todo, todo_edges = self.nodes_edges(new_graph)
+            cycle = self.find_cycle(new_graph)
+            if cycle:
+                cycles.append(cycle)
+                for node in cycle:
+                    todo_degree[todo.index(node)] = todo_degree[todo.index(node)] - 1
+            todo, todo_edges, todo_degree = self.remove_node(todo, todo_edges, todo_degree)
+        return cycles
+
+    def find_cycle(self, graph):
+        """
+        Find if graph contains at least one cycle. Search stops when one cycle
+        is found. Returns None if no cycle is found.
+        """
+        todo = set(graph.keys())
+        while todo:
+            node = todo.pop()
+            stack = [node]
+            while stack:
+                top = stack[-1]
+                for node in graph[top]:
+                    if node in stack and node != stack[-2]:
+                        return stack[stack.index(node):]
+                    if node in todo:
+                        stack.append(node)
+                        todo.remove(node)
+                        break
+                else:
+                    node = stack.pop()
+        return None
+
 
 class Mechanism(object):
     '''
@@ -264,7 +423,7 @@ class Mechanism(object):
         self.Cycles = Cycles
         #self.check_mr()
         
-        self.update_mr()
+#        self.update_mr()
 
         # construct States end effectors from Rates:
         self.States = []
