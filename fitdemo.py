@@ -72,6 +72,7 @@ def main():
     mec.Rates[6].constrain_func = mechanism.constrain_rate_multiple
     mec.Rates[6].constrain_args = [8, 2]
     mec.update_constrains()
+    mec.update_mr()
     # Initial guesses. Now using rate constants from numerical example.
     rates = np.log(mec.unit_rates())
 #    rates = np.log([100, 3000, 10000, 100, 1000, 1000, 1e+7, 5e+7, 6e+7, 10])

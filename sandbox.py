@@ -76,11 +76,11 @@ if __name__ == "__main__":
 
     mec1 = samples.CH82()
     #mec1 = samples.six_cycles_mec()
-#    sys.stdout.write('%s' % mec1)
-#    mec1.update_mr()
-#    sys.stdout.write('\n\nmr imposed:')
-#    sys.stdout.write('%s' % mec1)
-#
+    sys.stdout.write('%s' % mec1)
+    mec1.update_mr()
+    sys.stdout.write('\n\nmr imposed:')
+    sys.stdout.write('%s' % mec1)
+
     gr1 = mechanism.Graph(mec1.Rates)
     print '\n\n\n    CH82:\n', gr1.graph
     print 'mr=', gr1.mr

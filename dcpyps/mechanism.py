@@ -604,7 +604,7 @@ class Mechanism(object):
 
         list = []
         for rate in self.Rates:
-            if not rate.fixed and not rate.is_constrained:
+            if not rate.fixed and not rate.is_constrained and not rate.mr:
                 list.append(rate.unit_rate())
         return np.array(list)
 
@@ -612,10 +612,13 @@ class Mechanism(object):
 
         iter = 0
         for i in range(len(self.Rates)):
-            if not self.Rates[i].fixed and not self.Rates[i].is_constrained:
+            if ((not self.Rates[i].fixed) and
+              (not self.Rates[i].is_constrained) and
+              (not self.Rates[i].mr)):
                 self.Rates[i].rateconstants = theta[iter]
                 iter += 1
         self.update_constrains()
+        self.update_mr()
 
     def update_constrains(self):
 
