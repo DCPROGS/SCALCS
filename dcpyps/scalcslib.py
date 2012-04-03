@@ -438,6 +438,42 @@ def exact_GAMAxx(mec, tres, open):
 
     return eigen, gama00, gama10, gama11
 
+def likelihood(theta, opts):
+    """
+    """
+
+    mec = opts['mec']
+    conc = opts['conc']
+    bursts = opts['data']
+
+    #mec.set_rateconstants(np.exp(theta))
+    mec.theta_unsqueeze(np.exp(theta))
+    mec.set_eff('c', conc)
+
+    startB = qml.phiA(mec)
+    endB = np.ones((mec.kF, 1))
+
+    loglik = 0
+    for ind in bursts:
+        burst = bursts[ind]
+        grouplik = startB
+        for i in range(len(burst)):
+            t = burst[i] * 0.001
+            if i % 2 == 0: # open time
+                GAFt = qml.iGt(t, mec.QAA, mec.QAF)
+            else: # shut
+                GAFt = qml.iGt(t, mec.QFF, mec.QFA)
+            grouplik = np.dot(grouplik, GAFt)
+            if grouplik.max() > 1e50:
+                grouplik = grouplik * 1e-100
+                print 'grouplik was scaled down'
+        grouplik = np.dot(grouplik, endB)
+        loglik += log(grouplik[0])
+
+    #newrates = np.log(mec.unit_rates())
+    newrates = np.log(mec.theta())
+    return -loglik, newrates
+
 def HJClik(theta, opts):
     """
     Calculate likelihood for a series of open and shut times using HJC missed

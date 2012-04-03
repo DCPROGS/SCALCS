@@ -48,9 +48,9 @@ def create_graph(mec):
     return G, state_labels, rate_labels
 
 if __name__=="__main__":
-    import calculate_demo as demo
+    import samples
 
-    demomec = demo.demoQ()
+    demomec = samples.CH82()
     G, state_labels, rate_labels = create_graph(demomec)
     pos = nx.spring_layout(G)
 

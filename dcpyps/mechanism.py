@@ -256,23 +256,69 @@ class Graph(object):
     def __init__(self, Rates):
         self.Rates = Rates
         self.graph = {}
-        for rate in self.Rates:
-            if rate.State1.name not in self.graph:
-                self.graph[rate.State1.name] = [rate.State2.name]
-            if rate.State1.name in self.graph:
-                if rate.State2.name not in self.graph[rate.State1.name]:
-                    self.graph[rate.State1.name].append(rate.State2.name)
+        self.fixed = []
+        self.constrained = []
+        self.mr = []
+        self.graph_from_rates(self.Rates)
+        self.nodes, self.edges = self.nodes_edges(self.graph)
 
-    def make_graph(self, nodes, edges):
+    def graph_from_rates(self, Rates):
         """
-        Prepare a graph from given nodes and edges.
+        Prepare a graph from given dcpyps mechanism rates. Graph is a
+        dictionary of nodes. Each node has a list of connected states and a
+        list of connection weights.
+        """
+
+        self.graph = {}
+        for rate in Rates:
+            w = 1
+            if rate.fixed:
+                self.fixed.append([rate.State1.name, rate.State2.name])
+                w = 0
+            if rate.is_constrained:
+                self.constrained.append([rate.State1.name, rate.State2.name])
+                w = 0
+            if rate.mr:
+                self.mr.append([rate.State1.name, rate.State2.name])
+                w = 2
+
+            if rate.State1.name not in self.graph:
+                self.graph[rate.State1.name] = [[rate.State2.name], [w]]
+            if rate.State1.name in self.graph:
+                if rate.State2.name not in self.graph[rate.State1.name][0]:
+                    self.graph[rate.State1.name][0].append(rate.State2.name)
+                    self.graph[rate.State1.name][1].append(w)
+
+    def nodes_edges(self, graph):
+        """
+        Prepare list of nodes and list of edges and their weights.
+        """
+        nodes = graph.keys()
+        edges = [[],[]]
+        for node in nodes:
+            for next, w in zip(graph[node][0], graph[node][1]):
+                edge1 = [node, next]
+                edge2 = [next, node]
+                if (edge1 not in edges[0]) and (edge2 not in edges[0]):
+                    edges[0].append(edge1)
+                    edges[1].append([w])
+                elif edge1 in edges[0]:
+                    edges[1][edges[0].index(edge1)].append(w)
+                elif edge2 in edges[0]:
+                    edges[1][edges[0].index(edge2)].append(w)
+        return nodes, edges
+
+    def graph_from_nodes(self, nodes, edges):
+        """
+        Prepare a graph (without weights) from given nodes and edges.
         """
         graph = {}
         for node in nodes:
-            graph[node] = []
-            for edge in edges:
+            graph[node] = [[],[]]
+            for edge, w in zip(edges[0], edges[1]):
                 if node in edge:
-                    graph[node].append(edge[edge.index(node)-1])
+                    graph[node][0].append(edge[edge.index(node)-1])
+                    graph[node][1].append(w[edge.index(node)-1])
         return graph
 
     def adjacency(self, graph):
@@ -282,33 +328,20 @@ class Graph(object):
         nodes = graph.keys()
         M = np.zeros((len(nodes), len(nodes)))
         for node in nodes:
-            for adj in graph[node]:
+            for adj in graph[node][0]:
                 M[nodes.index(node), nodes.index(adj)] = 1
         return M
-
-    def nodes_edges(self, graph):
-        """
-        Prepare list of nodes and list of edges.
-        """
-        nodes = graph.keys()
-        edges = []
-        for node in nodes:
-            for next in graph[node]:
-                edge = [node, next]
-                if (edge not in edges) and (edge.reverse() not in edges):
-                    edges.append(edge)
-        return nodes, edges
 
     def incidence(self, graph):
         """
         Construct incidence matrix of a graph.
         """
         nodes, edges = self.nodes_edges(graph)
-        M = np.zeros((len(nodes), len(edges)))
+        M = np.zeros((len(nodes), len(edges[0])))
         for node in nodes:
-            for edge in edges:
+            for edge in edges[0]:
                 if node in edge:
-                    M[nodes.index(node), edges.index(edge)] = 1
+                    M[nodes.index(node), edges[0].index(edge)] = 1
         return M
 
     def degree(self, graph):
@@ -318,7 +351,7 @@ class Graph(object):
         nodes, edges = self.nodes_edges(graph)
         M = np.zeros((len(nodes), len(nodes)))
         for node in nodes:
-            for edge in edges:
+            for edge in edges[0]:
                 if node in edge:
                     M[nodes.index(node), nodes.index(node)] += 1
         return M
@@ -330,7 +363,7 @@ class Graph(object):
         nodes, edges = self.nodes_edges(graph)
         L = [0] * len(nodes)
         for node in nodes:
-            for edge in edges:
+            for edge in edges[0]:
                 if node in edge:
                     L[nodes.index(node)] += 1
         return L
@@ -353,11 +386,13 @@ class Graph(object):
             if dgr == 1 or dgr == 0:
                 nodes_to_remove.append(nodes[ind])
                 edges_to_remove = []
-                for id, edge in enumerate(edges):
+                for id, edge in enumerate(edges[0]):
                     if nodes[ind] in edge:
                         edges_to_remove.append(edge)
                 for edge in edges_to_remove:
-                    edges.pop(edges.index(edge))
+                    id = edges[0].index(edge)
+                    edges[0].pop(id)
+                    edges[1].pop(id)
         for node in nodes_to_remove:
             degrees.pop(nodes.index(node))
             nodes.pop(nodes.index(node))
@@ -375,7 +410,7 @@ class Graph(object):
         cycles = []
         todo, todo_edges, todo_degree = self.remove_node(todo, todo_edges, todo_degree)
         while todo and len(todo) >= 4:
-            new_graph = self.make_graph(todo, todo_edges)
+            new_graph = self.graph_from_nodes(todo, todo_edges)
             todo_degree = self.degree_list(new_graph)
             todo, todo_edges = self.nodes_edges(new_graph)
             cycle = self.find_cycle(new_graph)
@@ -397,7 +432,7 @@ class Graph(object):
             stack = [node]
             while stack:
                 top = stack[-1]
-                for node in graph[top]:
+                for node in graph[top][0]:
                     if node in stack and node != stack[-2]:
                         return stack[stack.index(node):]
                     if node in todo:
@@ -407,7 +442,6 @@ class Graph(object):
                 else:
                     node = stack.pop()
         return None
-
 
 class Mechanism(object):
     '''

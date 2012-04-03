@@ -177,6 +177,15 @@ def iGs(Q, kA, kB):
     GBA = np.dot(nplin.inv(-1 * QBB), QBA)
     return GAB, GBA
 
+def iGt(t, QAA, QAB):
+    """
+    GAB(t) = PAA(t) * QAB      Eq. 1.20 in CH82
+    PAA(t) = exp(QAA * t)      Eq. 1.16 in CH82
+    """
+
+    GAB = np.dot(expQt(QAA, t), QAB)
+    return GAB
+
 def eGs(GAF, GFA, kA, kF, expQFF):
     """
     Calculate eGAF, probabilities from transitions from apparently open to
