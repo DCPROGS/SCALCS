@@ -437,10 +437,10 @@ def shut_times_between_burst_mean(mec):
 
     return m
 
-def shut_time_total_pdf_components(mec):
+def shut_time_total_pdf_components_2more_openings(mec):
     """
     Calculate time constants and amplitudes for a PDF of total shut time 
-    per burst (Eq. 3.40, CH82).
+    per burst (Eq. 3.40, CH82) for bursts with at least 2 openings.
 
     Parameters
     ----------
@@ -465,6 +465,28 @@ def shut_time_total_pdf_components(mec):
             A[i]), (mec.QBA)), endBurst(mec)) / norm
 
     return eigs, w
+
+def shut_time_total_mean(mec):
+    """
+    Calculate the mean total shut time per burst (Eq. 3.41, CH82).
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+
+    Returns
+    -------
+    m : float
+        The mean total shut time per burst.
+    """
+
+    WBB = mec.QBB + np.dot(mec.QBA, mec.GAB)
+    invW = - nplin.inv(WBB)
+    uA = np.ones((mec.kA, 1))
+    m = np.dot(np.dot(np.dot(np.dot(phiBurst(mec), mec.GAB),
+            invW), (mec.GBA)), uA)[0]
+    return m
 
 def first_opening_length_pdf_components(mec):
     """
@@ -561,10 +583,13 @@ def printout_pdfs(mec, output=sys.stdout):
         format(mop * 1000) + 'millisec')
 
     # # #
-    output.write('\n\nPDF of total shut time per bursts')
+    output.write('\n\nPDF of total shut time per bursts for bursts with at least 2 openings')
     output.write('\nf(gap tot) =')
-    eigs, w = shut_time_total_pdf_components(mec)
+    eigs, w = shut_time_total_pdf_components_2more_openings(mec)
     pdfs.expPDF_printout(eigs, w, output)
+    msh = shut_time_total_mean(mec)
+    output.write('\nMean of total shut time for all bursts = {0:.5g} '.
+        format(msh * 1000) + 'millisec')
 
     output.write('\n\nNo of gaps within burst per unit open time = {0:.5g} '.
         format((mu - 1) / mop))

@@ -60,7 +60,7 @@ def main():
 
     # PREPARE RATE CONSTANTS.
     # Fixed rates.
-    fixed = np.array([False, False, False, False, False, False, False, False, True, False])
+    fixed = np.array([False, False, False, False, False, False, False, True, False, False])
     if fixed.size == len(mec.Rates):
         for i in range(len(mec.Rates)):
             mec.Rates[i].fixed = fixed[i]
