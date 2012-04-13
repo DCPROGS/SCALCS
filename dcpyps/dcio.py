@@ -460,11 +460,11 @@ def mec_load(mecfile, start):
             StateList[jrate[i]-1], name=ratename[i], eff=bound))
 
     CycleList = []
-    for i in range(ncyc):
-        mrconstrained = False
+    for i in xrange(ncyc):
+#        mrconstrained = False
         CycleStates = []
-        for j in range(nsc[i]):
-            CycleStates.append(statenames[im[i, j]])
+        for j in xrange(nsc[i]):
+            CycleStates.append(statenames[im[i, j]-1])
         CycleList.append(dcpyps.Cycle(CycleStates))
 
     return dcpyps.Mechanism(RateList, CycleList)

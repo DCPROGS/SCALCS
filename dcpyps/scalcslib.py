@@ -559,14 +559,14 @@ def HJClik(theta, opts):
             t = burst[i] * 0.001
             if i % 2 == 0: # open time
                 eGAFt = qml.eGAF(t, tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
-                    AR, mec.QAF, expQFF)
+                AR, mec.QAF, expQFF)
             else: # shut
                 eGAFt = qml.eGAF(t, tres, Feigvals, FZ00, FZ10, FZ11, Froots,
-                    FR, mec.QFA, expQAA)
+                FR, mec.QFA, expQAA)
             grouplik = np.dot(grouplik, eGAFt)
             if grouplik.max() > 1e50:
                 grouplik = grouplik * 1e-100
-                print 'grouplik was scaled down'
+                #print 'grouplik was scaled down'
         grouplik = np.dot(grouplik, endB)
         loglik += log(grouplik[0])
 
