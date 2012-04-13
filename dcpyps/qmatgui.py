@@ -35,6 +35,7 @@ import popen
 import dcio
 import samples
 import scplotlib as scpl
+import mechanism
 
 #import optimize
 #import dataset
@@ -916,9 +917,30 @@ class RateTableDlg(QDialog):
             self.mec.Rates[row].fixed = value
             print 'fixed value=', value
 
-        if column == 6 or column == 7:
-            newlimits = [float(self.table.item(row, 6).text()),
-                float(self.table.item(row, 7).text())]
+        if column == 6:
+            value = False
+            if self.table.item(row, column).checkState() > 0:
+                value = True
+            self.mec.Rates[row].mr = value
+            print 'mr value=', value
+
+        if column == 7 or column == 8 or column == 9:
+            #TODO: handle exceptions in this block
+            value = False
+            if self.table.item(row, 7).checkState() > 0:
+                value = True
+            self.mec.Rates[row].is_constrained = value
+            self.mec.Rates[row].constrain_func = mechanism.constrain_rate_multiple
+            print 'is_constrained =', value
+            factor = float(self.table.item(row, 8).text())
+            print 'factor=', factor
+            torate = int(self.table.item(row, 9).text())
+            print 'to rate=', torate
+            self.mec.Rates[row].constrain_args = [torate, factor]
+
+        if column == 10 or column == 11:
+            newlimits = [float(self.table.item(row, 10).text()),
+                float(self.table.item(row, 11).text())]
             self.mec.Rates[row].limits = newlimits
 
         self.changed = True
@@ -943,7 +965,7 @@ class RateTable(QTableWidget):
             the table """
 
         header = ['From State', 'To State', 'Rate name', 'Rate value',
-            'Conc depend', 'Fixed',
+            'Conc depend', 'Fixed', 'MR', 'Constr.', 'Factor', 'To rate',
             'Lower limit', 'Higher limit']
 
         nrows = len(self.mec.Rates)
@@ -976,6 +998,29 @@ class RateTable(QTableWidget):
             check.setCheckState(value)
             self.setItem(i, 5, check)
 
+            check = QTableWidgetItem()
+            value = 0
+            if self.mec.Rates[i].mr:
+                value = 2
+            check.setCheckState(value)
+            self.setItem(i, 6, check)
+
+            check = QTableWidgetItem()
+            value = 0
+            if self.mec.Rates[i].is_constrained:
+                value = 2
+            check.setCheckState(value)
+            self.setItem(i, 7, check)
+            factor = ''
+            torate = ''
+            if self.mec.Rates[i].constrain_args:
+                factor = self.mec.Rates[i].constrain_args[1]
+                torate = self.mec.Rates[i].constrain_args[0]
+            cell = QTableWidgetItem(str(factor))
+            self.setItem(i, 8, cell)
+            cell = QTableWidgetItem(str(torate))
+            self.setItem(i, 9, cell)
+
             if len(self.mec.Rates[i].limits) == 0:
                 if eff == '':
                     limits = [[1e-15,1e+7]]
@@ -984,10 +1029,10 @@ class RateTable(QTableWidget):
             else:
                 limits = self.mec.Rates[i].limits
             cell = QTableWidgetItem(str(limits[0][0]))
-            self.setItem(i, 6, cell)
+            self.setItem(i, 10, cell)
             cell = QTableWidgetItem(str(limits[0][1]))
-            self.setItem(i, 7, cell)
-            
+            self.setItem(i, 11, cell)
+
 
         self.resizeColumnsToContents()
         self.resizeRowsToContents()
