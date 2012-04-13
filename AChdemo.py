@@ -9,7 +9,6 @@ import numpy as np
 import cProfile
 
 from dcpyps import optimize
-from dcpyps import samples
 from dcpyps import dcio
 from dcpyps import dataset
 from dcpyps import scalcslib as scl
@@ -17,14 +16,10 @@ from dcpyps import mechanism
 
 def main():
 
-    # LOAD MECHANISM.
+    # LOAD MECHANISM USED IN COLQUHOUN et al 2003.
     mecfn = "./dcpyps/samples/demomec.mec"
     version, meclist, max_mecnum = dcio.mec_get_list(mecfn)
-    sys.stdout.write('mecfile: %s\n' % mecfn)
-    sys.stdout.write('version: %s\n' % version)
-    mecnum, ratenum = dcio.mec_choose_from_list(meclist, max_mecnum)
-    sys.stdout.write('\nRead rate set #%d of mec #%d\n' % (ratenum+1, mecnum))
-    mec = dcio.mec_load(mecfn, meclist[ratenum][0])
+    mec = dcio.mec_load(mecfn, meclist[1][0])
 
     mec.printout(sys.stdout)
     tres = 0.00005
@@ -51,7 +46,8 @@ def main():
 
     # PREPARE RATE CONSTANTS.
     # Fixed rates.
-    fixed = np.array([False, False, False, False, False, False, False, True, False, False, False, False, False, False])
+    fixed = np.array([False, False, False, False, False, False, False, True,
+        False, False, False, False, False, False])
     if fixed.size == len(mec.Rates):
         for i in range(len(mec.Rates)):
             mec.Rates[i].fixed = fixed[i]
@@ -68,14 +64,12 @@ def main():
     mec.Rates[9].constrain_args = [13, 1]
 
     mec.Rates[11].mr=True
-    
+
     mec.update_constrains()
     mec.update_mr()
 
     # Initial guesses. Now using rate constants from numerical example.
     rates = np.log(mec.unit_rates())
-#    rates = np.log([100, 3000, 10000, 100, 1000, 1000, 1e+7, 5e+7, 6e+7, 10])
-#    rates = np.log([6.5, 14800, 3640, 362, 1220, 2440, 1e+7, 5e+8, 2.5e+8, 55])
     mec.set_rateconstants(np.exp(rates))
     mec.printout(sys.stdout)
     theta = mec.theta()
@@ -95,8 +89,6 @@ def main():
     print ("Starting likelihood = {0:.6f}".format(-start_lik))
     print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
-    #xout, fopt, neval, niter = optimize.simplexHJC(scl.HJClik,
-    #    np.log(theta), data=rec1.bursts, args=opts)
     xout, fout, niter, neval = optimize.simplex(scl.HJClik,
         np.log(theta), args=opts, display=True)
     print ("\nFitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
