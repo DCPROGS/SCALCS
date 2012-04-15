@@ -28,7 +28,7 @@ except:
 import numpy as np
 
 import scalcslib as scl
-import rcj
+#import rcj
 import cjumps
 import scburst
 import popen
@@ -38,7 +38,7 @@ import scplotlib as scpl
 import mechanism
 
 #import optimize
-#import dataset
+import dataset
 
 class QMatGUI(QMainWindow):
     def __init__(self, parent=None):
@@ -120,21 +120,22 @@ class QMatGUI(QMainWindow):
             None))
 
 # UNCOMMENT NEXT LINES TO ENABLE DATA DISTRIBUTION PLOTTING
-#        dataMenu = self.menuBar().addMenu('&Data')
-#        openScanAction = self.createAction("&Load SC record", self.onLoadData)
-#        imposeResolutionAction = self.createAction("&Impose resolution",
-#            self.onImposeResolution)
-#        plotDataOpenAction = self.createAction("&Plot open period distribution",
-#            self.onPlotDataOpen)
-#        plotDataShutAction = self.createAction("&Plot shut period distribution",
-#            self.onPlotDataShut)
-#        plotDataBurstAction = self.createAction("&Plot burst length distribution",
-#            self.onPlotDataBurst)
-#        likelihoodAction = self.createAction("&Calculate likelihood",
-#            self.onCalculateLikelihood)
-#        self.addActions(dataMenu, (openScanAction, imposeResolutionAction,
-#            plotDataOpenAction, plotDataShutAction, plotDataBurstAction,
-#            likelihoodAction))
+        dataMenu = self.menuBar().addMenu('&Data')
+        openScanAction = self.createAction("&Load SC record", self.onLoadData)
+        imposeResolutionAction = self.createAction("&Impose resolution",
+            self.onImposeResolution)
+        plotDataOpenAction = self.createAction("&Plot open period distribution",
+            self.onPlotDataOpen)
+        plotDataShutAction = self.createAction("&Plot shut period distribution",
+            self.onPlotDataShut)
+        plotDataBurstAction = self.createAction("&Plot burst length distribution",
+            self.onPlotDataBurst)
+        likelihoodAction = self.createAction("&Calculate likelihood",
+            self.onCalculateLikelihood)
+        self.addActions(dataMenu, (openScanAction, imposeResolutionAction,
+            plotDataOpenAction, plotDataShutAction, plotDataBurstAction,
+            likelihoodAction))
+# LINES RELATED TO DATA HISTOGRAMMS PLOTTING
 
         helpMenu = self.menuBar().addMenu('&Help')
         helpAboutAction = self.createAction("&About", self.onHelpAbout)
@@ -270,146 +271,131 @@ class QMatGUI(QMainWindow):
         return str1, str2, str3
 
 # UNCOMMENT NEXT FUNCTIONS TO ENABLE DATA DISTRIBUTION PLOTTING
-#    def onLoadData(self):
-#        """
-#        """
-#
-#        self.textBox.append('\n\n\t===== LOADING DATA FILE =====')
-#        filename = QFileDialog.getOpenFileName(self,
-#            "Open SCN File...", "", "DC SCN Files (*.scn)")
-#        ioffset, nint, calfac, header = io.scn_read_header(filename)
-#        tint, iampl, iprops = dcio.scn_read_data(filename, ioffset, nint, calfac)
-#        self.rec1 = dataset.TimeSeries(filename, header, tint, iampl, iprops)
-#        self.textBox.append("\nLoaded record from file: " +
-#            os.path.split(str(filename))[1])
-#
-#    def onImposeResolution(self):
-#
-#        self.rec1.impose_resolution(self.tres)
-#        falsrate = dataset.false_events(self.tres,
-#            self.rec1.header['ffilt'] * 1000, self.rec1.header['rms'],
-#            self.rec1.header['avamp'] * self.rec1.calfac)
-#        trise = 0.3321 / (self.rec1.header['ffilt'] * 1000)
-#        zo = self.tres / trise
-#        aamaxo = dataset.erf(0.88604 * zo)
-#        self.textBox.append('\nAt resolution {0:.0f} microsec false event rate '.
-#            format(self.tres * 1000000) +
-#            '(per sec) for openings and shuttings is {0:.3e}'.format(falsrate)+
-#            ' ( {0:.2f} risetimes, A/Amax = {1:.2f})'.format(zo, aamaxo))
-#        self.textBox.append('After imposing the resolution of original {0:d}'.
-#            format(len(self.rec1.itint)) + ' intervals were left {0:d}'.
-#            format(len(self.rec1.rampl)))
-#        self.rec1.get_open_shut_periods()
-#
-#    def onCalculateLikelihood(self):
-#        """
-#        """
-#
-#        #self.mec.set_eff('c', self.conc)
-#        opts = {}
-#        opts['mec'] = self.mec
-#        opts['conc'] = self.conc
-#        opts['tres'] = self.tres
-#        opts['tcrit'] = self.tcrit
-#        opts['isCHS'] = True
-#
-#        rates = self.mec.rates
-#
-#        #loglik = scl.HJClik(rates, self.rec1.bursts, opts)
-#        #self.rec1.bursts, self.mec, self.tres, self.tcrit,
-#        #    True)
-#
-#        newrates, loglik = optimize.simplex(rates, self.rec1.bursts, scl.HJClik,
-#            opts, verbose=0)
-#        mec.rates = newrates
-#
-#        self.textBox.append('\nLog Likelihood = {0:.3f}'.
-#            format(loglik))
-#        self.mec.printout(self.log)
-#
-#
-#    def onPlotDataBurst(self):
-#        """
-#        """
-#        self.textBox.append('\n\n\t===== PLOTTING DATA: BURST LENGTH =====')
-#        self.textBox.append("\nFirst burst starts only after gap > tcrit is found.")
-#        self.textBox.append("Unusable shut time treated as a valid end of burst.")
-#
-#        dialog = BurstPlotDlg(self)
-#        if dialog.exec_():
-#            self.tcrit = dialog.return_par()
-#
-#        self.textBox.append('\nCritical gap length = {0:.3f} millisec'.
-#            format(self.tcrit * 1000))
-#        self.rec1.get_bursts(self.tcrit)
-#        self.textBox.append('\nNumber of bursts = {0:d}'.
-#            format(len(self.rec1.bursts)))
-#        blength = self.rec1.get_burst_length_list()
-#        self.textBox.append('Average = {0:.3f} millisec'.
-#            format(np.average(blength)))
-#        self.textBox.append('Range: {0:.3f}'.format(min(blength)) +
-#            ' to {0:.3f} millisec'.format(max(blength)))
-#
-#        x, y = dataset.prepare_hist(blength, self.tres)
-#
-#        self.axes.clear()
-#        self.axes.semilogx(x, y, 'b-')
-#        self.axes.set_yscale('sqrtscale')
-#        self.axes.xaxis.set_ticks_position('bottom')
-#        self.axes.yaxis.set_ticks_position('left')
-#        self.canvas.draw()
-#
-#    def onPlotDataOpen(self):
-#        """
-#        """
-#        self.textBox.append('\n\n\t===== PLOTTING DATA: OPEN PERIODS =====')
-#
-#        self.textBox.append('\nNumber of open periods = {0:d}'.
-#            format(len(self.rec1.opint)))
-#        self.textBox.append('Average = {0:.3f} millisec'.
-#            format(np.average(self.rec1.opint)))
-#        self.textBox.append('Range: {0:.3f}'.format(min(self.rec1.opint)) +
-#            ' to {0:.3f} millisec'.format(max(self.rec1.opint)))
-#
-#        x, y = dataset.prepare_hist(self.rec1.opint, self.tres)
-#
-#        self.axes.clear()
-#        self.axes.semilogx(x, y, 'b-')
-#        self.axes.set_yscale('sqrtscale')
-#        self.axes.xaxis.set_ticks_position('bottom')
-#        self.axes.yaxis.set_ticks_position('left')
-#        self.canvas.draw()
-#
-#    def onPlotDataShut(self):
-#        """
-#        """
-#        self.textBox.append('\n\n\t===== PLOTTING DATA: OPEN PERIODS =====')
-#        self.textBox.append('\nNumber of shut periods = {0:d}'.
-#            format(len(self.rec1.shint)))
-#        self.textBox.append('Average = {0:.3f} millisec'.
-#            format(np.average(self.rec1.shint)))
-#        self.textBox.append('Range: {0:.3f}'.format(min(self.rec1.shint)) +
-#            ' to {0:.3f} millisec'.format(max(self.rec1.shint)))
-#
-#        x, y = dataset.prepare_hist(self.rec1.shint, self.tres)
-#
-#        self.axes.clear()
-#        self.axes.semilogx(x, y, 'b-')
-#        self.axes.set_yscale('sqrtscale')
-#        self.axes.xaxis.set_ticks_position('bottom')
-#        self.axes.yaxis.set_ticks_position('left')
-#        self.canvas.draw()
+    def onLoadData(self):
+        """
+        """
+
+        self.textBox.append('\n\n\t===== LOADING DATA FILE =====')
+        filename = QFileDialog.getOpenFileName(self,
+            "Open SCN File...", "", "DC SCN Files (*.scn)")
+        ioffset, nint, calfac, header = dcio.scn_read_header(filename)
+        tint, iampl, iprops = dcio.scn_read_data(filename, ioffset, nint, calfac)
+        self.rec1 = dataset.TimeSeries(filename, header, tint, iampl, iprops)
+        self.textBox.append("\nLoaded record from file: " +
+            os.path.split(str(filename))[1])
+
+    def onImposeResolution(self):
+
+        self.rec1.impose_resolution(self.tres)
+        falsrate = dataset.false_events(self.tres,
+            self.rec1.header['ffilt'] * 1000, self.rec1.header['rms'],
+            self.rec1.header['avamp'] * self.rec1.calfac)
+        trise = 0.3321 / (self.rec1.header['ffilt'] * 1000)
+        zo = self.tres / trise
+        aamaxo = dataset.erf(0.88604 * zo)
+        self.textBox.append('\nAt resolution {0:.0f} microsec false event rate '.
+            format(self.tres * 1000000) +
+            '(per sec) for openings and shuttings is {0:.3e}'.format(falsrate)+
+            ' ( {0:.2f} risetimes, A/Amax = {1:.2f})'.format(zo, aamaxo))
+        self.textBox.append('After imposing the resolution of original {0:d}'.
+            format(len(self.rec1.itint)) + ' intervals were left {0:d}'.
+            format(len(self.rec1.rampl)))
+        self.rec1.get_open_shut_periods()
+
+    def onCalculateLikelihood(self):
+        """
+        """
+
+        opts = {}
+        opts['mec'] = self.mec
+        opts['conc'] = self.conc
+        opts['tres'] = self.tres
+        opts['tcrit'] = self.tcrit
+        opts['isCHS'] = True
+        opts['data'] = self.rec1.bursts
+        theta = self.mec.theta()
+        start_lik, th = scl.HJClik(np.log(theta), opts)
+        self.textBox.append('\nLog Likelihood = {0:.3f}'.
+            format(-start_lik))
+        self.mec.printout(self.log)
+
+    def onPlotDataBurst(self):
+        """
+        """
+        self.textBox.append('\n\n\t===== PLOTTING DATA: BURST LENGTH =====')
+        self.textBox.append("\nFirst burst starts only after gap > tcrit is found.")
+        self.textBox.append("Unusable shut time treated as a valid end of burst.")
+
+        dialog = BurstPlotDlg(self)
+        if dialog.exec_():
+            self.tcrit = dialog.return_par()
+
+        self.textBox.append('\nCritical gap length = {0:.3f} millisec'.
+            format(self.tcrit * 1000))
+        self.rec1.get_bursts(self.tcrit)
+        self.textBox.append('\nNumber of bursts = {0:d}'.
+            format(len(self.rec1.bursts)))
+        blength = self.rec1.get_burst_length_list()
+        self.textBox.append('Average = {0:.3f} millisec'.
+            format(np.average(blength)))
+        self.textBox.append('Range: {0:.3f}'.format(min(blength)) +
+            ' to {0:.3f} millisec'.format(max(blength)))
+
+        x, y = dataset.prepare_hist(blength, self.tres)
+
+        self.axes.clear()
+        self.axes.semilogx(x, y, 'b-')
+        self.axes.set_yscale('sqrtscale')
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
+
+    def onPlotDataOpen(self):
+        """
+        """
+
+        self.textBox.append('\n\n\t===== PLOTTING DATA: OPEN PERIODS =====')
+        self.textBox.append('\nNumber of open periods = {0:d}'.
+            format(len(self.rec1.opint)))
+        self.textBox.append('Average = {0:.3f} millisec'.
+            format(np.average(self.rec1.opint)))
+        self.textBox.append('Range: {0:.3f}'.format(min(self.rec1.opint)) +
+            ' to {0:.3f} millisec'.format(max(self.rec1.opint)))
+        x, y = dataset.prepare_hist(self.rec1.opint, self.tres)
+        self.axes.clear()
+        self.axes.semilogx(x, y, 'b-')
+        self.axes.set_yscale('sqrtscale')
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
+
+    def onPlotDataShut(self):
+        """
+        """
+        self.textBox.append('\n\n\t===== PLOTTING DATA: OPEN PERIODS =====')
+        self.textBox.append('\nNumber of shut periods = {0:d}'.
+            format(len(self.rec1.shint)))
+        self.textBox.append('Average = {0:.3f} millisec'.
+            format(np.average(self.rec1.shint)))
+        self.textBox.append('Range: {0:.3f}'.format(min(self.rec1.shint)) +
+            ' to {0:.3f} millisec'.format(max(self.rec1.shint)))
+        x, y = dataset.prepare_hist(self.rec1.shint, self.tres)
+        self.axes.clear()
+        self.axes.semilogx(x, y, 'b-')
+        self.axes.set_yscale('sqrtscale')
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
+# LINES RELATED TO DATA HISTOGRAMMS PLOTTING
 
     def onPlotCJumpPopen(self):
         """
         Display concentration jump.
         """
 
-
         dialog1 = ConcProfileDlg(self)
         if dialog1.exec_():
             profile = dialog1.return_par()
-
         dialog = CJumpParDlg(self, profile)
         if dialog.exec_():
             reclen, step, cfunc, cargs = dialog.return_par()
@@ -436,7 +422,6 @@ class QMatGUI(QMainWindow):
         elif profile == 'square':
             self.txtPltBox.append('Pulse width = {0:.5g} millisec'
                 .format(cargs[3] * 1000))
-
         self.txtPltBox.append("---\n")
 
         t, c, Popen, P  = cjumps.solve_jump(self.mec, reclen, step,
