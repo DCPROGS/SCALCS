@@ -7,6 +7,7 @@ import time
 import sys
 import os
 import socket
+import math
 
 #import numpy as np
 try:
@@ -37,7 +38,7 @@ import samples
 import scplotlib as scpl
 import mechanism
 
-#import optimize
+import optimize
 import dataset
 
 class QMatGUI(QMainWindow):
@@ -114,11 +115,6 @@ class QMatGUI(QMainWindow):
         plotMenu.insertSeparator(plotJumpPopenAction)
         plotMenu.insertSeparator(plotSaveASCII)
 
-        printOutMenu = self.menuBar().addMenu('&Printout')
-        printOutSaveAction = self.createAction("&Save", self.onPrintOutSave)
-        self.addActions(printOutMenu, (printOutSaveAction,
-            None))
-
 # UNCOMMENT NEXT LINES TO ENABLE DATA DISTRIBUTION PLOTTING
         dataMenu = self.menuBar().addMenu('&Data')
         openScanAction = self.createAction("&Load SC record", self.onLoadData)
@@ -130,12 +126,17 @@ class QMatGUI(QMainWindow):
             self.onPlotDataShut)
         plotDataBurstAction = self.createAction("&Plot burst length distribution",
             self.onPlotDataBurst)
-        likelihoodAction = self.createAction("&Calculate likelihood",
+        likelihoodAction = self.createAction("&HJCfit",
             self.onCalculateLikelihood)
         self.addActions(dataMenu, (openScanAction, imposeResolutionAction,
             plotDataOpenAction, plotDataShutAction, plotDataBurstAction,
             likelihoodAction))
 # LINES RELATED TO DATA HISTOGRAMMS PLOTTING
+
+        printOutMenu = self.menuBar().addMenu('&Printout')
+        printOutSaveAction = self.createAction("&Save", self.onPrintOutSave)
+        self.addActions(printOutMenu, (printOutSaveAction,
+            None))
 
         helpMenu = self.menuBar().addMenu('&Help')
         helpAboutAction = self.createAction("&About", self.onHelpAbout)
@@ -318,6 +319,17 @@ class QMatGUI(QMainWindow):
         self.textBox.append('\nLog Likelihood = {0:.3f}'.
             format(-start_lik))
         self.mec.printout(self.log)
+        self.textBox.append("\nFitting started: {0}\n".format(time.asctime()))
+        xout, fout, niter, neval = optimize.simplex(scl.HJClik,
+            np.log(theta), args=opts, display=True) #, outdev=self.log)
+        self.textBox.append("\nFitting finished: {0}\n".format(time.asctime()))
+        # Display results.
+        self.mec.theta_unsqueeze(np.exp(xout))
+        self.textBox.append("\n Final rate constants:")
+        self.mec.printout(self.log)
+        self.textBox.append('\n Final log-likelihood = {0:.6f}'.format(-fout))
+        self.textBox.append('\n Number of evaluations = {0:d}'.format(neval))
+        self.textBox.append('\n Number of iterations = {0:d}\n\n'.format(niter))
 
     def onPlotDataBurst(self):
         """
@@ -341,7 +353,7 @@ class QMatGUI(QMainWindow):
         self.textBox.append('Range: {0:.3f}'.format(min(blength)) +
             ' to {0:.3f} millisec'.format(max(blength)))
 
-        x, y = dataset.prepare_hist(blength, self.tres)
+        x, y, dx = dataset.prepare_hist(blength, self.tres)
 
         self.axes.clear()
         self.axes.semilogx(x, y, 'b-')
@@ -353,6 +365,15 @@ class QMatGUI(QMainWindow):
     def onPlotDataOpen(self):
         """
         """
+        self.txtPltBox.clear()
+        self.txtPltBox.append('\t===== HISTOGRAM AND DISTRIBUTION OF OPEN PERIODS =====')
+        self.txtPltBox.append('Agonist concentration = {0:.5g} mikroM'.
+            format(self.conc * 1000000))
+        self.txtPltBox.append('Resolution = {0:.5g} mikrosec'.
+            format(self.tres * 1000000))
+        self.txtPltBox.append('Ideal pdf- red dashed line.')
+        self.txtPltBox.append('Exact pdf- blue solid line.')
+        self.txtPltBox.append('Data histogram- black line.')
 
         self.textBox.append('\n\n\t===== PLOTTING DATA: OPEN PERIODS =====')
         self.textBox.append('\nNumber of open periods = {0:d}'.
@@ -361,9 +382,20 @@ class QMatGUI(QMainWindow):
             format(np.average(self.rec1.opint)))
         self.textBox.append('Range: {0:.3f}'.format(min(self.rec1.opint)) +
             ' to {0:.3f} millisec'.format(max(self.rec1.opint)))
-        x, y = dataset.prepare_hist(self.rec1.opint, self.tres)
+        x, y, dx = dataset.prepare_hist(self.rec1.opint, self.tres)
+
+        self.mec.set_eff('c', self.conc)
+#        scl.printout_occupancies(self.mec, self.tres, output=self.log)
+#        scl.printout_distributions(self.mec, self.tres, output=self.log)
+        t, ipdf, epdf, apdf = scpl.open_time_pdf(self.mec, self.tres)
+        sipdf = scpl.scaled_pdf(t, ipdf, math.log10(dx), len(self.rec1.opint))
+        sepdf = scpl.scaled_pdf(t, epdf, math.log10(dx), len(self.rec1.opint))
+
+#        self.present_plot = np.vstack((t, ipdf, epdf, apdf))
+
         self.axes.clear()
-        self.axes.semilogx(x, y, 'b-')
+        self.axes.semilogx(x, y, 'k-',
+            t, sipdf, 'r--', t, sepdf, 'b-')
         self.axes.set_yscale('sqrtscale')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
@@ -372,6 +404,18 @@ class QMatGUI(QMainWindow):
     def onPlotDataShut(self):
         """
         """
+
+        self.txtPltBox.clear()
+        self.txtPltBox.append('\t===== HISTOGRAM AND DISTRIBUTION OF SHUT TIMES =====')
+        self.txtPltBox.append('Agonist concentration = {0:.5g} mikroM'.
+            format(self.conc * 1000000))
+        self.txtPltBox.append('Resolution = {0:.5g} mikrosec'.
+            format(self.tres * 1000000))
+        self.txtPltBox.append('Ideal pdf- red dashed line.')
+        self.txtPltBox.append('Exact pdf- blue solid line.')
+        self.txtPltBox.append('Data histogram- black line.')
+
+
         self.textBox.append('\n\n\t===== PLOTTING DATA: OPEN PERIODS =====')
         self.textBox.append('\nNumber of shut periods = {0:d}'.
             format(len(self.rec1.shint)))
@@ -379,9 +423,19 @@ class QMatGUI(QMainWindow):
             format(np.average(self.rec1.shint)))
         self.textBox.append('Range: {0:.3f}'.format(min(self.rec1.shint)) +
             ' to {0:.3f} millisec'.format(max(self.rec1.shint)))
-        x, y = dataset.prepare_hist(self.rec1.shint, self.tres)
+        x, y, dx = dataset.prepare_hist(self.rec1.shint, self.tres)
+
+        self.mec.set_eff('c', self.conc)
+#        scl.printout_occupancies(self.mec, self.tres, output=self.log)
+#        scl.printout_distributions(self.mec, self.tres, output=self.log)
+        t, ipdf, epdf, apdf = scpl.shut_time_pdf(self.mec, self.tres)
+        sipdf = scpl.scaled_pdf(t, ipdf, math.log10(dx), len(self.rec1.opint))
+        sepdf = scpl.scaled_pdf(t, epdf, math.log10(dx), len(self.rec1.opint))
+#        self.present_plot = np.vstack((t, ipdf, epdf, apdf))
+
         self.axes.clear()
-        self.axes.semilogx(x, y, 'b-')
+        self.axes.semilogx(x, y, 'k-',
+            t, sipdf, 'r--', t, sepdf, 'b-')
         self.axes.set_yscale('sqrtscale')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
@@ -843,7 +897,6 @@ class QMatGUI(QMainWindow):
         table = RateTableDlg(self, self.mec, self.log)
         if table.exec_():
             self.mec = table.return_mec()
-            
 
 class PrintLog:
     """
@@ -916,11 +969,11 @@ class RateTableDlg(QDialog):
                 value = True
             self.mec.Rates[row].is_constrained = value
             self.mec.Rates[row].constrain_func = mechanism.constrain_rate_multiple
-            print 'is_constrained =', value
+#            print 'is_constrained =', value
             factor = float(self.table.item(row, 8).text())
-            print 'factor=', factor
-            torate = int(self.table.item(row, 9).text())
-            print 'to rate=', torate
+#            print 'factor=', factor
+            torate = int(self.table.item(row, 9).text()) - 1
+#            print 'to rate=', torate
             self.mec.Rates[row].constrain_args = [torate, factor]
 
         if column == 10 or column == 11:
@@ -932,6 +985,8 @@ class RateTableDlg(QDialog):
 
     def return_mec(self):
         if self.changed:
+            self.mec.update_constrains()
+            self.mec.update_mr()
             self.log.write("\n\nMechanism modified:\n")
             self.mec.printout(self.log)
         return self.mec

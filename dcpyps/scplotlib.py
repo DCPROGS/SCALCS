@@ -243,6 +243,31 @@ def open_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
 
     return t, ipdf, epdf, apdf
 
+def scaled_pdf(t, pdf, dt, n):
+    """
+    Scale pdf to the data histogram.
+
+    Parameters
+    ----------
+    t : ndarray of floats, shape (num of points)
+        Time in millisec.
+    pdf : ndarray of floats, shape (num of points)
+        pdf to scale.
+    dt : float
+        Histogram bin width in log10 units.
+    n : int
+        Total number of events.
+
+    Returns
+    -------
+    spdf : ndarray of floats, shape (num of points)
+        Scaled pdf.
+    """
+
+    spdf = n * dt * 2.30259 * pdf
+    #spdf = n * dt * pdf
+    return spdf
+
 def shut_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
     """
     Calculate ideal asymptotic and exact shut time distributions.

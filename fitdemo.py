@@ -80,7 +80,7 @@ def main():
     mec.set_rateconstants(np.exp(rates))
     mec.printout(sys.stdout)
     theta = mec.theta()
-    print 'theta=', theta
+    print '\ntheta=', theta
 
     # Prepare parameter dict for simplex
     opts = {}

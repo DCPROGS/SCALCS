@@ -411,5 +411,5 @@ def prepare_hist(X, tres):
     xout[-1] = xaxis[-1]
     yout[-1] = 0
 
-    return xout, yout
+    return xout, yout, dx
 

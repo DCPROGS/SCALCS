@@ -12,7 +12,7 @@ def simplex(func, theta, args=None,
     shrfac=0.5, resfac=10.0, perfac=0.1,
     errpar=1e-3, errfunc=1e-3,
     maxiter=10000, maxeval=100000,
-    display=False):
+    display=False, outdev=sys.stdout):
     """
     Minimize a function using the Nelder-Mead simplex algorithm to find the
     minimum of function.
@@ -61,8 +61,9 @@ def simplex(func, theta, args=None,
         while (fcalls < maxeval and iterations < maxiter):
 
             if display and (iterations % 10) == 0:
-                print ('iter# {0:d}\tlik= {1:f}'.format(iterations, -fval[0]))
-                print 'theta=', np.exp(simp[0])
+                outdev.write('\niter# {0:d}\tlik= {1:f}\ttheta=\n'.format(iterations, -fval[0]))
+                for th in np.exp(simp[0]):
+                    outdev.write('{0:6e}\t'.format(th))
 
             # Check for convergence.
             if (max(np.ravel(abs(simp[1:] - simp[0]))) <= errpar \
