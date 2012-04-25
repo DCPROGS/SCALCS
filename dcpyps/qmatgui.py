@@ -1055,7 +1055,7 @@ class RateTable(QTableWidget):
             torate = ''
             if self.mec.Rates[i].constrain_args:
                 factor = self.mec.Rates[i].constrain_args[1]
-                torate = self.mec.Rates[i].constrain_args[0]
+                torate = self.mec.Rates[i].constrain_args[0] + 1
             cell = QTableWidgetItem(str(factor))
             self.setItem(i, 8, cell)
             cell = QTableWidgetItem(str(torate))
@@ -1063,9 +1063,9 @@ class RateTable(QTableWidget):
 
             if len(self.mec.Rates[i].limits) == 0:
                 if eff == '':
-                    limits = [[1e-15,1e+7]]
+                    limits = [[1e-3,1e+7]]
                 else:
-                    limits = [[1e-15,1e+10]]
+                    limits = [[1e-3,1e+10]]
             else:
                 limits = self.mec.Rates[i].limits
             cell = QTableWidgetItem(str(limits[0][0]))
@@ -1336,7 +1336,7 @@ class BurstPlotDlg(QDialog):
         self.setWindowTitle("Define burst...")
 
     def on_par_changed(self):
-        self.tcrit = int(self.tcritEdit.text())
+        self.tcrit = float(self.tcritEdit.text())
 
     def return_par(self):
         return self.tcrit * 0.001 # Return tcrit in sec

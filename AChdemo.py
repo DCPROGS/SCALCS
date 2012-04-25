@@ -22,7 +22,7 @@ def main():
     mec = dcio.mec_load(mecfn, meclist[1][0])
 
     mec.printout(sys.stdout)
-    tres = 0.00005
+    tres = 0.000025
     tcrit = 0.0035
     conc = 50e-9
 
