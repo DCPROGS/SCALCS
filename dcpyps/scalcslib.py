@@ -726,6 +726,45 @@ def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
         '\t{0:.5g}'.format(gamma10[i]) +
         '\t{0:.5g}'.format(gamma11[i]))
 
+    # Transition probabilities
+    pi = transition_probability(mec.Q)
+    output.write('\n\nProbability of transitions regardless of time:')
+    for i in range(mec.k):
+        output.write('\n[')
+        for j in range(mec.k):
+            output.write('{0:.4g}\t'.format(pi[i,j]))
+        output.write(']')
+
+    # Transition frequency
+    f = transition_frequency(mec.Q)
+    output.write('\n\nFrequency of transitions (per second):')
+    for i in range(mec.k):
+        output.write('\n[')
+        for j in range(mec.k):
+            output.write('{0:.4g}\t'.format(f[i,j]))
+        output.write(']')
+
+def transition_probability(Q):
+    """
+    """
+    k = Q.shape[0]
+    pi = Q.copy()
+    for i in range(k):
+        pi[i] = pi[i] / -Q[i,i]
+        pi[i,i] = 0
+    return pi
+
+def transition_frequency(Q):
+    """
+    """
+    k = Q.shape[0]
+    pinf = qml.pinf(Q)
+    f = Q.copy().transpose()
+    for i in range(k):
+        f[i] = f[i] * pinf
+        f[i,i] = 0
+    return f.transpose()
+
 def sortShell2(vals, simp):
     """
     Shell sort using Shell's (original) gap sequence: n/2, n/4, ..., 1.
