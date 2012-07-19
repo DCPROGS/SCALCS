@@ -56,6 +56,12 @@ class QMatGUI(QMainWindow):
         self.my_colour = ["r", "g", "b", "m", "c", "y"]
         self.present_plot = None
 
+        self.cjprofile = 'rcj'
+        self.cjlen = 0.05
+        self.cjstep = 5e-6
+        self.cjfunc = None
+        self.cjargs = None
+
         loadMenu = self.menuBar().addMenu('&Mechanims')
         loadDemo1Action = self.createAction("&Load demo: CH82", self.onLoadDemo_CH82,
             None, "loaddemo", "Load Demo mec")
@@ -449,55 +455,55 @@ class QMatGUI(QMainWindow):
 
         dialog1 = ConcProfileDlg(self)
         if dialog1.exec_():
-            profile = dialog1.return_par()
-        dialog = CJumpParDlg(self, profile)
+            self.cjprofile = dialog1.return_par()
+        dialog = CJumpParDlg(self, self.cjprofile, self.cjlen, self.cjstep, self.cjargs)
         if dialog.exec_():
-            reclen, step, cfunc, cargs = dialog.return_par()
-            
+            self.cjlen, self.cjstep, self.cjfunc, self.cjargs = dialog.return_par()
+
         self.txtPltBox.clear()
         self.txtPltBox.append('===== CONCENTRATION JUMP =====')
         self.txtPltBox.append('Concentration profile- green solid line.')
         self.txtPltBox.append('Relaxation- blue solid line.')
         self.txtPltBox.append('\nConcentration pulse profile:')
         self.txtPltBox.append('Peak concentration = {0:.5g} mM'
-            .format(cargs[0] * 1000))
+            .format(self.cjargs[0] * 1000))
         self.txtPltBox.append('Background concentration = {0:.5g} mM'
-            .format(cargs[1] * 1000))
-        if profile == 'rcj':
+            .format(self.cjargs[1] * 1000))
+        if self.cjprofile == 'rcj':
             self.txtPltBox.append('10- 90% rise time = {0:.5g} microsec'
-                .format(cargs[4] * 1e+6))
+                .format(self.cjargs[4] * 1e+6))
             self.txtPltBox.append('90- 10% decay time = {0:.5g} microsec'
-                .format(cargs[5] * 1e+6))
+                .format(self.cjargs[5] * 1e+6))
             self.txtPltBox.append('Pulse width = {0:.5g} millisec'
-                .format(cargs[3] * 1000))
-        elif profile == 'instexp':
+                .format(self.cjargs[3] * 1000))
+        elif self.cjprofile == 'instexp':
             self.txtPltBox.append('Decay time constant = {0:.5g} millisec'
-                .format(cargs[3] * 1000))
-        elif profile == 'square':
+                .format(self.cjargs[3] * 1000))
+        elif self.cjprofile == 'square':
             self.txtPltBox.append('Pulse width = {0:.5g} millisec'
-                .format(cargs[3] * 1000))
+                .format(self.cjargs[3] * 1000))
         self.txtPltBox.append("---\n")
 
-        t, c, Popen, P  = cjumps.solve_jump(self.mec, reclen, step,
-            cfunc, cargs)
+        t, c, Popen, P  = cjumps.solve_jump(self.mec, self.cjlen, self.cjstep,
+            self.cjfunc, self.cjargs)
         maxP = max(Popen)
         maxC = max(c)
         c1 = (c / maxC) * 0.2 * maxP + 1.02 * maxP
-        
+
         self.axes.clear()
         self.axes.plot(t * 1000, Popen,'b-', t * 1000, c1, 'g-')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
 
-        if profile == 'instexp':
+        if self.cjprofile == 'instexp':
             self.textBox.append('\n\nCalculated response to an instantan jump to {0:.5g} mM '.
-                format(cargs[0] * 1000) +
+                format(self.cjargs[0] * 1000) +
                 'concentration with an exponential decay tau of {0:.5g} ms: '.
-                format(cargs[3] * 1000) +
+                format(self.cjargs[3] * 1000) +
                 'maximal Popen- {0:.5g}'.format(maxP))
-        elif ((profile == 'rcj') or (profile == 'square')):
-            cjumps.printout(self.mec, cargs[1], cargs[3], output=self.log)
+        elif ((self.cjprofile == 'rcj') or (self.cjprofile == 'square')):
+            cjumps.printout(self.mec, self.cjargs[1], self.cjargs[3], output=self.log)
         self.present_plot = np.vstack((t, Popen, c, P))
 
     def onPlotCJumpOccupancies(self):
@@ -507,11 +513,10 @@ class QMatGUI(QMainWindow):
 
         dialog1 = ConcProfileDlg(self)
         if dialog1.exec_():
-            profile = dialog1.return_par()
-
-        dialog = CJumpParDlg(self, profile)
+            self.cjprofile = dialog1.return_par()
+        dialog = CJumpParDlg(self, self.cjprofile, self.cjlen, self.cjstep, self.cjargs)
         if dialog.exec_():
-            reclen, step, cfunc, cargs = dialog.return_par()
+            self.cjlen, self.cjstep, self.cjfunc, self.cjargs = dialog.return_par()
 
         self.txtPltBox.clear()
         self.txtPltBox.append('===== REALISTIC CONCENTRATION JUMP =====')
@@ -523,26 +528,26 @@ class QMatGUI(QMainWindow):
 
         self.txtPltBox.append('\nConcentration pulse profile:')
         self.txtPltBox.append('Peak concentration = {0:.5g} mM'
-            .format(cargs[0] * 1000))
+            .format(self.cjargs[0] * 1000))
         self.txtPltBox.append('Background concentration = {0:.5g} mM'
-            .format(cargs[1] * 1000))
-        if profile == 'rcj':
+            .format(self.cjargs[1] * 1000))
+        if self.cjprofile == 'rcj':
             self.txtPltBox.append('10- 90% rise time = {0:.5g} microsec'
-                .format(cargs[4] * 1e+6))
+                .format(self.cjargs[4] * 1e+6))
             self.txtPltBox.append('90- 10% decay time = {0:.5g} microsec'
-                .format(cargs[5] * 1e+6))
+                .format(self.cjargs[5] * 1e+6))
             self.txtPltBox.append('Pulse width = {0:.5g} millisec'
-                .format(cargs[3] * 1000))
-        elif profile == 'instexp':
+                .format(self.cjargs[3] * 1000))
+        elif self.cjprofile == 'instexp':
             self.txtPltBox.append('Decay time constant = {0:.5g} millisec'
-                .format(cargs[3] * 1000))
-        elif profile == 'square':
+                .format(self.cjargs[3] * 1000))
+        elif self.cjprofile == 'square':
             self.txtPltBox.append('Pulse width = {0:.5g} millisec'
-                .format(cargs[3] * 1000))
+                .format(self.cjargs[3] * 1000))
         self.txtPltBox.append("---\n")
 
-        t, c, Popen, P = cjumps.solve_jump(self.mec, reclen, step,
-            cfunc, cargs)
+        t, c, Popen, P = cjumps.solve_jump(self.mec, self.cjlen, self.cjstep,
+            self.cjfunc, self.cjargs)
         maxP = max(Popen)
         maxC = max(c)
         c1 = (c / maxC) * 0.2 * maxP + 1.02 * maxP
@@ -1081,24 +1086,37 @@ class CJumpParDlg(QDialog):
     """
     Dialog to input realistic concentration pulse parameters.
     """
-    def __init__(self, parent=None, profile='realistic'):
+    def __init__(self, parent=None, profile='rcj', cjlen=0.05, cjstep=5e-6, cjargs=None):
         super(CJumpParDlg, self).__init__(parent)
 
         self.profile = profile
 
-        # Default values
-        self.reclength = 50 # Record length in ms.
-        self.step = 5 # The sample step in microsec.
-        self.cmax = 1 # in mM.
-        self.cb = 0.0 # Background concentration in mM.
-        # 'rcj' profile.
-        self.centre = 10 # Pulse centre in ms.
-        self.rise = 200 # 10-90% rise time for error function in microsec.
-        self.decay = 200 # 90-10% decay time for error function in microsec.
-        self.width = 10 # Pulse halfwidth in ms.
-        # 'instexp' profile
-        self.prepulse = self.reclength / 10.0 # Time before pulse starts (ms)
-        self.tdec = 2.5 # Decay time constant (ms)
+        self.reclength = cjlen * 1000 # Record length in ms.
+        self.step = cjstep * 1e6 # The sample step in microsec.
+        if cjargs:
+            self.cmax = cjargs[0] * 1000 # in mM.
+            self.cb = cjargs[1] * 1000 # Background concentration in mM.
+            if self.profile == 'rcj':
+                # 'rcj' profile.
+                self.centre = cjargs[2] * 1000 # Pulse centre in ms.
+                self.rise = cjargs[4] * 1e6 # 10-90% rise time for error function in microsec.
+                self.decay = cjargs[5] * 1e6 # 90-10% decay time for error function in microsec.
+                self.width = cjargs[3] * 1000 # Pulse halfwidth in ms.
+            elif self.profile == 'instexp':
+                self.prepulse = cjargs[2] * 1000 # Time before pulse starts (ms)
+                self.tdec = cjargs[3] * 1000 # Decay time constant (ms)
+        else:
+            # Default values
+            self.cmax = 1 # in mM.
+            self.cb = 0.0 # Background concentration in mM.
+            # 'rcj' profile.
+            self.centre = 10 # Pulse centre in ms.
+            self.rise = 200 # 10-90% rise time for error function in microsec.
+            self.decay = 200 # 90-10% decay time for error function in microsec.
+            self.width = 10 # Pulse halfwidth in ms.
+            # 'instexp' profile
+            self.prepulse = self.reclength / 10.0 # Time before pulse starts (ms)
+            self.tdec = 2.5 # Decay time constant (ms)
 
         layoutMain = QVBoxLayout()
         layoutMain.addWidget(QLabel("Concentration pulse profile:"))
