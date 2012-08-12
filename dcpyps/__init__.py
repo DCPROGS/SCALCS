@@ -55,3 +55,4 @@ import scplotlib
 import version
 
 import samples
+import dcstatslib
