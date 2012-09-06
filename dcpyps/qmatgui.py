@@ -503,7 +503,7 @@ class QMatGUI(QMainWindow):
                 format(self.cjargs[3] * 1000) +
                 'maximal Popen- {0:.5g}'.format(maxP))
         elif ((self.cjprofile == 'rcj') or (self.cjprofile == 'square')):
-            cjumps.printout(self.mec, self.cjargs[1], self.cjargs[3], output=self.log)
+            cjumps.printout(self.mec, self.cjargs[0], self.cjargs[3], output=self.log)
         self.present_plot = np.vstack((t, Popen, c, P))
 
     def onPlotCJumpOccupancies(self):
