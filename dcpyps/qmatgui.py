@@ -104,21 +104,25 @@ class QMatGUI(QMainWindow):
         plotJumpOccupanciesAction = self.createAction(
             "&Concentration jump: occupancies",
             self.onPlotCJumpOccupancies)
+        plotCorrOpenShutAction = self.createAction(
+            "&Correlations", self.onPlotOpShCorr)
 #        plotJump2PopenAction = self.createAction(
 #            "&Instant rise and exponential decay concentration jump: Popen", self.onPlotCJump2Popen)
         plotSaveASCII = self.createAction(
             "&Save current plot as ASCII file", self.onPlotSaveASCII)
         self.addActions(plotMenu, (plotOpenTimePDFAction, plotShutTimePDFAction,
+            plotCorrOpenShutAction,
             # setDisabled(False) to activate plotting the subset time distributions
             plotSubsetTimePDFAction.setDisabled(True),
             plotBurstLenPDFAction, plotBurstLenPDFActionCond,
             plotBurstOpeningDistrAction, plotBurstOpeningDistrActionCond,
             plotBurstLenVConcAction,
             plotJumpPopenAction, plotJumpOccupanciesAction,
-#            plotJump2PopenAction,
+#            plotJump2PopenAction,            
             plotPopenAction,
             plotSaveASCII))
         plotMenu.insertSeparator(plotJumpPopenAction)
+        plotMenu.insertSeparator(plotPopenAction)
         plotMenu.insertSeparator(plotSaveASCII)
 
 # UNCOMMENT NEXT LINES TO ENABLE DATA DISTRIBUTION PLOTTING
@@ -590,6 +594,34 @@ class QMatGUI(QMainWindow):
         self.axes.clear()
         self.axes.semilogx(c, pe, 'b-', c , pi, 'r--')
         self.axes.set_ylim(0, 1)
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
+
+    def onPlotOpShCorr(self):
+        """
+        Display open, shut and open-shut time correlations.
+        """
+
+        self.txtPltBox.clear()
+        self.txtPltBox.append('\t===== OPEN, SHUT, OPEN/SHUT CORRELATION PLOTS =====')
+        self.txtPltBox.append('Agonist concentration = {0:.5g} mikroM'.
+            format(self.conc * 1000000))
+        self.txtPltBox.append('Shut time correlation - red circles.')
+        self.txtPltBox.append('Open time correlation - green circles')
+        self.txtPltBox.append('Open-shut time correlation - blue circles')
+
+        self.mec.set_eff('c', self.conc)
+        scl.printout_correlations(self.mec, output=self.log)
+        # TODO: need dialog to enter lag value. 
+        lag = 5
+        n, roA, roF, roAF = scpl.corr_open_shut(self.mec, lag)
+        self.present_plot = np.vstack((n, roA, roF, roAF))
+
+        self.axes.clear()
+        self.axes.plot(n, roA,'go', n, roF, 'ro', n, roAF, 'bo')
+        self.axes.axhline(y=0, xmin=0, xmax=1, color='k')
+        self.axes.set_xlim(0, 6)
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()

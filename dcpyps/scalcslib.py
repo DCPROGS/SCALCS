@@ -13,6 +13,10 @@ CH82: Colquhoun D, Hawkes AG (1982)
 On the stochastic properties of bursts of single ion channel openings
 and of clusters of bursts. Phil Trans R Soc Lond B 300, 1-59.
 
+CH87: Colquhoun D, Hawkes AG (1987)
+A note on correlations in single ion channel records.
+Proc R Soc Lond 230, 15-52.
+
 HJC92: Hawkes AG, Jalali A, Colquhoun D (1992)
 Asymptotic distributions of apparent open times and shut times in a
 single channel record allowing for the omission of brief events.
@@ -574,6 +578,228 @@ def HJClik(theta, opts):
     newrates = np.log(mec.theta())
     return -loglik, newrates
 
+def corr_variance_A(phiA, QAA, kA):
+    """
+    Calculate variance of open (shut) time according Eq. 2.6 (CH87).
+    To calculate variance of shut time function should be called with
+    parameters (phiF, QFF, kF).
+
+    Parameters
+    ----------
+    phiA : array_like, shape (1, kA)
+        Initial vector for openings (shuttings).
+    QAA : array_like, shape (kA, kA)
+        AA submatrix of Q.
+    kA : int
+        Number of open (shut) states.
+
+    Returns
+    -------
+    var : float
+        Variance.
+    """
+
+    uA = np.ones((kA))[:,np.newaxis]
+    I = np.eye(kA)
+    invQAA = -nplin.inv(QAA)
+    M = 2 * I - np.dot(uA, phiA)
+    row = np.dot(phiA, invQAA)
+    col = np.dot(invQAA, uA)
+    var = np.dot(np.dot(row, M), col)[0,0]
+    return var
+
+def corr_covariance_A(lag, phiA, QAA, XAA, kA):
+    """
+    Calculate covariance of open (shut) time according CH87.
+    To calculate covariance of shut time function should be called with
+    parameters (phiF, QFF, XFF, kF).
+
+    Parameters
+    ----------
+    lag : int
+        Lag.
+    phiA : array_like, shape (1, kA)
+        Initial vector for openings (shuttings).
+    QAA : array_like, shape (kA, kA)
+        AA submatrix of Q.
+    XAA : array_like, shape (kA, kA)
+        Product GAF * GFA.
+    kA : int
+        Number of open (shut) states.
+
+    Returns
+    -------
+    covar : float
+        Covariance.
+    """
+    
+    Xn = qml.Qpow(XAA, lag)
+    uA = np.ones((kA))[:,np.newaxis]
+    invQAA = -nplin.inv(QAA)
+    M2 = Xn - np.dot(uA, phiA)
+    row = np.dot(phiA, invQAA)
+    col = np.dot(invQAA, uA)
+    covar = np.dot(np.dot(row, M2), col)[0,0]
+    return covar
+
+def corr_covariance_AF(lag, phiA, QAA, QFF, XAA, GAF, kA, kF):
+    """
+    Calculate covariance of open and nth shut times according CH87.
+    
+    Parameters
+    ----------
+    lag : int
+        Lag.
+    phiA : array_like, shape (1, kA)
+        Initial vector for openings.
+    QAA : array_like, shape (kA, kA)
+        AA submatrix of Q.
+    QFF : array_like, shape (kF, kF)
+        FF submatrix of Q.
+    XAA : array_like, shape (kA, kA)
+        Product GAF * GFA.
+    GAF : array_like, shape (kA, kF)
+        GAF matrix.
+    kA : int
+        Number of open states.
+    kF : int
+        Number of shut states.
+
+    Returns
+    -------
+    covar : float
+        Covariance.
+    """
+
+    Xn = qml.Qpow(XAA, lag-1)
+    uA, uF = np.ones((kA))[:,np.newaxis], np.ones((kF))[:,np.newaxis]
+    invQAA, invQFF = -nplin.inv(QAA), -nplin.inv(QFF)
+    MAF = Xn - np.dot(uA, phiA)
+    row = np.dot(phiA, invQAA)
+    col = np.dot(np.dot(GAF, invQFF),uF)
+    covar = np.dot(np.dot(row, MAF), col)[0,0]
+    return covar
+
+def corr_covariance_Atot(n, phiA, QAA, XAA, kA):
+
+    varA = corr_variance_A(phiA, QAA, kA)
+    covA = 0
+    for i in range(1, n):
+        covA += (n - i) * corr_coefficient_A(i, phiA, QAA, XAA, kA) * varA
+    return covA
+
+def corr_coefficient_A(lag, phiA, QAA, XAA, kA):
+    """
+    Calculate correlation coefficient with lag n for open (shut) times
+    according Eq. 2.7 (CH87).
+    To calculate for shut time function should be called with parameters (lag,
+    phiF, QFF, XFF, kF).
+
+    Parameters
+    ----------
+    lag : int
+        Lag.
+    phiA : array_like, shape (1, kA)
+        Initial vector for openings (shuttings).
+    QAA : array_like, shape (kA, kA)
+        AA submatrix of Q.
+    XAA : array_like, shape (kA, kA)
+        Product GAF * GFA.
+    kA : int
+        Number of open (shut) states.
+
+    Returns
+    -------
+    ro : float
+        Correlation coefficient.
+    """
+    
+    var = corr_variance_A(phiA, QAA, kA)
+    cov = corr_covariance_A(lag, phiA, QAA, XAA, kA)
+    ro = cov / var
+    return ro
+
+def corr_coefficient_AF(lag, phiA, phiF, QAA, QFF, XAA, GAF, kA, kF):
+    """
+    Calculate correlation coefficient between open and nth shut time
+    according Eq. 2.20 (CH87).
+
+    Parameters
+    ----------
+    lag : int
+        Lag.
+    phiA : array_like, shape (1, kA)
+        Initial vector for openings.
+    phiF : array_like, shape (1, kF)
+        Initial vector for shuttings.
+    QAA : array_like, shape (kA, kA)
+        AA submatrix of Q.
+    QFF : array_like, shape (kF, kF)
+        FF submatrix of Q.
+    XAA : array_like, shape (kA, kA)
+        Product GAF * GFA.
+    GAF : array_like, shape (kA, kF)
+        GAF matrix.
+    kA : int
+        Number of open states.
+    kF : int
+        Number of shut states.
+
+    Returns
+    -------
+    ro : float
+        Correlation coefficient.
+    """
+
+    varA = corr_variance_A(phiA, QAA, kA)
+    varF = corr_variance_A(phiF, QFF, kF)
+    covAF = corr_covariance_AF(lag, phiA, QAA, QFF, XAA, GAF, kA, kF)
+    coeff = covAF / sqrt(varA * varF)
+    return coeff
+
+def corr_decay_amplitude_A(phiA, QAA, XAA, kA):
+    """
+    Calculate scalar coefficients for correlation coefficien decay (Eq. 2.11,
+    CH83).
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    w : ndarray, shape (1, k)
+    eigs : ndarray, shape (1, k)
+    """
+    
+    varA = corr_variance_A(phiA, QAA, kA)
+    eigs, A = qml.eigs(XAA)
+
+    uA = np.ones((kA))[:,np.newaxis]
+    invQAA = -nplin.inv(QAA)
+    row = np.dot(phiA, invQAA)
+    col = np.dot(invQAA, uA)
+
+    ncA = np.rank(XAA) - 1
+    w = np.zeros((ncA))
+    n = 0
+    for i in range(kA):
+        if fabs(eigs[i]) > 1e-12 and fabs(eigs[i] - 1) > 1e-12:
+            w[n] = np.dot(np.dot(row, A[i, :, :]), col)[0,0] / varA
+            n += 1
+    return w, eigs
+
+def corr_limit_A(phiA, QAA, AXAA, eigXAA, kA):
+
+    uA = np.ones((kA))[:,np.newaxis]
+    invQAA = -nplin.inv(QAA)
+    row = np.dot(phiA, invQAA)
+    col = np.dot(invQAA, uA)
+    M = np.zeros((kA, kA))
+    for i in range(kA - 1):
+        M += AXAA[i,:,:] * eigXAA[i] / (1 - eigXAA[i])
+    cor = np.dot(np.dot(row, M), col)[0,0]
+    return cor
+
 def printout_occupancies(mec, tres, output=sys.stdout):
     """
     """
@@ -621,12 +847,20 @@ def printout_occupancies(mec, tres, output=sys.stdout):
     phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
     phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
 
-    output.write('\n\n\nInitial HJC vector for openings phiOp =\n')
+    output.write('\n\n\nInitial vector for HJC openings phiOp =\n')
     for i in range(phiA.shape[0]):
         output.write('\t{0:.5g}'.format(phiA[i]))
-    output.write('\n\nInitial HJC vector for shuttings phiSh =\n')
+    output.write('\n\nInitial vector for ideal openings phiOp =\n')
+    phiAi = qml.phiA(mec)
+    for i in range(phiA.shape[0]):
+        output.write('\t{0:.5g}'.format(phiAi[i]))
+    output.write('\n\nInitial vector for HJC shuttings phiSh =\n')
     for i in range(phiF.shape[0]):
         output.write('\t{0:.5g}'.format(phiF[i]))
+    output.write('\n\nInitial vector for ideal shuttings phiSh =\n')
+    phiFi = qml.phiF(mec)
+    for i in range(phiF.shape[0]):
+        output.write('\t{0:.5g}'.format(phiFi[i]))
 
 
 def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
@@ -855,3 +1089,93 @@ def printout_tcrit(mec, output=sys.stdout):
             '\t{0:.5g}'.format(tcrits[1, i] * 1000) +
             '\t{0:.5g}\n'.format(tcrits[2, i] * 1000))
 
+def printout_correlations(mec, output=sys.stdout, eff='c'):
+    """
+
+    """
+
+    output.write('\n\n\n*************************************\n')
+    output.write('CORRELATIONS\n')
+    
+    kA, kB, kF = mec.kA, mec.kB, mec.kF
+    output.write('kA, kF = {0:d}, {1:d}\n'.format(kA, kF))    
+    GAF, GFA = qml.iGs(mec.Q, kA, kF)
+    rGAF, rGFA = np.rank(GAF), np.rank(GFA)
+    output.write('Ranks of GAF, GFA = {0:d}, {1:d}\n'.format(rGAF, rGFA))
+    XFF = np.dot(GFA, GAF)
+    rXFF = np.rank(XFF)
+    output.write('Rank of GFA * GAF = {0:d}\n'.format(rXFF))
+    ncF = rXFF - 1
+    eigXFF, AXFF = qml.eigs(XFF)
+    output.write('Eigenvalues of GFA * GAF:\n')
+    for i in range(kF):
+        output.write('\t{0:.5g}'.format(eigXFF[i]))
+    XAA = np.dot(GAF, GFA)
+    rXAA = np.rank(XAA)
+    output.write('\nRank of GAF * GFA = {0:d}\n'.format(rXAA))
+    ncA = rXAA - 1
+    eigXAA, AXAA = qml.eigs(XAA)
+    output.write('Eigenvalues of GAF * GFA:\n')
+    for i in range(kA):
+        output.write('\t{0:.5g}'.format(eigXAA[i]))
+    phiA, phiF = qml.phiA(mec).reshape((1,kA)), qml.phiF(mec).reshape((1,kF))
+    varA = corr_variance_A(phiA, mec.QAA, kA)
+    varF = corr_variance_A(phiF, mec.QFF, kF)
+
+    #   open - open time correlations
+    output.write('\n\n OPEN - OPEN TIME CORRELATIONS')
+    output.write('\nVariance of open time = {0:.5g}'.format(varA))
+    SDA = sqrt(varA)
+    output.write('\nSD of all open times = {0:.5g} ms'.format(SDA * 1000))
+    n = 50
+    SDA_mean_n = SDA / sqrt(float(n))
+    output.write('\nSD of means of {0:d} open times if'.format(n) + 
+        'uncorrelated = {0:.5g} ms'.format(SDA_mean_n * 1000))
+    covA = corr_covariance_Atot(n, phiA, mec.QAA, XAA, kA)
+    vtot = n * varA + 2. * covA
+    actSDA = sqrt(vtot / (n * n))
+    output.write('\nActual SD of mean = {0:.5g} ms'.format(actSDA * 1000))
+    pA = 100 * (actSDA - SDA_mean_n) / SDA_mean_n
+    output.write('\nPercent difference as result of correlation = {0:.5g}'.
+        format(pA))
+    v2A = corr_limit_A(phiA, mec.QAA, AXAA, eigXAA, kA)
+    pmaxA = 100 * (sqrt(1 + 2 * v2A / varA) - 1)
+    output.write('\nLimiting value of percent difference for large n = {0:.5g}'.
+        format(pmaxA))
+    output.write('\nCorrelation coefficients, r(k), for up to lag k = 5:')
+    for i in range(5):
+        ro = corr_coefficient_A(i+1, phiA, mec.QAA, XAA, kA)
+        output.write('\nr({0:d}) = {1:.5g}'.format(i+1, ro))
+
+    # shut - shut time correlations
+    output.write('\n\n SHUT - SHUT TIME CORRELATIONS')
+    output.write('\nVariance of shut time = {0:.5g}'.format(varF))
+    SDF = sqrt(varF)
+    output.write('\nSD of all shut times = {0:.5g} ms'.format(SDF * 1000))
+    n = 50
+    SDF_mean_n = SDF / sqrt(float(n))
+    output.write('\nSD of means of {0:d} shut times if'.format(n) +
+        'uncorrelated = {0:.5g} ms'.format(SDF_mean_n * 1000))
+    covF = corr_covariance_Atot(n, phiF, mec.QFF, XFF, kF)
+    vtotF = 50 * varF + 2. * covF
+    actSDF = sqrt(vtotF / (50. * 50.))
+    output.write('\nActual SD of mean = {0:.5g} ms'.format(actSDF * 1000))
+    pF = 100 * (actSDF - SDF_mean_n) / SDF_mean_n
+    output.write('\nPercent difference as result of correlation = {0:.5g}'.
+        format(pF))
+    v2F = corr_limit_A(phiF, mec.QFF, AXFF, eigXFF, kF)
+    pmaxF = 100 * (sqrt(1 + 2 * v2F / varF) - 1)
+    output.write('\nLimiting value of percent difference for large n = {0:.5g}'.
+        format(pmaxF))
+    output.write('\nCorrelation coefficients, r(k), for up to k = 5 lags:')
+    for i in range(5):
+        ro = corr_coefficient_A(i+1, phiF, mec.QFF, XFF, kF)
+        output.write('\nr({0:d}) = {1:.5g}'.format(i+1, ro))
+
+    # open - shut time correlations
+    output.write('\n\n OPEN - SHUT TIME CORRELATIONS')
+    output.write('\nCorrelation coefficients, r(k), for up to k= 5 lags:')
+    for i in range(5):
+        ro = corr_coefficient_AF(i+1, phiA, phiF,
+            mec.QAA, mec.QFF, XAA, GAF, kA, kF)
+        output.write('\nr({0:d}) = {1:.5g}'.format(i+1, ro))

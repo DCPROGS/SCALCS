@@ -147,6 +147,41 @@ def burst_openings_pdf(mec, n, conditional=False):
 
     return r, Pr
 
+def corr_open_shut(mec, lag):
+    """
+    Calculate data for the plot of open, shut and open-shut time correlations.
+    
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    lag : int
+        Number of lags.
+
+    Returns
+    -------
+    c : ndarray of floats, shape (num of points,)
+        Concentration in mikroM
+    br : ndarray of floats, shape (num of points,)
+        Mean burst length in millisec.
+    brblk : ndarray of floats, shape (num of points,)
+        Mean burst length in millisec corrected for fast block.
+    """
+    
+    kA, kB, kF = mec.kA, mec.kB, mec.kF
+    GAF, GFA = qml.iGs(mec.Q, kA, kF)
+    XAA, XFF = np.dot(GAF, GFA), np.dot(GFA, GAF)
+    phiA, phiF = qml.phiA(mec).reshape((1,kA)), qml.phiF(mec).reshape((1,kF))
+    
+    r = np.arange(1, lag + 1)
+    roA, roF, roAF = np.zeros(lag), np.zeros(lag), np.zeros(lag)
+    for i in range(lag):
+        roA[i] = scl.corr_coefficient_A(i+1, phiA, mec.QAA, XAA, kA)
+        roF[i] = scl.corr_coefficient_A(i+1, phiF, mec.QFF, XFF, kF)
+        roAF[i] = scl.corr_coefficient_AF(i+1, phiA, phiF,
+            mec.QAA, mec.QFF, XAA, GAF, kA, kF)
+            
+    return r, roA, roF, roAF
+
 def burst_length_versus_conc_plot(mec, cmin, cmax):
     """
     Calculate data for the plot of burst length versus concentration.

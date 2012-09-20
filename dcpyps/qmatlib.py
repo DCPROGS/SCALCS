@@ -124,6 +124,28 @@ def expQt(M, t):
     expM = np.sum(A * np.exp(eigvals * t).reshape(A.shape[0],1,1), axis=0)
     return expM
 
+def Qpow(M, n):
+    """
+    Rise matrix M to power n.
+
+    Parameters
+    ----------
+    M : array_like, shape (k, k)
+    n : int
+        Power.
+
+    Returns
+    -------
+    Mn : ndarray, shape (k, k)
+    """
+
+    k = M.shape[0]
+    eig, A = eigs(M)
+    Mn = np.zeros((k, k))
+    for i in range(k):
+        Mn += A[i, :, :] * pow(eig[i], n)
+    return Mn
+
 def pinf(Q):
     """
     Calculate ecquilibrium occupancies by adding a column of ones
