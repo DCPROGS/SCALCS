@@ -287,3 +287,44 @@ def data_from_txt_file(filename):
     data1 = np.array([ x for x in x1 if not math.isnan(x) ])
     data2 = np.array([ y for y in y1 if not math.isnan(y) ])
     return data1, data2
+
+def correlation_coefficient_1(cov, var1, var2):
+    """
+    Correlation coefficient.
+
+    Parameters
+    ----------
+    cov : float
+        Covariance.
+    var1, var2 : floats
+        Variances.
+
+    Returns
+    -------
+    ro : float
+        Correlation coefficient.
+    """
+
+    ro = cov / math.sqrt(var1 * var2)
+    return ro
+
+def correlation_coefficient_2(m1, m2, sqE1, sqE2, E12):
+    """
+    Correlation coefficient.
+
+    Parameters
+    ----------
+    m1, m2 : floats
+        Means of quantities.
+    sqE1, sqE2, E12 : floats
+        Expectations.
+
+    Returns
+    -------
+    ro : float
+        Correlation coefficient.
+    """
+
+    ro = (E12 - m1 * m2) / math.sqrt((sqE1 - m1 * m1) * (sqE2 - m2 * m2))
+    return ro
+

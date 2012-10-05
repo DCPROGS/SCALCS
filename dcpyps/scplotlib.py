@@ -18,6 +18,7 @@ except:
 
 import qmatlib as qml
 import scalcslib as scl
+import dcstatslib as stl
 import scburst
 import popen
 import pdfs
@@ -171,14 +172,19 @@ def corr_open_shut(mec, lag):
     GAF, GFA = qml.iGs(mec.Q, kA, kF)
     XAA, XFF = np.dot(GAF, GFA), np.dot(GFA, GAF)
     phiA, phiF = qml.phiA(mec).reshape((1,kA)), qml.phiF(mec).reshape((1,kF))
+    varA = scl.corr_variance_A(phiA, mec.QAA, kA)
+    varF = scl.corr_variance_A(phiF, mec.QFF, kF)
     
     r = np.arange(1, lag + 1)
     roA, roF, roAF = np.zeros(lag), np.zeros(lag), np.zeros(lag)
     for i in range(lag):
-        roA[i] = scl.corr_coefficient_A(i+1, phiA, mec.QAA, XAA, kA)
-        roF[i] = scl.corr_coefficient_A(i+1, phiF, mec.QFF, XFF, kF)
-        roAF[i] = scl.corr_coefficient_AF(i+1, phiA, phiF,
-            mec.QAA, mec.QFF, XAA, GAF, kA, kF)
+        covA = scl.corr_covariance_A(i+1, phiA, mec.QAA, XAA, kA)
+        roA[i] = stl.correlation_coefficient_1(covA, varA, varA)
+        covF = scl.corr_covariance_A(i+1, phiF, mec.QFF, XFF, kF)
+        roF[i] = stl.correlation_coefficient_1(covF, varF, varF)
+        covAF = scl.corr_covariance_AF(i+1, phiA, mec.QAA, mec.QFF,
+            XAA, GAF, kA, kF)
+        roAF[i] = stl.correlation_coefficient_1(covAF, varA, varF)
             
     return r, roA, roF, roAF
 

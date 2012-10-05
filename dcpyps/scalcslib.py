@@ -47,6 +47,7 @@ import qmatlib as qml
 #import bisectHJC
 import pdfs
 import optimize
+import dcstatslib as stl
 
 def ideal_dwell_time_pdf(t, QAA, phiA):
     """
@@ -680,83 +681,6 @@ def corr_covariance_AF(lag, phiA, QAA, QFF, XAA, GAF, kA, kF):
     covar = np.dot(np.dot(row, MAF), col)[0,0]
     return covar
 
-def corr_covariance_Atot(n, phiA, QAA, XAA, kA):
-
-    varA = corr_variance_A(phiA, QAA, kA)
-    covA = 0
-    for i in range(1, n):
-        covA += (n - i) * corr_coefficient_A(i, phiA, QAA, XAA, kA) * varA
-    return covA
-
-def corr_coefficient_A(lag, phiA, QAA, XAA, kA):
-    """
-    Calculate correlation coefficient with lag n for open (shut) times
-    according Eq. 2.7 (CH87).
-    To calculate for shut time function should be called with parameters (lag,
-    phiF, QFF, XFF, kF).
-
-    Parameters
-    ----------
-    lag : int
-        Lag.
-    phiA : array_like, shape (1, kA)
-        Initial vector for openings (shuttings).
-    QAA : array_like, shape (kA, kA)
-        AA submatrix of Q.
-    XAA : array_like, shape (kA, kA)
-        Product GAF * GFA.
-    kA : int
-        Number of open (shut) states.
-
-    Returns
-    -------
-    ro : float
-        Correlation coefficient.
-    """
-    
-    var = corr_variance_A(phiA, QAA, kA)
-    cov = corr_covariance_A(lag, phiA, QAA, XAA, kA)
-    ro = cov / var
-    return ro
-
-def corr_coefficient_AF(lag, phiA, phiF, QAA, QFF, XAA, GAF, kA, kF):
-    """
-    Calculate correlation coefficient between open and nth shut time
-    according Eq. 2.20 (CH87).
-
-    Parameters
-    ----------
-    lag : int
-        Lag.
-    phiA : array_like, shape (1, kA)
-        Initial vector for openings.
-    phiF : array_like, shape (1, kF)
-        Initial vector for shuttings.
-    QAA : array_like, shape (kA, kA)
-        AA submatrix of Q.
-    QFF : array_like, shape (kF, kF)
-        FF submatrix of Q.
-    XAA : array_like, shape (kA, kA)
-        Product GAF * GFA.
-    GAF : array_like, shape (kA, kF)
-        GAF matrix.
-    kA : int
-        Number of open states.
-    kF : int
-        Number of shut states.
-
-    Returns
-    -------
-    ro : float
-        Correlation coefficient.
-    """
-
-    varA = corr_variance_A(phiA, QAA, kA)
-    varF = corr_variance_A(phiF, QFF, kF)
-    covAF = corr_covariance_AF(lag, phiA, QAA, QFF, XAA, GAF, kA, kF)
-    coeff = covAF / sqrt(varA * varF)
-    return coeff
-
 def corr_decay_amplitude_A(phiA, QAA, XAA, kA):
     """
     Calculate scalar coefficients for correlation coefficien decay (Eq. 2.11,
@@ -1121,7 +1045,7 @@ def printout_correlations(mec, output=sys.stdout, eff='c'):
     phiA, phiF = qml.phiA(mec).reshape((1,kA)), qml.phiF(mec).reshape((1,kF))
     varA = corr_variance_A(phiA, mec.QAA, kA)
     varF = corr_variance_A(phiF, mec.QFF, kF)
-
+    
     #   open - open time correlations
     output.write('\n\n OPEN - OPEN TIME CORRELATIONS')
     output.write('\nVariance of open time = {0:.5g}'.format(varA))
@@ -1131,8 +1055,12 @@ def printout_correlations(mec, output=sys.stdout, eff='c'):
     SDA_mean_n = SDA / sqrt(float(n))
     output.write('\nSD of means of {0:d} open times if'.format(n) + 
         'uncorrelated = {0:.5g} ms'.format(SDA_mean_n * 1000))
-    covA = corr_covariance_Atot(n, phiA, mec.QAA, XAA, kA)
-    vtot = n * varA + 2. * covA
+    covAtot = 0
+    for i in range(1, n):
+        covA = corr_covariance_A(i+1, phiA, mec.QAA, XAA, kA)
+        ro = stl.correlation_coefficient_1(covA, varA, varA)
+        covAtot += (n - i) * ro * varA
+    vtot = n * varA + 2. * covAtot
     actSDA = sqrt(vtot / (n * n))
     output.write('\nActual SD of mean = {0:.5g} ms'.format(actSDA * 1000))
     pA = 100 * (actSDA - SDA_mean_n) / SDA_mean_n
@@ -1144,7 +1072,8 @@ def printout_correlations(mec, output=sys.stdout, eff='c'):
         format(pmaxA))
     output.write('\nCorrelation coefficients, r(k), for up to lag k = 5:')
     for i in range(5):
-        ro = corr_coefficient_A(i+1, phiA, mec.QAA, XAA, kA)
+        covA = corr_covariance_A(i+1, phiA, mec.QAA, XAA, kA)
+        ro = stl.correlation_coefficient_1(covA, varA, varA)
         output.write('\nr({0:d}) = {1:.5g}'.format(i+1, ro))
 
     # shut - shut time correlations
@@ -1156,8 +1085,12 @@ def printout_correlations(mec, output=sys.stdout, eff='c'):
     SDF_mean_n = SDF / sqrt(float(n))
     output.write('\nSD of means of {0:d} shut times if'.format(n) +
         'uncorrelated = {0:.5g} ms'.format(SDF_mean_n * 1000))
-    covF = corr_covariance_Atot(n, phiF, mec.QFF, XFF, kF)
-    vtotF = 50 * varF + 2. * covF
+    covFtot = 0
+    for i in range(1, n):
+        covF = corr_covariance_A(i+1, phiF, mec.QFF, XFF, kF)
+        ro = stl.correlation_coefficient_1(covF, varF, varF)
+        covFtot += (n - i) * ro * varF
+    vtotF = 50 * varF + 2. * covFtot
     actSDF = sqrt(vtotF / (50. * 50.))
     output.write('\nActual SD of mean = {0:.5g} ms'.format(actSDF * 1000))
     pF = 100 * (actSDF - SDF_mean_n) / SDF_mean_n
@@ -1169,13 +1102,14 @@ def printout_correlations(mec, output=sys.stdout, eff='c'):
         format(pmaxF))
     output.write('\nCorrelation coefficients, r(k), for up to k = 5 lags:')
     for i in range(5):
-        ro = corr_coefficient_A(i+1, phiF, mec.QFF, XFF, kF)
+        covF = corr_covariance_A(i+1, phiF, mec.QFF, XFF, kF)
+        ro = stl.correlation_coefficient_1(covF, varF, varF)
         output.write('\nr({0:d}) = {1:.5g}'.format(i+1, ro))
 
-    # open - shut time correlations
+    # open - shut time correlations 
     output.write('\n\n OPEN - SHUT TIME CORRELATIONS')
     output.write('\nCorrelation coefficients, r(k), for up to k= 5 lags:')
     for i in range(5):
-        ro = corr_coefficient_AF(i+1, phiA, phiF,
-            mec.QAA, mec.QFF, XAA, GAF, kA, kF)
+        covAF = corr_covariance_AF(i+1, phiA, mec.QAA, mec.QFF, XAA, GAF, kA, kF)
+        ro = stl.correlation_coefficient_1(covAF, varA, varF)
         output.write('\nr({0:d}) = {1:.5g}'.format(i+1, ro))
