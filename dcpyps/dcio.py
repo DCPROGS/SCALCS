@@ -1345,6 +1345,77 @@ def scn_read_data(fname, ioffset, nint, calfac2):
 
     return tint, iampl, iprops
 
+def scn_write_dummy(data, filename):
+    """
+    Write binary SCAN (DCprogs) format file. Use this dummy file to plot one
+    type of time intervals in EKDIST (DCprogs).
+    DCprogs- http://www.ucl.ac.uk/Pharmacology/dcpr95.html
+
+    Parameters
+    ----------
+    data : list of flotas
+        Time intervals in milliseconds.
+    file : filename
+    """
+
+    iscanver = -103
+    nint = None
+    calfac2 = 1.0
+    ioffset = 154
+    ffilt = -1.0
+    rms = 0.0
+    treso = 0.0
+    tresg = 0.0
+    title = ('Converted from text file containing one column of intervals.' +
+        '          ')   #character*70
+    expdate = '00-ooo-0000'    #character*11
+    tapeID = 'Converted list          '      #character*24
+    ipatch = 0              #integer32
+    Emem = 0.0              #float
+    avamp = 1.0             #float
+
+    amplitudes = []
+    intervals = []
+    options = []
+    for d in data:
+        amplitudes.append(1)
+        intervals.append(100)
+        options.append(struct.pack("b",0)) ## int8_t
+        amplitudes.append(0)
+        intervals.append(d)
+        options.append(struct.pack("=b",0))
+    amplitudes.append(1)
+    intervals.append(100)
+    options.append(struct.pack("=b",0))
+    nint = len(intervals)
+
+    fout = open(filename, 'wb')
+    fout.write(struct.pack('i', iscanver))
+    fout.write(struct.pack('i', ioffset))
+    fout.write(struct.pack('i', nint))
+    fout.write(title)
+    fout.write(expdate)
+    fout.write(tapeID)
+    fout.write(struct.pack('i', ipatch))
+    fout.write(struct.pack('f', Emem))
+    fout.write(struct.pack('i', 0))
+    fout.write(struct.pack('f', avamp))
+    fout.write(struct.pack('f', rms))
+    fout.write(struct.pack('f', ffilt))
+    fout.write(struct.pack('f', calfac2))
+    fout.write(struct.pack('f', treso))
+    fout.write(struct.pack('f', tresg))
+
+    for i in range(0, nint):
+        fout.write(struct.pack('f', intervals[i]))
+    for i in range(0, nint):
+        fout.write(struct.pack('h', amplitudes[i]))
+    for i in range(0, nint):
+        fout.write(struct.pack('b', 0))
+
+    fout.close()
+    print 'Finished writing scn file.'
+
 def abf_read_header (filename, debug=1):
     """
     Read Axon abf file header. Works only for version < 2.0. Read only 
@@ -1788,3 +1859,22 @@ def abf2ssd(abf_h):
     ssd_h['temp'] = float(0.0)
 
     return ssd_h
+
+def txt_load_one_col(filename):
+    """"
+    Read one column of data from a text file.
+    """
+
+    f = open(filename, 'r')
+    lines = f.readlines()
+    f.close()
+    data = []
+    for line in lines:
+        if line != '\n':
+            value = float(line.strip("\t\n"))    #divide lines into values at tabs
+#            print 'value=', value
+            data.append(value)
+
+    print "number of original intervals =", len(lines)
+    print "number of useful intervals =", len(data)
+    return data
