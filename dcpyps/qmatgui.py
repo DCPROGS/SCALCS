@@ -47,6 +47,7 @@ class QMatGUI(QMainWindow):
         self.resize(1000, 700)     # wide, high in px
         self.mainFrame = QWidget()
 
+        self.path = ""
         self.mec = samples.CH82()
         self.mec.KBlk = 0.01
         self.mec.fastblk = False
@@ -898,7 +899,8 @@ class QMatGUI(QMainWindow):
         Called from menu Load|From DCPROGS .MEC File...
         """
         filename = QFileDialog.getOpenFileName(self,
-            "Open Mec File...", "", "DC Mec Files (*.mec *.MEC)")
+            "Open Mec File...", self.path, "DC Mec Files (*.mec *.MEC)")
+        self.path = os.path.split(str(filename))[0]
         self.textBox.append("\nFile to read: " + os.path.split(str(filename))[1])
 
         version, meclist, max_mecnum = dcio.mec_get_list(filename)
@@ -921,7 +923,8 @@ class QMatGUI(QMainWindow):
         Called from menu Load|From Channel Lab .MOD File...
         """
         filename = QFileDialog.getOpenFileName(self,
-            "Open MOD File...", "", "Channel Lab MOD Files (*.mod *.MOD)")
+            "Open MOD File...", self.path, "Channel Lab MOD Files (*.mod *.MOD)")
+        self.path = os.path.split(str(filename))[0]
         self.textBox.append("\nFile to read: " + os.path.split(str(filename))[1])
 
         self.mec, title = dcio.mod_load(filename)

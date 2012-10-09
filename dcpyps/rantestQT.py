@@ -25,6 +25,7 @@ class rantestQT(QDialog):
         self.paired = 0
         self.rancon_data = []
         self.rancon_data_source = ''
+        self.path = ""
 
         ####### Tabs ##########
         movie_screen = self.movie_screen()
@@ -214,7 +215,8 @@ class rantestQT(QDialog):
     def callback1(self):
         """Called by TAKE DATA FROM FILE button in Tab2"""
         file = QFileDialog.getOpenFileName(self,
-            "Open Data File...", "", "Text Data Files (*.txt)")
+            "Open Data File...", self.path, "Text Data Files (*.txt)")
+        self.path = os.path.split(str(filename))[0]
         self.X, self.Y = dcstats.data_from_txt_file(file)
         self.tb2txt.clear()
         self.tb2txt.append('Data loaded from a text file: ' + file + '\n')

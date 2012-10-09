@@ -229,7 +229,7 @@ def mec_load(mecfile, start):
     # Voltage.
     floats.fromfile(f,1)
     vref = floats.pop()
-    print 'vref=', vref
+#    print 'vref=', vref
 
     # Number of voltage dependent rates.
     ints.fromfile(f,1)

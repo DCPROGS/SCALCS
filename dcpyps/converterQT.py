@@ -15,6 +15,7 @@ class ConverterQT(QDialog):
 
         self.data = None
         self.to_filename = ''
+        self.path = "."
         
         grid = QGridLayout()
         grid.addWidget(QLabel("From file:"), 0, 0)
@@ -43,9 +44,10 @@ class ConverterQT(QDialog):
     def load_from_file(self):
         ""
         filename = QFileDialog.getOpenFileName(self,
-                "Open a text file...", ".",
+                "Open a text file...", self.path,
                 "TXT files (*.txt *.TXT);;All files (*.*)")
         if filename:
+            self.path = os.path.split(str(filename))[0]
             self.txt_from_file.setText(filename)
             self.data = dcio.txt_load_one_col(filename)
 
