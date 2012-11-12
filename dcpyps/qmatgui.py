@@ -487,6 +487,11 @@ class QMatGUI(QMainWindow):
         elif self.cjprofile == 'square':
             self.txtPltBox.append('Pulse width = {0:.5g} millisec'
                 .format(self.cjargs[3] * 1000))
+        elif self.cjprofile == 'square2':
+            self.txtPltBox.append('Pulse width = {0:.5g} millisec'
+                .format(self.cjargs[3] * 1000))
+            self.txtPltBox.append('Interpulse interval = {0:.5g} millisec'
+                .format(self.cjargs[4] * 1000))
         self.txtPltBox.append("---\n")
 
         t, c, Popen, P  = cjumps.solve_jump(self.mec, self.cjlen, self.cjstep,
@@ -1142,7 +1147,11 @@ class CJumpParDlg(QDialog):
                 self.tdec = cjargs[3] * 1000 # Decay time constant (ms)
             elif self.profile == 'square':
                 self.prepulse = cjargs[2] * 1000 # Time before pulse starts (ms)
-                self.width = cjargs[3] * 1000 # Pulse halfwidth in ms.          
+                self.width = cjargs[3] * 1000 # Pulse halfwidth in ms.    
+            elif self.profile == 'square2':
+                self.prepulse = cjargs[2] * 1000 # Time before pulse starts (ms)
+                self.width = cjargs[3] * 1000 # Pulse halfwidth in ms. 
+                self.inter = cjargs[4] * 1000 # Interpulse interval in ms. 
         else:
             # Default values
             self.cmax = 1 # in mM.
@@ -1155,6 +1164,7 @@ class CJumpParDlg(QDialog):
             # 'instexp' profile
             self.prepulse = self.reclength / 10.0 # Time before pulse starts (ms)
             self.tdec = 2.5 # Decay time constant (ms)
+            self.inter = 10 # Interpulse interval in ms. 
 
         layoutMain = QVBoxLayout()
         layoutMain.addWidget(QLabel("Concentration pulse profile:"))
@@ -1272,6 +1282,35 @@ class CJumpParDlg(QDialog):
                 self.on_par_changed)
             layout.addWidget(self.widthEdit)
             layoutMain.addLayout(layout)
+        
+        elif self.profile == 'square2':
+
+            layout = QHBoxLayout()
+            layout.addWidget(QLabel("Time before pulse (ms):"))
+            self.prepulseEdit = QLineEdit(unicode(self.prepulse))
+            self.prepulseEdit.setMaxLength(12)
+            self.connect(self.prepulseEdit, SIGNAL("editingFinished()"),
+                self.on_par_changed)
+            layout.addWidget(self.prepulseEdit)
+            layoutMain.addLayout(layout)
+
+            layout = QHBoxLayout()
+            layout.addWidget(QLabel("Concentration pulse width (millisec):"))
+            self.widthEdit = QLineEdit(unicode(self.width))
+            self.widthEdit.setMaxLength(12)
+            self.connect(self.widthEdit, SIGNAL("editingFinished()"),
+                self.on_par_changed)
+            layout.addWidget(self.widthEdit)
+            layoutMain.addLayout(layout)
+            
+            layout = QHBoxLayout()
+            layout.addWidget(QLabel("Interval between pulses (millisec):"))
+            self.interEdit = QLineEdit(unicode(self.inter))
+            self.interEdit.setMaxLength(12)
+            self.connect(self.interEdit, SIGNAL("editingFinished()"),
+                self.on_par_changed)
+            layout.addWidget(self.interEdit)
+            layoutMain.addLayout(layout)
 
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
             QDialogButtonBox.Cancel)
@@ -1304,6 +1343,10 @@ class CJumpParDlg(QDialog):
         elif self.profile == 'square':
             self.prepulse = float(self.prepulseEdit.text()) * 0.001
             self.width = float(self.widthEdit.text()) * 0.001
+        elif self.profile == 'square2':
+            self.prepulse = float(self.prepulseEdit.text()) * 0.001
+            self.width = float(self.widthEdit.text()) * 0.001
+            self.inter = float(self.interEdit.text()) * 0.001
 
     def return_par(self):
         """
@@ -1320,6 +1363,9 @@ class CJumpParDlg(QDialog):
         elif self.profile == 'square':
             cargs = (self.cmax, self.cb, self.prepulse, self.width)
             cfunc = cjumps.pulse_square
+        elif self.profile == 'square2':
+            cargs = (self.cmax, self.cb, self.prepulse, self.width, self.inter)
+            cfunc = cjumps.pulse_square_paired
         return self.reclength, self.step, cfunc, cargs
 
 class ConcProfileDlg(QDialog):
@@ -1332,11 +1378,13 @@ class ConcProfileDlg(QDialog):
         layoutMain.addWidget(QLabel("Concentration pulse profile:"))
 
         self.squareRB = QRadioButton("&Square pulse")
+        self.square2RB = QRadioButton("&Paired square pulses")
         self.realisticRB = QRadioButton("&Realistic pulse")
         self.realisticRB.setChecked(True)
         self.instexpRB = QRadioButton("&Instantaneous rise and exponential decay")
         
         layoutMain.addWidget(self.squareRB)
+        layoutMain.addWidget(self.square2RB)
         layoutMain.addWidget(self.realisticRB)
         layoutMain.addWidget(self.instexpRB)
 
@@ -1358,6 +1406,8 @@ class ConcProfileDlg(QDialog):
             profile = 'rcj'
         elif self.squareRB.isChecked():
             profile = 'square'
+        elif self.square2RB.isChecked():
+            profile = 'square2'
         return profile
 
 class BurstPlotDlg(QDialog):

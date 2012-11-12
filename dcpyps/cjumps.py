@@ -124,8 +124,8 @@ def pulse_square(t, (cmax, cb, prepulse, pulse)):
         Peak concentration.
     cb : float
         background concentration.
-    centre : float
-        Time moment of the pulse centre.
+    prepulse : float
+        Time before pulse starts. 
     pulse : float
         Pulse half width.
 
@@ -147,6 +147,52 @@ def pulse_square(t, (cmax, cb, prepulse, pulse)):
         c1 = cmax * np.ones(t2.shape)
         c2 = np.append(t1 * 0.0, c1)
         conc = np.append(c2, t3 * 0.0)
+
+    conc = conc + cb
+    return conc
+
+def pulse_square_paired(t, (cmax, cb, prepulse, pulse, inter)):
+    """
+    Generate paired square pulses.
+
+    Parameters
+    ----------
+    t : ndarray or float
+        Time samples.
+    cmax : float
+        Peak concentration.
+    cb : float
+        background concentration.
+    prepulse : float
+        Time before first pulse starts.
+    pulse : float
+        Square pulse width.
+    interpulse : float
+        Time between two square pulses.
+
+    Returns
+    -------
+    c : ndarray
+        Concentration profile.
+    """
+
+    if np.isscalar(t):
+        if (t >= prepulse) and (t <= (prepulse + pulse)):
+            conc = cmax
+        elif (t >= (prepulse + pulse + inter)) and (t <= (prepulse + 2 * pulse + inter)):
+            conc = cmax
+        else:
+            conc = 0.0
+    else:
+        c1 = t[np.where(t < prepulse)] * 0.0
+        t2 = t[np.where((t >= prepulse) & (t <= (prepulse + pulse)))]
+        c2 = np.append(c1, cmax * np.ones(t2.shape))
+        t3 = t[np.where((t > (prepulse + pulse)) & (t < (prepulse + pulse + inter)))]
+        c3 = np.append(c2, t3 * 0.0)
+        t4 = t[np.where((t >= (prepulse + pulse + inter)) & (t <= (prepulse + 2 * pulse + inter)))]
+        c4 = np.append(c3, cmax * np.ones(t4.shape))
+        t5 = t[np.where(t > (prepulse + 2 * pulse + inter))]
+        conc = np.append(c4, t5 * 0.0)
 
     conc = conc + cb
     return conc
