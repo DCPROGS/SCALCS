@@ -1140,6 +1140,9 @@ class CJumpParDlg(QDialog):
             elif self.profile == 'instexp':
                 self.prepulse = cjargs[2] * 1000 # Time before pulse starts (ms)
                 self.tdec = cjargs[3] * 1000 # Decay time constant (ms)
+            elif self.profile == 'square':
+                self.prepulse = cjargs[2] * 1000 # Time before pulse starts (ms)
+                self.width = cjargs[3] * 1000 # Pulse halfwidth in ms.          
         else:
             # Default values
             self.cmax = 1 # in mM.
@@ -1331,7 +1334,8 @@ class ConcProfileDlg(QDialog):
         self.squareRB = QRadioButton("&Square pulse")
         self.realisticRB = QRadioButton("&Realistic pulse")
         self.realisticRB.setChecked(True)
-        self.instexpRB = QRadioButton("&Instantaneous rise and exponentials decay")
+        self.instexpRB = QRadioButton("&Instantaneous rise and exponential decay")
+        
         layoutMain.addWidget(self.squareRB)
         layoutMain.addWidget(self.realisticRB)
         layoutMain.addWidget(self.instexpRB)
