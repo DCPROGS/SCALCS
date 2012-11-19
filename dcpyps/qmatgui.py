@@ -647,12 +647,13 @@ class QMatGUI(QMainWindow):
 
         self.mec.set_eff('c', self.conc)
         # TODO: need dialog to enter lag value. 
-        u1 = 0.001 # 1 ms
-        u2 = 0.01 # 10 ms
+        dialog = ShutRangeDlg(self)
+        if dialog.exec_():
+            u1, u2 = dialog.return_par()
         scl.printout_adjacent(self.mec, u1, u2, output=self.log)
         
         t, ipdf, ajpdf = scpl.adjacent_open_time_pdf(self.mec, self.tres, u1, u2)
-        self.present_plot = np.vstack((t, ipdf))
+        self.present_plot = np.vstack((t, ipdf, ajpdf))
 
         self.axes.clear()
         self.axes.semilogx(t, ipdf, 'r--', t, ajpdf, 'b-')
@@ -1476,6 +1477,53 @@ class BurstPlotDlg(QDialog):
 
     def return_par(self):
         return self.tcrit * 0.001 # Return tcrit in sec
+    
+class ShutRangeDlg(QDialog):
+    """
+    Dialog to input shut time range.
+    """
+    def __init__(self, parent=None):
+        super(ShutRangeDlg, self).__init__(parent)
+
+        self.u1 = 0.001 # 1 ms
+        self.u2 = 0.01 # 10 ms
+
+        layoutMain = QVBoxLayout()
+        layoutMain.addWidget(QLabel("Shut time range:"))
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("From shut time (ms):"))
+        self.u1Edit = QLineEdit(unicode(self.u1))
+        self.u1Edit.setMaxLength(10)
+        self.connect(self.u1Edit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.u1Edit)
+        
+        layout.addWidget(QLabel("To shut time (ms):"))
+        self.u2Edit = QLineEdit(unicode(self.u2))
+        self.u2Edit.setMaxLength(10)
+        self.connect(self.u2Edit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.u2Edit)
+        layoutMain.addLayout(layout)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+
+        self.setLayout(layoutMain)
+        self.setWindowTitle("Shut time range...")
+
+    def on_par_changed(self):
+        self.u1 = float(self.u1Edit.text())
+        self.u2 = float(self.u2Edit.text())
+
+    def return_par(self):
+        return self.u1 * 0.001, self.u2 * 0.001 # Return tcrit in sec
 
 class MecListDlg(QDialog):
     """
