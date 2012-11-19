@@ -284,6 +284,51 @@ def open_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
 
     return t, ipdf, epdf, apdf
 
+def adjacent_open_time_pdf(mec, tres, u1, u2, 
+    tmin=0.00001, tmax=1000, points=512, unit='ms'):
+    """
+    Calculate pdf's of ideal all open time and open time adjacent to specified shut
+    time range.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution.
+    tmin, tmax : floats
+        Time range for burst length ditribution.
+    points : int
+        Number of points per plot.
+    unit : str
+        'ms'- milliseconds.
+
+    Returns
+    -------
+    t : ndarray of floats, shape (num of points)
+        Time in millisec.
+    ipdf, ajpdf : ndarrays of floats, shape (num of points)
+        Ideal all and adjacent open time distributions.
+    """
+
+    # Ideal pdf.
+    eigs, w = scl.ideal_dwell_time_pdf_components(mec.QAA, qml.phiA(mec))
+    tmax = (1 / eigs.max()) * 100
+    t = np.logspace(math.log10(tmin), math.log10(tmax), points)
+    
+    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
+    ipdf = t * pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
+
+    # Ajacent open time pdf
+    eigs, w = scl.adjacent_open_to_shut_range_pdf_components(u1, u2, 
+        mec.QAA, mec.QAF, mec.QFF, mec.QFA, qml.phiA(mec).reshape((1,mec.kA)))
+#    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
+    ajpdf = t * pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
+           
+    if unit == 'ms':
+        t = t * 1000 # x scale in millisec
+
+    return t, ipdf, ajpdf
+
 def scaled_pdf(t, pdf, dt, n):
     """
     Scale pdf to the data histogram.

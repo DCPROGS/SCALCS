@@ -724,6 +724,73 @@ def corr_limit_A(phiA, QAA, AXAA, eigXAA, kA):
     cor = np.dot(np.dot(row, M), col)[0,0]
     return cor
 
+def adjacent_open_to_shut_range_mean(u1, u2, QAA, QAF, QFF, QFA, phiA):
+    """
+    Calculate mean (ideal- no missed events) open times adjacent to a 
+    specified shut time range.
+
+    Parameters
+    ----------
+    u1, u2 : floats
+        Shut time range.
+    QAA, QAF, QFF, QFA : array_like
+        Submatrices of Q.
+    phiA : array_like, shape (1, kA)
+        Initial vector for openings
+
+    Returns
+    -------
+    m : float
+        Mean open time.
+    """
+    
+    kA = QAA.shape[0]
+    uA = np.ones((kA))[:,np.newaxis]
+    invQAA, invQFF = -nplin.inv(QAA), nplin.inv(QFF)
+    expQFFr = qml.expQt(QFF, u2) - qml.expQt(QFF, u1)
+    col = np.dot(np.dot(np.dot(np.dot(QAF, invQFF), expQFFr), QFA), uA)
+    row1 = np.dot(phiA, qml.Qpow(invQAA, 2))
+    row2 = np.dot(phiA, invQAA)
+    m = np.dot(row1, col)[0, 0] / np.dot(row2, col)[0, 0]
+    return m
+
+def adjacent_open_to_shut_range_pdf_components(u1, u2, QAA, QAF, QFF, QFA, phiA):
+    """
+    Calculate time constants and areas for an ideal (no missed events)
+    exponential probability density function of open times adjacent to a 
+    specified shut time range.
+
+    Parameters
+    ----------
+    t : float
+        Time (sec).
+    QAA : array_like, shape (kA, kA)
+        Submatrix of Q.
+    phiA : array_like, shape (1, kA)
+        Initial vector for openings
+
+    Returns
+    -------
+    taus : ndarray, shape(k, 1)
+        Time constants.
+    areas : ndarray, shape(k, 1)
+        Component relative areas.
+    """
+
+    kA = QAA.shape[0]
+    uA = np.ones((kA))[:,np.newaxis]
+    invQAA, invQFF = -nplin.inv(QAA), nplin.inv(QFF)
+    expQFFr = qml.expQt(QFF, u2) - qml.expQt(QFF, u1)
+    col = np.dot(np.dot(np.dot(np.dot(QAF, invQFF), expQFFr), QFA), uA)
+    w = np.zeros(kA)
+    eigs, A = qml.eigs(-QAA)
+    row = np.dot(phiA, invQAA)
+    den = np.dot(row, col)[0, 0]
+    #TODO: remove 'for'
+    for i in range(kA):
+        w[i] = np.dot(np.dot(phiA, A[i]), col) / den
+    return eigs, w
+
 def printout_occupancies(mec, tres, output=sys.stdout):
     """
     """
@@ -1113,3 +1180,25 @@ def printout_correlations(mec, output=sys.stdout, eff='c'):
         covAF = corr_covariance_AF(i+1, phiA, mec.QAA, mec.QFF, XAA, GAF, kA, kF)
         ro = stl.correlation_coefficient_1(covAF, varA, varF)
         output.write('\nr({0:d}) = {1:.5g}'.format(i+1, ro))
+        
+def printout_adjacent(mec, t1, t2, output=sys.stdout):
+    """
+
+    """
+
+    output.write('\n\n\n*************************************\n')
+    output.write(' OPEN TIMES ADJACENT TO SPECIFIED SHUT TIME RANGE')
+    
+    kA = mec.kA
+    phiA = qml.phiA(mec).reshape((1,kA))
+    
+    output.write('\nPDF of open times that precede shut times between {0:.3f}\
+ and {1:.3f} ms'.format(t1 * 1000, t2 * 1000))
+        
+    eigs, w = adjacent_open_to_shut_range_pdf_components(t1, t2, 
+        mec.QAA, mec.QAF, mec.QFF, mec.QFA, phiA)
+    pdfs.expPDF_printout(eigs, w, output)
+
+    mean = adjacent_open_to_shut_range_mean(t1, t2, 
+        mec.QAA, mec.QAF, mec.QFF, mec.QFA, phiA)
+    output.write('\nMean from direct calculation (ms) = {0:.6f}'.format(mean * 1000))

@@ -107,12 +107,14 @@ class QMatGUI(QMainWindow):
             self.onPlotCJumpOccupancies)
         plotCorrOpenShutAction = self.createAction(
             "&Correlations", self.onPlotOpShCorr)
+        plotAdjacentOpenShutAction = self.createAction(
+            "&Open time adjacent to shut time range pdf", self.onPlotOpAdjShacent)
 #        plotJump2PopenAction = self.createAction(
 #            "&Instant rise and exponential decay concentration jump: Popen", self.onPlotCJump2Popen)
         plotSaveASCII = self.createAction(
             "&Save current plot as ASCII file", self.onPlotSaveASCII)
         self.addActions(plotMenu, (plotOpenTimePDFAction, plotShutTimePDFAction,
-            plotCorrOpenShutAction,
+            plotAdjacentOpenShutAction, plotCorrOpenShutAction,
             # setDisabled(False) to activate plotting the subset time distributions
             plotSubsetTimePDFAction.setDisabled(True),
             plotBurstLenPDFAction, plotBurstLenPDFActionCond,
@@ -628,6 +630,33 @@ class QMatGUI(QMainWindow):
         self.axes.plot(n, roA,'go', n, roF, 'ro', n, roAF, 'bo')
         self.axes.axhline(y=0, xmin=0, xmax=1, color='k')
         self.axes.set_xlim(0, 6)
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
+        
+    def onPlotOpAdjShacent(self):
+        """
+        Display open time adjacent to shut time range pdf.
+        """
+        self.txtPltBox.clear()
+        self.txtPltBox.append('\t===== OPEN TIME ADJACENT TO SHUT TIME RANGE PDF =====')
+        self.txtPltBox.append('Agonist concentration = {0:.5g} mikroM'.
+            format(self.conc * 1000000))
+        self.txtPltBox.append('Ideal open time pdf- red dashed line.')
+        self.txtPltBox.append('Open times adjacent to shut time range pdf- blue solid line.')
+
+        self.mec.set_eff('c', self.conc)
+        # TODO: need dialog to enter lag value. 
+        u1 = 0.001 # 1 ms
+        u2 = 0.01 # 10 ms
+        scl.printout_adjacent(self.mec, u1, u2, output=self.log)
+        
+        t, ipdf, ajpdf = scpl.adjacent_open_time_pdf(self.mec, self.tres, u1, u2)
+        self.present_plot = np.vstack((t, ipdf))
+
+        self.axes.clear()
+        self.axes.semilogx(t, ipdf, 'r--', t, ajpdf, 'b-')
+        self.axes.set_yscale('sqrtscale')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
