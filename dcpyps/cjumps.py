@@ -283,12 +283,13 @@ def calc_jump (mec, reclen, step, cfunc, cargs):
     for i in range(1, t.shape[0]):
 
         mec.set_eff('c', c[i])
-        w = coefficient_calc(mec.k, mec.A, pi)
+        eigenvals, A = qml.eigs(mec.Q)
+        w = coefficient_calc(mec.k, A, pi)
         #loop over states to get occupancy of each
         for s in range(mec.k):
             # r is a running total over contributions of all components
             r = 0
-            for ju, k in zip(w[:, s], mec.eigenvals):
+            for ju, k in zip(w[:, s], eigenvals):
                 r += ju * np.exp(k * step)
             pi[s] = r
         Pt = np.append(Pt, [pi.copy()], axis=0)
@@ -345,12 +346,10 @@ def weighted_taus(mec, cmax, width, eff='c'):
     
     mec.set_eff(eff, 0)
     P0 = qml.pinf(mec.Q)
-    eigs0 = mec.eigenvals
-    A0 = mec.A
+    eigs0, A0 = qml.eigs(mec.Q)
 
     mec.set_eff(eff, cmax)
-    eigsInf = mec.eigenvals
-    Ainf = mec.A
+    eigsInf, Ainf = qml.eigs(mec.Q)
     w_on = coefficient_calc(mec.k, Ainf, P0)
 
     Pt = np.zeros((mec.k))
@@ -395,8 +394,7 @@ def printout(mec, cmax, width, output=sys.stdout, eff='c'):
 
     mec.set_eff(eff, 0)
     P0 = qml.pinf(mec.Q)
-    eigs0 = mec.eigenvals
-    A0 = mec.A
+    eigs0, A0 = qml.eigs(mec.Q)
 
     output.write('\n\nEquilibrium occupancies before t=0, at concentration = 0.0:')
     for i in range(mec.k):
@@ -405,8 +403,7 @@ def printout(mec, cmax, width, output=sys.stdout, eff='c'):
 
     mec.set_eff(eff, cmax)
     Pinf = qml.pinf(mec.Q)
-    eigsInf = mec.eigenvals
-    Ainf = mec.A
+    eigsInf, Ainf = qml.eigs(mec.Q)
     w_on = coefficient_calc(mec.k, Ainf, P0)
 
     output.write('\n\nEquilibrium occupancies at maximum concentration = {0:.5g} mM:'

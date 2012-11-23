@@ -29,7 +29,8 @@ def phiBurst(mec):
 
     uA = np.ones((mec.kA, 1))
     pC = qml.pinf(mec.Q)[mec.kE:]
-    nom = np.dot(pC, (np.dot(mec.QCB, mec.GBA) + mec.QCA))
+    GAB, GBA = qml.iGs(mec.Q, mec.kA, mec.kB)
+    nom = np.dot(pC, (np.dot(mec.QCB, GBA) + mec.QCA))
     denom = np.dot(nom, uA)
     phiB = nom / denom
     return phiB
@@ -54,7 +55,8 @@ def endBurst(mec):
 
     uA = np.ones((mec.kA, 1))
     I = np.eye(mec.kA)
-    eB = np.dot((I - np.dot(mec.GAB, mec.GBA)), uA)
+    GAB, GBA = qml.iGs(mec.Q, mec.kA, mec.kB)
+    eB = np.dot((I - np.dot(GAB, GBA)), uA)
     return eB
 
 def length_pdf(mec, t):
@@ -123,8 +125,9 @@ def length_mean(mec):
     I = np.eye(mec.kA)
     invQAA = -1 * nplin.inv(mec.QAA)
     invQBB = nplin.inv(mec.QBB)
-    interm1 = nplin.inv(I - np.dot(mec.GAB, mec.GBA))
-    interm2 = I - np.dot(np.dot(mec.QAB, invQBB), mec.GBA)
+    GAB, GBA = qml.iGs(mec.Q, mec.kA, mec.kB)
+    interm1 = nplin.inv(I - np.dot(GAB, GBA))
+    interm2 = I - np.dot(np.dot(mec.QAB, invQBB), GBA)
     m = (np.dot(np.dot(np.dot(np.dot(phiBurst(mec), interm1), invQAA),
         interm2), uA)[0])
     return m
@@ -204,7 +207,8 @@ def openings_distr(mec, r):
         Probability of seeing r openings per burst.
     """
 
-    GG = np.dot(mec.GAB, mec.GBA)
+    GAB, GBA = qml.iGs(mec.Q, mec.kA, mec.kB)
+    GG = np.dot(GAB, GBA)
     if r == 1:
         interm = np.eye(mec.kA)
     elif r == 2:
@@ -238,7 +242,8 @@ def openings_distr_components(mec):
     w : ndarray, shape (kA,)
     """
 
-    GG = np.dot(mec.GAB, mec.GBA)
+    GAB, GBA = qml.iGs(mec.Q, mec.kA, mec.kB)
+    GG = np.dot(GAB, GBA)
     rho, A = qml.eigs(GG)
     w = np.dot(np.dot(phiBurst(mec), A), endBurst(mec)).transpose()[0]
     return rho, w
@@ -261,7 +266,8 @@ def openings_mean(mec):
 
     uA = np.ones((mec.kA,1))
     I = np.eye(mec.kA)
-    interm = nplin.inv(I - np.dot(mec.GAB, mec.GBA))
+    GAB, GBA = qml.iGs(mec.Q, mec.kA, mec.kB)
+    interm = nplin.inv(I - np.dot(GAB, GBA))
     mu = np.dot(np.dot(phiBurst(mec), interm), uA)[0]
     return mu
 
@@ -282,7 +288,8 @@ def openings_cond_distr_depend_on_start_state(mec, r):
         Probability of seeing r openings per burst depending on starting state.
     """
 
-    GG = np.dot(mec.GAB, mec.GBA)
+    GAB, GBA = qml.iGs(mec.Q, mec.kA, mec.kB)
+    GG = np.dot(GAB, GBA)
     if r == 1:
         interm = np.eye(mec.kA)
     elif r == 2:
@@ -312,7 +319,8 @@ def open_time_total_pdf_components(mec):
         Component amplitudes.
     """
 
-    VAA = mec.QAA + np.dot(mec.QAB, mec.GBA)
+    GAB, GBA = qml.iGs(mec.Q, mec.kA, mec.kB)
+    VAA = mec.QAA + np.dot(mec.QAB, GBA)
     eigs, A = qml.eigs(-VAA)
     uA = np.ones((mec.kA, 1))
 
@@ -338,7 +346,8 @@ def open_time_mean(mec):
     """
 
     uA = np.ones((mec.kA, 1))
-    VAA = mec.QAA + np.dot(mec.QAB, mec.GBA)
+    GAB, GBA = qml.iGs(mec.Q, mec.kA, mec.kB)
+    VAA = mec.QAA + np.dot(mec.QAB, GBA)
     m = np.dot(np.dot(phiBurst(mec), -nplin.inv(VAA)), uA)[0]
     return m
 
@@ -362,13 +371,14 @@ def shut_times_inside_burst_pdf_components(mec):
 
     uA = np.ones((mec.kA, 1))
     eigs, A = qml.eigs(-mec.QBB)
-    interm = nplin.inv(np.eye(mec.kA) - np.dot(mec.GAB, mec.GBA))
+    GAB, GBA = qml.iGs(mec.Q, mec.kA, mec.kB)
+    interm = nplin.inv(np.eye(mec.kA) - np.dot(GAB, GBA))
     norm = openings_mean(mec) - 1
 
     w = np.zeros(mec.kB)
     for i in range(mec.kB):
         w[i] = np.dot(np.dot(np.dot(np.dot(np.dot(np.dot(phiBurst(mec), interm),
-            mec.GAB), A[i]), (-mec.QBB)), mec.GBA), uA) / norm
+            GAB), A[i]), (-mec.QBB)), GBA), uA) / norm
 
     return eigs, w
 
@@ -430,9 +440,10 @@ def shut_times_between_burst_mean(mec):
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
     invQFF = -nplin.inv(mec.QFF)
     invQBB = -nplin.inv(mec.QBB)
+    GAB, GBA = qml.iGs(mec.Q, mec.kA, mec.kB)
 
     m1 = np.dot(np.dot(mec.QAF, invQFF), GFA)
-    m2 = np.dot(np.dot(mec.QAB, invQBB), mec.GBA)
+    m2 = np.dot(np.dot(mec.QAB, invQBB), GBA)
     m = np.dot(np.dot(start, m1 - m2), uA)[0]
 
     return m
@@ -455,13 +466,14 @@ def shut_time_total_pdf_components_2more_openings(mec):
         Component amplitudes.
     """
 
-    WBB = mec.QBB + np.dot(mec.QBA, mec.GAB)
+    GAB, GBA = qml.iGs(mec.Q, mec.kA, mec.kB)
+    WBB = mec.QBB + np.dot(mec.QBA, GAB)
     eigs, A = qml.eigs(-WBB)
     norm = 1 - np.dot(phiBurst(mec), endBurst(mec))[0]
 
     w = np.zeros(mec.kB)
     for i in range(mec.kB):
-        w[i] = np.dot(np.dot(np.dot(np.dot(phiBurst(mec), mec.GAB),
+        w[i] = np.dot(np.dot(np.dot(np.dot(phiBurst(mec), GAB),
             A[i]), (mec.QBA)), endBurst(mec)) / norm
 
     return eigs, w
@@ -481,11 +493,12 @@ def shut_time_total_mean(mec):
         The mean total shut time per burst.
     """
 
-    WBB = mec.QBB + np.dot(mec.QBA, mec.GAB)
+    GAB, GBA = qml.iGs(mec.Q, mec.kA, mec.kB)
+    WBB = mec.QBB + np.dot(mec.QBA, GAB)
     invW = - nplin.inv(WBB)
     uA = np.ones((mec.kA, 1))
-    m = np.dot(np.dot(np.dot(np.dot(phiBurst(mec), mec.GAB),
-            invW), (mec.GBA)), uA)[0]
+    m = np.dot(np.dot(np.dot(np.dot(phiBurst(mec), GAB),
+            invW), (GBA)), uA)[0]
     return m
 
 def first_opening_length_pdf_components(mec):
@@ -508,7 +521,8 @@ def first_opening_length_pdf_components(mec):
 
     uA = np.ones((mec.kA, 1))
     eigs, A = qml.eigs(-mec.QAA)
-    GG = np.dot(mec.GAB, mec.GBA)
+    GAB, GBA = qml.iGs(mec.Q, mec.kA, mec.kB)
+    GG = np.dot(GAB, GBA)
     norm = np.dot(np.dot(phiBurst(mec), GG), uA)[0]
 
     w = np.zeros(mec.kA)

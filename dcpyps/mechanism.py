@@ -570,8 +570,8 @@ class Mechanism(object):
             self.Q[d,d] = 0
             self.Q[d,d] = -np.sum(self.Q[d])
 
-        self.eigenvals, self.A = qml.eigs(self.Q)
-        self.GAB, self.GBA = qml.iGs(self.Q, self.kA, self.kB)
+#        self.eigenvals, self.A = qml.eigs(self.Q)
+#        self.GAB, self.GBA = qml.iGs(self.Q, self.kA, self.kB)
         self.QFF = self.Q[self.kA:, self.kA:]
         self.QFA = self.Q[self.kA:, :self.kA]
         self.QAF = self.Q[:self.kA, self.kA:]

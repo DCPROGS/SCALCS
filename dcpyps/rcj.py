@@ -189,18 +189,19 @@ def rcj_calc (cjump, mec, paras, eff='c'):
         # Extract concentration.
         c = cjump [t_point]
         mec.set_eff(eff, c)
+        eigenvals, A = qml.eigs(mec.Q)
 
         if not firststep:
             # Not the first step, so use P from last step to calculate
             # new occupancy. Note that P is not used again in the calculation,
             # so can be updated safely.
-            w = coefficient_calc(mec.k, mec.A, P)
+            w = coefficient_calc(mec.k, A, P)
 
             #loop over states to get occupancy of each
             for s in range(mec.k):
                 # r is a running total over contributions of all components
                 r = 0
-                for ju, k in zip(w[:, s], mec.eigenvals):
+                for ju, k in zip(w[:, s], eigenvals):
                     r += ju * np.exp(k * dt)
                 P[s] = r
         else:
