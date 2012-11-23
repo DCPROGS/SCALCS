@@ -323,6 +323,66 @@ def coefficient_calc(k, A, p_occup):
         w[n, :] = np.dot(p_occup, A[n, :, :])
     return w
 
+def weighted_taus(mec, cmax, width, eff='c'):
+    """
+    Calculate weighted on and off time constants for a square concentration 
+    pulse.
+    
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    cmax : float
+        Pulse concentration.
+    width : float
+        Pulse width.
+
+    Returns
+    -------
+    tau_on_weighted, tau_off_weighted : floats
+        Weighted time constants.
+    """
+    
+    mec.set_eff(eff, 0)
+    P0 = qml.pinf(mec.Q)
+    eigs0 = mec.eigenvals
+    A0 = mec.A
+
+    mec.set_eff(eff, cmax)
+    eigsInf = mec.eigenvals
+    Ainf = mec.A
+    w_on = coefficient_calc(mec.k, Ainf, P0)
+
+    Pt = np.zeros((mec.k))
+    for i in range(mec.k):
+        for ju, eg in zip(w_on[:, i], eigsInf):
+            Pt[i] += np.dot(ju, np.exp(eg * width))
+
+    ampl_on = np.zeros((mec.k))
+    for i in range(mec.k):
+        for j in range(mec.kA):
+            ampl_on[i] += w_on[i,j]
+    max_ampl_on = np.max(np.abs(ampl_on))
+    rel_ampl_on = ampl_on / max_ampl_on
+
+    tau_on_weighted = 0
+    for i in range(mec.k-1):
+        tau_on_weighted += -rel_ampl_on[i] * (-1 / eigsInf[i])
+            
+    w_off = coefficient_calc(mec.k, A0, Pt)
+    ampl_off = np.zeros((mec.k))
+    for i in range(mec.k):
+        for j in range(mec.kA):
+            ampl_off[i] += w_off[i,j]
+    max_ampl_off = np.max(np.abs(ampl_off))
+    rel_ampl_off = ampl_off / max_ampl_off
+
+    tau_off_weighted = 0
+    for i in range(mec.k-1):
+        tau_off_weighted += rel_ampl_off[i] * (-1 / eigs0[i])
+        
+    return tau_on_weighted, tau_off_weighted
+
 def printout(mec, cmax, width, output=sys.stdout, eff='c'):
     """
     """
@@ -368,7 +428,7 @@ def printout(mec, cmax, width, output=sys.stdout, eff='c'):
 
     output.write('\n\nON-RELAXATION for ideal step:')
     output.write('\nTime course for current')
-    output.write('\n\nComp\tEigen\t\tTau(ms)')
+    output.write('\n\nComp\tEigen\t\tTau (ms)')
     for i in range(mec.k-1):
         output.write('\n{0:d}\t'.format(i+1) +
             '{0:.5g}\t\t'.format(eigsInf[i]) +
@@ -383,12 +443,16 @@ def printout(mec, cmax, width, output=sys.stdout, eff='c'):
     rel_ampl_on = ampl_on / max_ampl_on
     area_on = np.zeros((mec.k-1))
 
+    tau_on_weighted = 0
     output.write('\n\nAmpl.(t=0,pA)\tRel.ampl.\t\tArea(pC)')
     for i in range(mec.k-1):
         area_on[i] = -1000 * cur_on[i] / eigsInf[i]
         output.write('\n{0:.5g}\t\t'.format(cur_on[i]) +
             '{0:.5g}\t\t'.format(rel_ampl_on[i]) +
             '{0:.5g}\t'.format(area_on[i]))
+        tau_on_weighted += -rel_ampl_on[i] * (-1000 / eigsInf[i])
+            
+    output.write('\n\nWeighted On Tau (ms) = {0:.5g}'.format(tau_on_weighted))
 
     output.write('\n\nTotal current at t=0 (pA) = {0:.5g}'.
         format(np.sum(cur_on)))
@@ -406,7 +470,7 @@ def printout(mec, cmax, width, output=sys.stdout, eff='c'):
     # Calculate off- relaxation.
     output.write('\n\nOFF-RELAXATION for ideal step:')
     output.write('\nTime course for current')
-    output.write('\n\nComp\tEigen\t\tTau(ms)')
+    output.write('\n\nComp\tEigen\t\tTau (ms)')
     for i in range(mec.k-1):
         output.write('\n{0:d}\t'.format(i+1) +
             '{0:.5g}\t\t'.format(eigs0[i]) +
@@ -422,12 +486,16 @@ def printout(mec, cmax, width, output=sys.stdout, eff='c'):
     rel_ampl_off = ampl_off / max_ampl_off
     area_off = np.zeros((mec.k-1))
 
+    tau_off_weighted = 0
     output.write('\n\nAmpl.(t=0,pA)\tRel.ampl.\t\tArea(pC)')
     for i in range(mec.k-1):
         area_off[i] = -1000 * cur_off[i] / eigs0[i]
         output.write('\n{0:.5g}\t\t'.format(cur_off[i]) +
             '{0:.5g}\t\t'.format(rel_ampl_off[i]) +
             '{0:.5g}\t'.format(area_off[i]))
+        tau_off_weighted += rel_ampl_off[i] * (-1000 / eigs0[i])
+            
+    output.write('\n\nWeighted Off Tau (ms) = {0:.5g}'.format(tau_off_weighted))
 
     output.write('\n\nTotal current at t=0 (pA) = {0:.5g}'.
         format(np.sum(cur_off)))

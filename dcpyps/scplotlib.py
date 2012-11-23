@@ -22,6 +22,7 @@ import dcstatslib as stl
 import scburst
 import popen
 import pdfs
+import cjumps
 
 def Popen(mec, tres):
     """
@@ -225,6 +226,43 @@ def burst_length_versus_conc_plot(mec, cmin, cmax):
     brblk= brblk * 1000
 
     return c, br, brblk
+
+def conc_jump_on_off_taus_versus_conc_plot(mec, cmin, cmax, width):
+    """
+    Calculate data for the plot of square concentration pulse evoked current 
+    (occupancy) weighted on and off time constants versus concentration.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    cmin, cmax : float
+        Range of concentrations in M.
+
+    Returns
+    -------
+    c : ndarray of floats, shape (num of points,)
+        Concentration in mikroM
+    ton, toff : floats
+        On and off weighted time constants.
+    """
+
+    points = 100
+#    c = np.logspace(cmin, cmax, points)
+    
+    log_start = int(np.log10(cmin))
+    log_end = int(np.log10(cmax))
+    c = np.logspace(log_start, log_end, points)
+    
+    ton = np.zeros(points)
+    toff = np.zeros(points)
+    for i in range(points):
+        mec.set_eff('c', c[i])
+        ton[i], toff[i] = cjumps.weighted_taus(mec, c[i], width)
+    c = c * 1000 # x axis scale in milliMoles
+    ton = ton * 1000
+    toff= toff * 1000
+
+    return c, ton, toff
 
 def open_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
     """

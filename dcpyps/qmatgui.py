@@ -60,6 +60,7 @@ class QMatGUI(QMainWindow):
         self.cjprofile = 'rcj'
         self.cjlen = 0.05
         self.cjstep = 5e-6
+        self.cjwidth = 0.00001
         self.cjfunc = None
         self.cjargs = None
 
@@ -105,6 +106,9 @@ class QMatGUI(QMainWindow):
         plotJumpOccupanciesAction = self.createAction(
             "&Concentration jump: occupancies",
             self.onPlotCJumpOccupancies)
+        plotJumpOnOffTauConc = self.createAction(
+            "&Concentration jump: weighted on/off tau versus concentration",
+            self.onPlotCJumpRiseVConc)
         plotCorrOpenShutAction = self.createAction(
             "&Correlations", self.onPlotOpShCorr)
         plotAdjacentOpenShutAction = self.createAction(
@@ -120,7 +124,7 @@ class QMatGUI(QMainWindow):
             plotBurstLenPDFAction, plotBurstLenPDFActionCond,
             plotBurstOpeningDistrAction, plotBurstOpeningDistrActionCond,
             plotBurstLenVConcAction,
-            plotJumpPopenAction, plotJumpOccupanciesAction,
+            plotJumpPopenAction, plotJumpOccupanciesAction, plotJumpOnOffTauConc,
 #            plotJump2PopenAction,            
             plotPopenAction,
             plotSaveASCII))
@@ -582,6 +586,35 @@ class QMatGUI(QMainWindow):
 
         self.present_plot = np.vstack((t, Popen, c, P))
 #        rcj.printout(self.mec, jpar, output=self.log)
+
+    def onPlotCJumpRiseVConc(self):
+        """
+        Display plot of weighted on-tau versus concentration. Square pulse only.
+        """
+        
+        self.cjprofile == 'square'
+
+        dialog = CJumpParDlg2(self)
+        if dialog.exec_():
+            cmin, cmax, self.width = dialog.return_par()
+
+        self.txtPltBox.clear()
+        self.txtPltBox.append('===== WEIGHTED ON/OFF TAU VERSUS CONCENTRATION =====')
+        self.txtPltBox.append('Pulse width = {0:.5g} millisec'
+            .format(self.width * 1000))
+        self.txtPltBox.append('Tau ON - blue solid line.')
+        self.txtPltBox.append('Tau OFF - green solid line.')
+        self.txtPltBox.append('X axis in mM; Y axis in ms.')
+        self.txtPltBox.append("---\n")
+
+        c, ton, toff  = scpl.conc_jump_on_off_taus_versus_conc_plot(self.mec,
+            cmin, cmax, self.width)
+
+        self.axes.clear()
+        self.axes.semilogx(c, ton,'b-', c, toff, 'g-')
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
 
     def onPlotPopen(self):
         """
@@ -1397,6 +1430,71 @@ class CJumpParDlg(QDialog):
             cargs = (self.cmax, self.cb, self.prepulse, self.width, self.inter)
             cfunc = cjumps.pulse_square_paired
         return self.reclength, self.step, cfunc, cargs
+
+class CJumpParDlg2(QDialog):
+    """
+    Dialog to squatre concentration pulse width and concentration range.
+    """
+    def __init__(self, parent=None, width = 0.01, cmin=1e-6, cmax=0.001):
+        super(CJumpParDlg2, self).__init__(parent)
+
+        self.cmin = cmin * 1000 # in mM.
+        self.cmax = cmax * 1000 # in mM.
+        self.width = width * 1000 # Pulse halfwidth in ms.
+
+        layoutMain = QVBoxLayout()
+        layoutMain.addWidget(QLabel("Square concentration pulse:"))
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Start concentration (mM):"))
+        self.conc1Edit = QLineEdit(unicode(self.cmin))
+        self.conc1Edit.setMaxLength(12)
+        self.connect(self.conc1Edit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.conc1Edit)
+        layoutMain.addLayout(layout)
+        
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("End concentration (mM):"))
+        self.conc2Edit = QLineEdit(unicode(self.cmax))
+        self.conc2Edit.setMaxLength(12)
+        self.connect(self.conc2Edit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.conc2Edit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Concentration pulse width (millisec):"))
+        self.widthEdit = QLineEdit(unicode(self.width))
+        self.widthEdit.setMaxLength(12)
+        self.connect(self.widthEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.widthEdit)
+        layoutMain.addLayout(layout)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+
+        self.setLayout(layoutMain)
+        self.setWindowTitle("Square concentration pulse pulse...")
+
+    def on_par_changed(self):
+        """
+        """
+        self.cmin = float(self.conc1Edit.text()) * 0.001
+        self.cmax = float(self.conc2Edit.text()) * 0.001
+        self.width = float(self.widthEdit.text()) * 0.001
+
+    def return_par(self):
+        """
+        Return parameter dictionary on exit.
+        """
+        return self.cmin, self.cmax, self.width
 
 class ConcProfileDlg(QDialog):
     """
