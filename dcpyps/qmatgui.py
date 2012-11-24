@@ -1016,7 +1016,7 @@ class PrintLog:
         self.out1 = out1
         self.out2 = out2
     def write(self, text):
-        self.out1.insertPlainText(text)
+        self.out1.append(text.rstrip('\n'))
         if self.out2:
             self.out2.write(text)
 

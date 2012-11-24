@@ -545,87 +545,91 @@ def printout_pdfs(mec, output=sys.stdout):
         Default device: sys.stdout
     """
 
-    output.write('\n\n*******************************************\n')
+    output.write('\n*******************************************\n')
     output.write('CALCULATED SINGLE CHANNEL BURST PDFS ETC....\n')
 
     # # #
     phiB = phiBurst(mec)
-    output.write('\nInitial vector for burst (phiB) = \n')
+    output.write('Initial vector for burst (phiB) = \n')
+    str = ''
     for i in range(mec.kA):
-        output.write('{0:.5g}\t'.format(phiB[i]))
+        str += '{0:.5g}\t'.format(phiB[i])
+    output.write(str + '\n')
     endB = endBurst(mec)
-    output.write('\nEnd vector for burst (endB) = \n')
+    output.write('End vector for burst (endB) = \n')
+    str = ''
     for i in range(mec.kA):
-        output.write('{0:.5g}\t'.format(endB[i, 0]))
+        str += '{0:.5g}\t'.format(endB[i, 0])
+    output.write(str + '\n')
 
     # # #
     eigs, w = length_pdf_components(mec)
-    output.write('\n\nTotal burst length, unconditional pdf')
-    output.write('\nFbst(t) =')
+    output.write('\nTotal burst length, unconditional pdf\n')
+    output.write('Fbst(t) =\n')
     pdfs.expPDF_printout(eigs, w, output)
     mbl = length_mean(mec)
-    output.write('\nMean from direct matrix calc = {0:.5g} millisec'.
+    output.write('Mean from direct matrix calc = {0:.5g} millisec\n'.
         format(mbl * 1000))
         
     # # #
     eigs, w = length_no_single_openings_pdf_components(mec)
-    output.write('\n\nBurst length pdf for bursts with 2 or more openings.')
-    output.write('\nFbst(bst>1) =')
+    output.write('\nBurst length pdf for bursts with 2 or more openings.\n')
+    output.write('Fbst(bst>1) =\n')
     pdfs.expPDF_printout(eigs, w, output)
 
     # # #
     rho, w = openings_distr_components(mec)
-    output.write('\n\nNumber (r) of openings / burst (unconditional)')
-    output.write('\nP(r) =')
+    output.write('\nNumber (r) of openings / burst (unconditional)\n')
+    output.write('P(r) =\n')
     pdfs.geometricPDF_printout(rho, w, output)
     mu = openings_mean(mec)
-    output.write('\nMean from direct matrix calc = {0:.5g}'. format(mu))
+    output.write('Mean from direct matrix calc = {0:.5g}\n'. format(mu))
 
     # # #
-    output.write('\n\nPDF of first opening in a burst with 2 or more openings')
-    output.write('\nf(open; r>1) =')
+    output.write('\nPDF of first opening in a burst with 2 or more openings\n')
+    output.write('f(open; r>1) =\n')
     eigs, w = first_opening_length_pdf_components(mec)
     pdfs.expPDF_printout(eigs, w, output)
 
     # # #
-    output.write('\n\nPDF of total open time per bursts')
-    output.write('\nf(open tot) =')
+    output.write('\nPDF of total open time per bursts\n')
+    output.write('f(open tot) =\n')
     eigs, w = open_time_total_pdf_components(mec)
     pdfs.expPDF_printout(eigs, w, output)
     mop = open_time_mean(mec)
-    output.write('\nMean from direct matrix calc = {0:.5g} '.
-        format(mop * 1000) + 'millisec')
+    output.write('Mean from direct matrix calc = {0:.5g} '.
+        format(mop * 1000) + 'millisec\n')
 
     # # #
-    output.write('\n\nPDF of total shut time per bursts for bursts with at least 2 openings')
-    output.write('\nf(gap tot) =')
+    output.write('\nPDF of total shut time per bursts for bursts with at least 2 openings\n')
+    output.write('f(gap tot) =\n')
     eigs, w = shut_time_total_pdf_components_2more_openings(mec)
     pdfs.expPDF_printout(eigs, w, output)
     msh = shut_time_total_mean(mec)
-    output.write('\nMean of total shut time for all bursts = {0:.5g} '.
-        format(msh * 1000) + 'millisec')
+    output.write('Mean of total shut time for all bursts = {0:.5g} '.
+        format(msh * 1000) + 'millisec\n')
 
-    output.write('\n\nNo of gaps within burst per unit open time = {0:.5g} '.
+    output.write('\nNo of gaps within burst per unit open time = {0:.5g} \n'.
         format((mu - 1) / mop))
 
     # # #
-    output.write('\n\nPDF of gaps inside bursts')
-    output.write('\nf(gap) =')
+    output.write('\nPDF of gaps inside bursts\n')
+    output.write('f(gap) =\n')
     eigs, w = shut_times_inside_burst_pdf_components(mec)
     pdfs.expPDF_printout(eigs, w, output)
 
     # # #
-    output.write('\n\nPDF of gaps between bursts')
-    output.write('\nf(gap) =')
+    output.write('\nPDF of gaps between bursts\n')
+    output.write('f(gap) =\n')
     eigs, w = shut_times_between_burst_pdf_components(mec)
     pdfs.expPDF_printout(eigs, w, output)
     msh = shut_times_between_burst_mean(mec)
-    output.write('\nMean from direct matrix calc = {0:.5g} '.
-        format(msh * 1000) + 'millisec')
+    output.write('Mean from direct matrix calc = {0:.5g} '.
+        format(msh * 1000) + 'millisec\n')
 
     # # #
     bpop = mop / mbl
-    output.write('\n\nPopen WITHIN BURST = (open time/bst)/(bst length)\
+    output.write('\nPopen WITHIN BURST = (open time/bst)/(bst length)\
         = {0:.5g} \n'.format(bpop))
     tpop = mop / (mbl + msh)
     output.write('Total Popen = (open time/bst)/(bst_length + ' +
