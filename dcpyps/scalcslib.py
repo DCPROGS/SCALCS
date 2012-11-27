@@ -754,6 +754,61 @@ def adjacent_open_to_shut_range_mean(u1, u2, QAA, QAF, QFF, QFA, phiA):
     m = np.dot(row1, col)[0, 0] / np.dot(row2, col)[0, 0]
     return m
 
+def HJC_adjacent_mean_open_to_shut_time_pdf(sht, tres, Q, QAA, QAF, QFF, QFA):
+    """
+    Calculate theoretical HJC (with missed events correction) mean open time
+    given previous/next gap length (continuous function; CHS96 Eq.3.5). 
+
+    Parameters
+    ----------
+    sht : array of floats
+        Shut time interval.
+    tres : float
+        Time resolution.
+    Q : array, shape (k,k)
+        Q matrix.
+    QAA, QAF, QFF, QFA : array_like
+        Submatrices of Q.
+
+    Returns
+    -------
+    mp : ndarray of floats
+        Mean open time given previous gap length.
+    mn : ndarray of floats
+        Mean open time given next gap length.
+    """
+    
+    kA, kF = QAA.shape[0], QFF.shape[0]
+    uA = np.ones((kA))[:,np.newaxis]
+    uF = np.ones((kF))[:,np.newaxis]
+    expQFF = qml.expQt(QFF, tres)
+    expQAA = qml.expQt(QAA, tres)
+    GAF, GFA = qml.iGs(Q, kA, kF)
+    eGAF = qml.eGs(GAF, GFA, kA, kF, expQFF)
+    eGFA = qml.eGs(GFA, GAF, kF, kA, expQAA)
+    phiA = qml.phiHJC(eGAF, eGFA, kA)
+    phiF = qml.phiHJC(eGFA, eGAF, kF)
+    DARS = qml.dARSdS(tres, QAA, QFF, GAF, GFA, expQFF, kA, kF)
+    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(Q, kA, QAA, QFA, QAF, expQAA, False)
+    Froots = asymptotic_roots(tres, QFF, QAA, QFA, QAF, kF, kA)
+    FR = qml.AR(Froots, tres, QFF, QAA, QFA, QAF, kF, kA)
+    Q1 = np.dot(np.dot(DARS, QAF), expQFF)
+    col1 = np.dot(Q1, uF)
+    row1 = np.dot(phiA, Q1)
+    
+    mp = []
+    mn = []
+    for t in sht:
+        eGFAt = qml.eGAF(t, tres, Feigvals, FZ00, FZ10, FZ11, Froots,
+                    FR, QFA, expQAA)
+        denom = np.dot(np.dot(phiF, eGFAt), uA)[0]
+        nom1 = np.dot(np.dot(phiF, eGFAt), col1)[0]
+        nom2 = np.dot(np.dot(row1, eGFAt), uA)[0]
+        mp.append(nom1 / denom)
+        mn.append(nom2 / denom)
+    
+    return np.array(mp), np.array(mn)
+
 def adjacent_open_to_shut_range_pdf_components(u1, u2, QAA, QAF, QFF, QFA, phiA):
     """
     Calculate time constants and areas for an ideal (no missed events)

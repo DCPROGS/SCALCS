@@ -189,6 +189,36 @@ def corr_open_shut(mec, lag):
             
     return r, roA, roF, roAF
 
+def mean_open_next_shut(mec, tres, points=512):
+    """
+    Calculate plot of mean open time preceding/next-to shut time.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution (dead time).
+
+    Returns
+    -------
+    sht : ndarray of floats, shape (num of points,)
+        Shut times.
+    mp : ndarray of floats, shape (num of points,)
+        Mean open time preceding shut time.
+    mn : ndarray of floats, shape (num of points,)
+        Mean open time next to shut time.
+    """
+    
+    Froots = scl.asymptotic_roots(tres,
+        mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
+    tmax = (-1 / Froots.max()) * 5
+    sht = np.logspace(math.log10(tres), math.log10(tmax), points)
+    mp, mn = scl.HJC_adjacent_mean_open_to_shut_time_pdf(sht, tres, mec.Q, 
+        mec.QAA, mec.QAF, mec.QFF, mec.QFA)
+        
+    # return in ms
+    return sht * 1000, mp * 1000, mn * 1000
+
 def burst_length_versus_conc_plot(mec, cmin, cmax):
     """
     Calculate data for the plot of burst length versus concentration.

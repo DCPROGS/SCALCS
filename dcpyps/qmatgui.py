@@ -113,12 +113,15 @@ class QMatGUI(QMainWindow):
             "&Correlations", self.onPlotOpShCorr)
         plotAdjacentOpenShutAction = self.createAction(
             "&Open time adjacent to shut time range pdf", self.onPlotOpAdjShacent)
+        plotMeanOpenNextShutAction = self.createAction(
+            "&Mean open time preceding/next to shut time", self.onPlotMeanOpNextShut)
 #        plotJump2PopenAction = self.createAction(
 #            "&Instant rise and exponential decay concentration jump: Popen", self.onPlotCJump2Popen)
         plotSaveASCII = self.createAction(
             "&Save current plot as ASCII file", self.onPlotSaveASCII)
         self.addActions(plotMenu, (plotOpenTimePDFAction, plotShutTimePDFAction,
-            plotAdjacentOpenShutAction, plotCorrOpenShutAction,
+            plotAdjacentOpenShutAction, plotMeanOpenNextShutAction, 
+            plotCorrOpenShutAction,
             # setDisabled(False) to activate plotting the subset time distributions
             plotSubsetTimePDFAction.setDisabled(True),
             plotBurstLenPDFAction, plotBurstLenPDFActionCond,
@@ -691,6 +694,27 @@ class QMatGUI(QMainWindow):
         self.axes.clear()
         self.axes.semilogx(t, ipdf, 'r--', t, ajpdf, 'b-')
         self.axes.set_yscale('sqrtscale')
+        self.axes.xaxis.set_ticks_position('bottom')
+        self.axes.yaxis.set_ticks_position('left')
+        self.canvas.draw()
+        
+    def onPlotMeanOpNextShut(self):
+        """
+        Display mean open time preceding / next-to shut time plot.
+        """
+        self.txtPltBox.clear()
+        self.txtPltBox.append('\t===== MEAN OPEN TIME PRECEDING / NEXT TO SHUT TIME =====')
+        self.txtPltBox.append('Agonist concentration = {0:.5g} mikroM'.
+            format(self.conc * 1000000))
+        self.txtPltBox.append('Mean open time preceding specified shut time- red dashed line.')
+        self.txtPltBox.append('Mean open time next to specified shut time- blue dashed line.')
+
+        self.mec.set_eff('c', self.conc)
+        sht, mp, mn = scpl.mean_open_next_shut(self.mec, self.tres)
+        self.present_plot = np.vstack((sht, mp, mn))
+
+        self.axes.clear()
+        self.axes.semilogx(sht, mp, 'r--', sht, mn, 'b--')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
