@@ -754,6 +754,59 @@ def adjacent_open_to_shut_range_mean(u1, u2, QAA, QAF, QFF, QFA, phiA):
     m = np.dot(row1, col)[0, 0] / np.dot(row2, col)[0, 0]
     return m
 
+def HJC_dependency(top, tsh, tres, Q, QAA, QAF, QFF, QFA):
+    """
+    Calculate normalised joint distribution (CHS96, Eq. 3.22) of an open time
+    and the following shut time as proposed by Magleby & Song 1992. 
+    
+    Parameters
+    ----------
+    top, tsh : array_like of floats
+        Open and shut tims.
+    tres : float
+        Time resolution.
+    Q : array, shape (k,k)
+        Q matrix. 
+    QAA, QAF, QFF, QFA : array_like
+        Submatrices of Q.
+
+    Returns
+    -------
+    dependency : ndarray
+    """
+    
+    kA, kF = QAA.shape[0], QFF.shape[0]
+    uA = np.ones((kA))[:,np.newaxis]
+    uF = np.ones((kF))[:,np.newaxis]
+    expQFF = qml.expQt(QFF, tres)
+    expQAA = qml.expQt(QAA, tres)
+    GAF, GFA = qml.iGs(Q, kA, kF)
+    eGAF = qml.eGs(GAF, GFA, kA, kF, expQFF)
+    eGFA = qml.eGs(GFA, GAF, kF, kA, expQAA)
+    phiA = qml.phiHJC(eGAF, eGFA, kA)
+    phiF = qml.phiHJC(eGFA, eGAF, kF)
+    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(Q, kA, QAA, QFA, QAF, expQAA, False)
+    Froots = asymptotic_roots(tres, QFF, QAA, QFA, QAF, kF, kA)
+    FR = qml.AR(Froots, tres, QFF, QAA, QFA, QAF, kF, kA)
+    Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(Q, kA, QFF, QAF, QFA, expQFF, True)
+    Aroots = asymptotic_roots(tres, QAA, QFF, QAF, QFA, kA, kF)
+    AR = qml.AR(Aroots, tres, QAA, QFF, QAF, QFA, kA, kF)
+
+    dependency = np.zeros((top.shape[0], tsh.shape[0]))
+    
+    for i in range(top.shape[0]):
+        eGAFt = qml.eGAF(top[i], tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
+                AR, QAF, expQFF)
+        fo = np.dot(np.dot(phiA, eGAFt), uF)[0]
+        
+        for j in range(tsh.shape[0]):
+            eGFAt = qml.eGAF(tsh[j], tres, Feigvals, FZ00, FZ10, FZ11, Froots,
+                FR, QFA, expQAA)
+            fs = np.dot(np.dot(phiF, eGFAt), uA)[0]
+            fos = np.dot(np.dot(np.dot(phiA, eGAFt), eGFAt), uA)[0]
+            dependency[i, j] = (fos - (fo * fs)) / (fo * fs)
+    return dependency
+
 def HJC_adjacent_mean_open_to_shut_time_pdf(sht, tres, Q, QAA, QAF, QFF, QFA):
     """
     Calculate theoretical HJC (with missed events correction) mean open time

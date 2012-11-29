@@ -21,6 +21,10 @@ try:
     from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
     from matplotlib.figure import Figure
     from matplotlib import scale as mscale
+    from mpl_toolkits.mplot3d import Axes3D
+    from matplotlib import cm
+    from matplotlib.ticker import LinearLocator, FormatStrFormatter, FuncFormatter
+    import matplotlib.pyplot as plt
 #    from matplotlib import transforms as mtransforms
 #    from matplotlib import ticker
 except:
@@ -115,13 +119,15 @@ class QMatGUI(QMainWindow):
             "&Open time adjacent to shut time range pdf", self.onPlotOpAdjShacent)
         plotMeanOpenNextShutAction = self.createAction(
             "&Mean open time preceding/next to shut time", self.onPlotMeanOpNextShut)
+        plotDependencyAction = self.createAction(
+            "&Dependency plot", self.onPlotDependency)
 #        plotJump2PopenAction = self.createAction(
 #            "&Instant rise and exponential decay concentration jump: Popen", self.onPlotCJump2Popen)
         plotSaveASCII = self.createAction(
             "&Save current plot as ASCII file", self.onPlotSaveASCII)
         self.addActions(plotMenu, (plotOpenTimePDFAction, plotShutTimePDFAction,
             plotAdjacentOpenShutAction, plotMeanOpenNextShutAction, 
-            plotCorrOpenShutAction,
+            plotCorrOpenShutAction, plotDependencyAction,
             # setDisabled(False) to activate plotting the subset time distributions
             plotSubsetTimePDFAction.setDisabled(True),
             plotBurstLenPDFAction, plotBurstLenPDFActionCond,
@@ -718,6 +724,47 @@ class QMatGUI(QMainWindow):
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
+        
+    def onPlotDependency(self):
+        """
+        Display dependency plot.
+        """
+        
+        self.txtPltBox.clear()
+        self.txtPltBox.append('\t===== DEPENDENCY PLOT =====')
+        self.txtPltBox.append('Agonist concentration = {0:.5g} mikroM'.
+            format(self.conc * 1000000))
+        self.txtPltBox.append('Resolution = {0:.5g} mikrosec'.
+            format(self.tres * 1000000))
+        self.txtPltBox.append('X and Y axis are in ms')
+            
+        self.mec.set_eff('c', self.conc)
+        to, ts, d = scpl.dependency_plot(self.mec, self.tres, points=128)
+        
+        fig = plt.figure()
+        fig.suptitle('Dependency plot', fontsize=12)
+        ax = fig.gca(projection='3d')
+        to, ts = np.meshgrid(to, ts)
+        surf = ax.plot_surface(to, ts, d, rstride=1, cstride=1, cmap=cm.coolwarm,
+        linewidth=0, antialiased=False)
+        ax.set_zlim(-1.0, 1.0)
+        
+#        def log_10_product(x, pos):
+#            """The two args are the value and tick position.
+#            Label ticks with the product of the exponentiation"""
+#            return '%1i' % (x)
+#        
+#        ax.set_xscale('log')
+#        ax.set_yscale('log')
+#        formatter = FuncFormatter(log_10_product)
+#        ax.xaxis.set_major_formatter(formatter)
+#        ax.yaxis.set_major_formatter(formatter)
+
+        ax.zaxis.set_major_locator(LinearLocator(10))
+        ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+
+        fig.colorbar(surf, shrink=0.5, aspect=5)
+        plt.show()
         
     def onPlotOpenTimePDF(self):
         """

@@ -219,6 +219,41 @@ def mean_open_next_shut(mec, tres, points=512):
     # return in ms
     return sht * 1000, mp * 1000, mn * 1000
 
+def dependency_plot(mec, tres, points=512):
+    """
+    Calculate 3D dependency plot.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution (dead time).
+
+    Returns
+    -------
+    top : ndarray of floats, shape (num of points,)
+        Open times.
+    tsh : ndarray of floats, shape (num of points,)
+        Shut times.
+    dependency : ndarray 
+        Mean open time next to shut time.
+    """
+    
+    Froots = scl.asymptotic_roots(tres,
+        mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
+    tsmax = (-1 / Froots.max()) * 20
+    tsh = np.logspace(math.log10(tres), math.log10(tsmax), points)
+    
+    Aroots = scl.asymptotic_roots(tres,
+        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
+    tomax = (-1 / Aroots.max()) * 20
+    top = np.logspace(math.log10(tres), math.log10(tomax), points)
+    
+    dependency = scl.HJC_dependency(top, tsh, tres, mec.Q, 
+        mec.QAA, mec.QAF, mec.QFF, mec.QFA)
+    
+    return np.log10(top*1000), np.log10(tsh*1000), dependency
+
 def burst_length_versus_conc_plot(mec, cmin, cmax):
     """
     Calculate data for the plot of burst length versus concentration.
