@@ -1273,8 +1273,12 @@ class CJumpParDlg(QDialog):
             if self.profile == 'rcj':
                 # 'rcj' profile.
                 self.centre = cjargs[2] * 1000 # Pulse centre in ms.
-                self.rise = cjargs[4] * 1e6 # 10-90% rise time for error function in microsec.
-                self.decay = cjargs[5] * 1e6 # 90-10% decay time for error function in microsec.
+                try:
+                    self.rise = cjargs[4] * 1e6 # 10-90% rise time for error function in microsec.
+                    self.decay = cjargs[5] * 1e6 # 90-10% decay time for error function in microsec.
+                except:
+                    self.rise = 200 # 10-90% rise time for error function in microsec.
+                    self.decay = 200 # 90-10% decay time for error function in microsec.
                 self.width = cjargs[3] * 1000 # Pulse halfwidth in ms.
             elif self.profile == 'instexp':
                 self.prepulse = cjargs[2] * 1000 # Time before pulse starts (ms)
