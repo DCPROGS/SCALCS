@@ -625,6 +625,8 @@ class QMatGUI(QMainWindow):
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
 
+        self.present_plot = np.vstack((c, ton, toff))
+
     def onPlotPopen(self):
         """
         Display Popen curve.
@@ -959,11 +961,17 @@ class QMatGUI(QMainWindow):
         """
         self.txtPltBox.clear()
         self.txtPltBox.append('===== MEAN BURST LENGTH VERSUS CONCENTRATION =====')
+        self.txtPltBox.append('Solid line: mean burst length versus concentration.')
+        self.txtPltBox.append('    X-axis: microMols; Y-axis: ms.')
         self.txtPltBox.append('Dashed line: corrected for fast block.')
 
         # TODO: need dialog to enter concentration range.
-        cmin = 10e-9
-        cmax = 0.1
+        dialog = ConcRangeDlg(self)
+        if dialog.exec_():
+            cmin, cmax = dialog.return_par()
+
+#        cmin = 10e-9
+#        cmax = 0.005
         c, br, brblk = scpl.burst_length_versus_conc_plot(self.mec, cmin, cmax)
         self.present_plot = np.vstack((c, br, brblk))
 
@@ -993,7 +1001,7 @@ class QMatGUI(QMainWindow):
     def onPlotSaveASCII(self):
 
         savePlotTXTFilename = QFileDialog.getSaveFileName(self,
-                "Save as TXT file...", ".txt",
+                "Save as TXT file...", self.path, ".txt",
                 "TXT files (*.txt)")
 
         fout = open(savePlotTXTFilename,'w')
@@ -1002,6 +1010,9 @@ class QMatGUI(QMainWindow):
                 fout.write('{0:.6e}\t'.format(self.present_plot[j, i]))
             fout.write('\n')
         fout.close()
+
+        self.txtPltBox.append('Current plot saved in text file:')
+        self.txtPltBox.append(savePlotTXTFilename)
 
     def onHelpAbout(self):
         """
@@ -1612,6 +1623,60 @@ class ConcProfileDlg(QDialog):
         elif self.square2RB.isChecked():
             profile = 'square2'
         return profile
+
+class ConcRangeDlg(QDialog):
+    """
+    Dialog to get concentration range.
+    """
+    def __init__(self, parent=None, cmin=1e-6, cmax=0.001):
+        super(ConcRangeDlg, self).__init__(parent)
+
+        self.cmin = cmin * 1000 # in mM.
+        self.cmax = cmax * 1000 # in mM.
+
+        layoutMain = QVBoxLayout()
+        layoutMain.addWidget(QLabel("Enter concentrations:"))
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Start concentration (mM):"))
+        self.conc1Edit = QLineEdit(unicode(self.cmin))
+        self.conc1Edit.setMaxLength(12)
+        self.connect(self.conc1Edit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.conc1Edit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("End concentration (mM):"))
+        self.conc2Edit = QLineEdit(unicode(self.cmax))
+        self.conc2Edit.setMaxLength(12)
+        self.connect(self.conc2Edit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.conc2Edit)
+        layoutMain.addLayout(layout)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+
+        self.setLayout(layoutMain)
+        self.setWindowTitle("Concentration range...")
+
+    def on_par_changed(self):
+        """
+        """
+        self.cmin = float(self.conc1Edit.text()) * 0.001
+        self.cmax = float(self.conc2Edit.text()) * 0.001
+
+    def return_par(self):
+        """
+        Return parameter dictionary on exit.
+        """
+        return self.cmin, self.cmax
 
 class BurstPlotDlg(QDialog):
     """
