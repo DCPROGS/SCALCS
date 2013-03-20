@@ -39,6 +39,7 @@ def Popen(mec, tres, conc, eff='c'):
         GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
         hmopen = scl.exact_mean_time(tres,
             mec.QAA, mec.QFF, mec.QAF, mec.kA, mec.kF, GAF, GFA)
+#        hmshut = scl.ideal_subset_mean_life_time(mec.Q, 7, 13)
         hmshut = scl.exact_mean_time(tres,
             mec.QFF, mec.QAA, mec.QFA, mec.kF, mec.kA, GFA, GAF)
         popen = (hmopen / (hmopen + hmshut))

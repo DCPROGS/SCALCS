@@ -79,13 +79,15 @@ class QMatGUI(QMainWindow):
         loadFromModFileAction = self.createAction("&Load from ChannelLab MOD File...",
             self.onLoadModFile,
             None, "loadfrommodfile", "Load from ChannelLab Mod file")
-        modifyMecAction = self.createAction("&Modify loaded mec", self.onModifyMec,
-            None, "modifymec", "Modify mec")
+        modifyMecAction = self.createAction("&Modify loaded mec rates", self.onModifyMec,
+            None, "modifymec", "Modify mec rates")
+        modifyStatesAction = self.createAction("&Modify loaded mec states", self.onModifyStates,
+            None, "modifystates", "Modify mec states")
         quitAction = self.createAction("&Quit", self.close,
             "Ctrl+Q", "appquit", "Close the application")
         self.addActions(loadMenu, (loadDemo1Action, loadDemo2Action,
             loadFromMecFileAction, loadFromModFileAction,
-            modifyMecAction, quitAction))
+            modifyMecAction, modifyStatesAction, quitAction))
 
         plotMenu = self.menuBar().addMenu('&Plot')
         plotPopenAction = self.createAction("&Popen curve", self.onPlotPopen)
@@ -1088,6 +1090,13 @@ class QMatGUI(QMainWindow):
         if table.exec_():
             self.mec = table.return_mec()
 
+    def onModifyStates(self):
+        """
+        """
+        table = StateTableDlg(self, self.mec, self.log)
+        if table.exec_():
+            self.mec = table.return_mec()
+
 class PrintLog:
     """
     Write stdout to a QTextEdit.
@@ -1266,6 +1275,93 @@ class RateTable(QTableWidget):
 
         self.resizeColumnsToContents()
         self.resizeRowsToContents()
+
+class StateTableDlg(QDialog):
+    """
+    """
+    def __init__(self, parent=None, mec=None, log=None):
+        super(StateTableDlg, self).__init__(parent)
+        self.mec = mec
+        self.changed = False
+        self.log = log
+
+        layoutMain = QVBoxLayout()
+        self.table = StateTable(self.mec)
+        self.table.display_data()
+        self.connect(self.table,
+                SIGNAL("cellChanged(int, int)"),
+                self.tableItemChanged)
+        layoutMain.addWidget(self.table)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+
+        self.setLayout(layoutMain)
+        self.setGeometry(100,100,450,350)
+        self.setWindowTitle("View and modify states...")
+
+    def tableItemChanged(self, row, column):
+        # TODO: update mechanism if anything changed in table
+
+#        if column == 0:
+#            newname = self.table.item(row, column).text()
+#            self.mec.States[row].name = newname
+
+        if column == 1:
+            newtype = self.table.item(row, column).text().toUpper()
+            self.mec.States[row].statetype = newtype
+
+        if column == 2:
+            newgamma = float(self.table.item(row, column).text())
+            self.mec.Rates[row].conductance = newgamma
+
+        self.changed = True
+
+    def return_mec(self):
+        if self.changed:
+            self.mec.update_states()
+            self.log.write("\n\nMechanism states modified:\n")
+            self.mec.printout(self.log)
+        return self.mec
+
+class StateTable(QTableWidget):
+    """ Creates a custom table widget """
+    def __init__(self, mec=None, *args):
+        QTableWidget.__init__(self, *args)
+        self.setSelectionMode(self.ContiguousSelection)
+        self.setGeometry(0,0,700,400)
+        self.setShowGrid(False)
+        self.mec = mec
+
+    def display_data(self):
+        """ Reads in data as a 2D list and formats and displays it in
+            the table """
+
+        header = ['State name', 'State Class', 'Conductance',
+            'Number of connections']
+
+        nrows = len(self.mec.States)
+        ncols = len(header)
+        self.setRowCount(nrows)
+        self.setColumnCount(ncols)
+        self.setHorizontalHeaderLabels(header)
+
+        for i in xrange(nrows):
+            cell = QTableWidgetItem(self.mec.States[i].name)
+            self.setItem(i, 0, cell)
+            cell = QTableWidgetItem(self.mec.States[i].statetype)
+            self.setItem(i, 1, cell)
+            cell = QTableWidgetItem(str(self.mec.States[i].conductance))
+            self.setItem(i, 2, cell)
+
+        self.resizeColumnsToContents()
+        self.resizeRowsToContents()
+
 
 class CJumpParDlg(QDialog):
     """

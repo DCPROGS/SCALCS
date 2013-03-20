@@ -456,7 +456,6 @@ class Mechanism(object):
 #        self.ncyc = ncyc   # number of cycles; could be deduced from the rates!
         self.Cycles = Cycles
         #self.check_mr()
-        
 #        self.update_mr()
 
         # construct States end effectors from Rates:
@@ -474,13 +473,19 @@ class Mechanism(object):
                 if eff not in self._effdict.keys() and eff is not None:
                     self._effdict[eff] = 1.0
 
+        self.sort_states()
+        self.fastblk = fastblk
+        self.KBlk = KBlk
+        self.set_Q()
+        
+    def sort_states(self):
         # REMIS: please check whether this makes sense
         # sort States according to state type:
-        self.States.sort(key=lambda state: state.statetype.lower())
+        self.States.sort(key=lambda state: state.statetype)
         # assign Q matrix indices according to sorted list:
         for no, state in enumerate(self.States):
             state.no = no # ZERO-based!
-
+            
         self.kA = 0
         self.kB = 0
         self.kC = 0
@@ -498,8 +503,7 @@ class Mechanism(object):
         self.kE = self.kA + self.kB
         self.k = self.kA + self.kB + self.kC + self.kD
 
-        self.fastblk = fastblk
-        self.KBlk = KBlk
+    def set_Q(self):
 
         self.Q = np.zeros((len(self.States), len(self.States)), dtype=np.float64)
 
@@ -617,6 +621,22 @@ class Mechanism(object):
               (not self.Rates[i].mr)):
                 self.Rates[i].rateconstants = theta[iter]
                 iter += 1
+        self.update_constrains()
+        self.update_mr()
+
+    def update_states(self):
+        """
+        """
+
+        self.sort_states()
+        for i in range(len(self.Rates)):
+            for state in self.States:
+                if self.Rates[i].State1.name == state.name:
+                    self.Rates[i].State1 = state
+                if self.Rates[i].State2.name == state.name:
+                    self.Rates[i].State2 = state
+
+        self.set_Q()
         self.update_constrains()
         self.update_mr()
 
