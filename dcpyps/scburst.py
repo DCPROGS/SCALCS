@@ -28,7 +28,7 @@ def phiBurst(mec):
     """
 
     uA = np.ones((mec.kA, 1))
-    pC = qml.pinf(mec.Q)[mec.kE:]
+    pC = qml.pinf(mec.Q)[mec.kE:mec.kG]
     GAB, GBA = qml.iGs(mec.Q, mec.kA, mec.kB)
     nom = np.dot(pC, (np.dot(mec.QCB, GBA) + mec.QCA))
     denom = np.dot(nom, uA)

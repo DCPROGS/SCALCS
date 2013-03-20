@@ -178,16 +178,16 @@ def ideal_mean_latency_given_start_state(mec, state):
         # for calculating mean latency to next shutting
         p = np.zeros((mec.kA))
         p[state-1] = 1
-        uF = np.ones((mec.kA, 1))
-        invQFF = nplin.inv(-mec.QAA)
+        u = np.ones((mec.kA, 1))
+        invQ = nplin.inv(-mec.QAA)
     else:
         # for calculating mean latency to next opening
-        p = np.zeros((mec.kF))
+        p = np.zeros((mec.kI))
         p[state-mec.kA-1] = 1
-        uF = np.ones((mec.kF, 1))
-        invQFF = nplin.inv(-mec.QFF)
+        u = np.ones((mec.kI, 1))
+        invQ = nplin.inv(-mec.QII)
 
-    mean = np.dot(np.dot(p, invQFF), uF)[0]
+    mean = np.dot(np.dot(p, invQ), u)[0]
 
     return mean
 
@@ -420,21 +420,21 @@ def exact_GAMAxx(mec, tres, open):
         Constants for the exact open/shut time pdf.
     """
 
-    expQFF = qml.expQt(mec.QFF, tres)
+    expQFF = qml.expQt(mec.QII, tres)
     expQAA = qml.expQt(mec.QAA, tres)
-    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
-    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
-    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kI)
+    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kI, expQFF)
+    eGFA = qml.eGs(GFA, GAF, mec.kI, mec.kA, expQAA)
 
     if open:
         phi = qml.phiHJC(eGAF, eGFA, mec.kA)
         eigen, Z00, Z10, Z11 = qml.Zxx(mec.Q, mec.kA,
-            mec.QFF, mec.QAF, mec.QFA, expQFF, open)
-        u = np.ones((mec.kF,1))
+            mec.QII, mec.QAI, mec.QIA, expQFF, open)
+        u = np.ones((mec.kI,1))
     else:
-        phi = qml.phiHJC(eGFA, eGAF, mec.kF)
+        phi = qml.phiHJC(eGFA, eGAF, mec.kI)
         eigen, Z00, Z10, Z11 = qml.Zxx(mec.Q, mec.kA,
-            mec.QAA, mec.QFA, mec.QAF, expQAA, open)
+            mec.QAA, mec.QIA, mec.QAI, expQAA, open)
         u = np.ones((mec.kA, 1))
 
     gama00 = (np.dot(np.dot(phi, Z00), u)).T[0]
@@ -917,24 +917,31 @@ def printout_occupancies(mec, tres, output=sys.stdout):
                 '\t{0:.5g}'.format(np.sum(pinf[:mec.kA])) +
                 '\t{0:.5g}\n'.format(mean_life_A * 1000))
         if i == mec.kA:
-            mean_life_B = ideal_subset_mean_life_time(mec.Q, mec.kA + 1, mec.kA + mec.kB)
+            mean_life_B = ideal_subset_mean_life_time(mec.Q, mec.kA + 1, mec.kE)
             output.write('\nShut\tEquilibrium\tMean life\tMean latency (ms)\n')
             output.write('state\toccupancy\t(ms)\tto next opening\n')
             output.write('\t\t\tgiven start in this state\n')
             output.write('Subset B ' +
-                '\t{0:.5g}'.format(np.sum(pinf[mec.kA:mec.kA+mec.kB])) +
+                '\t{0:.5g}'.format(np.sum(pinf[mec.kA : mec.kE])) +
                 '\t{0:.5g}\n'.format(mean_life_B * 1000))
         if i == mec.kE:
-            mean_life_C = ideal_subset_mean_life_time(mec.Q, mec.kA + mec.kB + 1, mec.k)
+            mean_life_C = ideal_subset_mean_life_time(mec.Q, mec.kE + 1, mec.kG)
             output.write('\nSubset C ' +
-                '\t{0:.5g}'.format(np.sum(pinf[mec.kA+mec.kB:mec.k])) +
+                '\t{0:.5g}'.format(np.sum(pinf[mec.kE : mec.kG])) +
                 '\t{0:.5g}\n'.format(mean_life_C * 1000))
+        if i == mec.kG:
+            mean_life_D = ideal_subset_mean_life_time(mec.Q, mec.kG + 1, mec.k)
+            output.write('\nSubset D ' +
+                '\t{0:.5g}'.format(np.sum(pinf[mec.kG : mec.k])) +
+                '\t{0:.5g}\n'.format(mean_life_D * 1000))
+
         mean = ideal_mean_latency_given_start_state(mec, i+1)
         output.write('{0:d}'.format(i+1) +
             '\t{0:.5g}'.format(pinf[i]) +
             '\t{0:.5g}'.format(-1 / mec.Q[i,i] * 1000) +
             '\t{0:.5g}\n'.format(mean * 1000))
 
+    print 'QFF', mec.QFF
     expQFF = qml.expQt(mec.QFF, tres)
     expQAA = qml.expQt(mec.QAA, tres)
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
@@ -965,7 +972,7 @@ def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
     """
 
     output.write('\n*******************************************\n')
-    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+    GAI, GIA = qml.iGs(mec.Q, mec.kA, mec.kI)
     # OPEN TIME DISTRIBUTIONS
     open = True
     # Ideal pdf
@@ -977,10 +984,10 @@ def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
     # Asymptotic pdf
     #roots = asymptotic_roots(mec, tres, open)
     roots = asymptotic_roots(tres,
-        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
+        mec.QAA, mec.QII, mec.QAI, mec.QIA, mec.kA, mec.kI)
     #areas = asymptotic_areas(mec, tres, roots, open)
     areas = asymptotic_areas(tres, roots,
-        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF, GAF, GFA)
+        mec.QAA, mec.QII, mec.QAI, mec.QIA, mec.kA, mec.kI, GAI, GIA)
     output.write('\nASYMPTOTIC OPEN TIME DISTRIBUTION\n')
     output.write('term\ttau (ms)\tarea (%)\trate const (1/sec)\n')
     for i in range(mec.kA):
@@ -998,7 +1005,7 @@ def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
         output.write('{0:d}'.format(i+1) +
         '\t{0:.5g}\n'.format(areast0[i] * 100))
     mean = exact_mean_time(tres,
-            mec.QAA, mec.QFF, mec.QAF, mec.kA, mec.kF, GAF, GFA)
+            mec.QAA, mec.QII, mec.QAI, mec.kA, mec.kI, GAI, GIA)
     output.write('Mean open time (ms) = {0:.5g}\n'.format(mean * 1000))
 
     # Exact pdf
@@ -1015,35 +1022,35 @@ def printout_distributions(mec, tres, output=sys.stdout, eff='c'):
     # SHUT TIME DISTRIBUTIONS
     open = False
     # Ideal pdf
-    eigs, w = ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
+    eigs, w = ideal_dwell_time_pdf_components(mec.QII, qml.phiF(mec))
     output.write('IDEAL SHUT TIME DISTRIBUTION\n')
     pdfs.expPDF_printout(eigs, w, output)
 
     # Asymptotic pdf
     #roots = asymptotic_roots(mec, tres, open)
     roots = asymptotic_roots(tres,
-        mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
+        mec.QII, mec.QAA, mec.QIA, mec.QAI, mec.kI, mec.kA)
     #areas = asymptotic_areas(mec, tres, roots, open)
     areas = asymptotic_areas(tres, roots,
-        mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA, GFA, GAF)
+        mec.QII, mec.QAA, mec.QIA, mec.QAI, mec.kI, mec.kA, GIA, GAI)
     output.write('\nASYMPTOTIC SHUT TIME DISTRIBUTION\n')
     output.write('term\ttau (ms)\tarea (%)\trate const (1/sec)\n')
-    for i in range(mec.kF):
+    for i in range(mec.kI):
         output.write('{0:d}'.format(i+1) +
         '\t{0:.5g}'.format(-1.0 / roots[i] * 1000) +
         '\t{0:.5g}'.format(areas[i] * 100) +
         '\t{0:.5g}\n'.format(- roots[i]))
-    areast0 = np.zeros(mec.kF)
-    for i in range(mec.kF):
+    areast0 = np.zeros(mec.kI)
+    for i in range(mec.kI):
         areast0[i] = areas[i] * np.exp(- tres * roots[i])
     areast0 = areast0 / np.sum(areast0)
     output.write('Areas for asymptotic pdf renormalised for t=0 to\
     infinity (and sum=1), so areas can be compared with ideal pdf.\n')
-    for i in range(mec.kF):
+    for i in range(mec.kI):
         output.write('{0:d}'.format(i+1) +
         '\t{0:.5g}\n'.format(areast0[i] * 100))
     mean = exact_mean_time(tres,
-            mec.QFF, mec.QAA, mec.QFA, mec.kF, mec.kA, GFA, GAF)
+            mec.QII, mec.QAA, mec.QIA, mec.kI, mec.kA, GIA, GAI)
     output.write('Mean shut time (ms) = {0:.6f}\n'.format(mean * 1000))
 
     # Exact pdf
@@ -1134,7 +1141,7 @@ def printout_tcrit(mec, output=sys.stdout):
     output.write('CALCULATIONS BASED ON DIVISION INTO BURSTS BY' +
     ' tcrit- CRITICAL TIME.\n')
     # Ideal shut time pdf
-    eigs, w = ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
+    eigs, w = ideal_dwell_time_pdf_components(mec.QII, qml.phiF(mec))
     output.write('\nIDEAL SHUT TIME DISTRIBUTION\n')
     pdfs.expPDF_printout(eigs, w, output)
     taus = 1 / eigs
@@ -1195,9 +1202,9 @@ def printout_correlations(mec, output=sys.stdout, eff='c'):
     output.write('\n\n*************************************\n')
     output.write('CORRELATIONS\n')
     
-    kA, kB, kF = mec.kA, mec.kB, mec.kF
-    output.write('kA, kF = {0:d}, {1:d}\n'.format(kA, kF))    
-    GAF, GFA = qml.iGs(mec.Q, kA, kF)
+    kA, kI = mec.kA, mec.kI
+    output.write('kA, kF = {0:d}, {1:d}\n'.format(kA, kI))
+    GAF, GFA = qml.iGs(mec.Q, kA, kI)
     rGAF, rGFA = np.rank(GAF), np.rank(GFA)
     output.write('Ranks of GAF, GFA = {0:d}, {1:d}\n'.format(rGAF, rGFA))
     XFF = np.dot(GFA, GAF)
@@ -1207,7 +1214,7 @@ def printout_correlations(mec, output=sys.stdout, eff='c'):
     eigXFF, AXFF = qml.eigs(XFF)
     output.write('Eigenvalues of GFA * GAF:\n')
     str = ''
-    for i in range(kF):
+    for i in range(kI):
         str += '\t{0:.5g}'.format(eigXFF[i])
     output.write(str + '\n')
     XAA = np.dot(GAF, GFA)
@@ -1220,9 +1227,9 @@ def printout_correlations(mec, output=sys.stdout, eff='c'):
     for i in range(kA):
         str += '\t{0:.5g}'.format(eigXAA[i])
     output.write(str + '\n')
-    phiA, phiF = qml.phiA(mec).reshape((1,kA)), qml.phiF(mec).reshape((1,kF))
+    phiA, phiF = qml.phiA(mec).reshape((1,kA)), qml.phiF(mec).reshape((1,kI))
     varA = corr_variance_A(phiA, mec.QAA, kA)
-    varF = corr_variance_A(phiF, mec.QFF, kF)
+    varF = corr_variance_A(phiF, mec.QII, kI)
     
     #   open - open time correlations
     output.write('\n OPEN - OPEN TIME CORRELATIONS')
@@ -1265,7 +1272,7 @@ def printout_correlations(mec, output=sys.stdout, eff='c'):
         'uncorrelated = {0:.5g} ms\n'.format(SDF_mean_n * 1000))
     covFtot = 0
     for i in range(1, n):
-        covF = corr_covariance_A(i+1, phiF, mec.QFF, XFF, kF)
+        covF = corr_covariance_A(i+1, phiF, mec.QII, XFF, kI)
         ro = stl.correlation_coefficient_1(covF, varF, varF)
         covFtot += (n - i) * ro * varF
     vtotF = 50 * varF + 2. * covFtot
@@ -1274,13 +1281,13 @@ def printout_correlations(mec, output=sys.stdout, eff='c'):
     pF = 100 * (actSDF - SDF_mean_n) / SDF_mean_n
     output.write('Percent difference as result of correlation = {0:.5g}\n'.
         format(pF))
-    v2F = corr_limit_A(phiF, mec.QFF, AXFF, eigXFF, kF)
+    v2F = corr_limit_A(phiF, mec.QII, AXFF, eigXFF, kI)
     pmaxF = 100 * (sqrt(1 + 2 * v2F / varF) - 1)
     output.write('Limiting value of percent difference for large n = {0:.5g}\n'.
         format(pmaxF))
     output.write('Correlation coefficients, r(k), for up to k = 5 lags:\n')
     for i in range(5):
-        covF = corr_covariance_A(i+1, phiF, mec.QFF, XFF, kF)
+        covF = corr_covariance_A(i+1, phiF, mec.QII, XFF, kI)
         ro = stl.correlation_coefficient_1(covF, varF, varF)
         output.write('r({0:d}) = {1:.5g}\n'.format(i+1, ro))
 
@@ -1288,7 +1295,7 @@ def printout_correlations(mec, output=sys.stdout, eff='c'):
     output.write('\n OPEN - SHUT TIME CORRELATIONS\n')
     output.write('Correlation coefficients, r(k), for up to k= 5 lags:\n')
     for i in range(5):
-        covAF = corr_covariance_AF(i+1, phiA, mec.QAA, mec.QFF, XAA, GAF, kA, kF)
+        covAF = corr_covariance_AF(i+1, phiA, mec.QAA, mec.QII, XAA, GAF, kA, kI)
         ro = stl.correlation_coefficient_1(covAF, varA, varF)
         output.write('r({0:d}) = {1:.5g}\n'.format(i+1, ro))
         

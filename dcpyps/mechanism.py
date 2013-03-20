@@ -492,16 +492,20 @@ class Mechanism(object):
         self.kD = 0
         for State in self.States:
             if State.statetype=='A':
-                self.kA += 1
+                self.kA += 1 # all open states
             if State.statetype=='B':
-                self.kB += 1
+                self.kB += 1 # short lived shut (inside burst) shut states
             if State.statetype=='C':
-                self.kC += 1
+                self.kC += 1 # long lived shut (between bursts) shut states
             if State.statetype=='D':
-                self.kD += 1
-        self.kF = self.kB + self.kC
-        self.kE = self.kA + self.kB
-        self.k = self.kA + self.kB + self.kC + self.kD
+                self.kD += 1 # very long lived shut (between clusters)
+        
+        self.kE = self.kA + self.kB # burst states
+        self.kF = self.kB + self.kC # intra and inter burst shut states
+        self.kG = self.kA + self.kB + self.kC # cluster states
+        self.kH = self.kC + self.kD # gap between clusters states
+        self.kI = self.kB + self.kC + self.kD # all shut states
+        self.k = self.kA + self.kB + self.kC + self.kD # all states
 
     def set_Q(self):
 
@@ -576,18 +580,22 @@ class Mechanism(object):
 
 #        self.eigenvals, self.A = qml.eigs(self.Q)
 #        self.GAB, self.GBA = qml.iGs(self.Q, self.kA, self.kB)
-        self.QFF = self.Q[self.kA:, self.kA:]
-        self.QFA = self.Q[self.kA:, :self.kA]
-        self.QAF = self.Q[:self.kA, self.kA:]
+        self.QFF = self.Q[self.kA:self.kG, self.kA:self.kG]
+        self.QFA = self.Q[self.kA:self.kG, :self.kA]
+        self.QAF = self.Q[:self.kA, self.kA:self.kG]
         self.QAA = self.Q[:self.kA, :self.kA]
         self.QEE = self.Q[:self.kE, :self.kE]
         self.QBB = self.Q[self.kA:self.kE, self.kA:self.kE]
         self.QAB = self.Q[:self.kA, self.kA:self.kE]
         self.QBA = self.Q[self.kA:self.kE, :self.kA]
-        self.QBC = self.Q[self.kA:self.kE, self.kE:]
-        self.QAC = self.Q[:self.kA, self.kE:]
-        self.QCB = self.Q[self.kE:, self.kA:self.kE]
-        self.QCA = self.Q[self.kE:, :self.kA]
+        self.QBC = self.Q[self.kA:self.kE, self.kE:self.kG]
+        self.QAC = self.Q[:self.kA, self.kE:self.kG]
+        self.QCB = self.Q[self.kE:self.kG, self.kA:self.kE]
+        self.QCA = self.Q[self.kE:self.kG, :self.kA]
+        self.QII = self.Q[self.kA:self.k, self.kA:self.k]
+        self.QIA = self.Q[self.kA:self.k, :self.kA]
+        self.QAI = self.Q[:self.kA, self.kA:self.k]
+        self.QGG = self.Q[:self.kG, :self.kG]
 
     def set_eff(self, eff, val):
         self.set_effdict({eff:val})
@@ -637,6 +645,7 @@ class Mechanism(object):
                     self.Rates[i].State2 = state
 
         self.set_Q()
+        self.update_submat()
         self.update_constrains()
         self.update_mr()
 

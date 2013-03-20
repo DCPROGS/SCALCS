@@ -169,21 +169,21 @@ def corr_open_shut(mec, lag):
         Mean burst length in millisec corrected for fast block.
     """
     
-    kA, kB, kF = mec.kA, mec.kB, mec.kF
+    kA, kF = mec.kA, mec.kI
     GAF, GFA = qml.iGs(mec.Q, kA, kF)
     XAA, XFF = np.dot(GAF, GFA), np.dot(GFA, GAF)
     phiA, phiF = qml.phiA(mec).reshape((1,kA)), qml.phiF(mec).reshape((1,kF))
     varA = scl.corr_variance_A(phiA, mec.QAA, kA)
-    varF = scl.corr_variance_A(phiF, mec.QFF, kF)
+    varF = scl.corr_variance_A(phiF, mec.QII, kF)
     
     r = np.arange(1, lag + 1)
     roA, roF, roAF = np.zeros(lag), np.zeros(lag), np.zeros(lag)
     for i in range(lag):
         covA = scl.corr_covariance_A(i+1, phiA, mec.QAA, XAA, kA)
         roA[i] = stl.correlation_coefficient_1(covA, varA, varA)
-        covF = scl.corr_covariance_A(i+1, phiF, mec.QFF, XFF, kF)
+        covF = scl.corr_covariance_A(i+1, phiF, mec.QII, XFF, kF)
         roF[i] = stl.correlation_coefficient_1(covF, varF, varF)
-        covAF = scl.corr_covariance_AF(i+1, phiA, mec.QAA, mec.QFF,
+        covAF = scl.corr_covariance_AF(i+1, phiA, mec.QAA, mec.QII,
             XAA, GAF, kA, kF)
         roAF[i] = stl.correlation_coefficient_1(covAF, varA, varF)
             
@@ -210,11 +210,11 @@ def mean_open_next_shut(mec, tres, points=512):
     """
     
     Froots = scl.asymptotic_roots(tres,
-        mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
+        mec.QII, mec.QAA, mec.QIA, mec.QAI, mec.kI, mec.kA)
     tmax = (-1 / Froots.max()) * 5
     sht = np.logspace(math.log10(tres), math.log10(tmax), points)
     mp, mn = scl.HJC_adjacent_mean_open_to_shut_time_pdf(sht, tres, mec.Q, 
-        mec.QAA, mec.QAF, mec.QFF, mec.QFA)
+        mec.QAA, mec.QAI, mec.QII, mec.QIA)
         
     # return in ms
     return sht * 1000, mp * 1000, mn * 1000
@@ -240,17 +240,17 @@ def dependency_plot(mec, tres, points=512):
     """
     
     Froots = scl.asymptotic_roots(tres,
-        mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
+        mec.QII, mec.QAA, mec.QIA, mec.QAI, mec.kI, mec.kA)
     tsmax = (-1 / Froots.max()) * 20
     tsh = np.logspace(math.log10(tres), math.log10(tsmax), points)
     
     Aroots = scl.asymptotic_roots(tres,
-        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
+        mec.QAA, mec.QII, mec.QAI, mec.QIA, mec.kA, mec.kI)
     tomax = (-1 / Aroots.max()) * 20
     top = np.logspace(math.log10(tres), math.log10(tomax), points)
     
     dependency = scl.HJC_dependency(top, tsh, tres, mec.Q, 
-        mec.QAA, mec.QAF, mec.QFF, mec.QFA)
+        mec.QAA, mec.QAI, mec.QII, mec.QIA)
     
     return np.log10(top*1000), np.log10(tsh*1000), dependency
 
@@ -357,7 +357,7 @@ def open_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
 
     # Asymptotic pdf
     roots = scl.asymptotic_roots(tres,
-        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
+        mec.QAA, mec.QII, mec.QAI, mec.QIA, mec.kA, mec.kI)
 
     tmax = (-1 / roots.max()) * 20
     t = np.logspace(math.log10(tmin), math.log10(tmax), points)
@@ -368,10 +368,10 @@ def open_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
     ipdf = t * pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
 
     # Asymptotic pdf
-    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kI)
     areas = scl.asymptotic_areas(tres, roots,
-        mec.QAA, mec.QFF, mec.QAF, mec.QFA,
-        mec.kA, mec.kF, GAF, GFA)
+        mec.QAA, mec.QII, mec.QAI, mec.QIA,
+        mec.kA, mec.kI, GAF, GFA)
     apdf = scl.asymptotic_pdf(t, tres, -1 / roots, areas)
 
     # Exact pdf
@@ -423,7 +423,7 @@ def adjacent_open_time_pdf(mec, tres, u1, u2,
 
     # Ajacent open time pdf
     eigs, w = scl.adjacent_open_to_shut_range_pdf_components(u1, u2, 
-        mec.QAA, mec.QAF, mec.QFF, mec.QFA, qml.phiA(mec).reshape((1,mec.kA)))
+        mec.QAA, mec.QAI, mec.QII, mec.QIA, qml.phiA(mec).reshape((1,mec.kA)))
 #    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
     ajpdf = t * pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
            
@@ -484,22 +484,22 @@ def shut_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
     open = False
 
     # Asymptotic pdf
-    roots = scl.asymptotic_roots(tres, mec.QFF, mec.QAA, mec.QFA, mec.QAF,
-        mec.kF, mec.kA)
+    roots = scl.asymptotic_roots(tres, mec.QII, mec.QAA, mec.QIA, mec.QAI,
+        mec.kI, mec.kA)
 
     tmax = (-1 / roots.max()) * 20
     t = np.logspace(math.log10(tmin), math.log10(tmax), points)
 
     # Ideal pdf.
-    eigs, w = scl.ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
+    eigs, w = scl.ideal_dwell_time_pdf_components(mec.QII, qml.phiF(mec))
     fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
     ipdf = t * pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
 
     # Asymptotic pdf
-    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kI)
     areas = scl.asymptotic_areas(tres, roots,
-        mec.QFF, mec.QAA, mec.QFA, mec.QAF,
-        mec.kF, mec.kA, GFA, GAF)
+        mec.QII, mec.QAA, mec.QIA, mec.QAI,
+        mec.kI, mec.kA, GFA, GAF)
     apdf = scl.asymptotic_pdf(t, tres, -1 / roots, areas)
 
     # Exact pdf
@@ -544,7 +544,7 @@ def subset_time_pdf(mec, tres, state1, state2,
     if open:
         eigs, w = scl.ideal_dwell_time_pdf_components(mec.QAA, qml.phiA(mec))
     else:
-        eigs, w = scl.ideal_dwell_time_pdf_components(mec.QFF, qml.phiF(mec))
+        eigs, w = scl.ideal_dwell_time_pdf_components(mec.QII, qml.phiF(mec))
 
     tmax = tau.max() * 20
     t = np.logspace(math.log10(tmin), math.log10(tmax), points)

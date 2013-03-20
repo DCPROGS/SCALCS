@@ -32,8 +32,9 @@ def Popen(mec, tres, conc, eff='c'):
 
     mec.set_eff(eff, conc)
     if tres == 0:
-        p = qml.pinf(mec.Q)
-        popen = np.sum(p[:mec.kA])
+        p = qml.pinf(mec.QGG)
+        norm = np.sum(p)
+        popen = np.sum(p[:mec.kA]) / norm
 
     else:
         GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)

@@ -249,8 +249,8 @@ def phiA(mec):
     """
 
     uA = np.ones((mec.kA,1))
-    pF = pinf(mec.Q)[mec.kA:]
-    nom = np.dot(pF, mec.QFA)
+    pI = pinf(mec.Q)[mec.kA:]
+    nom = np.dot(pI, mec.QIA)
     denom = np.dot(nom,uA)
     phi = nom / denom
     return phi
@@ -269,7 +269,7 @@ def phiF(mec):
     phi : ndarray, shape (kF)
     """
 
-    GAF, GFA = iGs(mec.Q, mec.kA, mec.kF)
+    GAF, GFA = iGs(mec.Q, mec.kA, mec.kI)
     phi = np.dot(phiA(mec), GAF)
     return phi
 
