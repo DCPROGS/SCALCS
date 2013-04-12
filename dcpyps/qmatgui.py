@@ -68,6 +68,9 @@ class QMatGUI(QMainWindow):
         self.cjfunc = None
         self.cjargs = None
 
+        self.data_loaded = 0
+        self.data_simulated = 0
+
         loadMenu = self.menuBar().addMenu('&Mechanims')
         loadDemo1Action = self.createAction("&Load demo: CH82", self.onLoadDemo_CH82,
             None, "loaddemo", "Load Demo mec")
@@ -145,7 +148,11 @@ class QMatGUI(QMainWindow):
 
 # UNCOMMENT NEXT LINES TO ENABLE DATA DISTRIBUTION PLOTTING
         dataMenu = self.menuBar().addMenu('&Data')
-        openScanAction = self.createAction("&Load SC record", self.onLoadData)
+        openScanAction = self.createAction("&Load single channel record from SCN file", self.onLoadData)
+        simulateScanAction = self.createAction("&Simulate single channel record",
+            self.onSimulateData)
+        saveScanAction = self.createAction("Save single channel record (SCN file)",
+            self.onSaveDataSCN)
         imposeResolutionAction = self.createAction("&Impose resolution",
             self.onImposeResolution)
         plotDataOpenAction = self.createAction("&Plot open period distribution",
@@ -156,9 +163,10 @@ class QMatGUI(QMainWindow):
             self.onPlotDataBurst)
         likelihoodAction = self.createAction("&HJCfit",
             self.onCalculateLikelihood)
-        self.addActions(dataMenu, (openScanAction, imposeResolutionAction,
-            plotDataOpenAction, plotDataShutAction, plotDataBurstAction,
-            likelihoodAction))
+        self.addActions(dataMenu, (openScanAction, simulateScanAction,
+            saveScanAction,
+            imposeResolutionAction, plotDataOpenAction, plotDataShutAction,
+            plotDataBurstAction, likelihoodAction))
 # LINES RELATED TO DATA HISTOGRAMMS PLOTTING
 
         printOutMenu = self.menuBar().addMenu('&Printout')
@@ -307,29 +315,62 @@ class QMatGUI(QMainWindow):
         self.textBox.append('\n\n\t===== LOADING DATA FILE =====')
         filename = QFileDialog.getOpenFileName(self,
             "Open SCN File...", "", "DC SCN Files (*.scn)")
-        ioffset, nint, calfac, header = dcio.scn_read_header(filename)
-        tint, iampl, iprops = dcio.scn_read_data(filename, ioffset, nint, calfac)
-        self.rec1 = dataset.TimeSeries(filename, header, tint, iampl, iprops)
+#        self.rec1 = dataset.TimeSeries(filename, header, tint, iampl, iprops)
+        self.rec1 = dataset.TimeSeries()
+        self.rec1.load_from_file(filename)
         self.textBox.append("\nLoaded record from file: " +
             os.path.split(str(filename))[1])
+        self.data_loaded = 1
+        self.data_simulated = 0
+
+    def onSimulateData(self):
+        """
+        """
+        self.textBox.append('\n\n\t==== SIMULATING SINGLE CHANNEL RECORD ====')
+
+        tres, conc, oamp, nint = self.tres, self.conc, 5, 5000
+        dialog = SimRecDlg(self, tres, conc, oamp, nint)
+        if dialog.exec_():
+            tres, conc, oamp, nint = dialog.return_par()
+
+        self.rec1 = dataset.TimeSeries()
+        self.rec1.simulate_record(self.mec, tres, conc, oamp, nint)
+        self.textBox.append("\nSimulation finished")
+        self.textBox.append('{0:d}'.format(len(self.rec1.itint)) +
+            ' intervals were simulated')
+        self.data_loaded = 0
+        self.data_simulated = 1
+
+    def onSaveDataSCN(self):
+        saveSCNFilename = QFileDialog.getSaveFileName(self,
+                "Save as SCN file...", self.path, ".scn",
+                "SCN files (*.scn)")
+
+        dcio.scn_write_simulated(self.rec1.itint, self.rec1.iampl,
+            filename=saveSCNFilename)
+
+        self.txtPltBox.append('Current single channel record saved in SCN file:')
+        self.txtPltBox.append(saveSCNFilename)
 
     def onImposeResolution(self):
 
         self.rec1.impose_resolution(self.tres)
-        falsrate = dataset.false_events(self.tres,
-            self.rec1.header['ffilt'] * 1000, self.rec1.header['rms'],
-            self.rec1.header['avamp'] * self.rec1.calfac)
-        trise = 0.3321 / (self.rec1.header['ffilt'] * 1000)
-        zo = self.tres / trise
-        aamaxo = dataset.erf(0.88604 * zo)
-        self.textBox.append('\nAt resolution {0:.0f} microsec false event rate '.
-            format(self.tres * 1000000) +
-            '(per sec) for openings and shuttings is {0:.3e}'.format(falsrate)+
-            ' ( {0:.2f} risetimes, A/Amax = {1:.2f})'.format(zo, aamaxo))
         self.textBox.append('After imposing the resolution of original {0:d}'.
             format(len(self.rec1.itint)) + ' intervals were left {0:d}'.
             format(len(self.rec1.rampl)))
         self.rec1.get_open_shut_periods()
+
+#        if self.data_loaded:
+#            falsrate = dataset.false_events(self.tres,
+#                self.rec1.header['ffilt'] * 1000, self.rec1.header['rms'],
+#                self.rec1.header['avamp'] * self.rec1.calfac)
+#            trise = 0.3321 / (self.rec1.header['ffilt'] * 1000)
+#            zo = self.tres / trise
+#            aamaxo = dataset.erf(0.88604 * zo)
+#            self.textBox.append('\nAt resolution {0:.0f} microsec false event rate '.
+#                format(self.tres * 1000000) +
+#                '(per sec) for openings and shuttings is {0:.3e}'.format(falsrate)+
+#                ' ( {0:.2f} risetimes, A/Amax = {1:.2f})'.format(zo, aamaxo))
 
     def onCalculateLikelihood(self):
         """
@@ -1677,6 +1718,83 @@ class CJumpParDlg2(QDialog):
         Return parameter dictionary on exit.
         """
         return self.cmin, self.cmax, self.width
+
+class SimRecDlg(QDialog):
+    """
+
+    """
+    def __init__(self, parent=None, tres=0.0001, conc=100e-9, oamp=5,
+        nint=5000):
+        super(SimRecDlg, self).__init__(parent)
+
+        self.tres = tres * 1e6 # resolution in microsec
+        self.conc = conc * 1000 # concentration in mM.
+        self.oamp = oamp # open chanel current amplitude in pA
+        self.nint = nint # umber of intervals
+
+        layoutMain = QVBoxLayout()
+        layoutMain.addWidget(QLabel("Simulated Single channel record:"))
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Resolution (microsec):"))
+        self.resEdit = QLineEdit(unicode(self.tres))
+        self.resEdit.setMaxLength(12)
+        self.connect(self.resEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.resEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Concentration (mM):"))
+        self.concEdit = QLineEdit(unicode(self.conc))
+        self.concEdit.setMaxLength(12)
+        self.connect(self.concEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.concEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Open channel current amplitude (pA):"))
+        self.ampEdit = QLineEdit(unicode(self.oamp))
+        self.ampEdit.setMaxLength(12)
+        self.connect(self.ampEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.ampEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Number of intervals to calculate:"))
+        self.intEdit = QLineEdit(unicode(self.nint))
+        self.intEdit.setMaxLength(12)
+        self.connect(self.intEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.intEdit)
+        layoutMain.addLayout(layout)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+
+        self.setLayout(layoutMain)
+        self.setWindowTitle("Simulate single channel record...")
+
+    def on_par_changed(self):
+        """
+        """
+        self.tres = float(self.resEdit.text()) * 1e-6
+        self.conc = float(self.concEdit.text()) * 1e-3
+        self.oamp = float(self.ampEdit.text())
+        self.nint = int(self.intEdit.text())
+
+    def return_par(self):
+        """
+        Return parameter dictionary on exit.
+        """
+        return self.tres, self.conc, self.oamp, self.nint
 
 class ConcProfileDlg(QDialog):
     """

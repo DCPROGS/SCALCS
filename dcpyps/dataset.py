@@ -1,9 +1,13 @@
 #! /usr/bin/python
 
 import math
+import random
 
 import numpy as np
 from scipy.special import erf
+
+import dcio
+import scalcslib as scl
 
 class TimeSeries(object):
     """
@@ -11,14 +15,91 @@ class TimeSeries(object):
     record.
     """
 
-    def __init__(self, filename, header, itint, iampl=None, iprops=None):
-        
-        self.filename = filename
-        self.header = header
+    def __init__(self, itint=None, iampl=None, iprops=None):
         self.itint = itint
         self.iampl = iampl
         self.iprops = iprops
-        self.calfac = self.header['calfac2']
+
+    def load_from_file(self, filename):
+        self.filename = filename
+        ioffset, nint, self.calfac, self.header = dcio.scn_read_header(self.filename)
+        self.itint, self.iampl, self.iprops = dcio.scn_read_data(self.filename,
+            ioffset, nint, self.calfac)
+
+    def simulate_record(self, mec, tres=0.0001, conc=100e-9, opamp=5,
+        nintmax=5000):
+
+        tres = tres * 1000 # in ms
+        mec.set_eff('c', conc)
+        pi = scl.transition_probability(mec.Q)
+        picum = np.cumsum(pi,axis=1)
+        tmean = -1000 / mec.Q.diagonal() # in ms
+
+        # start state
+        inst = mec.k -1
+        a = 0
+        if inst < mec.kA:
+            a = opamp
+        t = - tmean[inst] * math.log(random.random())
+        itint = [t]
+        iampl = [a]
+        iprops = [0]
+
+        nint = 0 # number of intervals counter
+        while nint < nintmax:
+            newst, t, a = self.next_state(inst, picum, tmean, mec.kA, opamp)
+            if t < tres:
+                itint[-1] += t
+                a = iampl[-1]
+            else:
+                if ((a != 0 and iampl[-1] != 0) or (a == 0 and iampl[-1] == 0)):
+                    itint[-1] += t
+                else:
+                    itint.append(t)
+                    iampl.append(a)
+                    iprops.append(0)
+                    nint += 1
+            inst = newst
+
+        self.itint = itint
+        self.iampl = iampl
+        self.iprops = iprops
+
+    def next_state(self, present, picum, tmean, kA, opamp):
+        """
+        Get next state
+        """
+        u = random.random()
+        found = 0
+        next = -1
+        bot = 0.0
+        a = 0
+        while not found:
+            next += 1
+            if next != present:
+                if next > 0:
+                    bot = picum[present, next - 1]
+                if u > bot and u <= picum[present, next]:
+                    found = 1 # out of loop
+        t = - tmean[next] * math.log(random.random()) # in ms
+        if next < kA:
+            a = opamp
+        return next, t, a
+
+    def sample_from_ideal(self, dt):
+
+        tot = np.sum(self.itint)
+        data = []
+
+        t = -dt
+        tsum = 0.0
+        for i in range(len(self.itint)):
+            tsum += self.itint[i]
+            while t < (tsum - dt):
+                t += dt
+                ampl.append(self.iampl[i])
+
+        trace = np.array(ampl, dtype=int16)
 
     def print_all_record(self):
         for i in range(len(self.itint)):

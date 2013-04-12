@@ -45,6 +45,9 @@ def Popen(mec, tres):
     """
 
     iEC50 = popen.EC50(mec, 0)
+    eEC50 = popen.EC50(mec, tres)
+    pmax, cx = popen.maxPopen(mec, 0)
+    nH = popen.nH(mec, 0)
 
     # Plot ideal and corrected Popen curves.
     cmin = iEC50 / 20
@@ -56,13 +59,15 @@ def Popen(mec, tres):
     c = np.logspace(log_start, log_end, points)
     pe = np.zeros(points)
     pi = np.zeros(points)
+    H = np.zeros(points)
     for i in range(points):
         pe[i] = popen.Popen(mec, tres, c[i])
         pi[i] = popen.Popen(mec, 0, c[i])
+        H[i] = pmax / (math.pow((iEC50 / c[i]), nH) + 1)
 
     c = c * 1000000 # x axis in microM
 
-    return c, pe, pi
+    return c, pe, pi,  H
 
 def burst_length_pdf(mec, multicomp=False, conditional=False,
     tmin=0.00001, tmax=1000, points=512):
