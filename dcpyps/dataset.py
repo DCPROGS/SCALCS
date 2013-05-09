@@ -15,7 +15,7 @@ class TimeSeries(object):
     record.
     """
 
-    def __init__(self, itint=None, iampl=None, iprops=None):
+    def __init__(self, filename=None, header=None, itint=None, iampl=None, iprops=None):
         self.itint = itint
         self.iampl = iampl
         self.iprops = iprops
@@ -64,6 +64,37 @@ class TimeSeries(object):
         self.itint = itint
         self.iampl = iampl
         self.iprops = iprops
+
+    def sample_ideal_record(self):
+
+        srate = 100000 # in Hz
+        dt = 1.0 / srate
+        tott = np.sum(self.itint)
+        npoints = int(tott / dt)
+
+        ts = 0
+        tsampl = [ts]
+        asampl = [self.iampl[0]]
+        i = 0
+
+        trec = self.itint[0]
+        arec = self.iampl[0]
+        next = 1
+
+        while i < npoints:
+            ts += dt
+            while ts > trec:
+                trec += self.itint[next]
+                arec = self.iampl[next]
+                next += 1
+
+            tsampl.append(ts)
+            asampl.append(long(arec))
+            i += 1
+
+        return asampl
+
+
 
     def next_state(self, present, picum, tmean, kA, opamp):
         """

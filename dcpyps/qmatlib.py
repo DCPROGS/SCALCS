@@ -456,9 +456,9 @@ def dW(s, tres, QAF, QFF, QFA, kA, kF):
 
     IF = np.eye(kF)
     IA = np.eye(kA)
-    IQFF = s * IF - QFF
-    expIQFF = expQt(-IQFF, tres)
-    SFF = IF - expIQFF
+    XFF = s * IF - QFF
+    expXFF = expQt(-XFF, tres)
+    SFF = IF - expXFF
     eGFAs = np.dot(nplin.inv(s * IF - QFF), QFA)
     w1 = np.dot(SFF, nplin.inv(s * IF - QFF)) - tres * (IF - SFF)
     dW = IA + np.dot(np.dot(QAF, w1), eGFAs)
@@ -731,7 +731,7 @@ def f1(u, eigvals, Z10, Z11):
         f = np.sum((Z10 + Z11 * u) * np.exp(-eigvals * u))
     return f
 
-def Zxx(Q, kopen, QFF, QAF, QFA, expQFF, open):
+def Zxx(Q, eigen, A, kopen, QFF, QAF, QFA, expQFF, open):
     """
     Calculate Z constants for the exact open time pdf (Eq. 3.22, HJC90).
     Exchange A and F for shut time pdf.
@@ -758,7 +758,7 @@ def Zxx(Q, kopen, QFF, QAF, QFA, expQFF, open):
 
     k = Q.shape[0]
     kA = k - QFF.shape[0]
-    eigen, A = eigs(-Q)
+#    eigen, A = eigs(-Q)
     # Maybe needs check for equal eigenvalues.
 
     # Calculate Dj (Eq. 3.16, HJC90) and Cimr (Eq. 3.18, HJC90).

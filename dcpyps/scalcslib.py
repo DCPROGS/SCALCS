@@ -248,10 +248,12 @@ def asymptotic_roots(tres, QAA, QFF, QAF, QFA, kA, kF):
 
     roots = np.zeros(kA)
     for i in range(kA):
-        roots[i] = so.bisect(qml.detW, sro[i,0], sro[i,1],
+        roots[i] = so.brentq(qml.detW, sro[i,0], sro[i,1],
             args=(tres, QAA, QFF, QAF, QFA, kA, kF))
-#        roots[i] = bisectHJC.bisect(sro[i,0], sro[i,1], tres,
-#            QAA, QFF, QAF, QFA, kA, kF)
+
+#        roots[i] = so.bisect(qml.detW, sro[i,0], sro[i,1],
+#            args=(tres, QAA, QFF, QAF, QFA, kA, kF))
+
     return roots
 
 def asymptotic_areas(tres, roots, QAA, QFF, QAF, QFA, kA, kF, GAF, GFA):
@@ -425,15 +427,16 @@ def exact_GAMAxx(mec, tres, open):
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kI)
     eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kI, expQFF)
     eGFA = qml.eGs(GFA, GAF, mec.kI, mec.kA, expQAA)
+    eigs, A = qml.eigs(-mec.Q)
 
     if open:
         phi = qml.phiHJC(eGAF, eGFA, mec.kA)
-        eigen, Z00, Z10, Z11 = qml.Zxx(mec.Q, mec.kA,
+        eigen, Z00, Z10, Z11 = qml.Zxx(mec.Q, eigs, A, mec.kA,
             mec.QII, mec.QAI, mec.QIA, expQFF, open)
         u = np.ones((mec.kI,1))
     else:
         phi = qml.phiHJC(eGFA, eGAF, mec.kI)
-        eigen, Z00, Z10, Z11 = qml.Zxx(mec.Q, mec.kA,
+        eigen, Z00, Z10, Z11 = qml.Zxx(mec.Q, eigs, A, mec.kA,
             mec.QAA, mec.QIA, mec.QAI, expQAA, open)
         u = np.ones((mec.kA, 1))
 
@@ -541,12 +544,13 @@ def HJClik(theta, opts):
     startB = qml.phiHJC(eGAF, eGFA, mec.kA)
     endB = np.ones((mec.kF, 1))
 
-    Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(mec.Q, mec.kA, mec.QFF,
+    eigen, A = qml.eigs(-mec.Q)
+    Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(mec.Q, eigen, A, mec.kA, mec.QFF,
         mec.QAF, mec.QFA, expQFF, True)
     Aroots = asymptotic_roots(tres,
         mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
     AR = qml.AR(Aroots, tres, mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
-    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(mec.Q, mec.kA, mec.QAA,
+    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(mec.Q, eigen, A, mec.kA, mec.QAA,
         mec.QFA, mec.QAF, expQAA, False)
     Froots = asymptotic_roots(tres,
         mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
@@ -785,10 +789,11 @@ def HJC_dependency(top, tsh, tres, Q, QAA, QAF, QFF, QFA):
     eGFA = qml.eGs(GFA, GAF, kF, kA, expQAA)
     phiA = qml.phiHJC(eGAF, eGFA, kA)
     phiF = qml.phiHJC(eGFA, eGAF, kF)
-    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(Q, kA, QAA, QFA, QAF, expQAA, False)
+    eigs, A = qml.eigs(-Q)
+    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(Q, eigs, A, kA, QAA, QFA, QAF, expQAA, False)
     Froots = asymptotic_roots(tres, QFF, QAA, QFA, QAF, kF, kA)
     FR = qml.AR(Froots, tres, QFF, QAA, QFA, QAF, kF, kA)
-    Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(Q, kA, QFF, QAF, QFA, expQFF, True)
+    Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(Q, eigs, A, kA, QFF, QAF, QFA, expQFF, True)
     Aroots = asymptotic_roots(tres, QAA, QFF, QAF, QFA, kA, kF)
     AR = qml.AR(Aroots, tres, QAA, QFF, QAF, QFA, kA, kF)
 
@@ -842,7 +847,8 @@ def HJC_adjacent_mean_open_to_shut_time_pdf(sht, tres, Q, QAA, QAF, QFF, QFA):
     phiA = qml.phiHJC(eGAF, eGFA, kA)
     phiF = qml.phiHJC(eGFA, eGAF, kF)
     DARS = qml.dARSdS(tres, QAA, QFF, GAF, GFA, expQFF, kA, kF)
-    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(Q, kA, QAA, QFA, QAF, expQAA, False)
+    eigs, A = qml.eigs(-Q)
+    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(Q, eigs, A, kA, QAA, QFA, QAF, expQAA, False)
     Froots = asymptotic_roots(tres, QFF, QAA, QFA, QAF, kF, kA)
     FR = qml.AR(Froots, tres, QFF, QAA, QFA, QAF, kF, kA)
     Q1 = np.dot(np.dot(DARS, QAF), expQFF)
@@ -941,7 +947,6 @@ def printout_occupancies(mec, tres, output=sys.stdout):
             '\t{0:.5g}'.format(-1 / mec.Q[i,i] * 1000) +
             '\t{0:.5g}\n'.format(mean * 1000))
 
-    print 'QFF', mec.QFF
     expQFF = qml.expQt(mec.QFF, tres)
     expQAA = qml.expQt(mec.QAA, tres)
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)

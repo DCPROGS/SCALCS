@@ -63,11 +63,11 @@ def Popen(mec, tres):
     for i in range(points):
         pe[i] = popen.Popen(mec, tres, c[i])
         pi[i] = popen.Popen(mec, 0, c[i])
-        H[i] = pmax / (math.pow((iEC50 / c[i]), nH) + 1)
+        H[i] = pmax / (math.pow((iEC50 / c[i]), nH) + 1) # Hill equation
 
     c = c * 1000000 # x axis in microM
 
-    return c, pe, pi,  H
+    return c, pe, pi#,  H
 
 def burst_length_pdf(mec, multicomp=False, conditional=False,
     tmin=0.00001, tmax=1000, points=512):

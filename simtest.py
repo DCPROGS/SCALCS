@@ -52,79 +52,13 @@ def main():
     amean = -1000 / mec.Q.diagonal() # in ms
     print '\namean=\n', amean
 
-    ktmax = 5000 # Number of intervals to be simulated
-    nt = 0 # number of transitions counter
-    nbmax = 20 # Maximum number of openings/burst expected
-    
-    # Initial state
-    inst = mec.k -1
-    if inst < mec.kA:
-        ampl = 5
-    else:
-        ampl = 0
-    t = - amean[inst] * math.log(random.random())
-    print '\n\tstate ', inst+1, '\tt (ms)=', t, '\tampl (pA)='
-    first = 1
-    itint = [t]
-    iampl = [ampl]
+    ktmax = 500 # Number of intervals to be simulated
 
-    while nt < ktmax:
+    rec = dataset.TimeSeries()
+    rec.simulate_record(mec, tres, conc, 5, ktmax)
 
-
-
-        # Get next state
-        u = random.random()
-        next = 0
-        j = -1
-        bot = 0.0
-
-        while not next:
-            j += 1
-            if j != inst:
-                if j > 0:
-                    bot = picum[inst, j - 1]
-                if u > bot and u <= picum[inst, j]:
-                    next = 1 # out of loop
-
-        newst = j
-        # Get lifetime for current state
-        t = - amean[newst] * math.log(random.random()) # in ms
-        print '\ntransition #', nt, '\tstate ', inst+1, '\tt=', t, '\tampl (pA)=', ampl
-
-        if ((newst < mec.kA and inst < mec.kA) or (newst >= mec.kA and inst >= mec.kA)):
-            itint[-1] += t
-
-#        elif imposeres and (itint[-1] < tres):
-#            itint[-2] += itint[-1]
-#            itint.pop()
-#            iampl.pop()
-#            itint[-1] += t
-#            nt -= 1
-        else:
-            itint.append(t)
-            if newst < mec.kA:
-                ampl = 5
-            else:
-                ampl = 0
-            iampl.append(ampl)
-            nt += 1
-
-        inst = newst
-
-#    for i in range(len(itint)):
-#        print '\nint ', i+1, '\tt=', itint[i], 'ms \tampl=', iampl[i]
-
-
-        # Check if level has changed
-        # -if not, accumulate times for equal currents but do not increment kt
-        # (for first transition always accumulates -ilast set to initial state)
-#	if(icur(is,ichan).eq.ilast) then
-#	   tint1(kt)=tint1(kt)+t
-    
-
-    dcio.scn_write_simulated(itint, iampl, treso=tres/1000, tresg=tres/1000,
+    dcio.scn_write_simulated(rec.itint, rec.iampl, treso=tres/1000, tresg=tres/1000,
         Emem=-100.0, avamp = ampl, filename='c:/pySIMSCN.SCN')
-
 
 try:
     cProfile.run('main()')
