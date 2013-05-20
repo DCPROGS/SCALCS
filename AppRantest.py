@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 """
-An example of Qt based GUI to display single channel related plots.
+Launch rantest GUI.
 """
 
 import sys
@@ -10,11 +10,10 @@ try:
 except:
     raise ImportError("pyqt module is missing")
 
-import dcpyps.qmatgui as qmg
+import dcpyps.QTrantest as QTrantest
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    form = qmg.QMatGUI()
+    form = QTrantest.rantestQT()
     form.show()
     app.exec_()
-

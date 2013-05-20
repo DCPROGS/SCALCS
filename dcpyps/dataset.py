@@ -243,7 +243,17 @@ class TimeSeries(object):
                 rprops[-1] = 8
             n += 1
         # end of while
+
         # TODO: check if the very last interval is closed or open.
+        if rampl[0] == 0:
+            rtint.pop(0)
+            rampl.pop(0)
+            rprops.pop(0)
+
+        if rampl[-1] != 0:
+            rtint.pop()
+            rampl.pop()
+            rprops.pop()
 
         self.rtint = rtint
         self.rampl = rampl
@@ -285,8 +295,12 @@ class TimeSeries(object):
                 ampl = ampl + self.rampl[n] * self.rtint[n]
                 if self.rprops[n] == 8: prop = 8
                 avamp = ampl / tint
-                n += 1
                 first = 1
+                if n == (len(self.rtint) - 1):
+                    opamp.append(avamp)
+                    opint.append(tint)
+                    oppro.append(prop)
+                n += 1
             else:
                 shint.append(self.rtint[n])
                 shpro.append(self.rprops[n])
@@ -362,6 +376,7 @@ class TimeSeries(object):
         burstid = 0
         burstopt = []
         newburst = True
+        endburst = False
         badburst = False
         meanamp = 0 # mean amplitude of burst
         openburst = 0 # open time per burst
@@ -370,6 +385,10 @@ class TimeSeries(object):
         openings = 0
 
         while i < len(self.rtint):
+
+            if (i == (len(self.rtint)-1)):
+                endburst = True
+
             if self.rampl[i] != 0:
                 if newburst:
                     burst = []
@@ -384,21 +403,8 @@ class TimeSeries(object):
                 openinglength += self.rtint[i]
                 #TODO: if bad opening: set burst bad
 
-#                if i == len(self.rtint)-1:
-#                    burstopt.append(i) # 2nd position - last interval
-#                    burstopt.append(burstlen) # 3rd position- burst len
-#                    if self.rprops[i] >= 8:
-#                        badburst = True
-#                    burstopt.append(badburst) # 4th position- bad burst
-#                    burstopt.append(meanamp) # 5th position- mean ampl
-#                    burstopt.append(openburst) #6thpos- opentime per burst
-#
-#                    burst.append(openinglength)
-#                    bursts[burstid] = burst
-#                    burstsopts[burstid] = burstopt
-                
             else: # found gap
-                if self.rtint[i] < tcrit: # TODO: and unusable gap...
+                if self.rtint[i] < tcrit and not endburst:
                     burstlen += self.rtint[i]
                     if self.rprops[i] >= 8:
                         badburst = True
@@ -408,27 +414,31 @@ class TimeSeries(object):
                     openinglength = 0
 
                 else: # gap is longer than tcrit
-                    burstopt.append(i-1) # 2nd position - last interval
-                    burstopt.append(burstlen) # 3rd position- burst len
-                    if self.rprops[i] >= 8:
-                        badburst = True
-                    burstopt.append(badburst) # 4th position- bad burst
-                    burstopt.append(meanamp) # 5th position- mean ampl
-                    burstopt.append(openburst) #6th pos- opentime per burst
-                    openings += 1
-                    burstopt.append(openings) #7th pos- number of openings
-                    newburst = True
-                    badburst = False
-                    meanamp = 0 # mean amplitude of burst
-                    openburst = 0 # open time per burst
-                    burstlen = 0 # burst len
-                    openings = 0
-                    burst.append(openinglength)
-                    openinglength = 0
-                    # TODO: bad/unusable gap
-                    bursts[burstid] = burst
-                    burstsopts[burstid] = burstopt
-                    burstid += 1
+                    endburst = True
+
+            if endburst:
+                burstopt.append(i-1) # 2nd position - last interval
+                burstopt.append(burstlen) # 3rd position- burst len
+                if self.rprops[i] >= 8:
+                    badburst = True
+                burstopt.append(badburst) # 4th position- bad burst
+                burstopt.append(meanamp) # 5th position- mean ampl
+                burstopt.append(openburst) #6th pos- opentime per burst
+                openings += 1
+                burstopt.append(openings) #7th pos- number of openings
+                newburst = True
+                endburst = False
+                badburst = False
+                meanamp = 0 # mean amplitude of burst
+                openburst = 0 # open time per burst
+                burstlen = 0 # burst len
+                openings = 0
+                burst.append(openinglength)
+                openinglength = 0
+                # TODO: bad/unusable gap
+                bursts[burstid] = burst
+                burstsopts[burstid] = burstopt
+                burstid += 1
 
             i += 1
 

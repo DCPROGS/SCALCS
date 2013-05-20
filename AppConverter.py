@@ -10,10 +10,10 @@ try:
 except:
     raise ImportError("pyqt module is missing")
 
-import dcpyps.converterQT as converterQT
+import dcpyps.QTconverter as QTconverter
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    form = converterQT.ConverterQT()
+    form = QTconverter.ConverterQT()
     form.show()
     app.exec_()

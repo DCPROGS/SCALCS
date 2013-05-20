@@ -10,7 +10,7 @@ try:
 except:
     raise ImportError("pyqt module is missing")
 
-import dcpyps.tracegui as trg
+import dcpyps.QTtrace as trg
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

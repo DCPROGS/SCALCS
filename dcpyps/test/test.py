@@ -155,14 +155,15 @@ class TestDC_PyPs(unittest.TestCase):
         eGAF = qml.eGs(GAF, GFA, self.mec.kA, self.mec.kF, expQFF)
         eGFA = qml.eGs(GFA, GAF, self.mec.kF, self.mec.kA, expQAA)
         phiF = qml.phiHJC(eGFA, eGAF, self.mec.kF)
+        eigs, A = qml.eigs(-self.mec.Q)
 
-        Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(self.mec.Q, self.mec.kA,
+        Aeigvals, AZ00, AZ10, AZ11 = qml.Zxx(self.mec.Q, eigs, A, self.mec.kA,
             self.mec.QFF, self.mec.QAF, self.mec.QFA, expQFF, True)
         Aroots = scl.asymptotic_roots(self.tres, self.mec.QAA, self.mec.QFF,
             self.mec.QAF, self.mec.QFA, self.mec.kA, self.mec.kF)
         AR = qml.AR(Aroots, self.tres, self.mec.QAA, self.mec.QFF,
             self.mec.QAF, self.mec.QFA, self.mec.kA, self.mec.kF)
-        Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(self.mec.Q, self.mec.kA,
+        Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(self.mec.Q, eigs, A, self.mec.kA,
             self.mec.QAA, self.mec.QFA, self.mec.QAF, expQAA, False)
         Froots = scl.asymptotic_roots(self.tres, self.mec.QFF, self.mec.QAA,
             self.mec.QFA, self.mec.QAF, self.mec.kF, self.mec.kA)
