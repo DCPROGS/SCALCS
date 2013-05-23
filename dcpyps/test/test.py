@@ -221,10 +221,10 @@ class TestDC_PyPs(unittest.TestCase):
         filename = "./dcpyps/samples/CH82.scn"
         ioffset, nint, calfac, header = dcio.scn_read_header(filename)
         tint, iampl, iprops = dcio.scn_read_data(filename, ioffset, nint, calfac)
-        rec1 = dataset.TimeSeries(filename, header, tint, iampl, iprops)
-        rec1.impose_resolution(self.tres)
+        rec1 = dataset.SCRecord(filename, header, tint, iampl, iprops)
+        rec1.impose_resolution(self.tres * 1000)
         rec1.get_open_shut_periods()
-        rec1.get_bursts(self.tcrit)
+        rec1.get_bursts(self.tcrit * 1000)
 
         # Check if burst separation is done right.
         self.assertEqual(len(rec1.bursts), 572)

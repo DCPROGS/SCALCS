@@ -37,41 +37,47 @@ def main():
     mec = samples.CH82()
     mec.printout(sys.stdout)
     tres = 0.000025
-    tcrit = 0.0035
+    tcrit = 0.004
     conc = 100e-9
 
     # LOAD DATA.
     filename = "./dcpyps/samples/CH82.scn"
     ioffset, nint, calfac, header = dcio.scn_read_header(filename)
     tint, iampl, iprops = dcio.scn_read_data(filename, ioffset, nint, calfac)
-    rec1 = dataset.TimeSeries(filename, header, tint, iampl, iprops)
+    rec1 = dataset.SCRecord(filename, header, tint, iampl, iprops)
 
     print('\nNumber of all intervals = {0:d}'.format(len(tint)))
     # Impose resolution, get open/shut times and bursts.
-    rec1.impose_resolution(tres)
+    rec1.impose_resolution(tres*1000)
     print('\nNumber of resolved intervals = {0:d}'.format(len(rec1.rtint)))
 
     rec1.get_open_shut_periods()
     print('\nNumber of open periods = {0:d}'.format(len(rec1.opint)))
-    print('Mean and SD of open periods = {0:.9f} +/- {1:.9f}'.format(np.average(rec1.opint), np.std(rec1.opint)))
-    print('Range of open periods from {0:.9f} to {1:.9f}'.format(np.min(rec1.opint), np.max(rec1.opint)))
+    print('Mean and SD of open periods = {0:.9f} +/- {1:.9f}'.
+        format(np.average(rec1.opint), np.std(rec1.opint)))
+    print('Range of open periods from {0:.9f} to {1:.9f}'.
+        format(np.min(rec1.opint), np.max(rec1.opint)))
     print('\nNumber of shut intervals = {0:d}'.format(len(rec1.shint)))
-    print('Mean and SD of shut periods = {0:.9f} +/- {1:.9f}'.format(np.average(rec1.shint), np.std(rec1.shint)))
-    print('Range of shut periods from {0:.9f} to {1:.9f}'.format(np.min(rec1.shint), np.max(rec1.shint)))
+    print('Mean and SD of shut periods = {0:.9f} +/- {1:.9f}'.
+        format(np.average(rec1.shint), np.std(rec1.shint)))
+    print('Range of shut periods from {0:.9f} to {1:.9f}'.
+        format(np.min(rec1.shint), np.max(rec1.shint)))
     print('Last shut period = {0:.9f}'.format(rec1.shint[-1]))
 
-    rec1.get_bursts(tcrit)
+    rec1.get_bursts(tcrit * 1000)
     print('\nNumber of bursts = {0:d}'.format(len(rec1.bursts)))
     blength = rec1.get_burst_length_list()
     print('Average length = {0:.9f} millisec'.format(np.average(blength)))
     print('Range: {0:.3f}'.format(min(blength)) +
             ' to {0:.3f} millisec'.format(max(blength)))
     openings = rec1.get_openings_burst_list()
-    print('Average number of openings per burst = {0:.9f}'.format(np.average(openings)))
+    print('Average number of openings per burst = {0:.9f}'.
+        format(np.average(openings)))
 
     # PREPARE RATE CONSTANTS.
     # Fixed rates.
-    fixed = np.array([False, False, False, False, False, False, False, True, False, False])
+    fixed = np.array([False, False, False, False, False,
+        False, False, True, False, False])
     if fixed.size == len(mec.Rates):
         for i in range(len(mec.Rates)):
             mec.Rates[i].fixed = fixed[i]

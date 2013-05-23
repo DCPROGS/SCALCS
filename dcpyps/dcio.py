@@ -1344,7 +1344,7 @@ def scn_read_data(fname, ioffset, nint, calfac2):
         iampl.append(0)
         iprops.append(8)
 
-    return tint, iampl, iprops
+    return np.array(tint), np.array(iampl), np.array(iprops)
 
 def scn_write_simulated(intervals, amplitudes, treso=0.0, tresg=0.0,
         Emem=0.0, avamp = 1.0, filename='SIMSCN.SCN'):

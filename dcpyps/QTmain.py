@@ -58,6 +58,7 @@ class QMatGUI(QMainWindow):
         self.conc = 100e-9    # 100 nM
         self.tres = 0.0001
         self.rec1 = None
+        self.data_loaded = False
         self.my_colour = ["r", "g", "b", "m", "c", "y"]
         self.present_plot = None
 
@@ -67,9 +68,6 @@ class QMatGUI(QMainWindow):
         self.cjwidth = 0.00001
         self.cjfunc = None
         self.cjargs = None
-
-        self.data_loaded = 0
-        self.data_simulated = 0
 
         loadMenu = self.menuBar().addMenu('&Mechanims')
         loadDemo1Action = self.createAction("&Load demo: CH82", self.onLoadDemo_CH82,
@@ -315,31 +313,33 @@ class QMatGUI(QMainWindow):
         self.textBox.append('\n\n\t===== LOADING DATA FILE =====')
         filename = QFileDialog.getOpenFileName(self,
             "Open SCN File...", "", "DC SCN Files (*.scn)")
-#        self.rec1 = dataset.TimeSeries(filename, header, tint, iampl, iprops)
-        self.rec1 = dataset.TimeSeries()
+#        self.rec1 = dataset.SCRecord(filename, header, tint, iampl, iprops)
+        self.rec1 = dataset.SCRecord()
         self.rec1.load_from_file(filename)
         self.textBox.append("\nLoaded record from file: " +
             os.path.split(str(filename))[1])
-        self.data_loaded = 1
-        self.data_simulated = 0
+        self.data_loaded = True
 
     def onSimulateData(self):
         """
         """
         self.textBox.append('\n\n\t==== SIMULATING SINGLE CHANNEL RECORD ====')
 
-        tres, conc, oamp, nint = self.tres, self.conc, 5, 5000
-        dialog = SimRecDlg(self, tres, conc, oamp, nint)
+        self.tres, conc, oamp, nint = self.tres, self.conc, 5, 5000
+        dialog = SimRecDlg(self, self.tres, conc, oamp, nint)
         if dialog.exec_():
             tres, conc, oamp, nint = dialog.return_par()
 
-        self.rec1 = dataset.TimeSeries()
-        self.rec1.simulate_record(self.mec, tres, conc, oamp, nint)
+        self.rec1 = dataset.SCRecord()
+        tres = self.tres * 1000 # in ms since intervals are in ms in record
+        self.mec.set_eff('c', conc)
+        startstate = self.mec.k - 1 # TODO: ask for this in dialog
+        self.rec1.simulate_record(self.mec, tres, startstate, oamp, nint)
         self.textBox.append("\nSimulation finished")
         self.textBox.append('{0:d}'.format(len(self.rec1.itint)) +
             ' intervals were simulated')
-        self.data_loaded = 0
-        self.data_simulated = 1
+        self.data_loaded = True
+        self.rec1.get_open_shut_periods()
 
     def onSaveDataSCN(self):
         saveSCNFilename = QFileDialog.getSaveFileName(self,
@@ -354,11 +354,14 @@ class QMatGUI(QMainWindow):
 
     def onImposeResolution(self):
 
-        self.rec1.impose_resolution(self.tres)
+        tres = self.tres * 1000 # in ms since intervals are in ms in record
+        self.rec1.impose_resolution(tres)
         self.textBox.append('After imposing the resolution of original {0:d}'.
             format(len(self.rec1.itint)) + ' intervals were left {0:d}'.
-            format(len(self.rec1.rampl)))
+            format(len(self.rec1.rtint)))
+        self.resolution_imposed = True
         self.rec1.get_open_shut_periods()
+
 
 #        if self.data_loaded:
 #            falsrate = dataset.false_events(self.tres,
@@ -413,7 +416,7 @@ class QMatGUI(QMainWindow):
 
         self.textBox.append('\nCritical gap length = {0:.3f} millisec'.
             format(self.tcrit * 1000))
-        self.rec1.get_bursts(self.tcrit)
+        self.rec1.get_bursts(self.tcrit * 1000)
         self.textBox.append('\nNumber of bursts = {0:d}'.
             format(len(self.rec1.bursts)))
         blength = self.rec1.get_burst_length_list()

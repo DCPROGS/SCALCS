@@ -561,7 +561,7 @@ def HJClik(theta, opts):
             mec.QFA, mec.kA, expQAA, phiF, FR)
 
     loglik = 0
-    for ind in bursts:
+    for ind in range(len(bursts)):
         burst = bursts[ind]
         grouplik = startB
         for i in range(len(burst)):
