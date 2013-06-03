@@ -41,6 +41,12 @@ def dPdt(P, t, mec, cfunc, cargs):
     dpdt = np.dot(P, mec.Q)
     return dpdt
 
+def P_t(t, eigs, w):
+    Pt = np.zeros((eigs.shape))
+    for i in range(eigs.size):
+        Pt[i] = np.sum(w[:, i] * np.exp(eigs * t))
+    return Pt
+
 def pulse_instexp(t, (cmax, cb, prepulse, tdec)):
     """
     Generate concentration pulse with instantaneous rise to maximal current
@@ -76,8 +82,7 @@ def pulse_instexp(t, (cmax, cb, prepulse, tdec)):
         conc2 = cmax * np.exp(-(t2 - prepulse) / tdec)
         conc = np.append(t1 * 0.0, conc2)
 
-    conc = conc + cb
-    return conc
+    return conc + cb
 
 def pulse_erf(t, (cmax, cb, centre, width, rise, decay)):
     """
@@ -109,8 +114,7 @@ def pulse_erf(t, (cmax, cb, centre, width, rise, decay)):
     conc = (cmax * 0.5 *
         (erf((t - centre + width / 2.) / rise) -
         erf((t - centre - width / 2.) / decay)))
-    conc = conc + cb
-    return conc
+    return conc + cb
 
 def pulse_square(t, (cmax, cb, prepulse, pulse)):
     """
@@ -136,10 +140,7 @@ def pulse_square(t, (cmax, cb, prepulse, pulse)):
     """
 
     if np.isscalar(t):
-        if (t > prepulse) and (t <= (prepulse + pulse)):
-            conc = cmax
-        else:
-            conc = 0.0
+        conc = cmax if ((t > prepulse) and (t <= (prepulse + pulse))) else 0.0
     else:
         t1 = t[np.where(t < prepulse)]
         t2 = t[np.where((t >= prepulse) & (t <= (prepulse + pulse)))]
@@ -148,8 +149,7 @@ def pulse_square(t, (cmax, cb, prepulse, pulse)):
         c2 = np.append(t1 * 0.0, c1)
         conc = np.append(c2, t3 * 0.0)
 
-    conc = conc + cb
-    return conc
+    return conc + cb
 
 def pulse_square_paired(t, (cmax, cb, prepulse, pulse, inter)):
     """
@@ -194,10 +194,9 @@ def pulse_square_paired(t, (cmax, cb, prepulse, pulse, inter)):
         t5 = t[np.where(t > (prepulse + 2 * pulse + inter))]
         conc = np.append(c4, t5 * 0.0)
 
-    conc = conc + cb
-    return conc
+    return conc + cb
 
-def solve_jump(mec, reclen, step, cfunc, cargs):
+def solve_jump(mec, reclen, step, cfunc, cargs, abserr=1.0e-8, relerr=1.0e-6):
     """
     Calculate response to a concentration pulse by integration.
 
@@ -213,6 +212,8 @@ def solve_jump(mec, reclen, step, cfunc, cargs):
         Concentration profile.
     cargs : tuple
         Arguments for cfunc(t, cargs).
+    rtol, atol : float, optional
+        Tolerance limits for the error control performed by the scipy.odeint solver.
 
     Returns
     -------
@@ -229,18 +230,10 @@ def solve_jump(mec, reclen, step, cfunc, cargs):
     t = np.arange(0, reclen, step)
     mec.set_eff('c', cargs[1])
     P0 = qml.pinf(mec.Q)
-
-    abserr = 1.0e-8
-    relerr = 1.0e-6
-
     Pt = scpi.odeint(dPdt, P0, t, args=(mec, cfunc, cargs),
         atol=abserr,rtol=relerr)
     P = Pt.transpose()
-
-    Popen = np.zeros(t.shape)
-    for i in range(mec.kA):
-        Popen += P[i]
-
+    Popen = np.sum(P[: mec.kA], axis=0)
     c =  cfunc(t, cargs)
     return t, c, Popen, P
 
@@ -275,30 +268,19 @@ def calc_jump (mec, reclen, step, cfunc, cargs):
 
     t = np.arange(0, reclen, step)
     c =  cfunc(t, cargs)
-    
     mec.set_eff('c', cargs[1])
     pi = qml.pinf(mec.Q)
     Pt = np.array([pi.copy()])
 
     for i in range(1, t.shape[0]):
-
         mec.set_eff('c', c[i])
         eigenvals, A = qml.eigs(mec.Q)
         w = coefficient_calc(mec.k, A, pi)
-        #loop over states to get occupancy of each
-        for s in range(mec.k):
-            # r is a running total over contributions of all components
-            r = 0
-            for ju, k in zip(w[:, s], eigenvals):
-                r += ju * np.exp(k * step)
-            pi[s] = r
+        pi = P_t(step, eigenvals, w)
         Pt = np.append(Pt, [pi.copy()], axis=0)
 
     P = Pt.transpose()
-    Popen = np.zeros(t.shape)
-    for i in range(mec.kA):
-        Popen += P[i]
-        
+    Popen = np.sum(P[: mec.kA], axis=0)
     return t, c, Popen, P
 
 def coefficient_calc(k, A, p_occup):
@@ -345,42 +327,27 @@ def weighted_taus(mec, cmax, width, eff='c'):
     """
     
     mec.set_eff(eff, 0)
-    P0 = qml.pinf(mec.Q)
     eigs0, A0 = qml.eigs(mec.Q)
-
+    P0 = qml.pinf(mec.Q)
     mec.set_eff(eff, cmax)
     eigsInf, Ainf = qml.eigs(mec.Q)
     w_on = coefficient_calc(mec.k, Ainf, P0)
+    Pt = P_t(width, eigsInf, w_on)
+    w_off = coefficient_calc(mec.k, A0, Pt)
 
-    Pt = np.zeros((mec.k))
-    for i in range(mec.k):
-        for ju, eg in zip(w_on[:, i], eigsInf):
-            Pt[i] += np.dot(ju, np.exp(eg * width))
-
-    ampl_on = np.zeros((mec.k))
-    for i in range(mec.k):
-        for j in range(mec.kA):
-            ampl_on[i] += w_on[i,j]
+    ampl_on = np.sum(w_on[:, :mec.kA], axis=1)
     max_ampl_on = np.max(np.abs(ampl_on))
     rel_ampl_on = ampl_on / max_ampl_on
+    tau_on_weighted = np.sum(-rel_ampl_on[:-1] * (-1 / eigsInf[:-1]))
+    tau_on = -1 / eigsInf[:-1]
 
-    tau_on_weighted = 0
-    for i in range(mec.k-1):
-        tau_on_weighted += -rel_ampl_on[i] * (-1 / eigsInf[i])
-            
-    w_off = coefficient_calc(mec.k, A0, Pt)
-    ampl_off = np.zeros((mec.k))
-    for i in range(mec.k):
-        for j in range(mec.kA):
-            ampl_off[i] += w_off[i,j]
+    ampl_off = np.sum(w_off[:, :mec.kA], axis=1)
     max_ampl_off = np.max(np.abs(ampl_off))
     rel_ampl_off = ampl_off / max_ampl_off
+    tau_off_weighted = np.sum(rel_ampl_off[: -1] * (-1 / eigs0[:-1]))
+    tau_off = -1 / eigs0[:-1]
 
-    tau_off_weighted = 0
-    for i in range(mec.k-1):
-        tau_off_weighted += rel_ampl_off[i] * (-1 / eigs0[i])
-        
-    return tau_on_weighted, tau_off_weighted
+    return tau_on_weighted, tau_on, tau_off_weighted, tau_off
 
 def printout(mec, cmax, width, output=sys.stdout, eff='c'):
     """
@@ -398,7 +365,6 @@ def printout(mec, cmax, width, output=sys.stdout, eff='c'):
     mec.set_eff(eff, 0)
     P0 = qml.pinf(mec.Q)
     eigs0, A0 = qml.eigs(mec.Q)
-
     output.write('\nEquilibrium occupancies before t=0, at concentration = 0.0:\n')
     for i in range(mec.k):
         output.write('p00({0:d}) = '.format(i+1) +
@@ -408,23 +374,20 @@ def printout(mec, cmax, width, output=sys.stdout, eff='c'):
     Pinf = qml.pinf(mec.Q)
     eigsInf, Ainf = qml.eigs(mec.Q)
     w_on = coefficient_calc(mec.k, Ainf, P0)
-
     output.write('\nEquilibrium occupancies at maximum concentration = {0:.5g} mM:\n'
         .format(cmax * 1000))
     for i in range(mec.k):
         output.write('pinf({0:d}) = '.format(i+1) +
             '{0:.5g}\n'.format(Pinf[i]))
 
-    Pt = np.zeros((mec.k))
-    for i in range(mec.k):
-        for ju, eg in zip(w_on[:, i], eigsInf):
-            Pt[i] += np.dot(ju, np.exp(eg * width))
-
+    Pt = P_t(width, eigsInf, w_on)
     output.write('\nOccupancies at the end of {0:.5g} ms pulse:\n'.
         format(width * 1000))
     for i in range(mec.k):
         output.write('pt({0:d}) = '.format(i+1) +
             '{0:.5g}\n'.format(Pt[i]))
+
+    tau_on_weighted, tau_on, tau_off_weighted, tau_off = weighted_taus(mec, cmax, width, eff='c')
 
     output.write('\nON-RELAXATION for ideal step:\n')
     output.write('Time course for current\n')
@@ -434,36 +397,26 @@ def printout(mec, cmax, width, output=sys.stdout, eff='c'):
             '{0:.5g}\t\t'.format(eigsInf[i]) +
             '{0:.5g}\t\n'.format(-1000 / eigsInf[i])) # convert to ms
 
-    ampl_on = np.zeros((mec.k))
-    for i in range(mec.k):
-        for j in range(mec.kA):
-            ampl_on[i] += w_on[i,j]
+    ampl_on = np.sum(w_on[:, :mec.kA], axis=1)
     cur_on = ampl_on * gamma * Vm
     max_ampl_on = np.max(np.abs(ampl_on))
     rel_ampl_on = ampl_on / max_ampl_on
-    area_on = np.zeros((mec.k-1))
-
-    tau_on_weighted = 0
+    area_on = -cur_on[:-1] / eigsInf[:-1]
     output.write('\nAmpl.(t=0,pA)\tRel.ampl.\t\tArea(pC)\n')
     for i in range(mec.k-1):
-        area_on[i] = -1000 * cur_on[i] / eigsInf[i]
         output.write('{0:.5g}\t\t'.format(cur_on[i]) +
             '{0:.5g}\t\t'.format(rel_ampl_on[i]) +
-            '{0:.5g}\t\n'.format(area_on[i]))
-        tau_on_weighted += -rel_ampl_on[i] * (-1000 / eigsInf[i])
-            
-    output.write('\nWeighted On Tau (ms) = {0:.5g}\n'.format(tau_on_weighted))
+            '{0:.5g}\t\n'.format(area_on[i] * 1000))
 
+    output.write('\nWeighted On Tau (ms) = {0:.5g}\n'.format(tau_on_weighted * 1000))
     output.write('\nTotal current at t=0 (pA) = {0:.5g}\n'.
         format(np.sum(cur_on)))
     output.write('Total current at equilibrium (pA) = {0:.5g}\n'.
         format(cur_on[-1]))
     output.write('Total area (pC) = {0:.5g}\n'.
         format(np.sum(area_on)))
-
     #TODO: Current at the end of pulse
     ct = cur_on[:-1] * np.exp(width * eigsInf[:-1])
-
     output.write('Current at the end of {0:.5g}'.format(width
         * 1000) + ' ms pulse = {0:.5g}\n'.format(np.sum(ct) + cur_on[-1]))
 
@@ -477,26 +430,19 @@ def printout(mec, cmax, width, output=sys.stdout, eff='c'):
             '{0:.5g}\t\n'.format(-1000 / eigs0[i]))
 
     w_off = coefficient_calc(mec.k, A0, Pt)
-    ampl_off = np.zeros((mec.k))
-    for i in range(mec.k):
-        for j in range(mec.kA):
-            ampl_off[i] += w_off[i,j]
+    ampl_off = np.sum(w_off[:, :mec.kA], axis=1)
     cur_off = ampl_off * gamma * Vm
     max_ampl_off = np.max(np.abs(ampl_off))
     rel_ampl_off = ampl_off / max_ampl_off
     area_off = np.zeros((mec.k-1))
-
-    tau_off_weighted = 0
     output.write('\nAmpl.(t=0,pA)\tRel.ampl.\t\tArea(pC)\n')
     for i in range(mec.k-1):
         area_off[i] = -1000 * cur_off[i] / eigs0[i]
         output.write('{0:.5g}\t\t'.format(cur_off[i]) +
             '{0:.5g}\t\t'.format(rel_ampl_off[i]) +
             '{0:.5g}\t\n'.format(area_off[i]))
-        tau_off_weighted += rel_ampl_off[i] * (-1000 / eigs0[i])
             
-    output.write('\nWeighted Off Tau (ms) = {0:.5g}\n'.format(tau_off_weighted))
-
+    output.write('\nWeighted Off Tau (ms) = {0:.5g}\n'.format(tau_off_weighted * 1000))
     output.write('\nTotal current at t=0 (pA) = {0:.5g}\n'.
         format(np.sum(cur_off)))
     output.write('Total current at equilibrium (pA) = {0:.5g}\n'.

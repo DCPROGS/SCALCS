@@ -317,22 +317,20 @@ def conc_jump_on_off_taus_versus_conc_plot(mec, cmin, cmax, width):
     """
 
     points = 100
-#    c = np.logspace(cmin, cmax, points)
+    c = np.logspace(int(np.log10(cmin)), int(np.log10(cmax)), points)
     
-    log_start = int(np.log10(cmin))
-    log_end = int(np.log10(cmax))
-    c = np.logspace(log_start, log_end, points)
-    
-    ton = np.zeros(points)
-    toff = np.zeros(points)
+    wton = np.zeros(points)
+    wtoff = np.zeros(points)
+    ton = np.zeros((points, mec.k-1))
+    toff = np.zeros((points, mec.k-1))
     for i in range(points):
         mec.set_eff('c', c[i])
-        ton[i], toff[i] = cjumps.weighted_taus(mec, c[i], width)
-    c = c * 1000 # x axis scale in milliMoles
-    ton = ton * 1000
-    toff= toff * 1000
+        wton[i], ton[i], wtoff[i], toff[i] = cjumps.weighted_taus(mec, c[i], width)
 
-    return c, ton, toff
+    ton = ton.transpose()
+    toff = toff.transpose()
+
+    return c * 1000, wton * 1000, ton * 1000, wtoff * 1000, toff * 1000
 
 def open_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
     """

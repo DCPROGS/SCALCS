@@ -32,6 +32,9 @@ except:
 
 import numpy as np
 
+from scipy.optimize import curve_fit
+from scipy.optimize import leastsq
+
 import scalcslib as scl
 #import rcj
 import cjumps
@@ -662,20 +665,21 @@ class QMatGUI(QMainWindow):
         self.txtPltBox.append('Pulse width = {0:.5g} millisec'
             .format(self.width * 1000))
         self.txtPltBox.append('Tau ON - blue solid line.')
+        self.txtPltBox.append('Tau ON dominant component- red dashed line.')
         self.txtPltBox.append('Tau OFF - green solid line.')
         self.txtPltBox.append('X axis in mM; Y axis in ms.')
         self.txtPltBox.append("---\n")
 
-        c, ton, toff  = scpl.conc_jump_on_off_taus_versus_conc_plot(self.mec,
+        c, wton, ton, wtoff, toff  = scpl.conc_jump_on_off_taus_versus_conc_plot(self.mec,
             cmin, cmax, self.width)
 
         self.axes.clear()
-        self.axes.semilogx(c, ton,'b-', c, toff, 'g-')
+        self.axes.semilogx(c, wton,'b-', c, wtoff, 'g-', c, ton[-1], 'r--')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
 
-        self.present_plot = np.vstack((c, ton, toff))
+        self.present_plot = np.vstack((c, wton, wtoff))
 
     def onPlotPopen(self):
         """
