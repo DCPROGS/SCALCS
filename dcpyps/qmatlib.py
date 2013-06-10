@@ -146,9 +146,9 @@ def Qpow(M, n):
         Mn += A[i, :, :] * pow(eig[i], n)
     return Mn
 
-def pinf(Q):
+def pinf1(Q):
     """
-    Calculate ecquilibrium occupancies by adding a column of ones
+    Calculate equilibrium occupancies by adding a column of ones
     to Q matrix.
     Pinf = uT * invert((S * transpos(S))).
 
@@ -164,6 +164,25 @@ def pinf(Q):
     u = np.ones((Q.shape[0],1))
     S = np.concatenate((Q, u), 1)
     pinf = np.dot(u.transpose(), nplin.inv((np.dot(S,S.transpose()))))[0]
+    return pinf
+
+def pinf(Q):
+    """
+    Calculate equilibrium occupancies with the reduced Q-matrix method.
+
+    Parameters
+    ----------
+    Q : array_like, shape (k, k)
+
+    Returns
+    -------
+    pinf : ndarray, shape (k1)
+    """
+
+    R = (Q - Q[-1: , :])[:-1, :-1]
+    r = Q[-1: , :-1]
+    pinf = -np.dot(r, nplin.inv(R))
+    pinf = np.append(pinf, 1 - np.sum(pinf))
     return pinf
 
 def iGs(Q, kA, kB):

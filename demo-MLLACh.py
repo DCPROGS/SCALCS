@@ -30,7 +30,7 @@ def main():
     filename = "./dcpyps/samples/AChsim.scn"
     ioffset, nint, calfac, header = dcio.scn_read_header(filename)
     tint, iampl, iprops = dcio.scn_read_data(filename, ioffset, nint, calfac)
-    rec1 = dataset.TimeSeries(filename, header, tint, iampl, iprops)
+    rec1 = dataset.SCRecord(filename, header, tint, iampl, iprops)
     # Impose resolution, get open/shut times and bursts.
     rec1.impose_resolution(tres)
     rec1.get_open_shut_periods()
