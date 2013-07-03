@@ -577,7 +577,14 @@ def HJClik(theta, opts):
                 grouplik = grouplik * 1e-100
                 #print 'grouplik was scaled down'
         grouplik = np.dot(grouplik, endB)
-        loglik += log(grouplik[0])
+        try:
+            loglik += log(grouplik[0])
+        except:
+            print 'HJClik: Warning: likelihood has been set to 0'
+            print 'likelihood=', grouplik[0]
+            print 'rates=', np.log(mec.theta())
+            loglik = 0
+            break
 
     #newrates = np.log(mec.unit_rates())
     newrates = np.log(mec.theta())
