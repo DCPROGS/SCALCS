@@ -265,18 +265,18 @@ class SCRecord(object):
                 openinglength += self.rtint[i]
                 #TODO: if bad opening: set burst bad
             else: # found gap
-                if self.rtint[i] < tcrit and not endburst:
+                if self.rtint[i] < tcrit and not endburst and i != (len(self.rtint)-1):
                     burst.append(openinglength)
                     burst.append(self.rtint[i])
                     openinglength = 0
                 else: # gap is longer than tcrit
                     endburst = True
-            if endburst or i == (len(self.rtint)-1):
-                endburst = False
+            if endburst:
                 burst.append(openinglength)
                 openinglength = 0
                 # TODO: bad/unusable gap
                 bursts.append(burst)
+                endburst = False
                 burst = []
             i += 1
         self.bursts = bursts
