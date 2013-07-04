@@ -80,12 +80,35 @@ def eigs(Q):
     #         np.dot(M[:, i].reshape(k, 1), N[i].reshape(1, k)) \
     #             for i in range(k)
     #         ])
-    
-    # Sort eigenvalues in ascending order. 
+
+    return eigvals, A
+
+def eigs_sorted(Q):
+    """
+    Calculate eigenvalues and spectral matrices of a matrix Q. 
+    Return eigenvalues in ascending order 
+
+    Parameters
+    ----------
+    Q : array_like, shape (k, k)
+
+    Returns
+    -------
+    eigvals : ndarray, shape (k,)
+        Eigenvalues of M.
+    A : ndarray, shape (k, k, k)
+        Spectral matrices of Q.
+    """
+
+    eigvals, M = nplin.eig(Q)
+    N = nplin.inv(M)
+    k = N.shape[0]
+    A = np.zeros((k, k, k))
+    for i in range(k):
+        A[i] = np.dot(M[:, i].reshape(k, 1), N[i].reshape(1, k))
     sorted_indices = eigvals.real.argsort()
     eigvals = eigvals[sorted_indices]
     A = A[sorted_indices, : , : ]
-
     return eigvals, A
 
 def expQt(M, t):
