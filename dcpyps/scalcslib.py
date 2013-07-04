@@ -100,7 +100,7 @@ def ideal_dwell_time_pdf_components(QAA, phiA):
 
     kA = QAA.shape[0]
     w = np.zeros(kA)
-    eigs, A = qml.eigs(-QAA)
+    eigs, A = qml.eigs_sorted(-QAA)
     uA = np.ones((kA, 1))
     #TODO: remove 'for'
     for i in range(kA):
@@ -248,7 +248,7 @@ def asymptotic_roots(tres, QAA, QFF, QAF, QFA, kA, kF):
 
     roots = np.zeros(kA)
     for i in range(kA):
-        roots[i] = so.brentq(qml.detW, sro[i,0], sro[i,1],
+        roots[i] = so.brentq(qml.detW, sro[i, 0], sro[i, 1],
             args=(tres, QAA, QFF, QAF, QFA, kA, kF))
 
 #        roots[i] = so.bisect(qml.detW, sro[i,0], sro[i,1],
@@ -427,7 +427,7 @@ def exact_GAMAxx(mec, tres, open):
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kI)
     eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kI, expQFF)
     eGFA = qml.eGs(GFA, GAF, mec.kI, mec.kA, expQAA)
-    eigs, A = qml.eigs(-mec.Q)
+    eigs, A = qml.eigs_sorted(-mec.Q)
 
     if open:
         phi = qml.phiHJC(eGAF, eGFA, mec.kA)

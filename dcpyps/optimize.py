@@ -253,63 +253,39 @@ def bisect_intervals(sa, sb, tres, Q11, Q22, Q12, Q21, k1, k2):
     """
 
     nga = bisect_gFB(sa, tres, Q11, Q22, Q12, Q21, k1, k2)
-    if nga > 0:
-        sa = sa * 4
+    if nga > 0: sa = sa * 4
     ngb = bisect_gFB(sb, tres, Q11, Q22, Q12, Q21, k1, k2)
-    if ngb < k2:
-        sb = sb / 4
+    if ngb < k2: sb = sb / 4
 
-    sr = np.zeros((k1, 2))
-    sv = np.empty((101, 4))
-    sv[0,0] = sa
-    sv[0,1] = sb
-    sv[0,2] = nga
-    sv[0,3] = ngb
-    ntodo = 0
-    ndone = 0
-    nsplit = 0
+    done = []
+    todo = [[sa, sb, nga, ngb]]
+#    nsplit = 0
 
-    while (ndone < k1) and (nsplit < 1000):
-        sa = sv[ntodo, 0]
-        sb = sv[ntodo, 1]
-        nga = sv[ntodo, 2]
-        ngb = sv[ntodo, 3]
-        sa1, sc, sb2, nga1, ngc, ngb2 = bisect_split(sa, sb,
-            nga, ngb, tres, Q11, Q22, Q12, Q21, k1, k2)
-        nsplit = nsplit + 1
-        ntodo = ntodo - 1
+#    while (len(done) < k1) and (nsplit < 1000):
+    while todo:
+        svv = todo.pop()
+        sa1, sc, sb2, nga1, ngc, ngb2 = bisect_split(svv[0], svv[1], svv[2], svv[3],
+            tres, Q11, Q22, Q12, Q21, k1, k2)
+#        nsplit += 1
 
         # Check if either or both of the two subintervals output from
         # SPLIT contain only one root?
         if (ngc - nga1) == 1:
-            sr[ndone, 0] = sa1
-            sr[ndone, 1] = sc
-            ndone = ndone + 1
-            if ndone == k1:
-                break
+            done.append([sa1, sc])
+#            if len(done) == k1:
+#                break
         else:
-            ntodo = ntodo + 1
-            sv[ntodo, 0] = sa1
-            sv[ntodo, 1] = sc
-            sv[ntodo, 2] = nga1
-            sv[ntodo, 3] = ngc
+            todo.append([sa1, sc, nga1, ngc])
         if (ngb2 - ngc) == 1:
-            sr[ndone, 0] = sc
-            sr[ndone, 1] = sb2
-            ndone = ndone + 1
+            done.append([sc, sb2])
         else:
-            ntodo = ntodo + 1
-            sv[ntodo, 0] = sc
-            sv[ntodo, 1] = sb2
-            sv[ntodo, 2] = ngc
-            sv[ntodo, 3] = ngb2
+            todo.append([sc, sb2, ngc, ngb2])
 
-    if ndone < k1:
+    if len(done) < k1:
         sys.stderr.write(
             "bisectHJC: Warning: Only {0:d} roots out of {1:d} were located.".
-            format(ndone, k1))
-
-    return sr
+            format(len(done), k1))
+    return np.array(done)
 
 def bisect_split(sa, sb, nga, ngb, tres, Q11, Q22, Q12, Q21, k1, k2):
     """
