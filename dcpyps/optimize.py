@@ -4,6 +4,7 @@ import sys
 import random
 from math import*
 import numpy as np
+from numpy import linalg as nplin
 
 import qmatlib as qml
 
@@ -221,12 +222,8 @@ def bisect_gFB(s, tres, Q11, Q22, Q12, Q21, k1, k2):
     """
 
     h = qml.H(s, tres, Q11, Q22, Q12, Q21, k2)
-    eigval, A = qml.eigs(h)
-    ng = 0
-    for i in range(k1):
-        if eigval[i] <= s: ng += 1
-#    if dcpypsrc.debug:
-#        print ('number of eigenvalues that are <= s (=', s, ') =', ng)
+    eigval = nplin.eigvals(h)
+    ng = (eigval <= s).sum()
     return ng
 
 def bisect_intervals(sa, sb, tres, Q11, Q22, Q12, Q21, k1, k2):

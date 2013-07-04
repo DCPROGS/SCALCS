@@ -7,6 +7,7 @@ import sys
 import time
 import numpy as np
 import cProfile
+from scipy.optimize import minimize
 
 from dcpyps import optimize
 from dcpyps import samples
@@ -36,7 +37,7 @@ def main():
     # LOAD DEMO MECHANISM (C&H82 numerical example).
     mec = samples.CH82()
     mec.printout(sys.stdout)
-    tres = 0.000025
+    tres = 0.0001
     tcrit = 0.004
     conc = 100e-9
 
@@ -113,13 +114,18 @@ def main():
     print ("Starting likelihood = {0:.6f}".format(-start_lik))
     print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
+    start = time.clock()
     #xout, fopt, neval, niter = optimize.simplexHJC(scl.HJClik,
     #    np.log(theta), data=rec1.bursts, args=opts)
     xout, fout, niter, neval = optimize.simplex(scl.HJClik,
         np.log(theta), args=opts, display=True)
+       
     print ("\nFitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
+    print 'time in simplex=', time.clock() - start
     # Display results.
+    
+#    print 'result=', result
     mec.theta_unsqueeze(np.exp(xout))
     print "\n Final rate constants:"
     mec.printout(sys.stdout)
