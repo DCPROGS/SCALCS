@@ -8,7 +8,9 @@ import sys
 try:
     from PyQt4.QtGui import *
 except:
-    raise ImportError("pyqt module is missing")
+    raise ImportError("PyQt import failed")
+else:
+    from PySide.QtGui import *
 
 import dcpyps.QTmain as qmg
 

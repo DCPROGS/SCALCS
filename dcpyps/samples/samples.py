@@ -37,10 +37,10 @@ def CCO():
     R    = dcpyps.State('C', 'R', 0.0)
 
     RateList = [
-         dcpyps.Rate(20.0, AR, ARS, name='beta', limits=[1e-15,1e+7]),
-         dcpyps.Rate(50.0, ARS, AR, name='alpha', limits=[1e-15,1e+7]),
-         dcpyps.Rate(5.0, AR, R, name='koff', limits=[1e-15,1e+7]),
-         dcpyps.Rate(1.0e06, R, AR, name='kon', eff='c', limits=[1e-15,1e+10]),
+         dcpyps.Rate(15000.0, AR, ARS, name='beta', limits=[1e-15,1e+7]),
+         dcpyps.Rate(500.0, ARS, AR, name='alpha', limits=[1e-15,1e+7]),
+         dcpyps.Rate(2000.0, AR, R, name='koff', limits=[1e-15,1e+7]),
+         dcpyps.Rate(5.0e08, R, AR, name='kon', eff='c', limits=[1e-15,1e+10]),
          ]
 
     return  dcpyps.Mechanism(RateList)

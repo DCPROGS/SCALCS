@@ -9,12 +9,14 @@ import os
 import socket
 import math
 
-#import numpy as np
 try:
-    from PyQt4.QtCore import *
-    from PyQt4.QtGui import *
+        from PyQt4.QtCore import *
+        from PyQt4.QtGui import *
 except:
     raise ImportError("pyqt module is missing")
+else:
+    from PySide.QtGui import *
+    from PySide.QtCore import *
 
 try:
     from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
@@ -679,7 +681,7 @@ class QMatGUI(QMainWindow):
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
 
-        self.present_plot = np.vstack((c, wton, wtoff))
+        self.present_plot = np.vstack((c, ton[-1], wton, wtoff))
 
     def onPlotPopen(self):
         """
@@ -780,16 +782,17 @@ class QMatGUI(QMainWindow):
             format(self.conc * 1000000))
         self.txtPltBox.append('Mean open time preceding specified shut time- red dashed line.')
         self.txtPltBox.append('Mean open time next to specified shut time- blue dashed line.')
-        
-        dialog = ConcDlg(self, self.conc)
+
+        dialog = ConcResDlg(self, self.conc, self.tres)
         if dialog.exec_():
-            self.conc = dialog.return_par()
+            self.conc, self.tres = dialog.return_par()
         self.mec.set_eff('c', self.conc)
         sht, mp, mn = scpl.mean_open_next_shut(self.mec, self.tres)
         self.present_plot = np.vstack((sht, mp, mn))
 
         self.axes.clear()
         self.axes.semilogx(sht, mp, 'r--', sht, mn, 'b--')
+#        self.axes.set_ylim(bottom=0)
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
@@ -857,8 +860,11 @@ class QMatGUI(QMainWindow):
             self.conc, self.tres = dialog.return_par()
         self.mec.set_eff('c', self.conc)
 
-        scl.printout_occupancies(self.mec, self.tres, output=self.log)
-        scl.printout_distributions(self.mec, self.tres, output=self.log)
+        try:
+            scl.printout_occupancies(self.mec, self.tres, output=self.log)
+            scl.printout_distributions(self.mec, self.tres, output=self.log)
+        except:
+            sys.stderr.write("main: Warning: unable to prepare printout.")
         
         t, ipdf, epdf, apdf = scpl.open_time_pdf(self.mec, self.tres)
         self.present_plot = np.vstack((t, ipdf, epdf, apdf))
