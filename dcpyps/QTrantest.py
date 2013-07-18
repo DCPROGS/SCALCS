@@ -1,7 +1,8 @@
 #! /usr/bin/python
+import os
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PySide.QtCore import *
+from PySide.QtGui import *
 import dcstatslib as dcstats
 
 __author__="remis"
@@ -214,12 +215,12 @@ class rantestQT(QDialog):
 
     def callback1(self):
         """Called by TAKE DATA FROM FILE button in Tab2"""
-        file = QFileDialog.getOpenFileName(self,
+        filename, filt = QFileDialog.getOpenFileName(self,
             "Open Data File...", self.path, "Text Data Files (*.txt)")
         self.path = os.path.split(str(filename))[0]
-        self.X, self.Y = dcstats.data_from_txt_file(file)
+        self.X, self.Y = dcstats.data_from_txt_file(filename)
         self.tb2txt.clear()
-        self.tb2txt.append('Data loaded from a text file: ' + file + '\n')
+        self.tb2txt.append('Data loaded from a text file: ' + filename + '\n')
         log = PrintLog(self.tb2txt)
         dcstats.stats_continuous_printout(self.X, self.Y,
             self.paired, output=log)

@@ -5,8 +5,8 @@ Depends on pyqt and matplotlib modules.
 """
 
 try:
-    from PyQt4.QtCore import *
-    from PyQt4.QtGui import *
+    from PySide.QtCore import *
+    from PySide.QtGui import *
 except:
     raise ImportError("pyqt module is missing")
 
@@ -98,7 +98,7 @@ class TraceGUI(QMainWindow):
         """
         """
 
-        self.filename = QFileDialog.getOpenFileName(self,
+        self.filename, filt = QFileDialog.getOpenFileName(self,
             "Open Data File...", "", "Consam files (*.ssd *.SSD *.dat *.DAT)")
         self.h = dcio.ssd_read_header (self.filename)
         self.trace = dcio.ssd_read_data(self.filename, self.h)
@@ -118,7 +118,7 @@ class TraceGUI(QMainWindow):
         """
         """
 
-        self.filename = QFileDialog.getOpenFileName(self,
+        self.filename, filt = QFileDialog.getOpenFileName(self,
             "Open Data File...", "", "Axon files (*.abf)")
         self.h = dcio.abf_read_header(self.filename)
         self.trace = dcio.abf_read_data(self.filename, self.h)
@@ -141,7 +141,7 @@ class TraceGUI(QMainWindow):
         """
         """
 
-        self.out_filename = QFileDialog.getSaveFileName(self,
+        self.out_filename, filt = QFileDialog.getSaveFileName(self,
             "Save File As...", "",
             "Consam file (*.ssd)")
 

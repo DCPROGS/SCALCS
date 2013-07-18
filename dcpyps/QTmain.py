@@ -10,13 +10,12 @@ import socket
 import math
 
 try:
-        from PyQt4.QtCore import *
-        from PyQt4.QtGui import *
-except:
-    raise ImportError("pyqt module is missing")
-else:
+#    from PyQt4.QtCore import *
+#    from PyQt4.QtGui import *
     from PySide.QtGui import *
     from PySide.QtCore import *
+except:
+    raise ImportError("pyqt module is missing")
 
 try:
     from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
@@ -38,7 +37,6 @@ from scipy.optimize import curve_fit
 from scipy.optimize import leastsq
 
 import scalcslib as scl
-#import rcj
 import cjumps
 import scburst
 import popen
@@ -1082,7 +1080,7 @@ class QMatGUI(QMainWindow):
     def onPrintOutSave(self):
         """
         """
-        printOutFilename = QFileDialog.getSaveFileName(self,
+        printOutFilename, filt = QFileDialog.getSaveFileName(self,
                 "Save as PRT file...", ".prt",
                 "PRT files (*.prt)")
 
@@ -1098,7 +1096,7 @@ class QMatGUI(QMainWindow):
 
     def onPlotSaveASCII(self):
 
-        savePlotTXTFilename = QFileDialog.getSaveFileName(self,
+        savePlotTXTFilename, filt = QFileDialog.getSaveFileName(self,
                 "Save as TXT file...", self.path, ".txt",
                 "TXT files (*.txt)")
 
@@ -1146,7 +1144,7 @@ class QMatGUI(QMainWindow):
         Load a mechanism and rates from DC's mec file.
         Called from menu Load|From DCPROGS .MEC File...
         """
-        filename = QFileDialog.getOpenFileName(self,
+        filename, filt = QFileDialog.getOpenFileName(self,
             "Open Mec File...", self.path, "DC Mec Files (*.mec *.MEC)")
         self.path = os.path.split(str(filename))[0]
         self.textBox.append("\nFile to read: " + os.path.split(str(filename))[1])
@@ -1170,7 +1168,7 @@ class QMatGUI(QMainWindow):
         Load a mechanism and rates from Channel Lab .mod file.
         Called from menu Load|From Channel Lab .MOD File...
         """
-        filename = QFileDialog.getOpenFileName(self,
+        filename, filt = QFileDialog.getOpenFileName(self,
             "Open MOD File...", self.path, "Channel Lab MOD Files (*.mod *.MOD)")
         self.path = os.path.split(str(filename))[0]
         self.textBox.append("\nFile to read: " + os.path.split(str(filename))[1])
@@ -1327,23 +1325,23 @@ class RateTable(QTableWidget):
             self.setItem(i, 4, cell)
 
             check = QTableWidgetItem()
-            value = 0
+            value = Qt.Unchecked
             if self.mec.Rates[i].fixed > 0:
-                value = 2
+                value = Qt.Checked
             check.setCheckState(value)
             self.setItem(i, 5, check)
 
             check = QTableWidgetItem()
-            value = 0
+            value = Qt.Unchecked
             if self.mec.Rates[i].mr:
-                value = 2
+                value = Qt.Checked
             check.setCheckState(value)
             self.setItem(i, 6, check)
 
             check = QTableWidgetItem()
-            value = 0
+            value = Qt.Unchecked
             if self.mec.Rates[i].is_constrained:
-                value = 2
+                value = Qt.Checked
             check.setCheckState(value)
             self.setItem(i, 7, check)
             factor = ''

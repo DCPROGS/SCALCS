@@ -1,7 +1,7 @@
 #! /usr/bin/python
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PySide.QtCore import *
+from PySide.QtGui import *
 
 import dcpyps.dcio as dcio
 
@@ -43,7 +43,7 @@ class ConverterQT(QDialog):
 
     def load_from_file(self):
         ""
-        filename = QFileDialog.getOpenFileName(self,
+        filename, filt = QFileDialog.getOpenFileName(self,
                 "Open a text file...", self.path,
                 "TXT files (*.txt *.TXT);;All files (*.*)")
         if filename:
@@ -53,7 +53,7 @@ class ConverterQT(QDialog):
 
     def browse_to_file(self):
         ""
-        self.to_filename = QFileDialog.getSaveFileName(self,
+        self.to_filename, filt = QFileDialog.getSaveFileName(self,
                 "Save as SCN file...", ".scn",
                 "SCN files (*.scn)")
         if self.to_filename:
