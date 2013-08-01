@@ -1913,6 +1913,548 @@ def abf2ssd(abf_h):
 
     return ssd_h
 
+def ini_HJCFIT_read(filename, verbose=False):
+    """
+    Read HJCFIT ini (configuration) file.
+    
+    iftype=100 (from windows) read pfiles and qmec which have the long path
+    included character*60 qmec, pfiles(20,10) rather than DOS versions
+    character*33 pfileb(20,10) character*40 qfilem.
+    
+    
+    """
+    
+    ini = {}
+    floats = array ('f')
+    doubles = array('d')
+    ints = array('i')
+    
+    f = open(filename, 'rb')
+    ftype = f.read(8)
+    f.close()
+    f = open(filename, 'rb')
+    ints.fromfile(f,1)
+    iftype = ints.pop()
+    f.close()
+    f = open(filename, 'rb')
+    
+    if iftype == 100:
+        ints.fromfile(f,1)
+        iftype = ints.pop()
+        ini['initype'] = iftype
+        if verbose: print 'iftype=', iftype
+    if ftype == 'windows':
+        ftype = f.read(8)
+        ini['initype'] = ftype
+        if verbose: print 'ftype=', ftype
+
+    # path names for scn files
+    pfiles = []
+    for i in range(20):
+        temp = []
+        for j in range(10):
+            if iftype == 100:
+                temp.append(f.read(60))
+            else:
+                temp.append(f.read(33))
+        pfiles.append(temp)
+    if verbose: print 'pfiles:', pfiles
+
+    # number of fixed rates
+    ints.fromfile(f,1)
+    nfix = ints.pop()
+    if verbose: print 'nfix=', nfix
+    # mark fixed rates
+    jfix = []
+    for i in range(200):
+        ints.fromfile(f,1)
+        jfix.append(ints.pop())
+    if verbose: print 'jfix=', jfix
+
+    ints.fromfile(f,1)
+    neq = ints.pop()
+    if verbose: print 'neq=', neq
+
+    ie = []
+    for i in range(200):
+        ints.fromfile(f,1)
+        ie.append(ints.pop())
+    if verbose: print 'ie=', ie
+
+    je = []
+    for i in range(200):
+        ints.fromfile(f,1)
+        je.append(ints.pop())
+    if verbose: print 'je=', je
+
+    efac = []
+    for i in range(200):
+        floats.fromfile(f,1)
+        efac.append(floats.pop())
+    if verbose: print 'efac=', efac
+
+    iff = []
+    for i in range(200):
+        ints.fromfile(f,1)
+        iff.append(ints.pop())
+    if verbose: print 'iff=', iff
+
+    jff = []
+    for i in range(200):
+        ints.fromfile(f,1)
+        jff.append(ints.pop())
+    if verbose: print 'jff=', jff
+
+    # mark constrained rates
+    jcon = []
+    for i in range(200):
+        ints.fromfile(f,1)
+        jcon.append(ints.pop())
+    if verbose: print 'jcon=', jcon
+
+    im2 = []
+    for i in range(50):
+        temp = []
+        for j in range(100):
+            ints.fromfile(f,1)
+            temp.append(ints.pop())
+        im2.append(temp)
+    if verbose: print 'im2', im2
+    jm2 = []
+    for i in range(50):
+        temp = []
+        for j in range(100):
+            ints.fromfile(f,1)
+            temp.append(ints.pop())
+        jm2.append(temp)
+    if verbose: print 'jm2', jm2
+
+    # mark rates constrained by microscopic reversibility
+    jmic = []
+    for i in range(200):
+        ints.fromfile(f,1)
+        jmic.append(ints.pop())
+    if verbose: print 'jmic=', jmic
+
+    ints.fromfile(f,1)
+    ndisp = ints.pop()
+    if verbose: print 'ndisp=', ndisp
+
+    ints.fromfile(f,1)
+    irecq = ints.pop()
+    if verbose: print 'irecq=', irecq
+
+    ans1 = f.read(1)
+    if verbose: print 'ans1', ans1
+
+    ylo = []
+    for i in range(20):
+        floats.fromfile(f,1)
+        ylo.append(floats.pop())
+    if verbose: print 'ylo=', ylo
+
+    yhi = []
+    for i in range(20):
+        floats.fromfile(f,1)
+        yhi.append(floats.pop())
+    if verbose: print 'yhi=', yhi
+
+    ints.fromfile(f,1)
+    nrange = ints.pop()
+    if verbose: print 'nrange=', nrange
+
+    ints.fromfile(f,1)
+    idiskq = ints.pop()
+    if verbose: print 'idiskq=', idiskq
+
+    # Number of scn files to concatenate for each concentration
+    nfileb = []
+    for i in range(10):
+        ints.fromfile(f,1)
+        nfileb.append(ints.pop())
+    if verbose: print 'nfileb', nfileb
+
+    kfile = []
+    for i in range(20):
+        temp = []
+        for j in range(10):
+            ints.fromfile(f,1)
+            temp.append(ints.pop())
+        kfile.append(temp)
+    if verbose: print 'kfile', kfile
+  
+    # Rate set number in mec file
+    ints.fromfile(f,1)
+    nset = ints.pop()
+    if verbose: print 'nset=', nset
+
+    conc = []
+    for i in range(10):
+        temp = []
+        for j in range(10):
+            floats.fromfile(f,1)
+            temp.append(floats.pop())
+        conc.append(temp)
+    if verbose: print 'conc', conc
+
+    tcrit = []
+    for i in range(10):
+        floats.fromfile(f,1)
+        tcrit.append(floats.pop())
+    if verbose: print 'tcrit=', tcrit
+
+    burst = []
+    for i in range(10):
+        ints.fromfile(f,1)
+        burst.append(ints.pop())
+    if verbose: print 'burst=', burst
+
+    ints.fromfile(f,1)
+    irecq1 = ints.pop()
+    if verbose: print 'irecq1=', irecq1
+
+    ints.fromfile(f,1)
+    idatyp = ints.pop()
+    if verbose: print 'idatyp=', idatyp
+
+    # path for plq file
+    qfile = f.read(40)
+    if verbose: print 'qfile:', qfile
+
+    # model number
+    ints.fromfile(f,1)
+    imodold = ints.pop()
+    if verbose: print 'imodold=', imodold
+
+    # set bad 0=shut, 1=open intervals
+    setbad = []
+    for i in range(2):
+        temp = []
+        for j in range(10):
+            ints.fromfile(f,1)
+            temp.append(ints.pop())
+        setbad.append(temp)
+    if verbose: print 'setbad', setbad
+    tcbad = []
+    for i in range(2):
+        temp = []
+        for j in range(10):
+            floats.fromfile(f,1)
+            temp.append(floats.pop())
+        tcbad.append(temp)
+    if verbose: print 'tcbad', tcbad
+
+    # one channel only?
+    ints.fromfile(f,1)
+    onechan = ints.pop()
+    if verbose: print 'onechan=', onechan
+
+    nbad1 = []
+    for i in range(10):
+        ints.fromfile(f,1)
+        nbad1.append(ints.pop())
+    if verbose: print 'nbad1=', nbad1
+
+    # set bad bits from stability plots
+    isbad = []
+    for i in range(20):
+        temp = []
+        for j in range(10):
+            ints.fromfile(f,1)
+            temp.append(ints.pop())
+        isbad.append(temp)
+    if verbose: print 'isbad', isbad
+    iebad = []
+    for i in range(20):
+        temp = []
+        for j in range(10):
+            ints.fromfile(f,1)
+            temp.append(ints.pop())
+        iebad.append(temp)
+    if verbose: print 'iebad', iebad
+
+    tresolb = []
+    for i in range(10):
+        floats.fromfile(f,1)
+        tresolb.append(floats.pop())
+    if verbose: print 'tresolb=', tresolb
+
+    ans3 = f.read(1)
+    if verbose: print 'ans3', ans3
+
+    ans4 = f.read(1)
+    if verbose: print 'ans4', ans4
+
+    ints.fromfile(f,1)
+    nlvar = ints.pop()
+    if verbose: print 'nlvar=', nlvar
+
+    ints.fromfile(f,1)
+    fixec50 = ints.pop()
+    if verbose: print 'fixec50=', fixec50
+
+    doubles.fromfile(f,1)
+    ec50 = doubles.pop()
+    if verbose: print 'ec50=', ec50
+
+    ints.fromfile(f,1)
+    i50 = ints.pop()
+    if verbose: print 'i50=', i50
+
+    ints.fromfile(f,1)
+    j50 = ints.pop()
+    if verbose: print 'j50=', j50
+
+    ints.fromfile(f,1)
+    m50 = ints.pop()
+    if verbose: print 'm50=', m50
+
+    doubles.fromfile(f,1)
+    xqlo = doubles.pop()
+    if verbose: print 'xqlo=', xqlo
+
+    doubles.fromfile(f,1)
+    xqhi = doubles.pop()
+    if verbose: print 'xqhi=', xqhi
+
+    # number of open and shut states
+    ints.fromfile(f,1)
+    kAm = ints.pop()
+    if verbose: print 'kAm=', kAm
+    ints.fromfile(f,1)
+    kFm = ints.pop()
+    if verbose: print 'kFm=', kFm
+
+    # use CHS vectors
+    chsvec = []
+    for i in range(10):
+        ints.fromfile(f,1)
+        chsvec.append(ints.pop())
+    if verbose: print 'chsvec=', chsvec
+
+    ints.fromfile(f,1)
+    ncyc2 = ints.pop()
+    if verbose: print 'ncyc2=', ncyc2
+
+    # Get number of states in each cycle and connections.
+    nsc2 = []
+    for i in range(0, ncyc2):
+        ints.fromfile(f,1)
+        nsc2.append(ints.pop())
+    if verbose: print "nsc2=", nsc2
+    im2 = []
+    for i in range(0, ncyc2):
+        temp = []
+        for j in range(0, nsc2[i]):
+            ints.fromfile(f,1)
+            temp.append(ints.pop())
+        im2.append(temp)
+    if verbose: print "im2=",im2
+    jm2 = []
+    for i in range(0, ncyc2):
+        temp = []
+        for j in range(0, nsc2[i]):
+            ints.fromfile(f,1)
+            temp.append(ints.pop())
+        jm2.append(temp)
+    if verbose: print "jm2=", jm2
+
+    # association rate limit
+    doubles.fromfile(f,1)
+    assmax = doubles.pop()
+    if verbose: print 'assmax=', assmax
+
+    # mec file path
+    if iftype == 100:
+        qmec = f.read(60)
+    else:
+        qmec = f.read(40)
+    if verbose: print 'qmec', qmec
+
+    ints.fromfile(f,1)
+    nsim = ints.pop()
+    if verbose: print 'nsim=', nsim
+
+    ints.fromfile(f,1)
+    irect = ints.pop()
+    if verbose: print 'irect=', irect
+
+    ints.fromfile(f,1)
+    logsav = ints.pop()
+    if verbose: print 'logsav=', logsav
+
+    ints.fromfile(f,1)
+    imodolds = ints.pop()
+    if verbose: print 'imodolds=', imodolds
+
+    badend = []
+    for i in range(10):
+        ints.fromfile(f,1)
+        badend.append(ints.pop())
+    if verbose: print 'badend=', badend
+
+    iexcop = []
+    for i in range(10):
+        ints.fromfile(f,1)
+        iexcop.append(ints.pop())
+    if verbose: print 'iexcop=', iexcop
+
+    gaplo = []
+    for i in range(10):
+        floats.fromfile(f,1)
+        gaplo.append(floats.pop())
+    if verbose: print 'gaplo=', gaplo
+
+    gaphi = []
+    for i in range(10):
+        floats.fromfile(f,1)
+        gaphi.append(floats.pop())
+    if verbose: print 'gaphi=', gaphi
+
+    ints.fromfile(f,1)
+    dcmod = ints.pop()
+    if verbose: print 'dcmod=', dcmod
+
+    # parameters for grouped (closely spaced) asymptotic roots
+    ints.fromfile(f,1)
+    slopsch = ints.pop()
+    if verbose: print 'slopsch=', slopsch
+
+    ints.fromfile(f,1)
+    checkgrp = ints.pop()
+    if verbose: print 'checkgrp=', checkgrp
+
+    doubles.fromfile(f,1)
+    rcrit = doubles.pop()
+    if verbose: print 'rcrit=', rcrit
+
+    ints.fromfile(f,1)
+    ngpcheck = ints.pop()
+    if verbose: print 'ngpcheck=', ngpcheck
+
+    # parameters for using narrower guesses when fit is stabilised
+    # 200 evals since last rootsch call
+    ints.fromfile(f,1)
+    nstab1 = ints.pop()
+    if verbose: print 'nstab1=', nstab1
+    # guesses = rootF +/- 10% after nstab1 evaluations
+    doubles.fromfile(f,1)
+    gfac1 = doubles.pop()
+    if verbose: print 'gfac1=', gfac1
+    # 500 evals since last rootsch call
+    ints.fromfile(f,1)
+    nstab2 = ints.pop()
+    if verbose: print 'nstab2=', nstab2
+    # guesses = rootF +/- 2% after nstab2 evaluations
+    doubles.fromfile(f,1)
+    gfac2 = doubles.pop()
+    if verbose: print 'gfac2=', gfac2
+
+    ans5 = f.read(1)
+    if verbose: print 'ans5', ans5
+
+
+    ints.fromfile(f,1)
+    nfixec50 = ints.pop()
+    if verbose: print 'nfixec50=', nfixec50
+
+    doubles.fromfile(f,1)
+    ec502 = doubles.pop()
+    if verbose: print 'ec502=', ec502
+
+    ints.fromfile(f,1)
+    i502 = ints.pop()
+    if verbose: print 'i502=', i502
+
+    ints.fromfile(f,1)
+    j502 = ints.pop()
+    if verbose: print 'j502=', j502
+
+    ints.fromfile(f,1)
+    m502 = ints.pop()
+    if verbose: print 'm502=', m502
+
+    doubles.fromfile(f,1)
+    xqlo2 = doubles.pop()
+    if verbose: print 'xqlo2=', xqlo2
+
+    doubles.fromfile(f,1)
+    xqhi2 = doubles.pop()
+    if verbose: print 'xqhi2=', xqhi2
+
+    ints.fromfile(f,1)
+    useprim = ints.pop()
+    if verbose: print 'useprim=', useprim
+
+    isetmr = []
+    for i in range(0, ncyc2):
+        ints.fromfile(f,1)
+        isetmr.append(ints.pop())
+    if verbose: print "isetmr=", isetmr
+
+    doubles.fromfile(f,1)
+    ratemax = doubles.pop()
+    if verbose: print 'ratemax=', ratemax
+
+    # number of rates actually set by microscopic reversibility
+    ints.fromfile(f,1)
+    nmr = ints.pop()
+    if verbose: print 'nmr=', nmr
+
+    # number of ligands
+    ints.fromfile(f,1)
+    nlig = ints.pop()
+    if verbose: print 'nlig=', nlig
+
+    conc_ec1 = []
+    for i in range(0, nlig):
+        floats.fromfile(f,1)
+        conc_ec1.append(floats.pop())
+    if verbose: print "conc_ec1=", conc_ec1
+
+    conc_ec2 = []
+    for i in range(0, nlig):
+        floats.fromfile(f,1)
+        conc_ec2.append(floats.pop())
+    if verbose: print "conc_ec2=", conc_ec2
+
+    f.close()
+    
+    ini['scn_files'] = []
+    for i in range(nset):
+        temp = []
+        for j in range(nfileb[i]):
+            temp.append(pfiles[j][i].strip())
+        ini['scn_files'].append(temp)
+    ini['mec_file'] = qmec.strip()
+    ini['mec_num'] = imodold
+    ini['mec_rates'] = irecq
+    ini['fix_num'] = nfix
+    ini['fix_rates'] = jfix
+    ini['constr_num'] = neq
+    ini['constr_fixed'] = [ie[:neq], je[:neq]]
+    ini['constr_torate'] = [iff[:neq], jff[:neq]]
+    ini['constr_fact'] = efac[:neq]
+    ini['conc_dep_rates'] = jcon
+    ini['conc_dep_rates_states'] = [im2, jm2]
+    ini['mr_constr_rates'] = jmic
+    ini['tcrit'] = tcrit[:nset]
+    ini['chsvec'] = chsvec[:nset]
+    ini['tres'] = tresolb[:nset]
+    ini['conc'] = []
+    for i in range(nset):
+        temp = []
+        for j in range(nfileb[i]):
+            temp.append(conc[j][i])
+        ini['conc'].append(temp)
+    ini['ec50'] = ec50
+    ini['cycles'] = [im2, jm2]
+    ini['assmax'] = assmax
+    ini['ratemax'] = ratemax
+    
+    
+    return ini
+
 def txt_load_one_col(filename):
     """"
     Read one column of data from a text file.

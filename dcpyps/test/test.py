@@ -240,7 +240,7 @@ class TestDC_PyPs(unittest.TestCase):
         opts['tcrit'] = self.tcrit
         opts['isCHS'] = True
         opts['data'] = rec1.bursts
-        rates = np.log(self.mec.unit_rates())
+        rates = np.log(self.mec.theta())
         lik, theta = scl.HJClik(rates, opts)
         print 'lik=', lik
         self.assertAlmostEqual(-lik, 5265.9536156, 5)
