@@ -38,7 +38,7 @@ def main():
     print('\nNumber of resolved intervals = {0:d}'.format(len(rec1.rtint)))
     print('\nNumber of bursts = {0:d}'.format(len(rec1.bursts)))
     blength = rec1.get_burst_length_list()
-    print('Average length = {0:.9f} millisec'.format(np.average(blength)))
+    print('Average length = {0:.9f} ms'.format(np.average(blength)*1000))
 #    print('Range: {0:.3f}'.format(min(blength)) +
 #            ' to {0:.3f} millisec'.format(max(blength)))
     openings = rec1.get_openings_burst_list()

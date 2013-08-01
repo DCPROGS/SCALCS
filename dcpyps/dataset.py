@@ -34,7 +34,7 @@ class SCRecord(object):
         """
         """
         picum = np.cumsum(scl.transition_probability(mec.Q), axis=1)
-        tmean = -1000 / mec.Q.diagonal() # in ms
+        tmean = -1 / mec.Q.diagonal() # in ms
         itint = [random.expovariate(1 / tmean[state])]
         iampl = [opamp if state < mec.kA else 0]
         while len(itint) < nintmax:
@@ -320,7 +320,7 @@ def prepare_hist(X, tres):
 
     n = len(X)
     xmax = max(X)
-    xstart = tres * 1000    # histogramm starts at
+    xstart = tres #* 1000    # histogramm starts at
 
     # Defines bin width and number of bins.
     # Number of bins/decade

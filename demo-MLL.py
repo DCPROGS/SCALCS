@@ -16,22 +16,7 @@ from dcpyps import dataset
 from dcpyps import scalcslib as scl
 from dcpyps import mechanism
 
-
-def rosen(x, data=None, args=None):
-    """The Rosenbrock function"""
-    f = sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
-    return f, x
-
-
 def main():
-
-    # Test with Rosenbrock function minimisation.
-    print('\nTesting Rosenbrock function minimisation:')
-    x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
-    xout, fout, niter, neval = optimize.simplex(rosen, x0, args=None)
-    print xout, fout, niter, neval
-    print('\nFirst test finished.')
-
 
     print('\n\nTesting single channel data:')
     # LOAD DEMO MECHANISM (C&H82 numerical example).
@@ -49,28 +34,28 @@ def main():
 
     print('\nNumber of all intervals = {0:d}'.format(len(tint)))
     # Impose resolution, get open/shut times and bursts.
-    rec1.impose_resolution(tres*1000)
+    rec1.impose_resolution(tres)
     print('\nNumber of resolved intervals = {0:d}'.format(len(rec1.rtint)))
 
     rec1.get_open_shut_periods()
     print('\nNumber of open periods = {0:d}'.format(len(rec1.opint)))
-    print('Mean and SD of open periods = {0:.9f} +/- {1:.9f}'.
-        format(np.average(rec1.opint), np.std(rec1.opint)))
-    print('Range of open periods from {0:.9f} to {1:.9f}'.
-        format(np.min(rec1.opint), np.max(rec1.opint)))
+    print('Mean and SD of open periods = {0:.9f} +/- {1:.9f} ms'.
+        format(np.average(rec1.opint)*1000, np.std(rec1.opint)*1000))
+    print('Range of open periods from {0:.9f} ms to {1:.9f} ms'.
+        format(np.min(rec1.opint)*1000, np.max(rec1.opint)*1000))
     print('\nNumber of shut intervals = {0:d}'.format(len(rec1.shint)))
-    print('Mean and SD of shut periods = {0:.9f} +/- {1:.9f}'.
-        format(np.average(rec1.shint), np.std(rec1.shint)))
-    print('Range of shut periods from {0:.9f} to {1:.9f}'.
-        format(np.min(rec1.shint), np.max(rec1.shint)))
-    print('Last shut period = {0:.9f}'.format(rec1.shint[-1]))
+    print('Mean and SD of shut periods = {0:.9f} +/- {1:.9f} ms'.
+        format(np.average(rec1.shint)*1000, np.std(rec1.shint)*1000))
+    print('Range of shut periods from {0:.9f} ms to {1:.9f} ms'.
+        format(np.min(rec1.shint)*1000, np.max(rec1.shint)*1000))
+    print('Last shut period = {0:.9f} ms'.format(rec1.shint[-1])*1000)
 
-    rec1.get_bursts(tcrit * 1000)
+    rec1.get_bursts(tcrit)
     print('\nNumber of bursts = {0:d}'.format(len(rec1.bursts)))
     blength = rec1.get_burst_length_list()
-    print('Average length = {0:.9f} millisec'.format(np.average(blength)))
-    print('Range: {0:.3f}'.format(min(blength)) +
-            ' to {0:.3f} millisec'.format(max(blength)))
+    print('Average length = {0:.9f} ms'.format(np.average(blength))*1000)
+    print('Range: {0:.3f} ms'.format(min(blength)*1000) +
+            ' to {0:.3f} ms'.format(max(blength)*1000))
     openings = rec1.get_openings_burst_list()
     print('Average number of openings per burst = {0:.9f}'.
         format(np.average(openings)))

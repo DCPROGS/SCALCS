@@ -222,14 +222,14 @@ class TestDC_PyPs(unittest.TestCase):
         ioffset, nint, calfac, header = dcio.scn_read_header(filename)
         tint, iampl, iprops = dcio.scn_read_data(filename, ioffset, nint, calfac)
         rec1 = dataset.SCRecord(filename, header, tint, iampl, iprops)
-        rec1.impose_resolution(self.tres * 1000)
+        rec1.impose_resolution(self.tres)
         rec1.get_open_shut_periods()
-        rec1.get_bursts(self.tcrit * 1000)
+        rec1.get_bursts(self.tcrit)
 
         # Check if burst separation is done right.
         self.assertEqual(len(rec1.bursts), 572)
         blength = rec1.get_burst_length_list()
-        self.assertAlmostEqual(np.average(blength), 8.425049335, 8)
+        self.assertAlmostEqual(np.average(blength)*1000, 8.425049335, 8)
         openings = rec1.get_openings_burst_list()
         self.assertAlmostEqual(np.average(openings), 1.461538462, 8)
 

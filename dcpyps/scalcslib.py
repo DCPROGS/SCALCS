@@ -466,7 +466,7 @@ def likelihood(theta, opts):
         burst = bursts[ind]
         grouplik = startB
         for i in range(len(burst)):
-            t = burst[i] * 0.001
+            t = burst[i]
             if i % 2 == 0: # open time
                 GAFt = qml.iGt(t, mec.QAA, mec.QAF)
             else: # shut
@@ -565,7 +565,7 @@ def HJClik(theta, opts):
         burst = bursts[ind]
         grouplik = startB
         for i in range(len(burst)):
-            t = burst[i] * 0.001
+            t = burst[i]
             if i % 2 == 0: # open time
                 eGAFt = qml.eGAF(t, tres, Aeigvals, AZ00, AZ10, AZ11, Aroots,
                 AR, mec.QAF, expQFF)

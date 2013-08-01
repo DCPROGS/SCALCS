@@ -315,7 +315,7 @@ class QMatGUI(QMainWindow):
         """
 
         self.textBox.append('\n\n\t===== LOADING DATA FILE =====')
-        filename = QFileDialog.getOpenFileName(self,
+        filename, filt = QFileDialog.getOpenFileName(self,
             "Open SCN File...", "", "DC SCN Files (*.scn)")
 #        self.rec1 = dataset.SCRecord(filename, header, tint, iampl, iprops)
         self.rec1 = dataset.SCRecord()
@@ -335,10 +335,9 @@ class QMatGUI(QMainWindow):
             tres, conc, oamp, nint = dialog.return_par()
 
         self.rec1 = dataset.SCRecord()
-        tres = self.tres * 1000 # in ms since intervals are in ms in record
         self.mec.set_eff('c', conc)
         startstate = self.mec.k - 1 # TODO: ask for this in dialog
-        self.rec1.simulate_record(self.mec, tres, startstate, oamp, nint)
+        self.rec1.simulate_record(self.mec, self.tres, startstate, oamp, nint)
         self.textBox.append("\nSimulation finished")
         self.textBox.append('{0:d}'.format(len(self.rec1.itint)) +
             ' intervals were simulated')
@@ -346,7 +345,7 @@ class QMatGUI(QMainWindow):
         self.rec1.get_open_shut_periods()
 
     def onSaveDataSCN(self):
-        saveSCNFilename = QFileDialog.getSaveFileName(self,
+        saveSCNFilename, filt = QFileDialog.getSaveFileName(self,
                 "Save as SCN file...", self.path, ".scn",
                 "SCN files (*.scn)")
 
@@ -361,8 +360,7 @@ class QMatGUI(QMainWindow):
         dialog = ConcResDlg(self, self.conc, self.tres)
         if dialog.exec_():
             self.conc, self.tres = dialog.return_par()
-        tres = self.tres * 1000 # in ms since intervals are in ms in record
-        self.rec1.impose_resolution(tres)
+        self.rec1.impose_resolution(self.tres)
         self.textBox.append('After imposing the resolution of original {0:d}'.
             format(len(self.rec1.itint)) + ' intervals were left {0:d}'.
             format(len(self.rec1.rtint)))
@@ -423,19 +421,19 @@ class QMatGUI(QMainWindow):
 
         self.textBox.append('\nCritical gap length = {0:.3f} millisec'.
             format(self.tcrit * 1000))
-        self.rec1.get_bursts(self.tcrit * 1000)
+        self.rec1.get_bursts(self.tcrit)
         self.textBox.append('\nNumber of bursts = {0:d}'.
             format(len(self.rec1.bursts)))
         blength = self.rec1.get_burst_length_list()
         self.textBox.append('Average = {0:.3f} millisec'.
-            format(np.average(blength)))
-        self.textBox.append('Range: {0:.3f}'.format(min(blength)) +
-            ' to {0:.3f} millisec'.format(max(blength)))
+            format(np.average(blength)*1000))
+        self.textBox.append('Range: {0:.3f}'.format(min(blength)*1000) +
+            ' to {0:.3f} millisec'.format(max(blength)*1000))
 
         x, y, dx = dataset.prepare_hist(blength, self.tres)
 
         self.axes.clear()
-        self.axes.semilogx(x, y, 'b-')
+        self.axes.semilogx(x*1000, y, 'b-')
         self.axes.set_yscale('sqrtscale')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
@@ -457,10 +455,10 @@ class QMatGUI(QMainWindow):
         self.textBox.append('\n\n\t===== PLOTTING DATA: OPEN PERIODS =====')
         self.textBox.append('\nNumber of open periods = {0:d}'.
             format(len(self.rec1.opint)))
-        self.textBox.append('Average = {0:.3f} millisec'.
-            format(np.average(self.rec1.opint)))
-        self.textBox.append('Range: {0:.3f}'.format(min(self.rec1.opint)) +
-            ' to {0:.3f} millisec'.format(max(self.rec1.opint)))
+        self.textBox.append('Average = {0:.3f} ms'.
+            format(np.average(self.rec1.opint)*1000))
+        self.textBox.append('Range: {0:.3f}'.format(min(self.rec1.opint)*1000) +
+            ' to {0:.3f} ms'.format(max(self.rec1.opint)*1000))
         x, y, dx = dataset.prepare_hist(self.rec1.opint, self.tres)
 
         self.mec.set_eff('c', self.conc)
@@ -473,7 +471,7 @@ class QMatGUI(QMainWindow):
 #        self.present_plot = np.vstack((t, ipdf, epdf, apdf))
 
         self.axes.clear()
-        self.axes.semilogx(x, y, 'k-',
+        self.axes.semilogx(x*1000, y, 'k-',
             t, sipdf, 'r--', t, sepdf, 'b-')
         self.axes.set_yscale('sqrtscale')
         self.axes.xaxis.set_ticks_position('bottom')
@@ -498,10 +496,10 @@ class QMatGUI(QMainWindow):
         self.textBox.append('\n\n\t===== PLOTTING DATA: OPEN PERIODS =====')
         self.textBox.append('\nNumber of shut periods = {0:d}'.
             format(len(self.rec1.shint)))
-        self.textBox.append('Average = {0:.3f} millisec'.
-            format(np.average(self.rec1.shint)))
-        self.textBox.append('Range: {0:.3f}'.format(min(self.rec1.shint)) +
-            ' to {0:.3f} millisec'.format(max(self.rec1.shint)))
+        self.textBox.append('Average = {0:.3f} ms'.
+            format(np.average(self.rec1.shint)*1000))
+        self.textBox.append('Range: {0:.3f}'.format(min(self.rec1.shint)*1000) +
+            ' to {0:.3f} ms'.format(max(self.rec1.shint)*1000))
         x, y, dx = dataset.prepare_hist(self.rec1.shint, self.tres)
 
         self.mec.set_eff('c', self.conc)
@@ -513,7 +511,7 @@ class QMatGUI(QMainWindow):
 #        self.present_plot = np.vstack((t, ipdf, epdf, apdf))
 
         self.axes.clear()
-        self.axes.semilogx(x, y, 'k-',
+        self.axes.semilogx(x*1000, y, 'k-',
             t, sipdf, 'r--', t, sepdf, 'b-')
         self.axes.set_yscale('sqrtscale')
         self.axes.xaxis.set_ticks_position('bottom')
