@@ -448,6 +448,8 @@ def exact_GAMAxx(mec, tres, open):
 
 def likelihood(theta, opts):
     """
+    Calculate likelihood for a series of open and shut times using ideal
+    probability density functions.
     """
 
     mec = opts['mec']
@@ -478,7 +480,6 @@ def likelihood(theta, opts):
         grouplik = np.dot(grouplik, endB)
         loglik += log(grouplik[0])
 
-    #newrates = np.log(mec.unit_rates())
     newrates = np.log(mec.theta())
     return -loglik, newrates
 
@@ -531,7 +532,6 @@ def HJClik(theta, opts):
     is_chsvec = opts['isCHS']
     bursts = opts['data']
 
-    #mec.set_rateconstants(np.exp(theta))
     mec.theta_unsqueeze(np.exp(theta))
     mec.set_eff('c', conc)
 
@@ -582,11 +582,10 @@ def HJClik(theta, opts):
         except:
             print 'HJClik: Warning: likelihood has been set to 0'
             print 'likelihood=', grouplik[0]
-            print 'rates=', np.log(mec.theta())
+            print 'rates=', mec.unit_rates()
             loglik = 0
             break
 
-    #newrates = np.log(mec.unit_rates())
     newrates = np.log(mec.theta())
     return -loglik, newrates
 

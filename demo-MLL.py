@@ -104,12 +104,12 @@ def main():
     #    np.log(theta), data=rec1.bursts, args=opts)
     xout, fout, niter, neval = optimize.simplex(scl.HJClik,
         np.log(theta), args=opts, display=True)
-       
+
     print ("\nFitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
     print 'time in simplex=', time.clock() - start
     # Display results.
-    
+
 #    print 'result=', result
     mec.theta_unsqueeze(np.exp(xout))
     print "\n Final rate constants:"
