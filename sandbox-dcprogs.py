@@ -4,6 +4,8 @@ import time, math, sys
 from dcpyps import samples, dataset, dcio, optimize, scalcslib as scl, mechanism as mechanism1
 from numpy import log, exp, average, abs, array, any, all
 
+from scipy.optimize import fmin
+
 from dcprogs import read_idealized_bursts
 from dcprogs.likelihood import QMatrix, Log10Likelihood, MissedEventsG
 from dcprogs.likelihood.optimization import reduce_likelihood
@@ -104,6 +106,3 @@ mechanism.theta_unsqueeze(exp(xout))
 print "\n Final rate constants:"
 mechanism.printout(sys.stdout)
 
-theta = mechanism.theta()
-start_lik, th = scl.HJClik(log(theta), opts)
-print ("\n\nStarting likelihood = {0:.6f}".format(-start_lik))

@@ -21,6 +21,7 @@ class SCRecord(object):
         self.iprops = iprops
         self.resolution_imposed = False
         self.tres = None
+        self.tcrit = None
         self.record_type = None
 
     def load_from_file(self, filename):
@@ -72,7 +73,7 @@ class SCRecord(object):
         print('\n#########\nList of resolved intervals:\n')
         for i in range(len(self.rtint)):
             print i, self.rtint[i], self.rampl[i], self.rprops[i]
-            if (self.rampl[i] == 0) and (self.rtint > (self.tcrit * 1000)):
+            if (self.rampl[i] == 0) and (self.rtint > (self.tcrit)):
                 print ('\n')
         print('\n###################\n\n')
             
@@ -110,7 +111,8 @@ class SCRecord(object):
             if ((self.itint[n] > tres) and (self.iprops[n] != 8)): # and
                 #(self.itint[n-1] > tres) and (self.iprops[n-1] != 8)):
                 firstResolved = True # first interval is usable and resolvable
-            n += 1
+            else:
+                n += 1
         # TODO: check if preceeding interval is resolvable and not bad.
 
         rtint = [self.itint[n]]

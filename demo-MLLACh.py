@@ -5,6 +5,7 @@ Maximum likelihood fit demo.
 
 import sys
 import time
+import math
 import numpy as np
 import cProfile
 
@@ -13,6 +14,8 @@ from dcpyps import dcio
 from dcpyps import dataset
 from dcpyps import scalcslib as scl
 from dcpyps import mechanism
+
+from dcprogs.likelihood import Log10Likelihood
 
 def main():
 
@@ -39,8 +42,8 @@ def main():
     print('\nNumber of bursts = {0:d}'.format(len(rec1.bursts)))
     blength = rec1.get_burst_length_list()
     print('Average length = {0:.9f} ms'.format(np.average(blength)*1000))
-#    print('Range: {0:.3f}'.format(min(blength)) +
-#            ' to {0:.3f} millisec'.format(max(blength)))
+    print('Range: {0:.3f}'.format(min(blength)*1000) +
+            ' to {0:.3f} millisec'.format(max(blength)*1000))
     openings = rec1.get_openings_burst_list()
     print('Average number of openings= {0:.9f}'.format(np.average(openings)))
 
@@ -84,16 +87,28 @@ def main():
     opts['isCHS'] = True
     opts['data'] = rec1.bursts
 
-    # MAXIMUM LIKELIHOOD FIT.
+#################################################
+
     start_lik, th = scl.HJClik(np.log(theta), opts)
-    print ("Starting likelihood = {0:.6f}".format(-start_lik))
-    print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"
+    print ("Starting likelihood = {0:.6f}".format(-start_lik))#
+
+    bursts = rec1.bursts
+    name   = 'CH82'
+    likelihood = Log10Likelihood(bursts, mec.kA, tres, tcrit)
+
+    def dcprogslik(x, args=None):
+        mec.theta_unsqueeze(np.exp(x))
+        mec.set_eff('c', opts['conc'])
+        return -likelihood(mec.Q) * math.log(10), np.log(mec.theta())
+
+    start = time.clock()
+    xout, fout, niter, neval = optimize.simplex(dcprogslik,
+        np.log(theta), display=True)
+    print ("\nDCPROGS Fitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
-    xout, fout, niter, neval = optimize.simplex(scl.HJClik,
-        np.log(theta), args=opts, display=True)
-    print ("\nFitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
-            %time.localtime()[0:6])
-    # Display results.
+    print 'time in simplex=', time.clock() - start
+    print ('\n Final log-likelihood = {0:.6f}'.format(-fout))
+    print ('\n Number of iterations = {0:d}'.format(niter))
     mec.theta_unsqueeze(np.exp(xout))
     print "\n Final rate constants:"
     mec.printout(sys.stdout)
@@ -101,6 +116,24 @@ def main():
     print ('\n Number of evaluations = {0:d}'.format(neval))
     print ('\n Number of iterations = {0:d}'.format(niter))
     print '\n\n'
+
+    # MAXIMUM LIKELIHOOD FIT.
+#    start_lik, th = scl.HJClik(np.log(theta), opts)
+#    print ("Starting likelihood = {0:.6f}".format(-start_lik))
+#    print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"
+#            %time.localtime()[0:6])
+#    xout, fout, niter, neval = optimize.simplex(scl.HJClik,
+#        np.log(theta), args=opts, display=True)
+#    print ("\nFitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
+#            %time.localtime()[0:6])
+#    # Display results.
+#    mec.theta_unsqueeze(np.exp(xout))
+#    print "\n Final rate constants:"
+#    mec.printout(sys.stdout)
+#    print ('\n Final log-likelihood = {0:.6f}'.format(-fout))
+#    print ('\n Number of evaluations = {0:d}'.format(neval))
+#    print ('\n Number of iterations = {0:d}'.format(niter))
+#    print '\n\n'
 
 try:
     cProfile.run('main()')
