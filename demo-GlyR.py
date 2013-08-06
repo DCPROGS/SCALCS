@@ -14,10 +14,9 @@ from dcprogs.likelihood import QMatrix, Log10Likelihood, MissedEventsG
 mecfn = "./dcpyps/samples/demomec.mec"
 version, meclist, max_mecnum = dcio.mec_get_list(mecfn)
 mec = dcio.mec_load(mecfn, meclist[2][0])
-mec.printout(sys.stdout)
 
 tres = [0.000030, 0.000030, 0.000030, 0.000030]
-tcrit = [0.004, 0.1, 0.06, 0.02]
+tcrit = [0.004, -0.1, -0.06, -0.02]
 conc = [10e-6, 30e-6, 100e-6, 1000e-6]
 scnfiles = ["./dcpyps/samples/A-10.scn", "./dcpyps/samples/B-30.scn",
     "./dcpyps/samples/C-100.scn", "./dcpyps/samples/D-1000.scn"]
@@ -38,9 +37,23 @@ def get_bursts(sfile, tres, tcrit):
     rec = dataset.SCRecord(sfile, header, tint, iampl, iprops)
     # Impose resolution, get open/shut times and bursts.
     rec.impose_resolution(tres)
-    rec.get_open_shut_periods()
-    rec.get_bursts(tcrit)
     print('\nNumber of resolved intervals = {0:d}'.format(len(rec.rtint)))
+
+    rec.get_open_shut_periods()
+    print('\nNumber of resolved periods = {0:d}'.format(len(rec.opint) + len(rec.shint)))
+    print('\nNumber of open periods = {0:d}'.format(len(rec.opint)))
+    print('Mean and SD of open periods = {0:.9f} +/- {1:.9f} ms'.
+        format(np.average(rec.opint)*1000, np.std(rec.opint)*1000))
+    print('Range of open periods from {0:.9f} ms to {1:.9f} ms'.
+        format(np.min(rec.opint)*1000, np.max(rec.opint)*1000))
+    print('\nNumber of shut intervals = {0:d}'.format(len(rec.shint)))
+    print('Mean and SD of shut periods = {0:.9f} +/- {1:.9f} ms'.
+        format(np.average(rec.shint)*1000, np.std(rec.shint)*1000))
+    print('Range of shut periods from {0:.9f} ms to {1:.9f} ms'.
+        format(np.min(rec.shint)*1000, np.max(rec.shint)*1000))
+    print('Last shut period = {0:.9f} ms'.format(rec.shint[-1])*1000)
+
+    rec.get_bursts(tcrit)
     print('\nNumber of bursts = {0:d}'.format(len(rec.bursts)))
     blength = rec.get_burst_length_list()
     print('Average length = {0:.9f} ms'.format(np.average(blength)*1000))
@@ -52,15 +65,15 @@ def get_bursts(sfile, tres, tcrit):
 
 bursts = []
 for i in range(len(scnfiles)):
-    bursts.append(get_bursts(scnfiles[i], tres[i], tcrit[i]))
+    bursts.append(get_bursts(scnfiles[i], tres[i], math.fabs(tcrit[i])))
 
 # PREPARE RATE CONSTANTS.
 # Fixed rates.
 #fixed = np.array([False, False, False, False, False, False, False, True,
 #    False, False, False, False, False, False])
 #if fixed.size == len(mec.Rates):
-#    for i in range(len(mec.Rates)):
-#        mec.Rates[i].fixed = fixed[i]
+for i in range(len(mec.Rates)):
+    mec.Rates[i].fixed = False
 
 # Constrained rates.
 mec.Rates[21].is_constrained = True
@@ -88,19 +101,18 @@ mec.update_constrains()
 mec.update_mr()
 
 # Initial guesses. Now using rate constants from numerical example.
-rates = np.log(mec.unit_rates())
-mec.set_rateconstants(np.exp(rates))
+#rates = np.log(mec.unit_rates())
+#mec.set_rateconstants(np.exp(rates))
 mec.printout(sys.stdout)
-theta = mec.theta()
+theta = mec.theta() #+ 1000.0 * np.random.uniform(low=-1, high=1, size=14)
 print '\n\ntheta=', theta
-
-
-
 
 likelihood0 = Log10Likelihood(bursts[0], mec.kA, tres[0], tcrit[0])
 likelihood1 = Log10Likelihood(bursts[1], mec.kA, tres[1], tcrit[1])
 likelihood2 = Log10Likelihood(bursts[2], mec.kA, tres[2], tcrit[2])
 likelihood3 = Log10Likelihood(bursts[3], mec.kA, tres[3], tcrit[3])
+
+
 
 def dcprogslik(x, args=None):
     mec.theta_unsqueeze(np.exp(x))
@@ -113,6 +125,10 @@ def dcprogslik(x, args=None):
     mec.set_eff('c', conc[3])
     lik3 = -likelihood3(mec.Q) * math.log(10)
     return lik0+lik1+lik2+lik3, np.log(mec.theta())
+
+
+lik, th = dcprogslik(np.log(theta))
+print ("Starting likelihood of first record (DCprogs)= {0:.6f}".format(-lik))
 
 opts = {}
 start = time.clock()
