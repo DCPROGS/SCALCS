@@ -107,12 +107,12 @@ mec.printout(sys.stdout)
 theta = mec.theta() #+ 1000.0 * np.random.uniform(low=-1, high=1, size=14)
 print '\n\ntheta=', theta
 
-likelihood0 = Log10Likelihood(bursts[0], mec.kA, tres[0], tcrit[0])
-likelihood1 = Log10Likelihood(bursts[1], mec.kA, tres[1], tcrit[1])
-likelihood2 = Log10Likelihood(bursts[2], mec.kA, tres[2], tcrit[2])
-likelihood3 = Log10Likelihood(bursts[3], mec.kA, tres[3], tcrit[3])
+nmax, xtol, rtol, itermax = 2, 1e-12, 1e-12, 1000
 
-
+likelihood0 = Log10Likelihood(bursts[0], mec.kA, tres[0], tcrit[0], nmax, xtol, rtol, itermax)
+likelihood1 = Log10Likelihood(bursts[1], mec.kA, tres[1], tcrit[1], nmax, xtol, rtol, itermax)
+likelihood2 = Log10Likelihood(bursts[2], mec.kA, tres[2], tcrit[2], nmax, xtol, rtol, itermax)
+likelihood3 = Log10Likelihood(bursts[3], mec.kA, tres[3], tcrit[3], nmax, xtol, rtol, itermax)
 
 def dcprogslik(x, args=None):
     mec.theta_unsqueeze(np.exp(x))
@@ -128,7 +128,7 @@ def dcprogslik(x, args=None):
 
 
 lik, th = dcprogslik(np.log(theta))
-print ("Starting likelihood of first record (DCprogs)= {0:.6f}".format(-lik))
+print ("Starting likelihood (DCprogs)= {0:.6f}".format(-lik))
 
 opts = {}
 start = time.clock()
