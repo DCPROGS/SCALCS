@@ -61,7 +61,7 @@ def simplex(func, theta, args=None,
 
         while (fcalls < maxeval and iterations < maxiter):
 
-            if display: # and (iterations % 10) == 0:
+            if display and (iterations % 10) == 0:
                 outdev.write('\niter# {0:d}\tlik= {1:f}\ttheta=\n'.format(iterations, -fval[0]))
                 for th in np.exp(simp[0]):
                     outdev.write('{0:6e}\t'.format(th))

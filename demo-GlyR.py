@@ -1,13 +1,12 @@
 import time, math, sys
 import numpy as np
 
-from dcpyps import optimize
+from dcpyps.optimize import simplex
 from dcpyps import dcio
 from dcpyps import dataset
-from dcpyps import scalcslib as scl
 from dcpyps import mechanism
 
-from dcprogs.likelihood import QMatrix, Log10Likelihood, MissedEventsG
+from dcprogs.likelihood import Log10Likelihood
 
 
 # LOAD FLIP MECHANISM USED Burzomato et al 2004
@@ -16,7 +15,7 @@ version, meclist, max_mecnum = dcio.mec_get_list(mecfn)
 mec = dcio.mec_load(mecfn, meclist[2][0])
 
 tres = [0.000030, 0.000030, 0.000030, 0.000030]
-tcrit = [0.004, -0.1, -0.06, -0.02]
+tcrit = [0.004, -1, -0.06, -0.02]
 conc = [10e-6, 30e-6, 100e-6, 1000e-6]
 scnfiles = ["./dcpyps/samples/A-10.scn", "./dcpyps/samples/B-30.scn",
     "./dcpyps/samples/C-100.scn", "./dcpyps/samples/D-1000.scn"]
@@ -67,6 +66,9 @@ bursts = []
 for i in range(len(scnfiles)):
     bursts.append(get_bursts(scnfiles[i], tres[i], math.fabs(tcrit[i])))
 
+#rates = [5000.0, 500.0, 2700.0, 2000.0, 800.0, 15000.0, 300.0, 0.1200E+06, 6000.0, 0.4500E+09, 1500.0, 12000.0, 4000.0, 0.9000E+09, 7500.0, 1200.0, 3000.0, 0.4500E+07, 2000.0, 0.9000E+07, 1000, 0.135000E+08]
+#mec.set_rateconstants(rates)
+
 # PREPARE RATE CONSTANTS.
 # Fixed rates.
 #fixed = np.array([False, False, False, False, False, False, False, True,
@@ -107,12 +109,12 @@ mec.printout(sys.stdout)
 theta = mec.theta() #+ 1000.0 * np.random.uniform(low=-1, high=1, size=14)
 print '\n\ntheta=', theta
 
-nmax, xtol, rtol, itermax = 2, 1e-12, 1e-12, 1000
+kwargs = {'nmax': 2, 'xtol': 1e-12, 'rtol': 1e-12, 'itermax': 100, 'lower_bound': -1e6, 'upper_bound': 0}
 
-likelihood0 = Log10Likelihood(bursts[0], mec.kA, tres[0], tcrit[0], nmax, xtol, rtol, itermax)
-likelihood1 = Log10Likelihood(bursts[1], mec.kA, tres[1], tcrit[1], nmax, xtol, rtol, itermax)
-likelihood2 = Log10Likelihood(bursts[2], mec.kA, tres[2], tcrit[2], nmax, xtol, rtol, itermax)
-likelihood3 = Log10Likelihood(bursts[3], mec.kA, tres[3], tcrit[3], nmax, xtol, rtol, itermax)
+likelihood0 = Log10Likelihood(bursts[0], mec.kA, tres[0], tcrit[0], **kwargs)
+likelihood1 = Log10Likelihood(bursts[1], mec.kA, tres[1], tcrit[1], **kwargs)
+likelihood2 = Log10Likelihood(bursts[2], mec.kA, tres[2], tcrit[2], **kwargs)
+likelihood3 = Log10Likelihood(bursts[3], mec.kA, tres[3], tcrit[3], **kwargs)
 
 def dcprogslik(x, args=None):
     mec.theta_unsqueeze(np.exp(x))
@@ -130,19 +132,16 @@ def dcprogslik(x, args=None):
 lik, th = dcprogslik(np.log(theta))
 print ("Starting likelihood (DCprogs)= {0:.6f}".format(-lik))
 
-opts = {}
 start = time.clock()
-xout, fout, niter, neval = optimize.simplex(dcprogslik,
-    np.log(theta), args=opts, display=True)
+xout, fout, niter, neval = simplex(dcprogslik, np.log(theta), display=True)
 print ("\nDCPROGS Fitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
         %time.localtime()[0:6])
 print 'time in simplex=', time.clock() - start
+
 print ('\n Final log-likelihood = {0:.6f}'.format(-fout))
 print ('\n Number of iterations = {0:d}'.format(niter))
+print ('\n Number of evaluations = {0:d}'.format(neval))
 mec.theta_unsqueeze(np.exp(xout))
 print "\n Final rate constants:"
 mec.printout(sys.stdout)
-print ('\n Final log-likelihood = {0:.6f}'.format(-fout))
-print ('\n Number of evaluations = {0:d}'.format(neval))
-print ('\n Number of iterations = {0:d}'.format(niter))
 print '\n\n'

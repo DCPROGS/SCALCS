@@ -1405,7 +1405,7 @@ class StateTableDlg(QDialog):
 #            self.mec.States[row].name = newname
 
         if column == 1:
-            newtype = self.table.item(row, column).text().toUpper()
+            newtype = self.table.item(row, column).text().upper()
             self.mec.States[row].statetype = newtype
 
         if column == 2:
