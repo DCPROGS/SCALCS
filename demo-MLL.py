@@ -5,6 +5,7 @@ Maximum likelihood fit demo.
 
 import sys
 import time
+import math
 import numpy as np
 import cProfile
 from scipy.optimize import minimize
@@ -16,12 +17,14 @@ from dcpyps import dataset
 from dcpyps import scalcslib as scl
 from dcpyps import mechanism
 
+from dcprogs.likelihood import Log10Likelihood
+
 def main():
 
     print('\n\nTesting single channel data:')
     # LOAD DEMO MECHANISM (C&H82 numerical example).
     mec = samples.CH82()
-    mec.printout(sys.stdout)
+    #mec.printout(sys.stdout)
     tres = 0.0001
     tcrit = 0.004
     conc = 100e-9
@@ -36,7 +39,6 @@ def main():
     # Impose resolution, get open/shut times and bursts.
     rec1.impose_resolution(tres)
     print('\nNumber of resolved intervals = {0:d}'.format(len(rec1.rtint)))
-
     rec1.get_open_shut_periods()
     print('\nNumber of open periods = {0:d}'.format(len(rec1.opint)))
     print('Mean and SD of open periods = {0:.9f} +/- {1:.9f} ms'.
@@ -85,7 +87,7 @@ def main():
     theta = mec.theta()
     print '\ntheta=', theta
 
-    # Prepare parameter dict for simplex
+    # Prepare parameter dict for DC-Pyps simplex
     opts = {}
     opts['mec'] = mec
     opts['conc'] = conc
@@ -97,27 +99,71 @@ def main():
     # MAXIMUM LIKELIHOOD FIT.
     start_lik, th = scl.HJClik(np.log(theta), opts)
     print ("Starting likelihood = {0:.6f}".format(-start_lik))
-    print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"
+    
+    ############ DC-Pyps likelihood
+    print ("\n\nFitting with DC-Pyps likelihood started: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
     start = time.clock()
-    #xout, fopt, neval, niter = optimize.simplexHJC(scl.HJClik,
-    #    np.log(theta), data=rec1.bursts, args=opts)
     xout, fout, niter, neval = optimize.simplex(scl.HJClik,
         np.log(theta), args=opts, display=True)
-
+    t1 = time.clock() - start
     print ("\nFitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
-    print 'time in simplex=', time.clock() - start
+    print 'time in simplex=', t1
     # Display results.
-
-#    print 'result=', result
     mec.theta_unsqueeze(np.exp(xout))
     print "\n Final rate constants:"
     mec.printout(sys.stdout)
-    print ('\n Final log-likelihood = {0:.6f}'.format(-fout))
+    lik1 = -fout
+    print ('\n Final log-likelihood = {0:.6f}'.format(lik1))
     print ('\n Number of evaluations = {0:d}'.format(neval))
     print ('\n Number of iterations = {0:d}'.format(niter))
     print '\n\n'
+    
+    #######   DCPROGS likelihood
+    bursts = rec1.bursts
+    logfac = math.log(10)
+    likelihood = Log10Likelihood(bursts, mec.kA, tres, tcrit)
+    def dcprogslik(x, args=None):
+        mec.theta_unsqueeze(np.exp(x))
+        mec.set_eff('c', opts['conc'])
+        return -likelihood(mec.Q) * logfac, np.log(mec.theta())
+    
+    def dcprogslik1(x, args=None):
+        mec.theta_unsqueeze(np.exp(x))
+        mec.set_eff('c', opts['conc'])
+        return -likelihood(mec.Q) * logfac
+    
+    start = time.clock()
+    xout, lik, niter, neval = optimize.simplex(dcprogslik,
+        np.log(theta), args=opts, display=True)
+    t2 = time.clock() - start
+    print ("\nFitting with DCPROGS likelihood finished: %4d/%02d/%02d %02d:%02d:%02d\n"
+            %time.localtime()[0:6])
+    print 'time in simplex=', t2
+    lik2 = -lik
+    print ('\n Final log-likelihood = {0:.6f}'.format(lik2))
+    print ('\n Number of iterations = {0:d}'.format(niter))
+    print 'xout', xout
+    mec.theta_unsqueeze(np.exp(xout))
+    print "\n Final rate constants:"
+    mec.printout(sys.stdout)
+    
+    
+    start = time.clock()
+    res = minimize(dcprogslik1, np.log(theta), method='Powell')
+    t3 = time.clock() - start
+    print ("\n\n\nScyPy.minimize (Powell) Fitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
+            %time.localtime()[0:6])
+    print 'time in ScyPy.minimize (Powell)=', t3
+    print 'xout', res.x
+    mec.theta_unsqueeze(np.exp(res.x))
+    print "\n Final rate constants:"
+    mec.printout(sys.stdout)
+    lik, th = scl.HJClik(res.x, opts)
+    lik3 = -lik
+    print ("\n likelihood = {0:.6f}".format(-lik3))
+    
 
 try:
     cProfile.run('main()')

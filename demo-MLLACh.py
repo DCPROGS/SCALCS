@@ -8,6 +8,7 @@ import time
 import math
 import numpy as np
 import cProfile
+from scipy.optimize import minimize
 
 from dcpyps import optimize
 from dcpyps import dcio
@@ -93,48 +94,50 @@ def main():
     print ("Starting likelihood = {0:.6f}".format(-start_lik))#
 
     bursts = rec1.bursts
-    name   = 'CH82'
     likelihood = Log10Likelihood(bursts, mec.kA, tres, tcrit)
 
     def dcprogslik(x, args=None):
         mec.theta_unsqueeze(np.exp(x))
         mec.set_eff('c', opts['conc'])
         return -likelihood(mec.Q) * math.log(10), np.log(mec.theta())
+    
+    def dcprogslik1(x, args=None):
+        mec.theta_unsqueeze(np.exp(x))
+        mec.set_eff('c', opts['conc'])
+        return -likelihood(mec.Q) * math.log(10)
 
+#### testing DC-Pyps simplex
     start = time.clock()
     xout, fout, niter, neval = optimize.simplex(dcprogslik,
         np.log(theta), display=True)
     print ("\nDCPROGS Fitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
             %time.localtime()[0:6])
-    print 'time in simplex=', time.clock() - start
-    print ('\n Final log-likelihood = {0:.6f}'.format(-fout))
-    print ('\n Number of iterations = {0:d}'.format(niter))
+    t1 = time.clock() - start
     mec.theta_unsqueeze(np.exp(xout))
     print "\n Final rate constants:"
     mec.printout(sys.stdout)
-    print ('\n Final log-likelihood = {0:.6f}'.format(-fout))
-    print ('\n Number of evaluations = {0:d}'.format(neval))
     print ('\n Number of iterations = {0:d}'.format(niter))
-    print '\n\n'
+    print ('\n Number of evaluations = {0:d}'.format(neval))
 
-    # MAXIMUM LIKELIHOOD FIT.
-#    start_lik, th = scl.HJClik(np.log(theta), opts)
-#    print ("Starting likelihood = {0:.6f}".format(-start_lik))
-#    print ("\nFitting started: %4d/%02d/%02d %02d:%02d:%02d\n"
-#            %time.localtime()[0:6])
-#    xout, fout, niter, neval = optimize.simplex(scl.HJClik,
-#        np.log(theta), args=opts, display=True)
-#    print ("\nFitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
-#            %time.localtime()[0:6])
-#    # Display results.
-#    mec.theta_unsqueeze(np.exp(xout))
-#    print "\n Final rate constants:"
-#    mec.printout(sys.stdout)
-#    print ('\n Final log-likelihood = {0:.6f}'.format(-fout))
-#    print ('\n Number of evaluations = {0:d}'.format(neval))
-#    print ('\n Number of iterations = {0:d}'.format(niter))
-#    print '\n\n'
-
+#### testing SciPy optimize.minimize
+    start = time.clock()
+    res = minimize(dcprogslik1, np.log(theta), method='Powell')
+#    res = minimize(dcprogslik1, res.x, method='Nelder-Mead')
+    
+    print ("\nDCPROGS Fitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
+            %time.localtime()[0:6])
+    t2 = time.clock() - start
+    mec.theta_unsqueeze(np.exp(res.x))
+    print "\n Final rate constants:"
+    mec.printout(sys.stdout)
+    theta = mec.theta()
+    lik2, th = scl.HJClik(np.log(theta), opts)
+    
+    print '\n\n\ntime in DC-Pyps simplex=', t1
+    print ('\n Final log-likelihood = {0:.6f}'.format(-fout))
+    print '\ntime in SciPy simplex=', t2
+    print ("\n likelihood = {0:.6f}".format(-lik2))
+    
 try:
     cProfile.run('main()')
 except KeyboardInterrupt:
