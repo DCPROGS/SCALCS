@@ -8,6 +8,7 @@ from array import array
 import numpy as np
 
 import dcpyps
+from dcpyps import mechanism
 
 def mec_get_list(mecfile):
     """
@@ -466,6 +467,215 @@ def mec_load(mecfile, start):
         CycleStates = []
         for j in xrange(nsc[i]):
             CycleStates.append(statenames[im[i, j]-1])
+        CycleList.append(dcpyps.Cycle(CycleStates))
+
+    return dcpyps.Mechanism(RateList, CycleList)
+
+def mec_load_from_prt(filename, verbose=False):    
+    f = open(filename, 'r')
+    linenum = 0
+    
+    
+    ncyc, nsc, im2, jm2 = 0, [], [], []
+    states, ligbound = [], []
+    tres, tcrit, CHS = [], [], []
+    rates, constrained = [], []
+    while True:
+        try:
+            line = f.readline()
+            #print 'line:', line
+            if line == '':
+                break
+            line = line.strip("\r\n")
+            linenum += 1
+        except EOFError:
+            print('MOD reading finished.')
+            
+        if "HJCFIT: Fit of model to open-shut times with missed events" in line:
+            if verbose: print 'This is possibly HJCFIT printout file.'
+            
+        if "No of states in each subset: kA, kB, kC, kD =" in line:
+            kA = int(line.split()[-4].strip())
+            kB = int(line.split()[-3].strip())
+            kC = int(line.split()[-2].strip())
+            kD = int(line.split()[-1].strip())
+            k = kA + kB + kC + kD
+            if verbose: print ("Number of states: kA, kB, kC, kD = {0:d}, {1:d}, {2:d}, {3:d}".
+                format(kA, kB, kC, kD))
+            
+        if "Number of ligands =" in line:
+            nlig = int(line.split()[-1].strip())
+            if verbose: print "Number of ligands = {0:d}".format(nlig)
+            f.readline() #'Concentration-dependent elements:'
+            f.readline() #'  i   j     ligand #   Ligand name'
+            line = f.readline()
+            im, jm, lig = [], [], []
+            while line != "\n":
+                temp = line.split()
+                im.append(int(temp[0]))
+                jm.append(int(temp[1]))
+                lig.append(temp[-1])
+                line = f.readline()
+            if verbose: print "im=", im
+            if verbose: print "jm=", jm
+            if verbose: print "lig=", lig
+                
+        
+        if "Cycle #" in line and int(line[-1]) > ncyc:
+            c1, c2 = [], []
+            ncyc += 1
+            line = f.readline()
+            temp = line.split()
+            c1.append(int(temp[1].strip(',')))
+            c2.append(int(temp[2].strip(')')))
+            line = f.readline()
+            temp = line.split()
+            while temp:
+                c1.append(int(temp.pop(0).strip('-')))
+                c2.append(int(temp.pop(0)))
+            nsc.append(len(c1))
+            im2.append(c1)
+            jm2.append(c2)
+            if verbose: print "Cycle # ", ncyc
+            if verbose: print nsc
+            if verbose: print im2, jm2
+            
+        if "state #    state name" in line:
+            line = f.readline()
+            while line != "\n":
+                temp = line.split()
+                states.append(temp[1])
+                line = f.readline()
+            if len(states) == k:
+                if verbose: print states
+            else:
+                print "Warning: number of states does not correspond."
+                
+        if "Number of ligands bound" in line:
+            line = f.readline()
+            line = f.readline()     
+            while line != "\n":
+                temp = line.split()
+                if len(temp) == 3:
+                    ligbound.append(int(temp[2]))
+                line = f.readline()
+            if len(ligbound) == k:
+                if verbose: print ligbound
+            else:
+                print "Warning: number of states does not correspond."
+                
+        if "Resolution for HJC calculations" in line:
+            line = f.readline()
+            while line != "\n":
+                temp = line.split()
+                if len(temp) == 4:
+                    tres.append(float(temp[2]) * 1e-6)
+                line = f.readline()
+            if verbose: print 'resolution: ', tres
+            
+        if "The following parameters are constrained:" in line:
+            line = f.readline()
+            while '-----' not in line:
+                cnstr = []
+                temp = line.split()
+                r1 = int(temp[1]) - 1
+                line = f.readline()
+                temp = line.split()
+                fac = float(temp[0])
+                op = temp[1]
+                r2 = int(temp[3]) - 1
+                cnstr.append(r1)
+                cnstr.append(op)
+                cnstr.append(fac)
+                cnstr.append(r2)
+                line = f.readline()
+                constrained.append(cnstr)
+#            print constrained
+            
+        if "initial        final" in line:
+            line = f.readline()
+            while line != "\n":
+                rate = []
+                if 'q(' in line:
+                    rate.append(int(line[8:10].strip()))
+                    rate.append(int(line[11:13].strip()))
+                    rate.append(line[18:29].strip())
+                    rate.append(float(line[42:55].strip()))
+                    if len(line) > 55:
+                        rate.append(line[55:].strip().strip('(').strip(')'))
+                rates.append(rate)
+                line = f.readline()
+            if constrained:
+                for item in constrained:
+                    if len(rates[item[0]]) > 4: # and rates[item[0, 4]] == 'constrained':
+                        rates[item[0]].append(item[1])
+                        rates[item[0]].append(item[2])
+                        rates[item[0]].append(item[3])
+            if verbose: print rates
+            
+        if 'Total number of rates' in line:
+            numrates = int(line.split()[-1])
+            numfixed = int(f.readline().split()[-1])
+            numconstr = int(f.readline().split()[-1])
+            nummr = int(f.readline().split()[-1])
+            numec50 = int(f.readline().split()[-1])
+            numfree = int(f.readline().split()[-1])
+            if verbose: print ('\nTotal number of rates = {0:d}'.format(numrates) +
+                '\nNumber that are fixed       = {0:d}'.format(numfixed) +
+                '\nNumber that are constrained = {0:d}'.format(numconstr) +
+                '\nNumber set by micro rev     = {0:d}'.format(nummr) +
+                '\nNumber set by fixed EC50    = {0:d}'.format(numec50) +
+                '\nNumber of free rates to be estimated = {0:d}'.format(numfree))
+
+    if verbose: print 'file contains {0:d} lines'.format(linenum)
+    f.close()
+    
+    StateList = []
+    j = 0
+    for i in range(kA):
+        StateList.append(dcpyps.State('A', states[j], 50))
+        j += 1
+    for i in range(kB):
+        StateList.append(dcpyps.State('B', states[j], 0))
+        j += 1
+    for i in range(kC):
+        StateList.append(dcpyps.State('C', states[j], 0))
+        j += 1
+    for i in range(kD):
+        StateList.append(dcpyps.State('D', states[j], 0))
+        j += 1
+        
+    RateList = []
+    for i in range(numrates):
+        bound = None
+        mr = False
+        is_constr = False
+        constr_func = None
+        constr_args = None
+        for j in range(len(im)):
+            if im[j] == rates[i][0] and jm[j] == rates[i][1]:
+                bound = 'c'
+        for j in range(ncyc):
+            if im2[j][0] == rates[i][0] and jm2[j][0] == rates[i][1]:
+                mr = True
+        if len(rates[i]) > 5 and rates[i][4] == 'constrained':
+            is_constr = True
+            if rates[i][5] == 'times':
+                constr_func = mechanism.constrain_rate_multiple
+                constr_args = [rates[i][7], rates[i][6]]
+        
+        rate = rates[i][3]
+        # REMIS: please make sure the state indexing is correct
+        RateList.append(dcpyps.Rate(rate, StateList[rates[i][0]-1],
+            StateList[rates[i][1]-1], name=rates[i][2], eff=bound, mr=mr,
+            is_constrained=is_constr, constrain_func=constr_func, constrain_args=constr_args))
+            
+    CycleList = []
+    for i in range(ncyc):
+#        mrconstrained = False
+        CycleStates = []
+        for j in range(nsc[i]):
+            CycleStates.append(states[im2[i][j]-1])
         CycleList.append(dcpyps.Cycle(CycleStates))
 
     return dcpyps.Mechanism(RateList, CycleList)
@@ -2012,22 +2222,22 @@ def ini_HJCFIT_read(filename, verbose=False):
         jcon.append(ints.pop())
     if verbose: print 'jcon=', jcon
 
-    im2 = []
+    im = []
     for i in range(50):
         temp = []
         for j in range(100):
             ints.fromfile(f,1)
             temp.append(ints.pop())
-        im2.append(temp)
-    if verbose: print 'im2', im2
-    jm2 = []
+        im.append(temp)
+    if verbose: print 'im', im
+    jm = []
     for i in range(50):
         temp = []
         for j in range(100):
             ints.fromfile(f,1)
             temp.append(ints.pop())
-        jm2.append(temp)
-    if verbose: print 'jm2', jm2
+        jm.append(temp)
+    if verbose: print 'jm', jm
 
     # mark rates constrained by microscopic reversibility
     jmic = []
@@ -2436,7 +2646,7 @@ def ini_HJCFIT_read(filename, verbose=False):
     ini['constr_torate'] = [iff[:neq], jff[:neq]]
     ini['constr_fact'] = efac[:neq]
     ini['conc_dep_rates'] = jcon
-    ini['conc_dep_rates_states'] = [im2, jm2]
+    ini['conc_dep_rates_states'] = [im, jm]
     ini['mr_constr_rates'] = jmic
     ini['tcrit'] = tcrit[:nset]
     ini['chsvec'] = chsvec[:nset]

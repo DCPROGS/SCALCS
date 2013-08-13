@@ -80,6 +80,9 @@ class QMatGUI(QMainWindow):
         loadFromMecFileAction = self.createAction("&Load from DCprogs MEC File...",
             self.onLoadMecFile,
             None, "loadfrommecfile", "Load from Mec file")
+        loadFromPrtFileAction = self.createAction("&Load from DCprogs PRT File...",
+            self.onLoadPrtFile,
+            None, "loadfromprtfile", "Load from Prt file")
         loadFromModFileAction = self.createAction("&Load from ChannelLab MOD File...",
             self.onLoadModFile,
             None, "loadfrommodfile", "Load from ChannelLab Mod file")
@@ -90,7 +93,7 @@ class QMatGUI(QMainWindow):
         quitAction = self.createAction("&Quit", self.close,
             "Ctrl+Q", "appquit", "Close the application")
         self.addActions(loadMenu, (loadDemo1Action, loadDemo2Action,
-            loadFromMecFileAction, loadFromModFileAction,
+            loadFromMecFileAction, loadFromPrtFileAction, loadFromModFileAction,
             modifyMecAction, modifyStatesAction, quitAction))
 
         plotMenu = self.menuBar().addMenu('&Plot')
@@ -1159,6 +1162,20 @@ class QMatGUI(QMainWindow):
 
         self.textBox.append("Loaded mec: " + meclist[nrate][2])
         self.textBox.append("Loaded rates: " + meclist[nrate][3] + "\n")
+        self.mec.printout(self.log)
+        
+    def onLoadPrtFile(self):
+        """
+        Load a mechanism and rates from DC's HJCFIT.PRT file.
+        Called from menu Load|From DCPROGS .PRT File...
+        """
+        filename, filt = QFileDialog.getOpenFileName(self,
+            "Open Mec File...", self.path, "DC Mec Files (*.prt *.PRT *.txt *.TXT)")
+        self.path = os.path.split(str(filename))[0]
+        self.textBox.append("\nFile to read: " + os.path.split(str(filename))[1])
+
+        self.mec = dcio.mec_load_from_prt(filename)
+        self.textBox.append("Loaded mec and rates from PRT file: " + filename)
         self.mec.printout(self.log)
 
     def onLoadModFile(self):
