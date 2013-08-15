@@ -1,0 +1,3600 @@
+
+ Program HJCFIT Windows Version (Beta)
+
+Copyright D. Colquhoun, I. Vais, University College London 2004
+All rights reserved.(Intel Visual Fortran/Gino version)
+Please cite: http://www.ucl.ac.uk/Pharmacology/dc.html
+
+HJCFIT: Fit of model to open-shut times with missed events
+ (Uses HJC distributions, exact for 1st 2 deadtimes then
+ asymptotic, to calculate likelihood of record
+
+DATE of analysis =          23-MAY-2012
+
+Initialisation file = Y:\ELIC\AleFit\mec48\mec48-gpon01.ini   
+
+DEFINE FILE FOR EXPERIMENTAL DATA (.scn)
+
+SET #   1
+Title:                                                   ELIC                                                                  
+Results file:                                                     E:\K.SCN
+DATEW of experiment: 15-Mar-2012 (patch number   1)
+Number of transitions =    13897
+Raw data file: C:\150312n2.abf               
+Tape details: ELIC500uMProp           
+Patch type: outside-out   
+Membrane potential (mV) =    -60.00
+Temperature =      20.0
+Filter (kHz, -3 dB) =      3.00000
+Full amplitude (pA) (approx) =     -9.10
+RMS noise (pA) =     0.5645
+Calibration (amplitude to pA) =  0.378818E-02
+Plot queue file:                                         
+
+DEFINE FILE FOR EXPERIMENTAL DATA (.scn)
+
+SET #   2
+Title:                                                   ELIC                                                                  
+Results file:                                                     E:\F.SCN
+DATEW of experiment: 15-Mar-2012 (patch number   1)
+Number of transitions =    23701
+Raw data file: C:\150312n4.abf               
+Tape details: ELIC1mM                 
+Patch type: outside-out   
+Membrane potential (mV) =    -60.00
+Temperature =      21.0
+Filter (kHz, -3 dB) =      3.00000
+Full amplitude (pA) (approx) =     -5.58
+RMS noise (pA) =     0.4552
+Calibration (amplitude to pA) =  0.378818E-02
+Plot queue file:                                         
+
+DEFINE FILE FOR EXPERIMENTAL DATA (.scn)
+
+SET #   3
+Title:                                                   ELIC                                                                  
+Results file:                                                     E:\L.SCN
+DATEW of experiment: 17-Apr-2012 (patch number   1)
+Number of transitions =    25336
+Raw data file: C:\170412c0.abf               
+Tape details: ELIC5mMProp             
+Patch type: outside-out   
+Membrane potential (mV) =    -60.00
+Temperature =      21.0
+Filter (kHz, -3 dB) =      5.00000
+Full amplitude (pA) (approx) =     -7.28
+RMS noise (pA) =     0.2758
+Calibration (amplitude to pA) =  0.378818E-02
+Plot queue file:                                         
+
+DEFINE FILE FOR EXPERIMENTAL DATA (.scn)
+
+SET #   4
+Title:                                                   ELIC                                                                  
+Results file:                                                     E:\J.SCN
+DATEW of experiment: 20-Mar-2012 (patch number   1)
+Number of transitions =    12185
+Raw data file: C:\200312n1.abf               
+Tape details: ELIC10mM                
+Patch type: outside-out   
+Membrane potential (mV) =    -60.00
+Temperature =      21.0
+Filter (kHz, -3 dB) =      6.00000
+Full amplitude (pA) (approx) =     -6.69
+RMS noise (pA) =     0.3052
+Calibration (amplitude to pA) =  0.378818E-02
+Plot queue file:                                         
+
+Total number of transitions =    75119, in    4 sets.
+Temperature (mean) =      20.8
+Approx full amplitude (mean) =     -7.16
+RMS baseline noise (mean) =     0.4002
+Potential (mV) (mean) =    -60.00
+
+Set   1
+set :Channel open at end of file #  1: number of intervals reduced to    13891
+Set   2
+set :Channel open at end of file #  1: number of intervals reduced to    23699
+Set   3
+set :Channel open at end of file #  1: number of intervals reduced to    25330
+Set   4
+set :Channel open at end of file #  1: number of intervals reduced to    12184
+Number of resolved intervals=    10373
+    0 intervals with dubious amplitudes in output
+  494 shut intervals with fixed amplitudes in output
+  205 open intervals with fixed amplitudes in output
+  481 intervals with constrained amplitudes in output
+   24 bad intervals (undefined durations) in output
+
+
+Resolution (microsec) for openings = 0.350000E-01
+Resolution (microsec) for shuttings = 0.350000E-01
+
+For sublevels take:
+   full amplitude (pA)=    -9.10; pA for real difference=  0.000
+Number of resolved intervals=    17135
+    0 intervals with dubious amplitudes in output
+  619 shut intervals with fixed amplitudes in output
+  640 open intervals with fixed amplitudes in output
+  760 intervals with constrained amplitudes in output
+   47 bad intervals (undefined durations) in output
+
+
+Resolution (microsec) for openings = 0.400000E-01
+Resolution (microsec) for shuttings = 0.400000E-01
+
+For sublevels take:
+   full amplitude (pA)=    -5.58; pA for real difference=  0.000
+Number of resolved intervals=    19152
+    0 intervals with dubious amplitudes in output
+  468 shut intervals with fixed amplitudes in output
+ 1255 open intervals with fixed amplitudes in output
+  492 intervals with constrained amplitudes in output
+    3 bad intervals (undefined durations) in output
+
+
+Resolution (microsec) for openings = 0.300000E-01
+Resolution (microsec) for shuttings = 0.300000E-01
+
+For sublevels take:
+   full amplitude (pA)=    -7.28; pA for real difference=  0.000
+Number of resolved intervals=     9500
+    0 intervals with dubious amplitudes in output
+  699 shut intervals with fixed amplitudes in output
+  161 open intervals with fixed amplitudes in output
+  266 intervals with constrained amplitudes in output
+    3 bad intervals (undefined durations) in output
+
+
+Resolution (microsec) for openings = 0.250000E-01
+Resolution (microsec) for shuttings = 0.250000E-01
+
+For sublevels take:
+   full amplitude (pA)=    -6.69; pA for real difference=  0.000
+
+Resolution for HJC calculations
+  Set   1:     35.000 microseconds
+  Set   2:     40.000 microseconds
+  Set   3:     30.000 microseconds
+  Set   4:     25.000 microseconds
+
+SET   1: Critical gap length to define end of group =      8.0 milliseconds
+ (defined so that all openings in a group prob come from same channel)
+
+Initial and final vectors for bursts calculated as in C.,
+Hawkes & Srodzinski, (1996, eqs 5.8, 5.11).
+
+A bad gap ends a group, but does not eliminate the whole group
+
+
+SET   2: Critical gap length to define end of group =      7.0 milliseconds
+ (defined so that all openings in a group prob come from same channel)
+
+Initial and final vectors for bursts calculated as in C.,
+Hawkes & Srodzinski, (1996, eqs 5.8, 5.11).
+
+A bad gap ends a group, but does not eliminate the whole group
+
+
+SET   3: Critical gap length to define end of group =     10.0 milliseconds
+ (defined so that all openings in a group prob come from same channel)
+
+Initial and final vectors for bursts calculated as in C.,
+Hawkes & Srodzinski, (1996, eqs 5.8, 5.11).
+
+A bad gap ends a group, but does not eliminate the whole group
+
+
+SET   4: Critical gap length to define end of group =     10.0 milliseconds
+ (defined so that all openings in a group prob come from same channel)
+
+
+Initial and final vectors for are calculated as for   
+steady state openings and shuttings (this involves a slight
+approximation at start and end of bursts that are defined
+by shut times that have been set as bad).
+
+A bad gap ends a group, but does not eliminate the whole group
+
+Set   1: Conversion to open periods
+Input:   10373 transitions (   7 bad openings,   57 bad gaps)
+Output:    1408 transitions (   0 bad open periods,   15 bad gaps)
+
+Set   2: Conversion to open periods
+Input:   17135 transitions (  29 bad openings,   83 bad gaps)
+Output:    1926 transitions (   0 bad open periods,   17 bad gaps)
+
+Set   3: Conversion to open periods
+Input:   19152 transitions (   0 bad openings,   10 bad gaps)
+Output:    1462 transitions (   0 bad open periods,    3 bad gaps)
+
+Set   4: Conversion to open periods
+Input:    9500 transitions (   0 bad openings,   10 bad gaps)
+Output:    1866 transitions (   0 bad open periods,    3 bad gaps)
+
+------------------------------------------------------------
+Set   1
+Set   2
+Set   3
+Set   4
+
+
+DEFINE THE REACTION MECHANISM
+Mechanisms file: Y:\ELIC\AleFit\mec48\mec48.mec          
+contains    2 records of rate constants +model
+
+Record number    1 (starts at byte # 20000)
+mec48                                                                     
+Model number =   1
+
+
+Number of channels =        1
+Number of open states =   4
+ conductance of state   1  (A2F*)      (pS) =   50.0000    
+ conductance of state   2  (A3F*)      (pS) =   50.0000    
+ conductance of state   3  (A2R*)      (pS) =   50.0000    
+ conductance of state   4  (A3R*)      (pS) =   50.0000    
+ conductance of state   5  (A2F)       (pS) =   0.00000    
+ conductance of state   6  (A3F)       (pS) =   0.00000    
+ conductance of state   7  (A3R)       (pS) =   0.00000    
+ conductance of state   8  (A2R)       (pS) =   0.00000    
+ conductance of state   9  (AR)        (pS) =   0.00000    
+ conductance of state  10  (R)         (pS) =   0.00000    
+
+Number of ligands =   1
+Concentration-dependent elements:
+  i   j     ligand #   Ligand name
+  5  6       1  agonist             
+  8  7       1  agonist             
+  9  8       1  agonist             
+ 10  9       1  agonist             
+
+Number of ligands bound
+State               agonist   
+  1: A2F*               2
+  2: A3F*               3
+  3: A2R*               2
+  4: A3R*               3
+  5: A2F                2
+  6: A3F                3
+  7: A3R                3
+  8: A2R                2
+  9: AR                 1
+ 10: R                  0
+Values of rate constants
+  1:q(1 ,5 )  = alpha2f   *  2100.00    none      
+  2:q(5 ,1 )  = beta2f    *  28000.0    none      
+  3:q(2 ,6 )  = alpha3f   *  7000.00    none      
+  4:q(6 ,2 )  = beta3f    *  129000.    none      
+  5:q(3 ,8 )  = alpha2    *  87644.0    none      
+  6:q(8 ,3 )  = beta2     *  21378.0    none      
+  7:q(4 ,7 )  = alpha3    *  3400.00    none      
+  8:q(7 ,4 )  = beta3     *  4200.00    none      
+  9:q(5 ,6 )  = kf+3      * 0.300000E+09agonist   
+ 10:q(6 ,5 )  = 3kf-3     *  2400.00    none      
+ 11:q(5 ,8 )  = gama2     *  8601.00    none      
+ 12:q(8 ,5 )  = delta2    *  2206.00    none      
+ 13:q(6 ,7 )  = gama3     *  8736.00    none      
+ 14:q(7 ,6 )  = delta3    *  10500.0    none      
+ 15:q(7 ,8 )  = 3k-3      *  701.000    none      
+ 16:q(8 ,7 )  = k+3       *  27932.0    agonist   
+ 17:q(8 ,9 )  = 2k-2      *  467.000    none      
+ 18:q(9 ,8 )  = 2k+2      *  55864.0    agonist   
+ 19:q(9 ,10)  = k-1       *  234.000    none      
+ 20:q(10,9 )  = 3k+1      *  83796.0    agonist   
+Microscopic reversibility
+cycle=   1 ,number of states=   4, states:  5;  6;  7;  8;
+rate  15   q(7 ,8 )   3k-3        is constrained to be
+ 3.00000     times rate  19   q(9 ,10)   k-1       
+rate  17   q(8 ,9 )   2k-2        is constrained to be
+ 2.00000     times rate  19   q(9 ,10)   k-1       
+rate  18   q(9 ,8 )   2k+2        is constrained to be
+ 2.00000     times rate  16   q(8 ,7 )   k+3       
+rate  20   q(10,9 )   3k+1        is constrained to be
+ 3.00000     times rate  16   q(8 ,7 )   k+3       
+rate  12   q(8 ,5 )   delta2      calculated by MR
+Q( 7, 8) and param # 15 changed from   701.000     to   702.000     by constraint
+Q( 8, 9) and param # 17 changed from   467.000     to   468.000     by constraint
+QT( 8, 5) changed from   2206.00     to   3.29064     by microscopic reversibility
+
+Equilibrium conc-response curve for ligand #  1 = agonist   
+At zero concentration of agonist   , P(open) = -0.25411E-19
+Equilibrium response-concentration curve is monotonic
+Maximum Popen =  0.913921
+   EC50 = Conc of agonist    for 50% of this maximum (muM) =  0.31623E+08
+
+
+
+_____________________________________________________ 
+
+QT( 8, 5) changed from   2206.00     to   3.29064     by microscopic reversibility
+
+Equilibrium conc-response curve for ligand #  1 = agonist   
+At zero concentration of agonist   , P(open) =  0.16941E-20
+Equilibrium response-concentration curve is monotonic
+Maximum Popen =  0.913916
+   EC50 = Conc of agonist    for 50% of this maximum (muM) =  0.31623E+08
+
+
+
+_____________________________________________________ 
+
+Number of resolved intervals=    10373
+    0 intervals with dubious amplitudes in output
+  494 shut intervals with fixed amplitudes in output
+  205 open intervals with fixed amplitudes in output
+  481 intervals with constrained amplitudes in output
+   24 bad intervals (undefined durations) in output
+
+
+Resolution (microsec) for openings = 0.350000E-01
+Resolution (microsec) for shuttings = 0.350000E-01
+
+For sublevels take:
+   full amplitude (pA)=    -9.10; pA for real difference=  0.000
+Number of resolved intervals=    17135
+    0 intervals with dubious amplitudes in output
+  619 shut intervals with fixed amplitudes in output
+  640 open intervals with fixed amplitudes in output
+  760 intervals with constrained amplitudes in output
+   47 bad intervals (undefined durations) in output
+
+
+Resolution (microsec) for openings = 0.400000E-01
+Resolution (microsec) for shuttings = 0.400000E-01
+
+For sublevels take:
+   full amplitude (pA)=    -5.58; pA for real difference=  0.000
+Number of resolved intervals=    19152
+    0 intervals with dubious amplitudes in output
+  468 shut intervals with fixed amplitudes in output
+ 1255 open intervals with fixed amplitudes in output
+  492 intervals with constrained amplitudes in output
+    3 bad intervals (undefined durations) in output
+
+
+Resolution (microsec) for openings = 0.300000E-01
+Resolution (microsec) for shuttings = 0.300000E-01
+
+For sublevels take:
+   full amplitude (pA)=    -7.28; pA for real difference=  0.000
+Number of resolved intervals=     9500
+    0 intervals with dubious amplitudes in output
+  699 shut intervals with fixed amplitudes in output
+  161 open intervals with fixed amplitudes in output
+  266 intervals with constrained amplitudes in output
+    3 bad intervals (undefined durations) in output
+
+
+Resolution (microsec) for openings = 0.250000E-01
+Resolution (microsec) for shuttings = 0.250000E-01
+
+For sublevels take:
+   full amplitude (pA)=    -6.69; pA for real difference=  0.000
+
+EC50 FOR INITIAL GUESSES:
+
+Resolution (microsec):
+  for openings =    25.00 (=  0.2258     risetimes, A/Amax =  0.22281     )
+  for shuttings=    25.00 (=  0.2258     risetimes, A/Amax =  0.22281     )
+
+ false event rate (per sec) for openings  =   4.74638    
+		      for shuttings =   4.74638    
+
+Resolution (microsec):
+  for openings =    25.00 (=  0.2258     risetimes, A/Amax =  0.22281     )
+  for shuttings=    25.00 (=  0.2258     risetimes, A/Amax =  0.22281     )
+
+ false event rate (per sec) for openings  =   71.6348    
+		      for shuttings =   71.6348    
+
+Resolution (microsec):
+  for openings =    25.00 (=  0.3764     risetimes, A/Amax =  0.36282     )
+  for shuttings=    25.00 (=  0.3764     risetimes, A/Amax =  0.36282     )
+
+ false event rate (per sec) for openings  =  0.590425E-16
+		      for shuttings =  0.590425E-16
+
+Resolution (microsec):
+  for openings =    25.00 (=  0.4517     risetimes, A/Amax =  0.42858     )
+  for shuttings=    25.00 (=  0.4517     risetimes, A/Amax =  0.42858     )
+
+ false event rate (per sec) for openings  =  0.393508E-15
+		      for shuttings =  0.393508E-15
+
+SET   1: Critical gap length to define end of group =      8.0 milliseconds
+ (defined so that all openings in a group prob come from same channel)
+
+Initial and final vectors for bursts calculated as in C.,
+Hawkes & Srodzinski, (1996, eqs 5.8, 5.11).
+
+A bad gap ends a group, but does not eliminate the whole group
+
+
+SET   2: Critical gap length to define end of group =      7.0 milliseconds
+ (defined so that all openings in a group prob come from same channel)
+
+Initial and final vectors for bursts calculated as in C.,
+Hawkes & Srodzinski, (1996, eqs 5.8, 5.11).
+
+A bad gap ends a group, but does not eliminate the whole group
+
+
+SET   3: Critical gap length to define end of group =     10.0 milliseconds
+ (defined so that all openings in a group prob come from same channel)
+
+Initial and final vectors for bursts calculated as in C.,
+Hawkes & Srodzinski, (1996, eqs 5.8, 5.11).
+
+A bad gap ends a group, but does not eliminate the whole group
+
+
+SET   4: Critical gap length to define end of group =     10.0 milliseconds
+ (defined so that all openings in a group prob come from same channel)
+
+
+Initial and final vectors for are calculated as for   
+steady state openings and shuttings (this involves a slight
+approximation at start and end of bursts that are defined
+by shut times that have been set as bad).
+
+A bad gap ends a group, but does not eliminate the whole group
+
+Set   1: Conversion to open periods
+Input:   10373 transitions (   7 bad openings,   57 bad gaps)
+Output:    1408 transitions (   0 bad open periods,   15 bad gaps)
+
+Set   2: Conversion to open periods
+Input:   17135 transitions (  29 bad openings,   83 bad gaps)
+Output:    1926 transitions (   0 bad open periods,   17 bad gaps)
+
+Set   3: Conversion to open periods
+Input:   19152 transitions (   0 bad openings,   10 bad gaps)
+Output:    1462 transitions (   0 bad open periods,    3 bad gaps)
+
+Set   4: Conversion to open periods
+Input:    9500 transitions (   0 bad openings,   10 bad gaps)
+Output:    1866 transitions (   0 bad open periods,    3 bad gaps)
+
+Total number of rates =    20
+Number that are fixed       =     0
+Number that are constrained =     4
+Number set by micro rev     =     1
+Number set by fixed EC50    =     0
+Number of free rates to be estimated =    15
+
+
+For initial guesses: 
+Set  1: Initial CHS vector for burst =  0.498756E-03 0.119971E-01 0.983795     0.370896E-02
+et  1: End CHS vector for burst = 
+0.150228E-01 0.149005E-02 0.149925E-01 0.296461     0.932630     0.988713    
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+Set  2: Initial CHS vector for burst =  0.439536E-03 0.328399E-01 0.955735     0.109857E-01
+et  2: End CHS vector for burst = 
+0.112007E-01 0.176887E-02 0.189135E-01 0.373685     0.894730     0.973474    
+Set  3: Initial CHS vector for burst =  0.568558E-04 0.592313E-01 0.918243     0.224687E-01
+et  3: End CHS vector for burst = 
+0.611469E-03 0.256272E-03 0.322134E-02 0.644175E-01 0.275767     0.386098    
+Problem with group    1(    75 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+
+EQUILIBRIUM CALCULATIONS FOR INITIAL GUESSES
+
+Equilibrium conc-response curve for ligand #  1 = agonist   
+At zero concentration of agonist   , P(open) =  0.16941E-20
+Equilibrium response-concentration curve is monotonic
+Maximum Popen =  0.913916
+   EC50 = Conc of agonist    for 50% of this maximum (muM) =  0.31623E+08
+
+
+
+_____________________________________________________ 
+
+log(likelihood) =   6716.403    
+Set   1: likelihood =   3298.229    
+  71 groups: mean no of openings/group =   9.91549    
+(likelihood scaled down   12 times by 1.e-100)
+Set   2: likelihood =   4767.044    
+ 118 groups: mean no of openings/group =   8.16102    
+(likelihood scaled down   13 times by 1.e-100)
+Set   3: likelihood =  -2754.525    
+  22 groups: mean no of openings/group =   33.2273    
+(likelihood scaled down    1 times by 1.e-100)
+Set   4: likelihood =   1405.654    
+  21 groups: mean no of openings/group =   44.4286    
+(likelihood scaled down   13 times by 1.e-100)
+
+ Note: if a particular set of parameter values causes the
+likelihood for a group to appear <0, the log(lik) for this
+group is taken as zero, thus penalising these parameters
+
+
+Fit  15 parameters: initial theta() = 
+    alpha2f   2100.00         beta2f    28000.0         alpha3f 
+ 7000.00         beta3f    129000.         alpha2    87644.0    
+    beta2     21378.0         alpha3    3400.00         beta3   
+ 4200.00         kf+3     0.300000E+09     3kf-3     2400.00    
+    gama2     8601.00         gama3     8736.00         delta3  
+ 10500.0         k+3       27932.0         k-1       234.000    
+
+
+Initial step size factor=    1.609437943
+Simplex contraction factor (0-1)=  0.500000
+Restart step size=resfac*critstep: resfac=   10.000000000
+Limit number of restarts=    3
+Print every Nth estimate=   10
+Relative error=  0.001000
+
+
+Simplex started at:17:09:16  
+Set  1: Initial CHS vector for burst =  0.498756E-03 0.119971E-01 0.983795     0.370896E-02
+et  1: End CHS vector for burst = 
+0.150228E-01 0.149005E-02 0.149925E-01 0.296461     0.932630     0.988713    
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+Set  2: Initial CHS vector for burst =  0.439536E-03 0.328399E-01 0.955735     0.109857E-01
+et  2: End CHS vector for burst = 
+0.112007E-01 0.176887E-02 0.189135E-01 0.373685     0.894730     0.973474    
+Set  3: Initial CHS vector for burst =  0.568558E-04 0.592313E-01 0.918243     0.224687E-01
+et  3: End CHS vector for burst = 
+0.611469E-03 0.256272E-03 0.322134E-02 0.644175E-01 0.275767     0.386098    
+Problem with group    1(    75 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    1(    75 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    1(    75 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+Problem with group    1(    75 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    2(    14 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    3(    31 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    7(    44 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    8(    33 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    1(    71 openings, set   4): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    4(    83 openings, set   4): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    5(    58 openings, set   4): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    6(    69 openings, set   4): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    9(    53 openings, set   4): Lik =   0.00000    
+rinted only first 10 rows for debug
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+Problem with group    1(    75 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+Problem with group    1(    75 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    1(    75 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    1(    75 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    1(    75 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    1(    75 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    1(    75 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    1(    75 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    3(    31 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    7(    44 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    8(    33 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    1(    71 openings, set   4): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    4(    83 openings, set   4): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    5(    58 openings, set   4): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    6(    69 openings, set   4): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    9(    53 openings, set   4): Lik =   0.00000    
+rinted only first 10 rows for debug
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+Problem with group    1(    75 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+Problem with group    1(    75 openings, set   3): Lik =   0.00000    
+rinted only first 10 rows for debug
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+nresmax =        3istart =        0  resfac =   10.0000    crtstp = 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02
+Restart after local search
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+nresmax =        3istart =        1  resfac =   10.0000    crtstp = 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02
+Restart after local search
+nresmax =        3istart =        2  resfac =   10.0000    crtstp = 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02 0.100000E-02
+
+ Simplex finished at:18:15:44  
+Duration of fit:  0 days    1 hours   6 min   28 sec
+ number of evaluations =   13081 theta = 
+ 1593.23      12647.8      78.5397      54956.1      36939.8    
+ 128.330      14664.6      2763.42     0.823257E+09  999654.    
+ 6906.49      18798.8      9168.99      53486.6      182.008    
+
+Number of evaluations =    13081 Max log(likelihood) =   33580.29    
+ Press any key to continue
+(Fit 'very stable' at time of convergence)
+
+FINAL VALUES OF RATE CONSTANTS
+
+Set   1
+    500.000     micromolar of agonist             
+   Analysed in bursts, tcrit (ms) =   8.00000    
+   CHS vector used for start and end of bursts
+   Resolution (microsec) =   35.0000    
+
+
+A bad gap ends a group, but does not eliminate the whole group
+Simplex used log(rate constant) for searching
+
+Set   2
+    1000.00     micromolar of agonist             
+   Analysed in bursts, tcrit (ms) =   7.00000    
+   CHS vector used for start and end of bursts
+   Resolution (microsec) =   40.0000    
+
+
+A bad gap ends a group, but does not eliminate the whole group
+Simplex used log(rate constant) for searching
+
+Set   3
+    5000.00     micromolar of agonist             
+   Analysed in bursts, tcrit (ms) =   10.0000    
+   CHS vector used for start and end of bursts
+   Resolution (microsec) =   30.0000    
+
+
+A bad gap ends a group, but does not eliminate the whole group
+Simplex used log(rate constant) for searching
+
+Set   4
+    10000.0     micromolar of agonist             
+   Analysed in bursts, tcrit (ms) =   10.0000    
+   Steady state vector used for start and end of bursts
+   Resolution (microsec) =   25.0000    
+
+
+A bad gap ends a group, but does not eliminate the whole group
+Simplex used log(rate constant) for searching
+
+                            initial        final
+
+   1  q( 1, 5) =  alpha2f     2100.00      1593.23    
+
+   2  q( 5, 1) =  beta2f      28000.0      12647.8    
+
+   3  q( 2, 6) =  alpha3f     7000.00      78.5397    
+
+   4  q( 6, 2) =  beta3f      129000.      54956.1    
+
+   5  q( 3, 8) =  alpha2      87644.0      36939.8    
+
+   6  q( 8, 3) =  beta2       21378.0      128.330    
+
+   7  q( 4, 7) =  alpha3      3400.00      14664.6    
+
+   8  q( 7, 4) =  beta3       4200.00      2763.42    
+
+   9  q( 5, 6) =  kf+3       0.300000E+09 0.823257E+09
+
+  10  q( 6, 5) =  3kf-3       2400.00      999654.    
+
+  11  q( 5, 8) =  gama2       8601.00      6906.49    
+
+  12  q( 8, 5) =  delta2      2206.00      400.680    
+ (micro-rev)
+
+  13  q( 6, 7) =  gama3       8736.00      18798.8    
+
+  14  q( 7, 6) =  delta3      10500.0      9168.99    
+
+  15  q( 7, 8) =  3k-3        702.000      546.023    
+ (constrained)
+
+  16  q( 8, 7) =  k+3         27932.0      53486.6    
+
+  17  q( 8, 9) =  2k-2        468.000      364.016    
+ (constrained)
+
+  18  q( 9, 8) =  2k+2        55864.0      106973.    
+ (constrained)
+
+  19  q( 9,10) =  k-1         234.000      182.008    
+
+  20  q(10, 9) =  3k+1        83796.0      160460.    
+ (constrained)
+
+Equilibrium constants calculated for fitted rate constants
+  E     = q( 5, 1)/q( 1, 5) = beta2f    /alpha2f    =   7.93849    
+  E     = q( 6, 2)/q( 2, 6) = beta3f    /alpha3f    =   699.724    
+  E     = q( 8, 3)/q( 3, 8) = beta2     /alpha2     =  0.347403E-02
+  E     = q( 7, 4)/q( 4, 7) = beta3     /alpha3     =  0.188441    
+ K (uM) = q( 5, 6)/q( 6, 5) = kf+3      /3kf-3      =  0.823542E+09
+ Kisom  = q( 8, 5)/q( 5, 8) = delta2    /gama2      =   17.2369    
+ Kisom  = q( 7, 6)/q( 6, 7) = delta3    /gama3      =   2.05026    
+ K (uM) = q( 7, 8)/q( 8, 7) = 3k-3      /k+3        =   10208.6    
+ K (uM) = q( 8, 9)/q( 9, 8) = 2k-2      /2k+2       =   3402.87    
+ K (uM) = q( 9,10)/q(10, 9) = k-1       /3k+1       =   1134.29    
+
+EC50 calculations for final parameter values
+Equilibrium conc-response curve for ligand # 
+------------------------------------------------------------
+
+VALUES CALCULATED FROM FINAL FIT
+
+Equilibrium values for set number   1: 
+concentration(s) =
+    500.000     micromolar of agonist             
+------------------------------------------------------------
+
+Subset  Open     Equilibrium    Mean life   Mean latency (ms)
+        state     occupancy        (ms)     to next shutting
+        (#i)                                given start in i
+   A              0.423738       7.44017    
+         1        0.113535E-01   0.627656       0.627656    
+         2        0.412071        12.7324        12.7324    
+         3        0.856415E-04   0.270711E-01   0.270711E-01
+         4        0.227525E-03   0.681912E-01   0.681912E-01
+
+Subset  Shut     Equilibrium    Mean life   Mean latency (ms)
+        state     occupancy        (ms)     to next opening
+        (#i)                                given start in i
+   C              0.576262       10.1182    
+         5        0.143018E-02   0.231920E-02    8.15689    
+         6        0.588906E-03   0.931612E-03    7.73515    
+         7        0.120741E-02   0.801383E-01    7.86793    
+         8        0.246519E-01    1.08723        48.0858    
+         9        0.167774        4.24639        109.196    
+        10        0.380609        12.4642        121.660    
+
+Equilibrium values for set number   2: 
+concentration(s) =
+    1000.00     micromolar of agonist             
+------------------------------------------------------------
+
+Subset  Open     Equilibrium    Mean life   Mean latency (ms)
+        state     occupancy        (ms)     to next shutting
+        (#i)                                given start in i
+   A              0.800226       9.02329    
+         1        0.108671E-01   0.627656       0.627656    
+         2        0.788841        12.7324        12.7324    
+         3        0.819731E-04   0.270711E-01   0.270711E-01
+         4        0.435558E-03   0.681912E-01   0.681912E-01
+
+Subset  Shut     Equilibrium    Mean life   Mean latency (ms)
+        state     occupancy        (ms)     to next opening
+        (#i)                                given start in i
+   C              0.199774       2.25264    
+         5        0.136892E-02   0.118651E-02    1.82809    
+         6        0.112736E-02   0.931612E-03    1.73918    
+         7        0.231138E-02   0.801383E-01    2.04199    
+         8        0.235959E-01    1.05651        15.6300    
+         9        0.802939E-01    3.46044        35.5816    
+        10        0.910765E-01    6.23210        41.8137    
+
+Equilibrium values for set number   3: 
+concentration(s) =
+    5000.00     micromolar of agonist             
+------------------------------------------------------------
+
+Subset  Open     Equilibrium    Mean life   Mean latency (ms)
+        state     occupancy        (ms)     to next shutting
+        (#i)                                given start in i
+   A              0.984609       10.9302    
+         1        0.270381E-02   0.627656       0.627656    
+         2        0.981343        12.7324        12.7324    
+         3        0.203954E-04   0.270711E-01   0.270711E-01
+         4        0.541847E-03   0.681912E-01   0.681912E-01
+
+Subset  Shut     Equilibrium    Mean life   Mean latency (ms)
+        state     occupancy        (ms)     to next opening
+        (#i)                                given start in i
+   C              0.153912E-01  0.170859    
+         5        0.340595E-03   0.241789E-03   0.141486    
+         6        0.140247E-02   0.931612E-03   0.137767    
+         7        0.287542E-02   0.801383E-01   0.289552    
+         8        0.587082E-02   0.861729        2.47236    
+         9        0.399552E-02    1.39495        4.76613    
+        10        0.906417E-03    1.24642        6.01255    
+
+Equilibrium values for set number   4: 
+concentration(s) =
+    10000.0     micromolar of agonist             
+------------------------------------------------------------
+
+Subset  Open     Equilibrium    Mean life   Mean latency (ms)
+        state     occupancy        (ms)     to next shutting
+        (#i)                                given start in i
+   A              0.991433       11.2306    
+         1        0.136316E-02   0.627656       0.627656    
+         2        0.989514        12.7324        12.7324    
+         3        0.102826E-04   0.270711E-01   0.270711E-01
+         4        0.546359E-03   0.681912E-01   0.681912E-01
+
+Subset  Shut     Equilibrium    Mean life   Mean latency (ms)
+        state     occupancy        (ms)     to next opening
+        (#i)                                given start in i
+   C              0.856652E-02  0.970382E-01
+         5        0.171716E-03   0.121181E-03   0.813233E-01
+         6        0.141415E-02   0.931612E-03   0.801969E-01
+         7        0.289937E-02   0.801383E-01   0.201554    
+         8        0.295985E-02   0.700334        1.42806    
+         9        0.100720E-02   0.798889        2.46891    
+        10        0.114245E-03   0.623210        3.09212    
+
+Distributions for set number   1
+------------------------------------------------------------
+   Concentration of ligand 1 (micromolar) =   500.000    
+HJC Initial vector for open times = 
+0.318361     0.585828     0.319767E-01 0.638343E-01
+HJC Initial vector for shut times = 
+0.408220     0.163118     0.213548     0.213339     0.177008E-02 0.443122E-05
+ ASYMPTOTIC OPEN TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     1162.17       36609.3            0.317453E-01  0.273155E-01
+ 2     756.080       13214.6            0.572155E-01  0.756739E-01
+ 3     243.457       1292.48            0.188365      0.773708    
+ 4     33.6356       46.5632            0.722364       21.4762    
+      Total area (for non-zero eigenvalues) =  0.999690    
+Mean (ms) =   15.6646       SD=   20.5230       SD/mean =   1.31016    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.101551    
+ 2     0.807075E-01
+ 3     0.175057    
+ 4     0.642684    
+
+
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -46.5632    : row*WF(s( 1)) = 
+ 0.710543E-14 -0.164313E-13 -0.111022E-14   0.00000     -0.710543E-14  -37.0153    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -46.5632    : col'*WF(s( 1))' = 
+ 0.113687E-11  0.306954E-11  0.127898E-12 -0.198952E-12 -0.213163E-13  -18.8521    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  2) =  -46.5632    : row*WF(s( 2)) = 
+ 0.710543E-14 -0.164313E-13 -0.111022E-14   0.00000     -0.710543E-14  -37.0153    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  2) =  -46.5632    : col'*WF(s( 2))' = 
+ 0.113687E-11  0.306954E-11  0.127898E-12 -0.198952E-12 -0.213163E-13  -18.8521    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  3) =  -46.5632    : row*WF(s( 3)) = 
+ 0.710543E-14 -0.164313E-13 -0.111022E-14   0.00000     -0.710543E-14  -37.0153    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  3) =  -46.5632    : col'*WF(s( 3))' = 
+ 0.113687E-11  0.306954E-11  0.127898E-12 -0.198952E-12 -0.213163E-13  -18.8521    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  4) =  -46.5632    : row*WF(s( 4)) = 
+ 0.710543E-14 -0.164313E-13 -0.111022E-14   0.00000     -0.710543E-14  -37.0153    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  4) =  -46.5632    : col'*WF(s( 4))' = 
+ 0.113687E-11  0.306954E-11  0.127898E-12 -0.198952E-12 -0.213163E-13  -18.8521    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  5) =  -46.5632    : row*WF(s( 5)) = 
+ 0.710543E-14 -0.164313E-13 -0.111022E-14   0.00000     -0.710543E-14  -37.0153    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  5) =  -46.5632    : col'*WF(s( 5))' = 
+ 0.113687E-11  0.306954E-11  0.127898E-12 -0.198952E-12 -0.213163E-13  -18.8521    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  6) =  -46.5632    : row*WF(s( 6)) = 
+ 0.710543E-14 -0.164313E-13 -0.111022E-14   0.00000     -0.710543E-14  -37.0153    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  6) =  -46.5632    : col'*WF(s( 6))' = 
+ 0.113687E-11  0.306954E-11  0.127898E-12 -0.198952E-12 -0.213163E-13  -18.8521    
+ ASYMPTOTIC SHUT TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     1.91174       46.5632            0.410568E-01   21.4762    
+ 2     1.91174       46.5632            0.410568E-01   21.4762    
+ 3     1.91174       46.5632            0.410568E-01   21.4762    
+ 4     1.91174       46.5632            0.410568E-01   21.4762    
+ 5     1.91174       46.5632            0.410568E-01   21.4762    
+ 6     1.91174       46.5632            0.410568E-01   21.4762    
+      Total area (for non-zero eigenvalues) =  0.246341    
+Mean (ms) =   5.29046       SD=   14.1155       SD/mean =   2.66811    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.166667    
+ 2     0.166667    
+ 3     0.166667    
+ 4     0.166667    
+ 5     0.166667    
+ 6     0.166667    
+
+
+Set  1: Initial CHS vector for burst =  0.312100     0.559229     0.905982E-01 0.380730E-01
+et  1: End CHS vector for burst = 
+0.839096E-01 0.796944E-01 0.876860E-01 0.479891     0.929543     0.823876    
+Open time roots (1/sec) =  -36609.3     -13214.6     -1292.48     -46.5632    
+shut time roots (1/sec) =  -46.5632     -46.5632     -46.5632     -46.5632     -46.5632    
+-46.5632    
+
+EXACT SOLUTIONS FOR OPEN TIMES
+****** In HJCEXACT, eigen(1) of Q reset from -0.186873E-11 to 0
+
+eigen =   0.00000      16.3988      267.919      680.148      1178.72      6169.16    
+ 18981.0      37056.1      37488.5     0.146974E+07
+g00(m) =   30.5040      29.5611      1.13046      65.4405      191.419      191.570    
+ 550.688      1122.90      42.8728     0.428941E-03
+g10(m) =   113.527     -74.1799      1.88540      47.5797     -39.2918     -14.0571    
+-31.3224     -10.0612      5.92053     0.441042E-08
+g11(m) =   930.495      633.239      11.8106      11947.2      22979.6      367354.    
+0.110503E+07 -139096.     -6519.89    -0.218425E-08
+
+EXACT SOLUTIONS FOR SHUT TIMES
+g00(m) =   52.2481      33.8806      12.6496      284.211      123.283      1559.28    
+ 1696.08      371.512      10050.4    -0.387260E-01
+g10(m) =   347.286     -189.885      6.54378      206.337     -16.1551     -458.119    
+ 334.745     -616.310      385.593    -0.358129E-01
+g11(m) =   2729.86      1666.01      50.3047      39343.1      39956.3     0.257730E+07
+0.291533E+07 -17417.8    -0.451612E+07 0.220946    
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     13676.1      0.146974E+07          0.930514   0.680393E-03
+ 2     18890.4       36932.7             51.148148   0.270763E-01
+ 3     2741.06       10474.5             26.168962   0.954701E-01
+ 4     102.790       875.870             11.735710    1.14172    
+ 5     4.28932       275.985              1.554185    3.62338    
+ 6    0.724166       8.55737              8.462479    116.858    
+      Total area=   1.00000    
+Mean (ms) =   10.1182       SD=   47.0063       SD/mean =   4.64569    
+
+
+Open time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     2051.91       36939.8              5.554742   0.270711E-01
+ 2     859.127       14664.6              5.858488   0.681912E-01
+ 3     506.023       1593.23             31.760809   0.627656    
+ 4     44.6309       78.5397             56.825958    12.7324    
+      Total area=   1.00000    
+Mean (ms) =   7.44017       SD=   11.3640       SD/mean =   1.52739    
+
+
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     13676.1      0.146974E+07          0.930514   0.680393E-03
+ 2     18890.4       36932.7             51.148148   0.270763E-01
+ 3     2741.06       10474.5             26.168962   0.954701E-01
+ 4     102.790       875.870             11.735710    1.14172    
+ 5     4.28932       275.985              1.554185    3.62338    
+ 6    0.724166       8.55737              8.462479    116.858    
+      Total area=   1.00000    
+Mean (ms) =   10.1182       SD=   47.0063       SD/mean =   4.64569    
+
+Ideal (zero resolution)
+Mean open time (ms) =   7.44017     Mean shut time (ms) =   10.1182    
+  P(open) (ideal) =     0.42374
+
+HJC distributions (exact)
+Mean open time (ms) =   15.6996     Mean shut time (ms) =   21.3240    
+  P(open) (HJC) =     0.42404
+
+
+Distributions for set number   2
+------------------------------------------------------------
+   Concentration of ligand 1 (micromolar) =   1000.00    
+HJC Initial vector for open times = 
+0.188736     0.704971     0.201475E-01 0.861456E-01
+HJC Initial vector for shut times = 
+0.252417     0.203487     0.351917     0.190339     0.183535E-02 0.523203E-05
+ ASYMPTOTIC OPEN TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     727.508       36519.9            0.199208E-01  0.273823E-01
+ 2     961.818       13000.9            0.739809E-01  0.769178E-01
+ 3     113.611       1371.54            0.828345E-01  0.729108    
+ 4     28.9085       35.1352            0.822777       28.4615    
+      Total area (for non-zero eigenvalues) =  0.999513    
+Mean (ms) =   23.4841       SD=   27.9567       SD/mean =   1.19045    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.765308E-01
+ 2     0.110938    
+ 3     0.780098E-01
+ 4     0.734521    
+
+
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -35.1352    : row*WF(s( 1)) = 
+-0.461853E-13  0.346390E-13 -0.222045E-14  0.710543E-14   0.00000      -9.94013    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -35.1352    : col'*WF(s( 1))' = 
+ 0.136424E-11 -0.289901E-11 -0.270006E-12 -0.170530E-12   0.00000      -7.60593    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  2) =  -35.1352    : row*WF(s( 2)) = 
+-0.461853E-13  0.346390E-13 -0.222045E-14  0.710543E-14   0.00000      -9.94013    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  2) =  -35.1352    : col'*WF(s( 2))' = 
+ 0.136424E-11 -0.289901E-11 -0.270006E-12 -0.170530E-12   0.00000      -7.60593    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  3) =  -35.1352    : row*WF(s( 3)) = 
+-0.461853E-13  0.346390E-13 -0.222045E-14  0.710543E-14   0.00000      -9.94013    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  3) =  -35.1352    : col'*WF(s( 3))' = 
+ 0.136424E-11 -0.289901E-11 -0.270006E-12 -0.170530E-12   0.00000      -7.60593    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  4) =  -35.1352    : row*WF(s( 4)) = 
+-0.461853E-13  0.346390E-13 -0.222045E-14  0.710543E-14   0.00000      -9.94013    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  4) =  -35.1352    : col'*WF(s( 4))' = 
+ 0.136424E-11 -0.289901E-11 -0.270006E-12 -0.170530E-12   0.00000      -7.60593    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  5) =  -35.1352    : row*WF(s( 5)) = 
+-0.461853E-13  0.346390E-13 -0.222045E-14  0.710543E-14   0.00000      -9.94013    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  5) =  -35.1352    : col'*WF(s( 5))' = 
+ 0.136424E-11 -0.289901E-11 -0.270006E-12 -0.170530E-12   0.00000      -7.60593    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  6) =  -35.1352    : row*WF(s( 6)) = 
+-0.461853E-13  0.346390E-13 -0.222045E-14  0.710543E-14   0.00000      -9.94013    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  6) =  -35.1352    : col'*WF(s( 6))' = 
+ 0.136424E-11 -0.289901E-11 -0.270006E-12 -0.170530E-12   0.00000      -7.60593    
+ ASYMPTOTIC SHUT TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     3.50461       35.1352            0.997463E-01   28.4615    
+ 2     3.50461       35.1352            0.997463E-01   28.4615    
+ 3     3.50461       35.1352            0.997463E-01   28.4615    
+ 4     3.50461       35.1352            0.997463E-01   28.4615    
+ 5     3.50461       35.1352            0.997463E-01   28.4615    
+ 6     3.50461       35.1352            0.997463E-01   28.4615    
+      Total area (for non-zero eigenvalues) =  0.598478    
+Mean (ms) =   17.0336       SD=   26.0664       SD/mean =   1.53030    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.166667    
+ 2     0.166667    
+ 3     0.166667    
+ 4     0.166667    
+ 5     0.166667    
+ 6     0.166667    
+
+
+Set  2: Initial CHS vector for burst =  0.190930     0.691246     0.682371E-01 0.495862E-01
+et  2: End CHS vector for burst = 
+0.187790     0.178827     0.223003      1.57790      3.28151      3.64932    
+Open time roots (1/sec) =  -36519.9     -13000.9     -1371.54     -35.1352    
+shut time roots (1/sec) =  -35.1352     -35.1352     -35.1352     -35.1352     -35.1352    
+-35.1352    
+
+EXACT SOLUTIONS FOR OPEN TIMES
+****** In HJCEXACT, eigen(1) of Q reset from -0.466116E-11 to 0
+
+eigen =   0.00000      28.2238      348.283      804.374      1301.37      5951.99    
+ 18946.7      37070.5      46274.6     0.187264E+07
+g00(m) =   38.3855      5.11171     0.888047      23.1739      111.748      271.087    
+ 691.517      732.087     0.655528     0.192379E-03
+g10(m) =   26.3699     -6.18029      1.37556      19.8509      3.76109      2.91224    
+-45.6246     -2.61734     0.152661     0.128263E-08
+g11(m) =   1473.45      15.8531      14.1549      3189.26      9045.81      498828.    
+0.133631E+07 -92119.5     -37.9145    -0.364095E-09
+
+EXACT SOLUTIONS FOR SHUT TIMES
+g00(m) =   82.2496      2.12594      17.4364      200.886      131.099      2302.97    
+ 1883.49      1.23370      10068.2    -0.230964E-01
+g10(m) =   148.562     -24.8012      5.18724      115.146      68.7549     -509.152    
+ 318.951     0.187516     -122.814    -0.211183E-01
+g11(m) =   6765.00      24.0928      76.6457      13336.8      32934.0     0.352234E+07
+0.302172E+07 -36.7025    -0.307364E+07 0.131860    
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     13020.5      0.187264E+07          0.695301   0.534006E-03
+ 2     24863.8       45915.5             54.151207   0.217791E-01
+ 3     3100.48       10199.4             30.398628   0.980449E-01
+ 4     73.2306       953.338              7.681497    1.04895    
+ 5     5.69101       361.234              1.575433    2.76829    
+ 6     1.44846       26.3456              5.497931    37.9570    
+      Total area=   1.00000    
+Mean (ms) =   2.25264       SD=   12.4001       SD/mean =   5.50472    
+
+
+Open time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     1261.28       36939.8              3.414427   0.270711E-01
+ 2     1056.19       14664.6              7.202272   0.681912E-01
+ 3     311.045       1593.23             19.522951   0.627656    
+ 4     54.8681       78.5397             69.860352    12.7324    
+      Total area=   1.00000    
+Mean (ms) =   9.02329       SD=   12.0517       SD/mean =   1.33562    
+
+
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     13020.5      0.187264E+07          0.695301   0.534006E-03
+ 2     24863.8       45915.5             54.151207   0.217791E-01
+ 3     3100.48       10199.4             30.398628   0.980449E-01
+ 4     73.2306       953.338              7.681497    1.04895    
+ 5     5.69101       361.234              1.575433    2.76829    
+ 6     1.44846       26.3456              5.497931    37.9570    
+      Total area=   1.00000    
+Mean (ms) =   2.25264       SD=   12.4001       SD/mean =   5.50472    
+
+Ideal (zero resolution)
+Mean open time (ms) =   9.02329     Mean shut time (ms) =   2.25264    
+  P(open) (ideal) =     0.80023
+
+HJC distributions (exact)
+Mean open time (ms) =   23.5241     Mean shut time (ms) =   5.84907    
+  P(open) (HJC) =     0.80087
+
+
+Distributions for set number   3
+------------------------------------------------------------
+   Concentration of ligand 1 (micromolar) =   5000.00    
+HJC Initial vector for open times = 
+0.439319E-01 0.817940     0.740255E-02 0.130726    
+HJC Initial vector for shut times = 
+0.833907E-01 0.340651     0.517093     0.584431E-01 0.421279E-03 0.904074E-06
+ ASYMPTOTIC OPEN TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     269.388       36685.8            0.734312E-02  0.272585E-01
+ 2     1561.21       13413.4            0.116391      0.745522E-01
+ 3     24.1947       1535.98            0.157520E-01  0.651051    
+ 4     25.1143       29.1949            0.860230       34.2526    
+      Total area (for non-zero eigenvalues) =  0.999717    
+Mean (ms) =   29.4843       SD=   33.9000       SD/mean =   1.14977    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.205594E-01
+ 2     0.162120    
+ 3     0.153639E-01
+ 4     0.801956    
+
+
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -29.1949    : row*WF(s( 1)) = 
+ 0.753175E-12 -0.127898E-12  0.142109E-13   0.00000      0.113687E-12   135.350    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -29.1949    : col'*WF(s( 1))' = 
+ 0.909495E-12 -0.284217E-13  0.781597E-13 -0.142109E-12 -0.284217E-13   313.667    
+ ASYMPTOTIC SHUT TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     5.34291       29.1949            0.183009       34.2526    
+ 2     14630.2       64899.8            0.225427      0.154084E-01
+ 3     14630.2       64899.8            0.225427      0.154084E-01
+ 4     14630.2       64899.8            0.225427      0.154084E-01
+ 5     14630.2       64899.8            0.225427      0.154084E-01
+ 6     14630.2       64899.8            0.225427      0.154084E-01
+      Total area (for non-zero eigenvalues) =   1.31015    
+Mean (ms) =   6.28589       SD=   19.7463       SD/mean =   3.14136    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.226647E-01
+ 2     0.195467    
+ 3     0.195467    
+ 4     0.195467    
+ 5     0.195467    
+ 6     0.195467    
+
+
+Set  3: Initial CHS vector for burst =  0.437194E-01 0.789732     0.628894E-01 0.103659    
+et  3: End CHS vector for burst = 
+0.486513E-01 0.469365E-01 0.925630E-01  1.15545      3.19631      8.68109    
+Open time roots (1/sec) =  -36685.8     -13413.4     -1535.98     -29.1949    
+shut time roots (1/sec) =  -29.1949     -64899.8     -64899.8     -64899.8     -64899.8    
+-64899.8    
+
+EXACT SOLUTIONS FOR OPEN TIMES
+****** In HJCEXACT, eigen(1) of Q reset from -0.937837E-12 to 0
+
+eigen =   0.00000      216.978      873.606      1395.13      1519.01      5679.70    
+ 18918.3      37071.8      65822.5     0.514618E+07
+g00(m) =   35.9276     0.177224      2.60960      11.2701      24.6570      476.746    
+ 1090.15      269.335     0.648506     0.950267E-05
+g10(m) =   15.0612     0.188306      3.80356      10.0104      5.40962      56.2973    
+-89.8342     -1.04120     0.105084     0.106984E-10
+g11(m) =   1290.79      4.18396      144.558      797.190      612.318      999570.    
+0.235408E+07 -34215.3     -13.4260    -0.475201E-12
+
+EXACT SOLUTIONS FOR SHUT TIMES
+g00(m) =   86.3662      11.9813      45.3133      95.0189      35.7904      3534.84    
+ 2248.99     0.841711E-01  14546.7    -0.176096E-02
+g10(m) =   109.655    -0.798776      17.7811      77.5674      19.6637     -582.722    
+ 428.743     0.228145E-01 -69.9110    -0.165386E-02
+g11(m) =   7459.13      93.8981      978.582      3929.36      2366.24     0.641636E+07
+0.418595E+07 -3.65537    -0.189976E+07 0.556149E-02
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     5571.71      0.514618E+07          0.108269   0.194319E-03
+ 2     38744.4       65675.7             58.993561   0.152263E-01
+ 3     3510.91       9908.01             35.435028   0.100928    
+ 4     24.3692       1477.57              1.649270   0.676785    
+ 5     13.3902       924.628              1.448172    1.08152    
+ 6     5.63666       238.266              2.365699    4.19699    
+      Total area=   1.00000    
+Mean (ms) =  0.170859       SD=  0.927744       SD/mean =   5.42988    
+
+
+Open time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     308.948       36939.8              0.836356   0.270711E-01
+ 2     1293.55       14664.6              8.820898   0.681912E-01
+ 3     76.1899       1593.23              4.782102   0.627656    
+ 4     67.1990       78.5397             85.560646    12.7324    
+      Total area=   1.00000    
+Mean (ms) =   10.9302       SD=   12.5691       SD/mean =   1.14994    
+
+
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     5571.71      0.514618E+07          0.108269   0.194319E-03
+ 2     38744.4       65675.7             58.993561   0.152263E-01
+ 3     3510.91       9908.01             35.435028   0.100928    
+ 4     24.3692       1477.57              1.649270   0.676785    
+ 5     13.3902       924.628              1.448172    1.08152    
+ 6     5.63666       238.266              2.365699    4.19699    
+      Total area=   1.00000    
+Mean (ms) =  0.170859       SD=  0.927744       SD/mean =   5.42988    
+
+Ideal (zero resolution)
+Mean open time (ms) =   10.9302     Mean shut time (ms) =  0.170859    
+  P(open) (ideal) =     0.98461
+
+HJC distributions (exact)
+Mean open time (ms) =   29.5143     Mean shut time (ms) =  0.444829    
+  P(open) (HJC) =     0.98515
+
+
+Distributions for set number   4
+------------------------------------------------------------
+   Concentration of ligand 1 (micromolar) =   10000.0    
+HJC Initial vector for open times = 
+0.225467E-01 0.835286     0.424763E-02 0.137920    
+HJC Initial vector for shut times = 
+0.503722E-01 0.412893     0.506645     0.299149E-01 0.174739E-03 0.309898E-06
+ ASYMPTOTIC OPEN TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     155.057       36749.4            0.421932E-02  0.272113E-01
+ 2     1716.66       13624.8            0.125995      0.733956E-01
+ 3     13.2389       1564.80            0.846044E-02  0.639059    
+ 4     26.4344       30.6967            0.861147       32.5768    
+      Total area (for non-zero eigenvalues) =  0.999822    
+Mean (ms) =   28.0681       SD=   32.2485       SD/mean =   1.14893    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.999154E-02
+ 2     0.167368    
+ 3     0.831326E-02
+ 4     0.814327    
+
+
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -30.6967    : row*WF(s( 1)) = 
+ 0.483169E-12 -0.653699E-12 -0.568434E-13  0.568434E-13 -0.113687E-12   288.201    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -30.6967    : col'*WF(s( 1))' = 
+ 0.170530E-11 -0.994760E-13 -0.131450E-12 -0.213163E-13  0.852651E-13   993.221    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  2) =  -30.6967    : row*WF(s( 2)) = 
+ 0.483169E-12 -0.653699E-12 -0.568434E-13  0.568434E-13 -0.113687E-12   288.201    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  2) =  -30.6967    : col'*WF(s( 2))' = 
+ 0.170530E-11 -0.994760E-13 -0.131450E-12 -0.213163E-13  0.852651E-13   993.221    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  3) =  -30.6967    : row*WF(s( 3)) = 
+ 0.483169E-12 -0.653699E-12 -0.568434E-13  0.568434E-13 -0.113687E-12   288.201    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  3) =  -30.6967    : col'*WF(s( 3))' = 
+ 0.170530E-11 -0.994760E-13 -0.131450E-12 -0.213163E-13  0.852651E-13   993.221    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  4) =  -30.6967    : row*WF(s( 4)) = 
+ 0.483169E-12 -0.653699E-12 -0.568434E-13  0.568434E-13 -0.113687E-12   288.201    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  4) =  -30.6967    : col'*WF(s( 4))' = 
+ 0.170530E-11 -0.994760E-13 -0.131450E-12 -0.213163E-13  0.852651E-13   993.221    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  5) =  -30.6967    : row*WF(s( 5)) = 
+ 0.483169E-12 -0.653699E-12 -0.568434E-13  0.568434E-13 -0.113687E-12   288.201    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  5) =  -30.6967    : col'*WF(s( 5))' = 
+ 0.170530E-11 -0.994760E-13 -0.131450E-12 -0.213163E-13  0.852651E-13   993.221    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  6) =  -30.6967    : row*WF(s( 6)) = 
+ 0.483169E-12 -0.653699E-12 -0.568434E-13  0.568434E-13 -0.113687E-12   288.201    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  6) =  -30.6967    : col'*WF(s( 6))' = 
+ 0.170530E-11 -0.994760E-13 -0.131450E-12 -0.213163E-13  0.852651E-13   993.221    
+ ASYMPTOTIC SHUT TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     4.34672       30.6967            0.141602       32.5768    
+ 2     4.34672       30.6967            0.141602       32.5768    
+ 3     4.34672       30.6967            0.141602       32.5768    
+ 4     4.34672       30.6967            0.141602       32.5768    
+ 5     4.34672       30.6967            0.141602       32.5768    
+ 6     4.34672       30.6967            0.141602       32.5768    
+      Total area (for non-zero eigenvalues) =  0.849612    
+Mean (ms) =   27.6776       SD=   32.2063       SD/mean =   1.16362    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.166667    
+ 2     0.166667    
+ 3     0.166667    
+ 4     0.166667    
+ 5     0.166667    
+ 6     0.166667    
+
+
+Open time roots (1/sec) =  -36749.4     -13624.8     -1564.80     -30.6967    
+shut time roots (1/sec) =  -30.6967     -30.6967     -30.6967     -30.6967     -30.6967    
+-30.6967    
+
+EXACT SOLUTIONS FOR OPEN TIMES
+****** In HJCEXACT, eigen(1) of Q reset from -0.676824E-12 to 0
+
+eigen =   0.00000      478.933      1423.51      1553.46      2170.75      5655.50    
+ 18916.9      37072.9      70617.9     0.925768E+07
+g00(m) =   37.4228      1.38747      7.85080      15.0458      1.72955      526.040    
+ 1190.08      154.592     0.622038     0.177273E-05
+g10(m) =   15.5054      1.97129      9.79799      4.13815      2.35801      70.9156    
+-104.122    -0.683189     0.118772     0.618140E-12
+g11(m) =   1400.46      70.8374      613.716      225.145      52.8336     0.116055E+07
+0.270223E+07 -19771.0     -12.3423    -0.109289E-13
+
+EXACT SOLUTIONS FOR SHUT TIMES
+g00(m) =   85.3545      32.4375      83.7935      24.6790      28.7209      3622.09    
+ 2252.45     0.186230E-01  18101.0    -0.359834E-03
+g10(m) =   108.351      8.36983      58.5439      22.5776      10.7619     -603.073    
+ 461.673     0.494408E-02 -67.2092    -0.341856E-03
+g11(m) =   7285.40      725.468      3597.06      926.215      443.866     0.709179E+07
+0.451287E+07-0.980567    -0.187255E+07 0.688737E-03
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     3147.69      0.925768E+07          0.034001   0.108018E-03
+ 2     42183.1       70503.4             59.831291   0.141837E-01
+ 3     3568.34       9879.97             36.116867   0.101215    
+ 4     11.8040       2204.98              0.535334   0.453518    
+ 5     20.2622       1501.61              1.349368   0.665953    
+ 6     11.2125       525.634              2.133142    1.90246    
+      Total area=   1.00000    
+Mean (ms) =  0.970382E-01   SD=  0.408421       SD/mean =   4.20887    
+
+
+Open time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     158.939       36939.8              0.430265   0.270711E-01
+ 2     1330.94       14664.6              9.075860   0.681912E-01
+ 3     39.1960       1593.23              2.460163   0.627656    
+ 4     69.1414       78.5397             88.033714    12.7324    
+      Total area=   1.00000    
+Mean (ms) =   11.2306       SD=   12.6224       SD/mean =   1.12393    
+
+
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     3147.69      0.925768E+07          0.034001   0.108018E-03
+ 2     42183.1       70503.4             59.831291   0.141837E-01
+ 3     3568.34       9879.97             36.116867   0.101215    
+ 4     11.8040       2204.98              0.535334   0.453518    
+ 5     20.2622       1501.61              1.349368   0.665953    
+ 6     11.2125       525.634              2.133142    1.90246    
+      Total area=   1.00000    
+Mean (ms) =  0.970382E-01   SD=  0.408421       SD/mean =   4.20887    
+
+Ideal (zero resolution)
+Mean open time (ms) =   11.2306     Mean shut time (ms) =  0.970382E-01
+  P(open) (ideal) =     0.99143
+
+HJC distributions (exact)
+Mean open time (ms) =   28.0931     Mean shut time (ms) =  0.230020    
+  P(open) (HJC) =     0.99188
+
+Mechanisms file: Y:\ELIC\AleFit\mec48\mec48.mec          
+contains    3 records of rate constants +model
+
+
+Record number    3 (starts at byte # 25040)
+mec48                                                                     
+Model number =   1
+
+
+Number of channels =        1
+Number of open states =   4
+ conductance of state   1(A2F*      ) (pS) =   50.0000    
+ conductance of state   2(A3F*      ) (pS) =   50.0000    
+ conductance of state   3(A2R*      ) (pS) =   50.0000    
+ conductance of state   4(A3R*      ) (pS) =   50.0000    
+ conductance of state   5(A2F       ) (pS) =   0.00000    
+ conductance of state   6(A3F       ) (pS) =   0.00000    
+ conductance of state   7(A3R       ) (pS) =   0.00000    
+ conductance of state   8(A2R       ) (pS) =   0.00000    
+ conductance of state   9(AR        ) (pS) =   0.00000    
+ conductance of state  10(R         ) (pS) =   0.00000    
+
+Number of ligands =   1
+Concentration-dependent elements:
+  i   j     ligand #   Ligand name
+  5  6       1  agonist             
+  8  7       1  agonist             
+  9  8       1  agonist             
+ 10  9       1  agonist             
+
+Number of ligands bound
+State               agonist   
+  1: A2F*               2
+  2: A3F*               3
+  3: A2R*               2
+  4: A3R*               3
+  5: A2F                2
+  6: A3F                3
+  7: A3R                3
+  8: A2R                2
+  9: AR                 1
+ 10: R                  0
+Values of rate constants
+ 1:q(1 ,5 )  = alpha2f     2100.00    *none      
+ 2:q(5 ,1 )  = beta2f      28000.0    *none      
+ 3:q(2 ,6 )  = alpha3f     7000.00    *none      
+ 4:q(6 ,2 )  = beta3f      129000.    *none      
+ 5:q(3 ,8 )  = alpha2      87644.0    *none      
+ 6:q(8 ,3 )  = beta2       21378.0    *none      
+ 7:q(4 ,7 )  = alpha3      3400.00    *none      
+ 8:q(7 ,4 )  = beta3       4200.00    *none      
+ 9:q(5 ,6 )  = kf+3       0.300000E+09*agonist   
+10:q(6 ,5 )  = 3kf-3       2400.00    *none      
+11:q(5 ,8 )  = gama2       8601.00    *none      
+12:q(8 ,5 )  = delta2      2206.00    *none      
+13:q(6 ,7 )  = gama3       8736.00    *none      
+14:q(7 ,6 )  = delta3      10500.0    *none      
+15:q(7 ,8 )  = 3k-3        702.000    *none      
+16:q(8 ,7 )  = k+3         27932.0    *agonist   
+17:q(8 ,9 )  = 2k-2        468.000    *none      
+18:q(9 ,8 )  = 2k+2        55864.0    *agonist   
+19:q(9 ,10)  = k-1         234.000    *none      
+20:q(10,9 )  = 3k+1        83796.0    *agonist   
+
+Plot for set number=  1
+
+
+  concentration of agonist    =   500.000    
+
+
+Distributions for set number   1
+------------------------------------------------------------
+   Concentration of ligand 1 (micromolar) =   500.000    
+HJC Initial vector for open times = 
+0.318361     0.585828     0.319767E-01 0.638343E-01
+HJC Initial vector for shut times = 
+0.408220     0.163118     0.213548     0.213339     0.177008E-02 0.443122E-05
+ ASYMPTOTIC OPEN TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     1162.17       36609.3            0.317453E-01  0.273155E-01
+ 2     756.080       13214.6            0.572155E-01  0.756739E-01
+ 3     243.457       1292.48            0.188365      0.773708    
+ 4     33.6356       46.5632            0.722364       21.4762    
+      Total area (for non-zero eigenvalues) =  0.999690    
+Mean (ms) =   15.6646       SD=   20.5230       SD/mean =   1.31016    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.101551    
+ 2     0.807075E-01
+ 3     0.175057    
+ 4     0.642684    
+
+
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -316040.    : row*WF(s( 1)) = 
+-0.375259E-09 -0.204636E-11  0.798819E-12 -0.388702E-12  0.135274E-13   109.337    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -316040.    : col'*WF(s( 1))' = 
+-0.881509E-10 -0.218634E-10 -0.173069E-11  0.308852E-14 -0.243135E-13  0.145269    
+ ASYMPTOTIC SHUT TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     188.651       316040.            0.596921E-03  0.316415E-02
+ 2     10660.1       35791.0            0.297844      0.279400E-01
+ 3     3102.69       9233.58            0.336023      0.108300    
+ 4     134.386       784.328            0.171339       1.27498    
+ 5     7.98048       271.288            0.294170E-01   3.68612    
+ 6     1.26571       7.77881            0.162712       128.554    
+      Total area (for non-zero eigenvalues) =  0.997932    
+Mean (ms) =   21.2890       SD=   70.1868       SD/mean =   3.29686    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.952979    
+ 2     0.261384E-01
+ 3     0.116407E-01
+ 4     0.441605E-02
+ 5     0.744695E-03
+ 6     0.408127E-02
+
+
+Set  1: Initial CHS vector for burst =  0.312098     0.559170     0.907790E-01 0.379529E-01
+et  1: End CHS vector for burst = 
+0.772347E-01 0.733492E-01 0.805141E-01 0.442405     0.895396     0.972475    
+Open time roots (1/sec) =  -36609.3     -13214.6     -1292.48     -46.5632    
+shut time roots (1/sec) =  -316040.     -35791.0     -9233.58     -784.328     -271.288    
+-7.77881    
+
+EXACT SOLUTIONS FOR OPEN TIMES
+****** In HJCEXACT, eigen(1) of Q reset from -0.186873E-11 to 0
+
+eigen =   0.00000      16.3988      267.919      680.148      1178.72      6169.16    
+ 18981.0      37056.1      37488.5     0.146974E+07
+g00(m) =   30.5040      29.5611      1.13046      65.4405      191.419      191.570    
+ 550.688      1122.90      42.8728     0.428941E-03
+g10(m) =   113.527     -74.1799      1.88540      47.5797     -39.2918     -14.0571    
+-31.3224     -10.0612      5.92053     0.441042E-08
+g11(m) =   930.495      633.239      11.8106      11947.2      22979.6      367354.    
+0.110503E+07 -139096.     -6519.89    -0.218425E-08
+
+EXACT SOLUTIONS FOR SHUT TIMES
+g00(m) =   52.2481      33.8806      12.6496      284.211      123.283      1559.28    
+ 1696.08      371.512      10050.4    -0.387260E-01
+g10(m) =   347.286     -189.885      6.54378      206.337     -16.1551     -458.119    
+ 334.745     -616.310      385.593    -0.358129E-01
+g11(m) =   2729.86      1666.01      50.3047      39343.1      39956.3     0.257730E+07
+0.291533E+07 -17417.8    -0.451612E+07 0.220946    
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     13676.1      0.146974E+07          0.930514   0.680393E-03
+ 2     18890.4       36932.7             51.148148   0.270763E-01
+ 3     2741.06       10474.5             26.168962   0.954701E-01
+ 4     102.790       875.870             11.735710    1.14172    
+ 5     4.28932       275.985              1.554185    3.62338    
+ 6    0.724166       8.55737              8.462479    116.858    
+      Total area=   1.00000    
+Mean (ms) =   10.1182       SD=   47.0063       SD/mean =   4.64569    
+
+
+Open time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     2051.91       36939.8              5.554742   0.270711E-01
+ 2     859.127       14664.6              5.858488   0.681912E-01
+ 3     506.023       1593.23             31.760809   0.627656    
+ 4     44.6309       78.5397             56.825958    12.7324    
+      Total area=   1.00000    
+Mean (ms) =   7.44017       SD=   11.3640       SD/mean =   1.52739    
+
+
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     13676.1      0.146974E+07          0.930514   0.680393E-03
+ 2     18890.4       36932.7             51.148148   0.270763E-01
+ 3     2741.06       10474.5             26.168962   0.954701E-01
+ 4     102.790       875.870             11.735710    1.14172    
+ 5     4.28932       275.985              1.554185    3.62338    
+ 6    0.724166       8.55737              8.462479    116.858    
+      Total area=   1.00000    
+Mean (ms) =   10.1182       SD=   47.0063       SD/mean =   4.64569    
+
+Ideal (zero resolution)
+Mean open time (ms) =   7.44017     Mean shut time (ms) =   10.1182    
+  P(open) (ideal) =     0.42374
+
+HJC distributions (exact)
+Mean open time (ms) =   15.6996     Mean shut time (ms) =   21.3240    
+  P(open) (HJC) =     0.42404
+
+
+Mean and SD of   704 values=   17.8977     +/-  23.9769    
+Range from   0.00000     to   215.689    
+Distribution of log(t) displayed-     31 bins, factor=   1.334    
+No of values below Xlow=        0 No of values above Xhigh=        0
+
+Set 1                                                           *******************
+Plot queue no   1 in bytes     1025 to    12684 in mec48kflj01.plq                         
+(i.e. 1024 byte records numbers     2 to    13)
+
+
+Plot for set number=  2
+
+
+  concentration of agonist    =   1000.00    
+
+
+Distributions for set number   2
+------------------------------------------------------------
+   Concentration of ligand 1 (micromolar) =   1000.00    
+HJC Initial vector for open times = 
+0.188736     0.704971     0.201475E-01 0.861456E-01
+HJC Initial vector for shut times = 
+0.252417     0.203487     0.351917     0.190339     0.183535E-02 0.523203E-05
+ ASYMPTOTIC OPEN TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     727.508       36519.9            0.199208E-01  0.273823E-01
+ 2     961.818       13000.9            0.739809E-01  0.769178E-01
+ 3     113.611       1371.54            0.828345E-01  0.729108    
+ 4     28.9085       35.1352            0.822777       28.4615    
+      Total area (for non-zero eigenvalues) =  0.999513    
+Mean (ms) =   23.4841       SD=   27.9567       SD/mean =   1.19045    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.765308E-01
+ 2     0.110938    
+ 3     0.780098E-01
+ 4     0.734521    
+
+
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -277009.    : row*WF(s( 1)) = 
+-0.179281E-10  0.365787E-10  0.205311E-11  0.419357E-12 -0.210884E-13  -1.64015    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -277009.    : col'*WF(s( 1))' = 
+-0.182820E-09 -0.381775E-10  0.717759E-12  0.149335E-13  0.371816E-13 -0.117538E-01
+ ASYMPTOTIC SHUT TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     166.124       277009.            0.599708E-03  0.361000E-02
+ 2     10074.6       44399.9            0.226906      0.225226E-01
+ 3     4075.40       8809.41            0.462619      0.113515    
+ 4     117.585       861.203            0.136536       1.16117    
+ 5     13.2310       352.332            0.375527E-01   2.83823    
+ 6     3.18753       24.1039            0.132241       41.4870    
+      Total area (for non-zero eigenvalues) =  0.996455    
+Mean (ms) =   5.80904       SD=   20.5538       SD/mean =   3.53825    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.943961    
+ 2     0.325111E-01
+ 3     0.159639E-01
+ 4     0.342837E-02
+ 5     0.923937E-03
+ 6     0.321119E-02
+
+
+Set  2: Initial CHS vector for burst =  0.190936     0.691240     0.682922E-01 0.495322E-01
+et  2: End CHS vector for burst = 
+0.462393E-01 0.440325E-01 0.549148E-01 0.388503     0.807355     0.924134    
+Open time roots (1/sec) =  -36519.9     -13000.9     -1371.54     -35.1352    
+shut time roots (1/sec) =  -277009.     -44399.9     -8809.41     -861.203     -352.332    
+-24.1039    
+
+EXACT SOLUTIONS FOR OPEN TIMES
+****** In HJCEXACT, eigen(1) of Q reset from -0.466116E-11 to 0
+
+eigen =   0.00000      28.2238      348.283      804.374      1301.37      5951.99    
+ 18946.7      37070.5      46274.6     0.187264E+07
+g00(m) =   38.3855      5.11171     0.888047      23.1739      111.748      271.087    
+ 691.517      732.087     0.655528     0.192379E-03
+g10(m) =   26.3699     -6.18029      1.37556      19.8509      3.76109      2.91224    
+-45.6246     -2.61734     0.152661     0.128263E-08
+g11(m) =   1473.45      15.8531      14.1549      3189.26      9045.81      498828.    
+0.133631E+07 -92119.5     -37.9145    -0.364095E-09
+
+EXACT SOLUTIONS FOR SHUT TIMES
+g00(m) =   82.2496      2.12594      17.4364      200.886      131.099      2302.97    
+ 1883.49      1.23370      10068.2    -0.230964E-01
+g10(m) =   148.562     -24.8012      5.18724      115.146      68.7549     -509.152    
+ 318.951     0.187516     -122.814    -0.211183E-01
+g11(m) =   6765.00      24.0928      76.6457      13336.8      32934.0     0.352234E+07
+0.302172E+07 -36.7025    -0.307364E+07 0.131860    
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     13020.5      0.187264E+07          0.695301   0.534006E-03
+ 2     24863.8       45915.5             54.151207   0.217791E-01
+ 3     3100.48       10199.4             30.398628   0.980449E-01
+ 4     73.2306       953.338              7.681497    1.04895    
+ 5     5.69101       361.234              1.575433    2.76829    
+ 6     1.44846       26.3456              5.497931    37.9570    
+      Total area=   1.00000    
+Mean (ms) =   2.25264       SD=   12.4001       SD/mean =   5.50472    
+
+
+Open time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     1261.28       36939.8              3.414427   0.270711E-01
+ 2     1056.19       14664.6              7.202272   0.681912E-01
+ 3     311.045       1593.23             19.522951   0.627656    
+ 4     54.8681       78.5397             69.860352    12.7324    
+      Total area=   1.00000    
+Mean (ms) =   9.02329       SD=   12.0517       SD/mean =   1.33562    
+
+
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     13020.5      0.187264E+07          0.695301   0.534006E-03
+ 2     24863.8       45915.5             54.151207   0.217791E-01
+ 3     3100.48       10199.4             30.398628   0.980449E-01
+ 4     73.2306       953.338              7.681497    1.04895    
+ 5     5.69101       361.234              1.575433    2.76829    
+ 6     1.44846       26.3456              5.497931    37.9570    
+      Total area=   1.00000    
+Mean (ms) =   2.25264       SD=   12.4001       SD/mean =   5.50472    
+
+Ideal (zero resolution)
+Mean open time (ms) =   9.02329     Mean shut time (ms) =   2.25264    
+  P(open) (ideal) =     0.80023
+
+HJC distributions (exact)
+Mean open time (ms) =   23.5241     Mean shut time (ms) =   5.84907    
+  P(open) (HJC) =     0.80087
+
+
+Mean and SD of   963 values=   18.1660     +/-  24.3171    
+Range from   0.00000     to   203.242    
+Distribution of log(t) displayed-     30 bins, factor=   1.334    
+No of values below Xlow=        0 No of values above Xhigh=        0
+
+Set 2                                                           *******************
+Plot queue no   2 in bytes    13313 to    25032 in mec48kflj01.plq                         
+(i.e. 1024 byte records numbers    14 to    25)
+
+
+Plot for set number=  3
+
+
+  concentration of agonist    =   5000.00    
+
+
+Distributions for set number   3
+------------------------------------------------------------
+   Concentration of ligand 1 (micromolar) =   5000.00    
+HJC Initial vector for open times = 
+0.439319E-01 0.817940     0.740255E-02 0.130726    
+HJC Initial vector for shut times = 
+0.833907E-01 0.340651     0.517093     0.584431E-01 0.421279E-03 0.904074E-06
+ ASYMPTOTIC OPEN TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     269.388       36685.8            0.734312E-02  0.272585E-01
+ 2     1561.21       13413.4            0.116391      0.745522E-01
+ 3     24.1947       1535.98            0.157520E-01  0.651051    
+ 4     25.1143       29.1949            0.860230       34.2526    
+      Total area (for non-zero eigenvalues) =  0.999717    
+Mean (ms) =   29.4843       SD=   33.9000       SD/mean =   1.14977    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.205594E-01
+ 2     0.162120    
+ 3     0.153639E-01
+ 4     0.801956    
+
+
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -399240.    : row*WF(s( 1)) = 
+-0.198615E-09 -0.244693E-09 -0.527922E-11 -0.305021E-13  0.459637E-13   1.60138    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -399240.    : col'*WF(s( 1))' = 
+ 0.416264E-08  0.715488E-09  0.312816E-10 -0.262318E-12 -0.527876E-12  -43.2145    
+ ASYMPTOTIC SHUT TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     125.874       399240.            0.315284E-03  0.250476E-02
+ 2     14630.2       64899.8            0.225427      0.154084E-01
+ 3     5693.68       8836.08            0.644367      0.113172    
+ 4     44.5134       1431.74            0.310904E-01  0.698449    
+ 5     31.7791       894.054            0.355449E-01   1.11850    
+ 6     13.9221       224.208            0.620945E-01   4.46014    
+      Total area (for non-zero eigenvalues) =  0.998839    
+Mean (ms) =  0.414821       SD=   1.56022       SD/mean =   3.76118    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.951600    
+ 2     0.299702E-01
+ 3     0.159357E-01
+ 4     0.615735E-03
+ 5     0.692691E-03
+ 6     0.118601E-02
+
+
+Set  3: Initial CHS vector for burst =  0.436960E-01 0.789711     0.620040E-01 0.104589    
+et  3: End CHS vector for burst = 
+0.237652E-02 0.229393E-02 0.456476E-02 0.556724E-01 0.123965     0.171896    
+Open time roots (1/sec) =  -36685.8     -13413.4     -1535.98     -29.1949    
+shut time roots (1/sec) =  -399240.     -64899.8     -8836.08     -1431.74     -894.054    
+-224.208    
+
+EXACT SOLUTIONS FOR OPEN TIMES
+****** In HJCEXACT, eigen(1) of Q reset from -0.937837E-12 to 0
+
+eigen =   0.00000      216.978      873.606      1395.13      1519.01      5679.70    
+ 18918.3      37071.8      65822.5     0.514618E+07
+g00(m) =   35.9276     0.177224      2.60960      11.2701      24.6570      476.746    
+ 1090.15      269.335     0.648506     0.950267E-05
+g10(m) =   15.0612     0.188306      3.80356      10.0104      5.40962      56.2973    
+-89.8342     -1.04120     0.105084     0.106984E-10
+g11(m) =   1290.79      4.18396      144.558      797.190      612.318      999570.    
+0.235408E+07 -34215.3     -13.4260    -0.475201E-12
+
+EXACT SOLUTIONS FOR SHUT TIMES
+g00(m) =   86.3662      11.9813      45.3133      95.0189      35.7904      3534.84    
+ 2248.99     0.841711E-01  14546.7    -0.176096E-02
+g10(m) =   109.655    -0.798776      17.7811      77.5674      19.6637     -582.722    
+ 428.743     0.228145E-01 -69.9110    -0.165386E-02
+g11(m) =   7459.13      93.8981      978.582      3929.36      2366.24     0.641636E+07
+0.418595E+07 -3.65537    -0.189976E+07 0.556149E-02
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     5571.71      0.514618E+07          0.108269   0.194319E-03
+ 2     38744.4       65675.7             58.993561   0.152263E-01
+ 3     3510.91       9908.01             35.435028   0.100928    
+ 4     24.3692       1477.57              1.649270   0.676785    
+ 5     13.3902       924.628              1.448172    1.08152    
+ 6     5.63666       238.266              2.365699    4.19699    
+      Total area=   1.00000    
+Mean (ms) =  0.170859       SD=  0.927744       SD/mean =   5.42988    
+
+
+Open time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     308.948       36939.8              0.836356   0.270711E-01
+ 2     1293.55       14664.6              8.820898   0.681912E-01
+ 3     76.1899       1593.23              4.782102   0.627656    
+ 4     67.1990       78.5397             85.560646    12.7324    
+      Total area=   1.00000    
+Mean (ms) =   10.9302       SD=   12.5691       SD/mean =   1.14994    
+
+
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     5571.71      0.514618E+07          0.108269   0.194319E-03
+ 2     38744.4       65675.7             58.993561   0.152263E-01
+ 3     3510.91       9908.01             35.435028   0.100928    
+ 4     24.3692       1477.57              1.649270   0.676785    
+ 5     13.3902       924.628              1.448172    1.08152    
+ 6     5.63666       238.266              2.365699    4.19699    
+      Total area=   1.00000    
+Mean (ms) =  0.170859       SD=  0.927744       SD/mean =   5.42988    
+
+Ideal (zero resolution)
+Mean open time (ms) =   10.9302     Mean shut time (ms) =  0.170859    
+  P(open) (ideal) =     0.98461
+
+HJC distributions (exact)
+Mean open time (ms) =   29.5143     Mean shut time (ms) =  0.444829    
+  P(open) (HJC) =     0.98515
+
+
+Mean and SD of   731 values=   42.5495     +/-  56.1181    
+Range from   0.00000     to   468.432    
+Distribution of log(t) displayed-     34 bins, factor=   1.334    
+No of values below Xlow=        0 No of values above Xhigh=        0
+
+Set 3                                                           *******************
+Plot queue no   3 in bytes    25601 to    37352 in mec48kflj01.plq                         
+(i.e. 1024 byte records numbers    26 to    37)
+
+
+Plot for set number=  4
+
+
+  concentration of agonist    =   10000.0    
+
+
+Distributions for set number   4
+------------------------------------------------------------
+   Concentration of ligand 1 (micromolar) =   10000.0    
+HJC Initial vector for open times = 
+0.225467E-01 0.835286     0.424763E-02 0.137920    
+HJC Initial vector for shut times = 
+0.503722E-01 0.412893     0.506645     0.299149E-01 0.174739E-03 0.309898E-06
+ ASYMPTOTIC OPEN TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     155.057       36749.4            0.421932E-02  0.272113E-01
+ 2     1716.66       13624.8            0.125995      0.733956E-01
+ 3     13.2389       1564.80            0.846044E-02  0.639059    
+ 4     26.4344       30.6967            0.861147       32.5768    
+      Total area (for non-zero eigenvalues) =  0.999822    
+Mean (ms) =   28.0681       SD=   32.2485       SD/mean =   1.14893    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.999154E-02
+ 2     0.167368    
+ 3     0.831326E-02
+ 4     0.814327    
+
+
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -505290.    : row*WF(s( 1)) = 
+-0.365697E-09 -0.360322E-09 -0.175937E-11 -0.735237E-12  0.103586E-12   2.48714    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -505290.    : col'*WF(s( 1))' = 
+ 0.362287E-09 -0.926175E-10  0.124573E-11  0.168873E-12 -0.161104E-13  -23.7868    
+ ASYMPTOTIC SHUT TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     80.6131       505290.            0.159538E-03  0.197906E-02
+ 2     18212.9       70020.8            0.260106      0.142815E-01
+ 3     5811.61       8974.25            0.647588      0.111430    
+ 4     21.9214       2186.15            0.100274E-01  0.457424    
+ 5     42.7617       1463.00            0.292287E-01  0.683525    
+ 6     26.1374       499.939            0.522812E-01   2.00024    
+      Total area (for non-zero eigenvalues) =  0.999391    
+Mean (ms) =  0.205016       SD=  0.651165       SD/mean =   3.17616    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.953147    
+ 2     0.292130E-01
+ 3     0.158095E-01
+ 4     0.206589E-03
+ 5     0.591394E-03
+ 6     0.103266E-02
+
+
+Open time roots (1/sec) =  -36749.4     -13624.8     -1564.80     -30.6967    
+shut time roots (1/sec) =  -505290.     -70020.8     -8974.25     -2186.15     -1463.00    
+-499.939    
+
+EXACT SOLUTIONS FOR OPEN TIMES
+****** In HJCEXACT, eigen(1) of Q reset from -0.676824E-12 to 0
+
+eigen =   0.00000      478.933      1423.51      1553.46      2170.75      5655.50    
+ 18916.9      37072.9      70617.9     0.925768E+07
+g00(m) =   37.4228      1.38747      7.85080      15.0458      1.72955      526.040    
+ 1190.08      154.592     0.622038     0.177273E-05
+g10(m) =   15.5054      1.97129      9.79799      4.13815      2.35801      70.9156    
+-104.122    -0.683189     0.118772     0.618140E-12
+g11(m) =   1400.46      70.8374      613.716      225.145      52.8336     0.116055E+07
+0.270223E+07 -19771.0     -12.3423    -0.109289E-13
+
+EXACT SOLUTIONS FOR SHUT TIMES
+g00(m) =   85.3545      32.4375      83.7935      24.6790      28.7209      3622.09    
+ 2252.45     0.186230E-01  18101.0    -0.359834E-03
+g10(m) =   108.351      8.36983      58.5439      22.5776      10.7619     -603.073    
+ 461.673     0.494408E-02 -67.2092    -0.341856E-03
+g11(m) =   7285.40      725.468      3597.06      926.215      443.866     0.709179E+07
+0.451287E+07-0.980567    -0.187255E+07 0.688737E-03
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     3147.69      0.925768E+07          0.034001   0.108018E-03
+ 2     42183.1       70503.4             59.831291   0.141837E-01
+ 3     3568.34       9879.97             36.116867   0.101215    
+ 4     11.8040       2204.98              0.535334   0.453518    
+ 5     20.2622       1501.61              1.349368   0.665953    
+ 6     11.2125       525.634              2.133142    1.90246    
+      Total area=   1.00000    
+Mean (ms) =  0.970382E-01   SD=  0.408421       SD/mean =   4.20887    
+
+
+Open time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     158.939       36939.8              0.430265   0.270711E-01
+ 2     1330.94       14664.6              9.075860   0.681912E-01
+ 3     39.1960       1593.23              2.460163   0.627656    
+ 4     69.1414       78.5397             88.033714    12.7324    
+      Total area=   1.00000    
+Mean (ms) =   11.2306       SD=   12.6224       SD/mean =   1.12393    
+
+
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     3147.69      0.925768E+07          0.034001   0.108018E-03
+ 2     42183.1       70503.4             59.831291   0.141837E-01
+ 3     3568.34       9879.97             36.116867   0.101215    
+ 4     11.8040       2204.98              0.535334   0.453518    
+ 5     20.2622       1501.61              1.349368   0.665953    
+ 6     11.2125       525.634              2.133142    1.90246    
+      Total area=   1.00000    
+Mean (ms) =  0.970382E-01   SD=  0.408421       SD/mean =   4.20887    
+
+Ideal (zero resolution)
+Mean open time (ms) =   11.2306     Mean shut time (ms) =  0.970382E-01
+  P(open) (ideal) =     0.99143
+
+HJC distributions (exact)
+Mean open time (ms) =   28.0931     Mean shut time (ms) =  0.230020    
+  P(open) (HJC) =     0.99188
+
+
+Mean and SD of   933 values=   22.2049     +/-  28.3144    
+Range from   0.00000     to   252.852    
+Distribution of log(t) displayed-     33 bins, factor=   1.334    
+No of values below Xlow=        0 No of values above Xhigh=        0
+
+Set 4                                                           *******************
+Plot queue no   4 in bytes    37889 to    49632 in mec48kflj01.plq                         
+(i.e. 1024 byte records numbers    38 to    49)
+
+
+Plot for set number=  1
+
+
+  concentration of agonist    =   500.000    
+
+
+Distributions for set number   1
+------------------------------------------------------------
+   Concentration of ligand 1 (micromolar) =   500.000    
+HJC Initial vector for open times = 
+0.318361     0.585828     0.319767E-01 0.638343E-01
+HJC Initial vector for shut times = 
+0.408220     0.163118     0.213548     0.213339     0.177008E-02 0.443122E-05
+ ASYMPTOTIC OPEN TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     1162.17       36609.3            0.317453E-01  0.273155E-01
+ 2     756.080       13214.6            0.572155E-01  0.756739E-01
+ 3     243.457       1292.48            0.188365      0.773708    
+ 4     33.6356       46.5632            0.722364       21.4762    
+      Total area (for non-zero eigenvalues) =  0.999690    
+Mean (ms) =   15.6646       SD=   20.5230       SD/mean =   1.31016    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.101551    
+ 2     0.807075E-01
+ 3     0.175057    
+ 4     0.642684    
+
+
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -316040.    : row*WF(s( 1)) = 
+-0.375259E-09 -0.204636E-11  0.798819E-12 -0.388702E-12  0.135274E-13   109.337    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -316040.    : col'*WF(s( 1))' = 
+-0.881509E-10 -0.218634E-10 -0.173069E-11  0.308852E-14 -0.243135E-13  0.145269    
+ ASYMPTOTIC SHUT TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     188.651       316040.            0.596921E-03  0.316415E-02
+ 2     10660.1       35791.0            0.297844      0.279400E-01
+ 3     3102.69       9233.58            0.336023      0.108300    
+ 4     134.386       784.328            0.171339       1.27498    
+ 5     7.98048       271.288            0.294170E-01   3.68612    
+ 6     1.26571       7.77881            0.162712       128.554    
+      Total area (for non-zero eigenvalues) =  0.997932    
+Mean (ms) =   21.2890       SD=   70.1868       SD/mean =   3.29686    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.952979    
+ 2     0.261384E-01
+ 3     0.116407E-01
+ 4     0.441605E-02
+ 5     0.744695E-03
+ 6     0.408127E-02
+
+
+Set  1: Initial CHS vector for burst =  0.312098     0.559170     0.907790E-01 0.379529E-01
+et  1: End CHS vector for burst = 
+0.772347E-01 0.733492E-01 0.805141E-01 0.442405     0.895396     0.972475    
+Open time roots (1/sec) =  -36609.3     -13214.6     -1292.48     -46.5632    
+shut time roots (1/sec) =  -316040.     -35791.0     -9233.58     -784.328     -271.288    
+-7.77881    
+
+EXACT SOLUTIONS FOR OPEN TIMES
+****** In HJCEXACT, eigen(1) of Q reset from -0.186873E-11 to 0
+
+eigen =   0.00000      16.3988      267.919      680.148      1178.72      6169.16    
+ 18981.0      37056.1      37488.5     0.146974E+07
+g00(m) =   30.5040      29.5611      1.13046      65.4405      191.419      191.570    
+ 550.688      1122.90      42.8728     0.428941E-03
+g10(m) =   113.527     -74.1799      1.88540      47.5797     -39.2918     -14.0571    
+-31.3224     -10.0612      5.92053     0.441042E-08
+g11(m) =   930.495      633.239      11.8106      11947.2      22979.6      367354.    
+0.110503E+07 -139096.     -6519.89    -0.218425E-08
+
+EXACT SOLUTIONS FOR SHUT TIMES
+g00(m) =   52.2481      33.8806      12.6496      284.211      123.283      1559.28    
+ 1696.08      371.512      10050.4    -0.387260E-01
+g10(m) =   347.286     -189.885      6.54378      206.337     -16.1551     -458.119    
+ 334.745     -616.310      385.593    -0.358129E-01
+g11(m) =   2729.86      1666.01      50.3047      39343.1      39956.3     0.257730E+07
+0.291533E+07 -17417.8    -0.451612E+07 0.220946    
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     13676.1      0.146974E+07          0.930514   0.680393E-03
+ 2     18890.4       36932.7             51.148148   0.270763E-01
+ 3     2741.06       10474.5             26.168962   0.954701E-01
+ 4     102.790       875.870             11.735710    1.14172    
+ 5     4.28932       275.985              1.554185    3.62338    
+ 6    0.724166       8.55737              8.462479    116.858    
+      Total area=   1.00000    
+Mean (ms) =   10.1182       SD=   47.0063       SD/mean =   4.64569    
+
+
+Open time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     2051.91       36939.8              5.554742   0.270711E-01
+ 2     859.127       14664.6              5.858488   0.681912E-01
+ 3     506.023       1593.23             31.760809   0.627656    
+ 4     44.6309       78.5397             56.825958    12.7324    
+      Total area=   1.00000    
+Mean (ms) =   7.44017       SD=   11.3640       SD/mean =   1.52739    
+
+
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     13676.1      0.146974E+07          0.930514   0.680393E-03
+ 2     18890.4       36932.7             51.148148   0.270763E-01
+ 3     2741.06       10474.5             26.168962   0.954701E-01
+ 4     102.790       875.870             11.735710    1.14172    
+ 5     4.28932       275.985              1.554185    3.62338    
+ 6    0.724166       8.55737              8.462479    116.858    
+      Total area=   1.00000    
+Mean (ms) =   10.1182       SD=   47.0063       SD/mean =   4.64569    
+
+Ideal (zero resolution)
+Mean open time (ms) =   7.44017     Mean shut time (ms) =   10.1182    
+  P(open) (ideal) =     0.42374
+
+HJC distributions (exact)
+Mean open time (ms) =   15.6996     Mean shut time (ms) =   21.3240    
+  P(open) (HJC) =     0.42404
+
+
+Mean and SD of   633 values=  0.277765     +/- 0.546530    
+Range from   0.00000     to   4.66795    
+Distribution of log(t) displayed-     18 bins, factor=   1.334    
+No of values below Xlow=        0 No of values above Xhigh=        0
+Prob[observed shut time <    8.000 ms] =  0.843341    
+
+Set 1                                                           *******************
+Plot queue no   5 in bytes    50177 to    61732 in mec48kflj01.plq                         
+(i.e. 1024 byte records numbers    50 to    61)
+
+
+Plot for set number=  2
+
+
+  concentration of agonist    =   1000.00    
+
+
+Distributions for set number   2
+------------------------------------------------------------
+   Concentration of ligand 1 (micromolar) =   1000.00    
+HJC Initial vector for open times = 
+0.188736     0.704971     0.201475E-01 0.861456E-01
+HJC Initial vector for shut times = 
+0.252417     0.203487     0.351917     0.190339     0.183535E-02 0.523203E-05
+ ASYMPTOTIC OPEN TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     727.508       36519.9            0.199208E-01  0.273823E-01
+ 2     961.818       13000.9            0.739809E-01  0.769178E-01
+ 3     113.611       1371.54            0.828345E-01  0.729108    
+ 4     28.9085       35.1352            0.822777       28.4615    
+      Total area (for non-zero eigenvalues) =  0.999513    
+Mean (ms) =   23.4841       SD=   27.9567       SD/mean =   1.19045    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.765308E-01
+ 2     0.110938    
+ 3     0.780098E-01
+ 4     0.734521    
+
+
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -277009.    : row*WF(s( 1)) = 
+-0.179281E-10  0.365787E-10  0.205311E-11  0.419357E-12 -0.210884E-13  -1.64015    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -277009.    : col'*WF(s( 1))' = 
+-0.182820E-09 -0.381775E-10  0.717759E-12  0.149335E-13  0.371816E-13 -0.117538E-01
+ ASYMPTOTIC SHUT TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     166.124       277009.            0.599708E-03  0.361000E-02
+ 2     10074.6       44399.9            0.226906      0.225226E-01
+ 3     4075.40       8809.41            0.462619      0.113515    
+ 4     117.585       861.203            0.136536       1.16117    
+ 5     13.2310       352.332            0.375527E-01   2.83823    
+ 6     3.18753       24.1039            0.132241       41.4870    
+      Total area (for non-zero eigenvalues) =  0.996455    
+Mean (ms) =   5.80904       SD=   20.5538       SD/mean =   3.53825    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.943961    
+ 2     0.325111E-01
+ 3     0.159639E-01
+ 4     0.342837E-02
+ 5     0.923937E-03
+ 6     0.321119E-02
+
+
+Set  2: Initial CHS vector for burst =  0.190936     0.691240     0.682922E-01 0.495322E-01
+et  2: End CHS vector for burst = 
+0.462393E-01 0.440325E-01 0.549148E-01 0.388503     0.807355     0.924134    
+Open time roots (1/sec) =  -36519.9     -13000.9     -1371.54     -35.1352    
+shut time roots (1/sec) =  -277009.     -44399.9     -8809.41     -861.203     -352.332    
+-24.1039    
+
+EXACT SOLUTIONS FOR OPEN TIMES
+****** In HJCEXACT, eigen(1) of Q reset from -0.466116E-11 to 0
+
+eigen =   0.00000      28.2238      348.283      804.374      1301.37      5951.99    
+ 18946.7      37070.5      46274.6     0.187264E+07
+g00(m) =   38.3855      5.11171     0.888047      23.1739      111.748      271.087    
+ 691.517      732.087     0.655528     0.192379E-03
+g10(m) =   26.3699     -6.18029      1.37556      19.8509      3.76109      2.91224    
+-45.6246     -2.61734     0.152661     0.128263E-08
+g11(m) =   1473.45      15.8531      14.1549      3189.26      9045.81      498828.    
+0.133631E+07 -92119.5     -37.9145    -0.364095E-09
+
+EXACT SOLUTIONS FOR SHUT TIMES
+g00(m) =   82.2496      2.12594      17.4364      200.886      131.099      2302.97    
+ 1883.49      1.23370      10068.2    -0.230964E-01
+g10(m) =   148.562     -24.8012      5.18724      115.146      68.7549     -509.152    
+ 318.951     0.187516     -122.814    -0.211183E-01
+g11(m) =   6765.00      24.0928      76.6457      13336.8      32934.0     0.352234E+07
+0.302172E+07 -36.7025    -0.307364E+07 0.131860    
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     13020.5      0.187264E+07          0.695301   0.534006E-03
+ 2     24863.8       45915.5             54.151207   0.217791E-01
+ 3     3100.48       10199.4             30.398628   0.980449E-01
+ 4     73.2306       953.338              7.681497    1.04895    
+ 5     5.69101       361.234              1.575433    2.76829    
+ 6     1.44846       26.3456              5.497931    37.9570    
+      Total area=   1.00000    
+Mean (ms) =   2.25264       SD=   12.4001       SD/mean =   5.50472    
+
+
+Open time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     1261.28       36939.8              3.414427   0.270711E-01
+ 2     1056.19       14664.6              7.202272   0.681912E-01
+ 3     311.045       1593.23             19.522951   0.627656    
+ 4     54.8681       78.5397             69.860352    12.7324    
+      Total area=   1.00000    
+Mean (ms) =   9.02329       SD=   12.0517       SD/mean =   1.33562    
+
+
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     13020.5      0.187264E+07          0.695301   0.534006E-03
+ 2     24863.8       45915.5             54.151207   0.217791E-01
+ 3     3100.48       10199.4             30.398628   0.980449E-01
+ 4     73.2306       953.338              7.681497    1.04895    
+ 5     5.69101       361.234              1.575433    2.76829    
+ 6     1.44846       26.3456              5.497931    37.9570    
+      Total area=   1.00000    
+Mean (ms) =   2.25264       SD=   12.4001       SD/mean =   5.50472    
+
+Ideal (zero resolution)
+Mean open time (ms) =   9.02329     Mean shut time (ms) =   2.25264    
+  P(open) (ideal) =     0.80023
+
+HJC distributions (exact)
+Mean open time (ms) =   23.5241     Mean shut time (ms) =   5.84907    
+  P(open) (HJC) =     0.80087
+
+
+Mean and SD of   845 values=  0.302835     +/- 0.510571    
+Range from   0.00000     to   5.47896    
+Distribution of log(t) displayed-     18 bins, factor=   1.334    
+No of values below Xlow=        0 No of values above Xhigh=        0
+Prob[observed shut time <    7.000 ms] =  0.884609    
+
+Set 2                                                           *******************
+Plot queue no   6 in bytes    62465 to    74088 in mec48kflj01.plq                         
+(i.e. 1024 byte records numbers    62 to    73)
+
+
+Plot for set number=  3
+
+
+  concentration of agonist    =   5000.00    
+
+
+Distributions for set number   3
+------------------------------------------------------------
+   Concentration of ligand 1 (micromolar) =   5000.00    
+HJC Initial vector for open times = 
+0.439319E-01 0.817940     0.740255E-02 0.130726    
+HJC Initial vector for shut times = 
+0.833907E-01 0.340651     0.517093     0.584431E-01 0.421279E-03 0.904074E-06
+ ASYMPTOTIC OPEN TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     269.388       36685.8            0.734312E-02  0.272585E-01
+ 2     1561.21       13413.4            0.116391      0.745522E-01
+ 3     24.1947       1535.98            0.157520E-01  0.651051    
+ 4     25.1143       29.1949            0.860230       34.2526    
+      Total area (for non-zero eigenvalues) =  0.999717    
+Mean (ms) =   29.4843       SD=   33.9000       SD/mean =   1.14977    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.205594E-01
+ 2     0.162120    
+ 3     0.153639E-01
+ 4     0.801956    
+
+
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -399240.    : row*WF(s( 1)) = 
+-0.198615E-09 -0.244693E-09 -0.527922E-11 -0.305021E-13  0.459637E-13   1.60138    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -399240.    : col'*WF(s( 1))' = 
+ 0.416264E-08  0.715488E-09  0.312816E-10 -0.262318E-12 -0.527876E-12  -43.2145    
+ ASYMPTOTIC SHUT TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     125.874       399240.            0.315284E-03  0.250476E-02
+ 2     14630.2       64899.8            0.225427      0.154084E-01
+ 3     5693.68       8836.08            0.644367      0.113172    
+ 4     44.5134       1431.74            0.310904E-01  0.698449    
+ 5     31.7791       894.054            0.355449E-01   1.11850    
+ 6     13.9221       224.208            0.620945E-01   4.46014    
+      Total area (for non-zero eigenvalues) =  0.998839    
+Mean (ms) =  0.414821       SD=   1.56022       SD/mean =   3.76118    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.951600    
+ 2     0.299702E-01
+ 3     0.159357E-01
+ 4     0.615735E-03
+ 5     0.692691E-03
+ 6     0.118601E-02
+
+
+Set  3: Initial CHS vector for burst =  0.436960E-01 0.789711     0.620040E-01 0.104589    
+et  3: End CHS vector for burst = 
+0.237652E-02 0.229393E-02 0.456476E-02 0.556724E-01 0.123965     0.171896    
+Open time roots (1/sec) =  -36685.8     -13413.4     -1535.98     -29.1949    
+shut time roots (1/sec) =  -399240.     -64899.8     -8836.08     -1431.74     -894.054    
+-224.208    
+
+EXACT SOLUTIONS FOR OPEN TIMES
+****** In HJCEXACT, eigen(1) of Q reset from -0.937837E-12 to 0
+
+eigen =   0.00000      216.978      873.606      1395.13      1519.01      5679.70    
+ 18918.3      37071.8      65822.5     0.514618E+07
+g00(m) =   35.9276     0.177224      2.60960      11.2701      24.6570      476.746    
+ 1090.15      269.335     0.648506     0.950267E-05
+g10(m) =   15.0612     0.188306      3.80356      10.0104      5.40962      56.2973    
+-89.8342     -1.04120     0.105084     0.106984E-10
+g11(m) =   1290.79      4.18396      144.558      797.190      612.318      999570.    
+0.235408E+07 -34215.3     -13.4260    -0.475201E-12
+
+EXACT SOLUTIONS FOR SHUT TIMES
+g00(m) =   86.3662      11.9813      45.3133      95.0189      35.7904      3534.84    
+ 2248.99     0.841711E-01  14546.7    -0.176096E-02
+g10(m) =   109.655    -0.798776      17.7811      77.5674      19.6637     -582.722    
+ 428.743     0.228145E-01 -69.9110    -0.165386E-02
+g11(m) =   7459.13      93.8981      978.582      3929.36      2366.24     0.641636E+07
+0.418595E+07 -3.65537    -0.189976E+07 0.556149E-02
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     5571.71      0.514618E+07          0.108269   0.194319E-03
+ 2     38744.4       65675.7             58.993561   0.152263E-01
+ 3     3510.91       9908.01             35.435028   0.100928    
+ 4     24.3692       1477.57              1.649270   0.676785    
+ 5     13.3902       924.628              1.448172    1.08152    
+ 6     5.63666       238.266              2.365699    4.19699    
+      Total area=   1.00000    
+Mean (ms) =  0.170859       SD=  0.927744       SD/mean =   5.42988    
+
+
+Open time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     308.948       36939.8              0.836356   0.270711E-01
+ 2     1293.55       14664.6              8.820898   0.681912E-01
+ 3     76.1899       1593.23              4.782102   0.627656    
+ 4     67.1990       78.5397             85.560646    12.7324    
+      Total area=   1.00000    
+Mean (ms) =   10.9302       SD=   12.5691       SD/mean =   1.14994    
+
+
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     5571.71      0.514618E+07          0.108269   0.194319E-03
+ 2     38744.4       65675.7             58.993561   0.152263E-01
+ 3     3510.91       9908.01             35.435028   0.100928    
+ 4     24.3692       1477.57              1.649270   0.676785    
+ 5     13.3902       924.628              1.448172    1.08152    
+ 6     5.63666       238.266              2.365699    4.19699    
+      Total area=   1.00000    
+Mean (ms) =  0.170859       SD=  0.927744       SD/mean =   5.42988    
+
+Ideal (zero resolution)
+Mean open time (ms) =   10.9302     Mean shut time (ms) =  0.170859    
+  P(open) (ideal) =     0.98461
+
+HJC distributions (exact)
+Mean open time (ms) =   29.5143     Mean shut time (ms) =  0.444829    
+  P(open) (HJC) =     0.98515
+
+
+Mean and SD of   709 values=  0.334423     +/- 0.826657    
+Range from   0.00000     to   9.23053    
+Distribution of log(t) displayed-     21 bins, factor=   1.334    
+No of values below Xlow=        0 No of values above Xhigh=        0
+Prob[observed shut time <   10.000 ms] =  0.993354    
+
+Set 3                                                           *******************
+Plot queue no   7 in bytes    74753 to    86332 in mec48kflj01.plq                         
+(i.e. 1024 byte records numbers    74 to    85)
+
+
+Plot for set number=  4
+
+
+  concentration of agonist    =   10000.0    
+
+
+Distributions for set number   4
+------------------------------------------------------------
+   Concentration of ligand 1 (micromolar) =   10000.0    
+HJC Initial vector for open times = 
+0.225467E-01 0.835286     0.424763E-02 0.137920    
+HJC Initial vector for shut times = 
+0.503722E-01 0.412893     0.506645     0.299149E-01 0.174739E-03 0.309898E-06
+ ASYMPTOTIC OPEN TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     155.057       36749.4            0.421932E-02  0.272113E-01
+ 2     1716.66       13624.8            0.125995      0.733956E-01
+ 3     13.2389       1564.80            0.846044E-02  0.639059    
+ 4     26.4344       30.6967            0.861147       32.5768    
+      Total area (for non-zero eigenvalues) =  0.999822    
+Mean (ms) =   28.0681       SD=   32.2485       SD/mean =   1.14893    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.999154E-02
+ 2     0.167368    
+ 3     0.831326E-02
+ 4     0.814327    
+
+
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -505290.    : row*WF(s( 1)) = 
+-0.365697E-09 -0.360322E-09 -0.175937E-11 -0.735237E-12  0.103586E-12   2.48714    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -505290.    : col'*WF(s( 1))' = 
+ 0.362287E-09 -0.926175E-10  0.124573E-11  0.168873E-12 -0.161104E-13  -23.7868    
+ ASYMPTOTIC SHUT TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     80.6131       505290.            0.159538E-03  0.197906E-02
+ 2     18212.9       70020.8            0.260106      0.142815E-01
+ 3     5811.61       8974.25            0.647588      0.111430    
+ 4     21.9214       2186.15            0.100274E-01  0.457424    
+ 5     42.7617       1463.00            0.292287E-01  0.683525    
+ 6     26.1374       499.939            0.522812E-01   2.00024    
+      Total area (for non-zero eigenvalues) =  0.999391    
+Mean (ms) =  0.205016       SD=  0.651165       SD/mean =   3.17616    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.953147    
+ 2     0.292130E-01
+ 3     0.158095E-01
+ 4     0.206589E-03
+ 5     0.591394E-03
+ 6     0.103266E-02
+
+
+Open time roots (1/sec) =  -36749.4     -13624.8     -1564.80     -30.6967    
+shut time roots (1/sec) =  -505290.     -70020.8     -8974.25     -2186.15     -1463.00    
+-499.939    
+
+EXACT SOLUTIONS FOR OPEN TIMES
+****** In HJCEXACT, eigen(1) of Q reset from -0.676824E-12 to 0
+
+eigen =   0.00000      478.933      1423.51      1553.46      2170.75      5655.50    
+ 18916.9      37072.9      70617.9     0.925768E+07
+g00(m) =   37.4228      1.38747      7.85080      15.0458      1.72955      526.040    
+ 1190.08      154.592     0.622038     0.177273E-05
+g10(m) =   15.5054      1.97129      9.79799      4.13815      2.35801      70.9156    
+-104.122    -0.683189     0.118772     0.618140E-12
+g11(m) =   1400.46      70.8374      613.716      225.145      52.8336     0.116055E+07
+0.270223E+07 -19771.0     -12.3423    -0.109289E-13
+
+EXACT SOLUTIONS FOR SHUT TIMES
+g00(m) =   85.3545      32.4375      83.7935      24.6790      28.7209      3622.09    
+ 2252.45     0.186230E-01  18101.0    -0.359834E-03
+g10(m) =   108.351      8.36983      58.5439      22.5776      10.7619     -603.073    
+ 461.673     0.494408E-02 -67.2092    -0.341856E-03
+g11(m) =   7285.40      725.468      3597.06      926.215      443.866     0.709179E+07
+0.451287E+07-0.980567    -0.187255E+07 0.688737E-03
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     3147.69      0.925768E+07          0.034001   0.108018E-03
+ 2     42183.1       70503.4             59.831291   0.141837E-01
+ 3     3568.34       9879.97             36.116867   0.101215    
+ 4     11.8040       2204.98              0.535334   0.453518    
+ 5     20.2622       1501.61              1.349368   0.665953    
+ 6     11.2125       525.634              2.133142    1.90246    
+      Total area=   1.00000    
+Mean (ms) =  0.970382E-01   SD=  0.408421       SD/mean =   4.20887    
+
+
+Open time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     158.939       36939.8              0.430265   0.270711E-01
+ 2     1330.94       14664.6              9.075860   0.681912E-01
+ 3     39.1960       1593.23              2.460163   0.627656    
+ 4     69.1414       78.5397             88.033714    12.7324    
+      Total area=   1.00000    
+Mean (ms) =   11.2306       SD=   12.6224       SD/mean =   1.12393    
+
+
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     3147.69      0.925768E+07          0.034001   0.108018E-03
+ 2     42183.1       70503.4             59.831291   0.141837E-01
+ 3     3568.34       9879.97             36.116867   0.101215    
+ 4     11.8040       2204.98              0.535334   0.453518    
+ 5     20.2622       1501.61              1.349368   0.665953    
+ 6     11.2125       525.634              2.133142    1.90246    
+      Total area=   1.00000    
+Mean (ms) =  0.970382E-01   SD=  0.408421       SD/mean =   4.20887    
+
+Ideal (zero resolution)
+Mean open time (ms) =   11.2306     Mean shut time (ms) =  0.970382E-01
+  P(open) (ideal) =     0.99143
+
+HJC distributions (exact)
+Mean open time (ms) =   28.0931     Mean shut time (ms) =  0.230020    
+  P(open) (HJC) =     0.99188
+
+
+Mean and SD of   912 values=  0.193907     +/- 0.720746    
+Range from   0.00000     to   9.62223    
+Distribution of log(t) displayed-     21 bins, factor=   1.334    
+No of values below Xlow=        0 No of values above Xhigh=        0
+Prob[observed shut time <   10.000 ms] =  0.999643    
+
+Set 4                                                           *******************
+Plot queue no   8 in bytes    87041 to    98688 in mec48kflj01.plq                         
+(i.e. 1024 byte records numbers    86 to    97)
+
+
+Mean durations of individual apparent openings that are
+ adjacent to gaps with durations in following ranges (ms)
+
+
+Plot for set number=  1
+
+
+  concentration of agonist    =   500.000    
+
+
+Distributions for set number   1
+------------------------------------------------------------
+   Concentration of ligand 1 (micromolar) =   500.000    
+HJC Initial vector for open times = 
+0.318361     0.585828     0.319767E-01 0.638343E-01
+HJC Initial vector for shut times = 
+0.408220     0.163118     0.213548     0.213339     0.177008E-02 0.443122E-05
+ ASYMPTOTIC OPEN TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     1162.17       36609.3            0.317453E-01  0.273155E-01
+ 2     756.080       13214.6            0.572155E-01  0.756739E-01
+ 3     243.457       1292.48            0.188365      0.773708    
+ 4     33.6356       46.5632            0.722364       21.4762    
+      Total area (for non-zero eigenvalues) =  0.999690    
+Mean (ms) =   15.6646       SD=   20.5230       SD/mean =   1.31016    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.101551    
+ 2     0.807075E-01
+ 3     0.175057    
+ 4     0.642684    
+
+
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -316040.    : row*WF(s( 1)) = 
+-0.375259E-09 -0.204636E-11  0.798819E-12 -0.388702E-12  0.135274E-13   109.337    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -316040.    : col'*WF(s( 1))' = 
+-0.881509E-10 -0.218634E-10 -0.173069E-11  0.308852E-14 -0.243135E-13  0.145269    
+ ASYMPTOTIC SHUT TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     188.651       316040.            0.596921E-03  0.316415E-02
+ 2     10660.1       35791.0            0.297844      0.279400E-01
+ 3     3102.69       9233.58            0.336023      0.108300    
+ 4     134.386       784.328            0.171339       1.27498    
+ 5     7.98048       271.288            0.294170E-01   3.68612    
+ 6     1.26571       7.77881            0.162712       128.554    
+      Total area (for non-zero eigenvalues) =  0.997932    
+Mean (ms) =   21.2890       SD=   70.1868       SD/mean =   3.29686    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.952979    
+ 2     0.261384E-01
+ 3     0.116407E-01
+ 4     0.441605E-02
+ 5     0.744695E-03
+ 6     0.408127E-02
+
+
+Set  1: Initial CHS vector for burst =  0.312098     0.559170     0.907790E-01 0.379529E-01
+et  1: End CHS vector for burst = 
+0.772347E-01 0.733492E-01 0.805141E-01 0.442405     0.895396     0.972475    
+Open time roots (1/sec) =  -36609.3     -13214.6     -1292.48     -46.5632    
+shut time roots (1/sec) =  -316040.     -35791.0     -9233.58     -784.328     -271.288    
+-7.77881    
+
+EXACT SOLUTIONS FOR OPEN TIMES
+****** In HJCEXACT, eigen(1) of Q reset from -0.186873E-11 to 0
+
+eigen =   0.00000      16.3988      267.919      680.148      1178.72      6169.16    
+ 18981.0      37056.1      37488.5     0.146974E+07
+g00(m) =   30.5040      29.5611      1.13046      65.4405      191.419      191.570    
+ 550.688      1122.90      42.8728     0.428941E-03
+g10(m) =   113.527     -74.1799      1.88540      47.5797     -39.2918     -14.0571    
+-31.3224     -10.0612      5.92053     0.441042E-08
+g11(m) =   930.495      633.239      11.8106      11947.2      22979.6      367354.    
+0.110503E+07 -139096.     -6519.89    -0.218425E-08
+
+EXACT SOLUTIONS FOR SHUT TIMES
+g00(m) =   52.2481      33.8806      12.6496      284.211      123.283      1559.28    
+ 1696.08      371.512      10050.4    -0.387260E-01
+g10(m) =   347.286     -189.885      6.54378      206.337     -16.1551     -458.119    
+ 334.745     -616.310      385.593    -0.358129E-01
+g11(m) =   2729.86      1666.01      50.3047      39343.1      39956.3     0.257730E+07
+0.291533E+07 -17417.8    -0.451612E+07 0.220946    
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     13676.1      0.146974E+07          0.930514   0.680393E-03
+ 2     18890.4       36932.7             51.148148   0.270763E-01
+ 3     2741.06       10474.5             26.168962   0.954701E-01
+ 4     102.790       875.870             11.735710    1.14172    
+ 5     4.28932       275.985              1.554185    3.62338    
+ 6    0.724166       8.55737              8.462479    116.858    
+      Total area=   1.00000    
+Mean (ms) =   10.1182       SD=   47.0063       SD/mean =   4.64569    
+
+
+Open time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     2051.91       36939.8              5.554742   0.270711E-01
+ 2     859.127       14664.6              5.858488   0.681912E-01
+ 3     506.023       1593.23             31.760809   0.627656    
+ 4     44.6309       78.5397             56.825958    12.7324    
+      Total area=   1.00000    
+Mean (ms) =   7.44017       SD=   11.3640       SD/mean =   1.52739    
+
+
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     13676.1      0.146974E+07          0.930514   0.680393E-03
+ 2     18890.4       36932.7             51.148148   0.270763E-01
+ 3     2741.06       10474.5             26.168962   0.954701E-01
+ 4     102.790       875.870             11.735710    1.14172    
+ 5     4.28932       275.985              1.554185    3.62338    
+ 6    0.724166       8.55737              8.462479    116.858    
+      Total area=   1.00000    
+Mean (ms) =   10.1182       SD=   47.0063       SD/mean =   4.64569    
+
+Ideal (zero resolution)
+Mean open time (ms) =   7.44017     Mean shut time (ms) =   10.1182    
+  P(open) (ideal) =     0.42374
+
+HJC distributions (exact)
+Mean open time (ms) =   15.6996     Mean shut time (ms) =   21.3240    
+  P(open) (HJC) =     0.42404
+
+Mean open time conditional on PRECEDING shut time                         
+       Gap length: range       mean gap  # of ops   mean open time   Std dev
+ 1      0.035 to      0.050       0.0405     143     17.281         19.772    
+ 2      0.050 to      0.070       0.0604      87     19.979         23.018    
+ 3      0.070 to      0.100       0.0827      78     17.918         23.340    
+ 4      0.100 to      0.300       0.1755     201     17.762         24.505    
+ 5      0.300 to      1.000       0.5259      88     13.141         15.992    
+ 6      1.000 to      8.000       2.1326      36     9.3788         14.130    
+                                Total        633
+Mean open time conditional on FOLLOWING shut time                         
+       Gap length: range       mean gap  # of ops   mean open time   Std dev
+ 1      0.035 to      0.050       0.0405     143     20.412         23.052    
+ 2      0.050 to      0.070       0.0604      87     19.014         22.065    
+ 3      0.070 to      0.100       0.0827      78     16.111         21.662    
+ 4      0.100 to      0.300       0.1755     201     18.744         25.136    
+ 5      0.300 to      1.000       0.5259      88     13.462         19.543    
+ 6      1.000 to      8.000       2.1326      36     14.430         20.476    
+                                Total        633
+Mean open time conditional on EITHER shut time                            
+       Gap length: range       mean gap  # of ops   mean open time   Std dev
+ 1      0.035 to      0.050       0.0405     286     18.846         21.494    
+ 2      0.050 to      0.070       0.0604     174     19.497         22.486    
+ 3      0.070 to      0.100       0.0827     156     17.014         22.462    
+ 4      0.100 to      0.300       0.1755     402     18.253         24.796    
+ 5      0.300 to      1.000       0.5259     176     13.301         17.806    
+ 6      1.000 to      8.000       2.1326      72     11.904         17.652    
+                                Total       1266
+Number of shut times not in any range =     110
+
+ CALCULATED values for mean open given preceding gap range                
+       Gap length: range       Mean gap    P[tlo<t<thi]  N*P   Mean open time
+  1      0.035 to      0.050       0.0420  0.17162       108.6     16.7357    
+  2      0.050 to      0.070       0.0591  0.14154        89.6     16.4820    
+  3      0.070 to      0.100       0.0834  0.11902        75.3     16.0792    
+  4      0.100 to      0.300       0.1681  0.20977       132.8     15.2548    
+  5      0.300 to      1.000       0.5539  0.09348        59.2     15.0018    
+  6      1.000 to      8.000       2.6372  0.10790        68.3     15.0502    
+ CALCULATED values for mean open given following gap range                
+       Gap length: range       Mean gap    P[tlo<t<thi]  N*P   Mean open time
+  1      0.035 to      0.050       0.0420  0.17162       108.6     16.7321    
+  2      0.050 to      0.070       0.0591  0.14154        89.6     16.4789    
+  3      0.070 to      0.100       0.0834  0.11902        75.3     16.0789    
+  4      0.100 to      0.300       0.1681  0.20977       132.8     15.2591    
+  5      0.300 to      1.000       0.5539  0.09348        59.2     15.0040    
+  6      1.000 to      8.000       2.6372  0.10790        68.3     15.0501    
+
+Observations -adjacent gap green, filled diamonds, cont. line
+Calculated -preceding gap light blue, open circles
+Calculated -preceding gap dark blue, solid squares
+Theoretical continuous relationship:
+  preceding gap yellow curve, following gap red curve.
+
+
+Set 1                                                           *******************
+Plot queue no   9 in bytes    99329 to   112540 in mec48kflj01.plq                         
+(i.e. 1024 byte records numbers    98 to   110)
+
+
+Mean durations of individual apparent openings that are
+ adjacent to gaps with durations in following ranges (ms)
+
+
+Plot for set number=  2
+
+
+  concentration of agonist    =   1000.00    
+
+
+Distributions for set number   2
+------------------------------------------------------------
+   Concentration of ligand 1 (micromolar) =   1000.00    
+HJC Initial vector for open times = 
+0.188736     0.704971     0.201475E-01 0.861456E-01
+HJC Initial vector for shut times = 
+0.252417     0.203487     0.351917     0.190339     0.183535E-02 0.523203E-05
+ ASYMPTOTIC OPEN TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     727.508       36519.9            0.199208E-01  0.273823E-01
+ 2     961.818       13000.9            0.739809E-01  0.769178E-01
+ 3     113.611       1371.54            0.828345E-01  0.729108    
+ 4     28.9085       35.1352            0.822777       28.4615    
+      Total area (for non-zero eigenvalues) =  0.999513    
+Mean (ms) =   23.4841       SD=   27.9567       SD/mean =   1.19045    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.765308E-01
+ 2     0.110938    
+ 3     0.780098E-01
+ 4     0.734521    
+
+
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -277009.    : row*WF(s( 1)) = 
+-0.179281E-10  0.365787E-10  0.205311E-11  0.419357E-12 -0.210884E-13  -1.64015    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -277009.    : col'*WF(s( 1))' = 
+-0.182820E-09 -0.381775E-10  0.717759E-12  0.149335E-13  0.371816E-13 -0.117538E-01
+ ASYMPTOTIC SHUT TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     166.124       277009.            0.599708E-03  0.361000E-02
+ 2     10074.6       44399.9            0.226906      0.225226E-01
+ 3     4075.40       8809.41            0.462619      0.113515    
+ 4     117.585       861.203            0.136536       1.16117    
+ 5     13.2310       352.332            0.375527E-01   2.83823    
+ 6     3.18753       24.1039            0.132241       41.4870    
+      Total area (for non-zero eigenvalues) =  0.996455    
+Mean (ms) =   5.80904       SD=   20.5538       SD/mean =   3.53825    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.943961    
+ 2     0.325111E-01
+ 3     0.159639E-01
+ 4     0.342837E-02
+ 5     0.923937E-03
+ 6     0.321119E-02
+
+
+Set  2: Initial CHS vector for burst =  0.190936     0.691240     0.682922E-01 0.495322E-01
+et  2: End CHS vector for burst = 
+0.462393E-01 0.440325E-01 0.549148E-01 0.388503     0.807355     0.924134    
+Open time roots (1/sec) =  -36519.9     -13000.9     -1371.54     -35.1352    
+shut time roots (1/sec) =  -277009.     -44399.9     -8809.41     -861.203     -352.332    
+-24.1039    
+
+EXACT SOLUTIONS FOR OPEN TIMES
+****** In HJCEXACT, eigen(1) of Q reset from -0.466116E-11 to 0
+
+eigen =   0.00000      28.2238      348.283      804.374      1301.37      5951.99    
+ 18946.7      37070.5      46274.6     0.187264E+07
+g00(m) =   38.3855      5.11171     0.888047      23.1739      111.748      271.087    
+ 691.517      732.087     0.655528     0.192379E-03
+g10(m) =   26.3699     -6.18029      1.37556      19.8509      3.76109      2.91224    
+-45.6246     -2.61734     0.152661     0.128263E-08
+g11(m) =   1473.45      15.8531      14.1549      3189.26      9045.81      498828.    
+0.133631E+07 -92119.5     -37.9145    -0.364095E-09
+
+EXACT SOLUTIONS FOR SHUT TIMES
+g00(m) =   82.2496      2.12594      17.4364      200.886      131.099      2302.97    
+ 1883.49      1.23370      10068.2    -0.230964E-01
+g10(m) =   148.562     -24.8012      5.18724      115.146      68.7549     -509.152    
+ 318.951     0.187516     -122.814    -0.211183E-01
+g11(m) =   6765.00      24.0928      76.6457      13336.8      32934.0     0.352234E+07
+0.302172E+07 -36.7025    -0.307364E+07 0.131860    
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     13020.5      0.187264E+07          0.695301   0.534006E-03
+ 2     24863.8       45915.5             54.151207   0.217791E-01
+ 3     3100.48       10199.4             30.398628   0.980449E-01
+ 4     73.2306       953.338              7.681497    1.04895    
+ 5     5.69101       361.234              1.575433    2.76829    
+ 6     1.44846       26.3456              5.497931    37.9570    
+      Total area=   1.00000    
+Mean (ms) =   2.25264       SD=   12.4001       SD/mean =   5.50472    
+
+
+Open time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     1261.28       36939.8              3.414427   0.270711E-01
+ 2     1056.19       14664.6              7.202272   0.681912E-01
+ 3     311.045       1593.23             19.522951   0.627656    
+ 4     54.8681       78.5397             69.860352    12.7324    
+      Total area=   1.00000    
+Mean (ms) =   9.02329       SD=   12.0517       SD/mean =   1.33562    
+
+
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     13020.5      0.187264E+07          0.695301   0.534006E-03
+ 2     24863.8       45915.5             54.151207   0.217791E-01
+ 3     3100.48       10199.4             30.398628   0.980449E-01
+ 4     73.2306       953.338              7.681497    1.04895    
+ 5     5.69101       361.234              1.575433    2.76829    
+ 6     1.44846       26.3456              5.497931    37.9570    
+      Total area=   1.00000    
+Mean (ms) =   2.25264       SD=   12.4001       SD/mean =   5.50472    
+
+Ideal (zero resolution)
+Mean open time (ms) =   9.02329     Mean shut time (ms) =   2.25264    
+  P(open) (ideal) =     0.80023
+
+HJC distributions (exact)
+Mean open time (ms) =   23.5241     Mean shut time (ms) =   5.84907    
+  P(open) (HJC) =     0.80087
+
+Mean open time conditional on PRECEDING shut time                         
+       Gap length: range       mean gap  # of ops   mean open time   Std dev
+ 1      0.040 to      0.050       0.0443     130     22.520         22.369    
+ 2      0.050 to      0.070       0.0594     131     23.078         35.471    
+ 3      0.070 to      0.100       0.0830     102     14.378         17.387    
+ 4      0.100 to      0.300       0.1764     270     16.692         23.397    
+ 5      0.300 to      1.000       0.5215     154     16.453         20.438    
+ 6      1.000 to      7.000       1.8268      58     18.159         23.535    
+                                Total        845
+Mean open time conditional on FOLLOWING shut time                         
+       Gap length: range       mean gap  # of ops   mean open time   Std dev
+ 1      0.040 to      0.050       0.0443     130     17.669         20.072    
+ 2      0.050 to      0.070       0.0594     131     21.690         25.667    
+ 3      0.070 to      0.100       0.0830     102     15.169         17.700    
+ 4      0.100 to      0.300       0.1764     270     17.770         23.128    
+ 5      0.300 to      1.000       0.5215     154     17.374         26.434    
+ 6      1.000 to      7.000       1.8268      58     17.259         26.564    
+                                Total        845
+Mean open time conditional on EITHER shut time                            
+       Gap length: range       mean gap  # of ops   mean open time   Std dev
+ 1      0.040 to      0.050       0.0443     260     20.094         21.349    
+ 2      0.050 to      0.070       0.0594     262     22.384         30.908    
+ 3      0.070 to      0.100       0.0830     204     14.774         17.505    
+ 4      0.100 to      0.300       0.1764     540     17.231         23.248    
+ 5      0.300 to      1.000       0.5215     308     16.913         23.593    
+ 6      1.000 to      7.000       1.8268     116     17.709         24.990    
+                                Total       1690
+Number of shut times not in any range =     200
+
+ CALCULATED values for mean open given preceding gap range                
+       Gap length: range       Mean gap    P[tlo<t<thi]  N*P   Mean open time
+  1      0.040 to      0.050       0.0447  0.12445       105.2     24.9974    
+  2      0.050 to      0.070       0.0590  0.15810       133.6     24.5449    
+  3      0.070 to      0.100       0.0835  0.13048       110.3     23.7715    
+  4      0.100 to      0.300       0.1714  0.26532       224.2     22.7698    
+  5      0.300 to      1.000       0.5276  0.10583        89.4     22.8126    
+  6      1.000 to      7.000       2.6458  0.10043        84.9     23.0580    
+ CALCULATED values for mean open given following gap range                
+       Gap length: range       Mean gap    P[tlo<t<thi]  N*P   Mean open time
+  1      0.040 to      0.050       0.0447  0.12445       105.2     24.9889    
+  2      0.050 to      0.070       0.0590  0.15810       133.6     24.5352    
+  3      0.070 to      0.100       0.0835  0.13048       110.3     23.7682    
+  4      0.100 to      0.300       0.1714  0.26532       224.2     22.7789    
+  5      0.300 to      1.000       0.5276  0.10583        89.4     22.8184    
+  6      1.000 to      7.000       2.6458  0.10043        84.9     23.0580    
+
+Observations -adjacent gap green, filled diamonds, cont. line
+Calculated -preceding gap light blue, open circles
+Calculated -preceding gap dark blue, solid squares
+Theoretical continuous relationship:
+  preceding gap yellow curve, following gap red curve.
+
+
+Set 2                                                           *******************
+Plot queue no  10 in bytes   112641 to   124900 in mec48kflj01.plq                         
+(i.e. 1024 byte records numbers   111 to   122)
+
+
+Mean durations of individual apparent openings that are
+ adjacent to gaps with durations in following ranges (ms)
+
+
+Plot for set number=  3
+
+
+  concentration of agonist    =   5000.00    
+
+
+Distributions for set number   3
+------------------------------------------------------------
+   Concentration of ligand 1 (micromolar) =   5000.00    
+HJC Initial vector for open times = 
+0.439319E-01 0.817940     0.740255E-02 0.130726    
+HJC Initial vector for shut times = 
+0.833907E-01 0.340651     0.517093     0.584431E-01 0.421279E-03 0.904074E-06
+ ASYMPTOTIC OPEN TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     269.388       36685.8            0.734312E-02  0.272585E-01
+ 2     1561.21       13413.4            0.116391      0.745522E-01
+ 3     24.1947       1535.98            0.157520E-01  0.651051    
+ 4     25.1143       29.1949            0.860230       34.2526    
+      Total area (for non-zero eigenvalues) =  0.999717    
+Mean (ms) =   29.4843       SD=   33.9000       SD/mean =   1.14977    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.205594E-01
+ 2     0.162120    
+ 3     0.153639E-01
+ 4     0.801956    
+
+
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -399240.    : row*WF(s( 1)) = 
+-0.198615E-09 -0.244693E-09 -0.527922E-11 -0.305021E-13  0.459637E-13   1.60138    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -399240.    : col'*WF(s( 1))' = 
+ 0.416264E-08  0.715488E-09  0.312816E-10 -0.262318E-12 -0.527876E-12  -43.2145    
+ ASYMPTOTIC SHUT TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     125.874       399240.            0.315284E-03  0.250476E-02
+ 2     14630.2       64899.8            0.225427      0.154084E-01
+ 3     5693.68       8836.08            0.644367      0.113172    
+ 4     44.5134       1431.74            0.310904E-01  0.698449    
+ 5     31.7791       894.054            0.355449E-01   1.11850    
+ 6     13.9221       224.208            0.620945E-01   4.46014    
+      Total area (for non-zero eigenvalues) =  0.998839    
+Mean (ms) =  0.414821       SD=   1.56022       SD/mean =   3.76118    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.951600    
+ 2     0.299702E-01
+ 3     0.159357E-01
+ 4     0.615735E-03
+ 5     0.692691E-03
+ 6     0.118601E-02
+
+
+Set  3: Initial CHS vector for burst =  0.436960E-01 0.789711     0.620040E-01 0.104589    
+et  3: End CHS vector for burst = 
+0.237652E-02 0.229393E-02 0.456476E-02 0.556724E-01 0.123965     0.171896    
+Open time roots (1/sec) =  -36685.8     -13413.4     -1535.98     -29.1949    
+shut time roots (1/sec) =  -399240.     -64899.8     -8836.08     -1431.74     -894.054    
+-224.208    
+
+EXACT SOLUTIONS FOR OPEN TIMES
+****** In HJCEXACT, eigen(1) of Q reset from -0.937837E-12 to 0
+
+eigen =   0.00000      216.978      873.606      1395.13      1519.01      5679.70    
+ 18918.3      37071.8      65822.5     0.514618E+07
+g00(m) =   35.9276     0.177224      2.60960      11.2701      24.6570      476.746    
+ 1090.15      269.335     0.648506     0.950267E-05
+g10(m) =   15.0612     0.188306      3.80356      10.0104      5.40962      56.2973    
+-89.8342     -1.04120     0.105084     0.106984E-10
+g11(m) =   1290.79      4.18396      144.558      797.190      612.318      999570.    
+0.235408E+07 -34215.3     -13.4260    -0.475201E-12
+
+EXACT SOLUTIONS FOR SHUT TIMES
+g00(m) =   86.3662      11.9813      45.3133      95.0189      35.7904      3534.84    
+ 2248.99     0.841711E-01  14546.7    -0.176096E-02
+g10(m) =   109.655    -0.798776      17.7811      77.5674      19.6637     -582.722    
+ 428.743     0.228145E-01 -69.9110    -0.165386E-02
+g11(m) =   7459.13      93.8981      978.582      3929.36      2366.24     0.641636E+07
+0.418595E+07 -3.65537    -0.189976E+07 0.556149E-02
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     5571.71      0.514618E+07          0.108269   0.194319E-03
+ 2     38744.4       65675.7             58.993561   0.152263E-01
+ 3     3510.91       9908.01             35.435028   0.100928    
+ 4     24.3692       1477.57              1.649270   0.676785    
+ 5     13.3902       924.628              1.448172    1.08152    
+ 6     5.63666       238.266              2.365699    4.19699    
+      Total area=   1.00000    
+Mean (ms) =  0.170859       SD=  0.927744       SD/mean =   5.42988    
+
+
+Open time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     308.948       36939.8              0.836356   0.270711E-01
+ 2     1293.55       14664.6              8.820898   0.681912E-01
+ 3     76.1899       1593.23              4.782102   0.627656    
+ 4     67.1990       78.5397             85.560646    12.7324    
+      Total area=   1.00000    
+Mean (ms) =   10.9302       SD=   12.5691       SD/mean =   1.14994    
+
+
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     5571.71      0.514618E+07          0.108269   0.194319E-03
+ 2     38744.4       65675.7             58.993561   0.152263E-01
+ 3     3510.91       9908.01             35.435028   0.100928    
+ 4     24.3692       1477.57              1.649270   0.676785    
+ 5     13.3902       924.628              1.448172    1.08152    
+ 6     5.63666       238.266              2.365699    4.19699    
+      Total area=   1.00000    
+Mean (ms) =  0.170859       SD=  0.927744       SD/mean =   5.42988    
+
+Ideal (zero resolution)
+Mean open time (ms) =   10.9302     Mean shut time (ms) =  0.170859    
+  P(open) (ideal) =     0.98461
+
+HJC distributions (exact)
+Mean open time (ms) =   29.5143     Mean shut time (ms) =  0.444829    
+  P(open) (HJC) =     0.98515
+
+Mean open time conditional on PRECEDING shut time                         
+       Gap length: range       mean gap  # of ops   mean open time   Std dev
+ 1      0.030 to      0.050       0.0378     169     41.525         45.945    
+ 2      0.050 to      0.070       0.0582      78     48.365         69.531    
+ 3      0.070 to      0.100       0.0847      96     38.367         49.262    
+ 4      0.100 to      0.300       0.1793     219     41.113         51.399    
+ 5      0.300 to      1.000       0.5552     105     41.439         62.008    
+ 6      1.000 to     10.000       2.8687      42     47.335         65.208    
+                                Total        709
+Mean open time conditional on FOLLOWING shut time                         
+       Gap length: range       mean gap  # of ops   mean open time   Std dev
+ 1      0.030 to      0.050       0.0378     169     47.597         55.778    
+ 2      0.050 to      0.070       0.0582      78     39.023         56.032    
+ 3      0.070 to      0.100       0.0847      96     40.761         46.153    
+ 4      0.100 to      0.300       0.1793     219     46.130         64.106    
+ 5      0.300 to      1.000       0.5552     105     31.055         45.109    
+ 6      1.000 to     10.000       2.8687      42     50.103         65.887    
+                                Total        709
+Mean open time conditional on EITHER shut time                            
+       Gap length: range       mean gap  # of ops   mean open time   Std dev
+ 1      0.030 to      0.050       0.0378     338     44.561         51.113    
+ 2      0.050 to      0.070       0.0582     156     43.694         63.114    
+ 3      0.070 to      0.100       0.0847     192     39.564         47.623    
+ 4      0.100 to      0.300       0.1793     438     43.622         58.089    
+ 5      0.300 to      1.000       0.5552     210     36.247         54.341    
+ 6      1.000 to     10.000       2.8687      84     48.719         65.167    
+                                Total       1418
+Number of shut times not in any range =      36
+
+ CALCULATED values for mean open given preceding gap range                
+       Gap length: range       Mean gap    P[tlo<t<thi]  N*P   Mean open time
+  1      0.030 to      0.050       0.0386  0.27148       192.5     31.7004    
+  2      0.050 to      0.070       0.0591  0.13400        95.0     30.1090    
+  3      0.070 to      0.100       0.0839  0.12234        86.7     28.8470    
+  4      0.100 to      0.300       0.1728  0.30540       216.5     28.2130    
+  5      0.300 to      1.000       0.4860  0.09402        66.7     28.2666    
+  6      1.000 to     10.000       3.3519  0.06612        46.9     28.4587    
+ CALCULATED values for mean open given following gap range                
+       Gap length: range       Mean gap    P[tlo<t<thi]  N*P   Mean open time
+  1      0.030 to      0.050       0.0386  0.27148       192.5     31.6886    
+  2      0.050 to      0.070       0.0591  0.13400        95.0     30.1007    
+  3      0.070 to      0.100       0.0839  0.12234        86.7     28.8510    
+  4      0.100 to      0.300       0.1728  0.30540       216.5     28.2232    
+  5      0.300 to      1.000       0.4860  0.09402        66.7     28.2739    
+  6      1.000 to     10.000       3.3519  0.06612        46.9     28.4590    
+
+Observations -adjacent gap green, filled diamonds, cont. line
+Calculated -preceding gap light blue, open circles
+Calculated -preceding gap dark blue, solid squares
+Theoretical continuous relationship:
+  preceding gap yellow curve, following gap red curve.
+
+
+Set 3                                                           *******************
+Plot queue no  11 in bytes   124929 to   136916 in mec48kflj01.plq                         
+(i.e. 1024 byte records numbers   123 to   134)
+
+
+Mean durations of individual apparent openings that are
+ adjacent to gaps with durations in following ranges (ms)
+
+
+Plot for set number=  4
+
+
+  concentration of agonist    =   10000.0    
+
+
+Distributions for set number   4
+------------------------------------------------------------
+   Concentration of ligand 1 (micromolar) =   10000.0    
+HJC Initial vector for open times = 
+0.225467E-01 0.835286     0.424763E-02 0.137920    
+HJC Initial vector for shut times = 
+0.503722E-01 0.412893     0.506645     0.299149E-01 0.174739E-03 0.309898E-06
+ ASYMPTOTIC OPEN TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     155.057       36749.4            0.421932E-02  0.272113E-01
+ 2     1716.66       13624.8            0.125995      0.733956E-01
+ 3     13.2389       1564.80            0.846044E-02  0.639059    
+ 4     26.4344       30.6967            0.861147       32.5768    
+      Total area (for non-zero eigenvalues) =  0.999822    
+Mean (ms) =   28.0681       SD=   32.2485       SD/mean =   1.14893    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.999154E-02
+ 2     0.167368    
+ 3     0.831326E-02
+ 4     0.814327    
+
+
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -505290.    : row*WF(s( 1)) = 
+-0.365697E-09 -0.360322E-09 -0.175937E-11 -0.735237E-12  0.103586E-12   2.48714    
+
+WARNING: error in solving rW=0. If result not close to 
+zero there may be errors in amplitudes of components
+of the asymptotic HJC distribution.
+Root(  1) =  -505290.    : col'*WF(s( 1))' = 
+ 0.362287E-09 -0.926175E-10  0.124573E-11  0.168873E-12 -0.161104E-13  -23.7868    
+ ASYMPTOTIC SHUT TIME DISTRIBUTION
+f(t) = 
+term   coeff (W)   rate const (1/sec)     area        tau (ms)
+ 1     80.6131       505290.            0.159538E-03  0.197906E-02
+ 2     18212.9       70020.8            0.260106      0.142815E-01
+ 3     5811.61       8974.25            0.647588      0.111430    
+ 4     21.9214       2186.15            0.100274E-01  0.457424    
+ 5     42.7617       1463.00            0.292287E-01  0.683525    
+ 6     26.1374       499.939            0.522812E-01   2.00024    
+      Total area (for non-zero eigenvalues) =  0.999391    
+Mean (ms) =  0.205016       SD=  0.651165       SD/mean =   3.17616    
+Areas for asymptotic pdf renormalised for t=0 to infinity (and sum=1)
+(so areas can be compared with ideal pdf)
+ 1     0.953147    
+ 2     0.292130E-01
+ 3     0.158095E-01
+ 4     0.206589E-03
+ 5     0.591394E-03
+ 6     0.103266E-02
+
+
+Open time roots (1/sec) =  -36749.4     -13624.8     -1564.80     -30.6967    
+shut time roots (1/sec) =  -505290.     -70020.8     -8974.25     -2186.15     -1463.00    
+-499.939    
+
+EXACT SOLUTIONS FOR OPEN TIMES
+****** In HJCEXACT, eigen(1) of Q reset from -0.676824E-12 to 0
+
+eigen =   0.00000      478.933      1423.51      1553.46      2170.75      5655.50    
+ 18916.9      37072.9      70617.9     0.925768E+07
+g00(m) =   37.4228      1.38747      7.85080      15.0458      1.72955      526.040    
+ 1190.08      154.592     0.622038     0.177273E-05
+g10(m) =   15.5054      1.97129      9.79799      4.13815      2.35801      70.9156    
+-104.122    -0.683189     0.118772     0.618140E-12
+g11(m) =   1400.46      70.8374      613.716      225.145      52.8336     0.116055E+07
+0.270223E+07 -19771.0     -12.3423    -0.109289E-13
+
+EXACT SOLUTIONS FOR SHUT TIMES
+g00(m) =   85.3545      32.4375      83.7935      24.6790      28.7209      3622.09    
+ 2252.45     0.186230E-01  18101.0    -0.359834E-03
+g10(m) =   108.351      8.36983      58.5439      22.5776      10.7619     -603.073    
+ 461.673     0.494408E-02 -67.2092    -0.341856E-03
+g11(m) =   7285.40      725.468      3597.06      926.215      443.866     0.709179E+07
+0.451287E+07-0.980567    -0.187255E+07 0.688737E-03
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     3147.69      0.925768E+07          0.034001   0.108018E-03
+ 2     42183.1       70503.4             59.831291   0.141837E-01
+ 3     3568.34       9879.97             36.116867   0.101215    
+ 4     11.8040       2204.98              0.535334   0.453518    
+ 5     20.2622       1501.61              1.349368   0.665953    
+ 6     11.2125       525.634              2.133142    1.90246    
+      Total area=   1.00000    
+Mean (ms) =  0.970382E-01   SD=  0.408421       SD/mean =   4.20887    
+
+
+Open time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     158.939       36939.8              0.430265   0.270711E-01
+ 2     1330.94       14664.6              9.075860   0.681912E-01
+ 3     39.1960       1593.23              2.460163   0.627656    
+ 4     69.1414       78.5397             88.033714    12.7324    
+      Total area=   1.00000    
+Mean (ms) =   11.2306       SD=   12.6224       SD/mean =   1.12393    
+
+
+Shut time pdf with zero resolution
+f(t) = 
+term   coeff (W)   rate const (1/sec)    area (%)     tau (ms)
+ 1     3147.69      0.925768E+07          0.034001   0.108018E-03
+ 2     42183.1       70503.4             59.831291   0.141837E-01
+ 3     3568.34       9879.97             36.116867   0.101215    
+ 4     11.8040       2204.98              0.535334   0.453518    
+ 5     20.2622       1501.61              1.349368   0.665953    
+ 6     11.2125       525.634              2.133142    1.90246    
+      Total area=   1.00000    
+Mean (ms) =  0.970382E-01   SD=  0.408421       SD/mean =   4.20887    
+
+Ideal (zero resolution)
+Mean open time (ms) =   11.2306     Mean shut time (ms) =  0.970382E-01
+  P(open) (ideal) =     0.99143
+
+HJC distributions (exact)
+Mean open time (ms) =   28.0931     Mean shut time (ms) =  0.230020    
+  P(open) (HJC) =     0.99188
+
+Mean open time conditional on PRECEDING shut time                         
+       Gap length: range       mean gap  # of ops   mean open time   Std dev
+ 1      0.025 to      0.050       0.0354     399     21.803         28.278    
+ 2      0.050 to      0.070       0.0590     123     20.993         23.959    
+ 3      0.070 to      0.100       0.0852     100     21.120         25.337    
+ 4      0.100 to      0.300       0.1649     207     24.421         32.735    
+ 5      0.300 to      1.000       0.4707      56     20.418         28.201    
+ 6      1.000 to     10.000       3.2021      27     24.073         26.930    
+                                Total        912
+Mean open time conditional on FOLLOWING shut time                         
+       Gap length: range       mean gap  # of ops   mean open time   Std dev
+ 1      0.025 to      0.050       0.0354     399     20.270         25.936    
+ 2      0.050 to      0.070       0.0590     123     23.680         27.275    
+ 3      0.070 to      0.100       0.0852     100     23.878         32.029    
+ 4      0.100 to      0.300       0.1649     207     22.328         24.995    
+ 5      0.300 to      1.000       0.4707      56     29.120         44.671    
+ 6      1.000 to     10.000       3.2021      27     21.797         30.453    
+                                Total        912
+Mean open time conditional on EITHER shut time                            
+       Gap length: range       mean gap  # of ops   mean open time   Std dev
+ 1      0.025 to      0.050       0.0354     798     21.036         27.126    
+ 2      0.050 to      0.070       0.0590     246     22.337         25.653    
+ 3      0.070 to      0.100       0.0852     200     22.499         28.838    
+ 4      0.100 to      0.300       0.1649     414     23.375         29.107    
+ 5      0.300 to      1.000       0.4707     112     24.769         37.442    
+ 6      1.000 to     10.000       3.2021      54     22.935         28.496    
+                                Total       1824
+Number of shut times not in any range =      34
+
+ CALCULATED values for mean open given preceding gap range                
+       Gap length: range       Mean gap    P[tlo<t<thi]  N*P   Mean open time
+  1      0.025 to      0.050       0.0352  0.34808       317.4     30.2818    
+  2      0.050 to      0.070       0.0592  0.12079       110.2     28.2246    
+  3      0.070 to      0.100       0.0840  0.11435       104.3     27.0250    
+  4      0.100 to      0.300       0.1725  0.29128       265.7     26.5312    
+  5      0.300 to      1.000       0.4793  0.08508        77.6     26.4995    
+  6      1.000 to     10.000       2.6387  0.04007        36.5     26.4849    
+ CALCULATED values for mean open given following gap range                
+       Gap length: range       Mean gap    P[tlo<t<thi]  N*P   Mean open time
+  1      0.025 to      0.050       0.0352  0.34808       317.4     30.2734    
+  2      0.050 to      0.070       0.0592  0.12079       110.2     28.2221    
+  3      0.070 to      0.100       0.0840  0.11435       104.3     27.0297    
+  4      0.100 to      0.300       0.1725  0.29128       265.7     26.5388    
+  5      0.300 to      1.000       0.4793  0.08508        77.6     26.5049    
+  6      1.000 to     10.000       2.6387  0.04007        36.5     26.4853    
+
+Observations -adjacent gap green, filled diamonds, cont. line
+Calculated -preceding gap light blue, open circles
+Calculated -preceding gap dark blue, solid squares
+Theoretical continuous relationship:
+  preceding gap yellow curve, following gap red curve.
+
+
+Set 4                                                           *******************
+Plot queue no  12 in bytes   137217 to   149476 in mec48kflj01.plq                         
+(i.e. 1024 byte records numbers   135 to   146)
+
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+
+At zero concentration of none      
+ P(open) (ideal) = -0.67630E-20, P(open) (HJC) = -0.67630E-20
+Equilibrium response-concentration for none       (monotonic)
+Maximum P(open) (ideal) =  0.9957     Maximum Popen (HJC) =  0.996274
+   EC50 for none      
+   EC50 (ideal) =   561.7        EC50 (HJC) =   561.2    
+
+Plot for set number=  1
+
+
+  concentration of agonist    =   500.000    
+
+ERROR IN QMAT: ifail,ibad=        0       3
+An off-diagonal of UNIT is >1.d-7
+SET # 1:  Hill slope at EC50 =    2.5538 (ideal), or    2.5539 (HJC)
+
+Set 1                                                           *******************
+Plot queue no  13 in bytes   149505 to   161826 in mec48kflj01.plq                         
+(i.e. 1024 byte records numbers   147 to   159)
+
