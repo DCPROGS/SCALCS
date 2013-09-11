@@ -132,6 +132,9 @@ def main():
     mec.printout(sys.stdout)
     theta = mec.theta()
     lik2, th = scl.HJClik(np.log(theta), opts)
+
+    print '\n\nresult='
+    print res
     
     print '\n\n\ntime in DC-Pyps simplex=', t1
     print ('\n Final log-likelihood = {0:.6f}'.format(-fout))
