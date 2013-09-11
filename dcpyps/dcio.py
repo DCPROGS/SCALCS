@@ -476,10 +476,20 @@ def mec_load_from_prt(filename, verbose=False):
     linenum = 0
     
     
-    ncyc, nsc, im2, jm2 = 0, [], [], []
-    states, ligbound = [], []
+    ncyc, nsc, im2, jm2, mr = 0, [], [], [], []
+    states, conductance, ligbound = [], [], []
     tres, tcrit, CHS = [], [], []
     rates, constrained = [], []
+    k, kA, kB, kC, kD = 0, 0, 0, 0, 0
+
+    f.readline()
+    line = f.readline()
+    if "Program HJCFIT Windows Version (Beta)" in line:
+        version = 'win'
+    else:
+        version = 'dos'
+    if verbose: print 'version=', version
+
     while True:
         try:
             line = f.readline()
@@ -502,6 +512,19 @@ def mec_load_from_prt(filename, verbose=False):
             k = kA + kB + kC + kD
             if verbose: print ("Number of states: kA, kB, kC, kD = {0:d}, {1:d}, {2:d}, {3:d}".
                 format(kA, kB, kC, kD))
+
+        if version == 'win' and "Number of open states =" in line and k == 0:
+            kA = int(line.split()[-1].strip())
+            line = f.readline()
+            while line != "\n":
+                conductance.append(float(line.split()[-1].strip()))
+                line = f.readline()
+            k = len(conductance)
+            kB = k - kA - 1
+            kC = 1
+            kD = 0
+            if verbose: print ("Number of states: kA, kB, kC, kD = {0:d}, {1:d}, {2:d}, {3:d}".
+                format(kA, kB, kC, kD))
             
         if "Number of ligands =" in line:
             nlig = int(line.split()[-1].strip())
@@ -521,13 +544,14 @@ def mec_load_from_prt(filename, verbose=False):
             if verbose: print "lig=", lig
                 
         
-        if "Cycle #" in line and int(line[-1]) > ncyc:
+        if (version == 'dos') and ("Cycle #" in line) and (int(line[-1]) > ncyc):
             c1, c2 = [], []
             ncyc += 1
             line = f.readline()
             temp = line.split()
             c1.append(int(temp[1].strip(',')))
             c2.append(int(temp[2].strip(')')))
+            mr.append([int(temp[1].strip(',')), int(temp[2].strip(')'))])
             line = f.readline()
             temp = line.split()
             while temp:
@@ -539,30 +563,49 @@ def mec_load_from_prt(filename, verbose=False):
             if verbose: print "Cycle # ", ncyc
             if verbose: print nsc
             if verbose: print im2, jm2
-            
-        if "state #    state name" in line:
+
+        if (version == 'win') and ("Microscopic reversibility" in line):
             line = f.readline()
-            while line != "\n":
-                temp = line.split()
-                states.append(temp[1])
+            while "cycle=" in line:
+                c1, c2 = [], []
+                ncyc += 1
+                temp = line.strip(';').split()
+                nsc.append(len(temp[3].strip()))
+                temp = temp[7:]
+                for item in temp:
+                    c1.append(int(item.strip(';')))
+                im2.append(c1)
                 line = f.readline()
-            if len(states) == k:
-                if verbose: print states
-            else:
-                print "Warning: number of states does not correspond."
+
+        if (version == 'win') and ("by microscopic reversibility" in line):
+            if len(mr) < ncyc:
+                temp = []
+                temp.append(int(line[3:5].strip()))
+                temp.append(int(line[6:8].strip()))
+                mr.append(temp)
+            
+#        if "state #    state name" in line: # in 'dos'
+#            line = f.readline()
+#            while line != "\n":
+#                temp = line.split()
+#                states.append(temp[1])
+#                line = f.readline()
+#            if len(states) == k:
+#                if verbose: print states
+#            else:
+#                print "Warning: number of states does not correspond."
                 
         if "Number of ligands bound" in line:
             line = f.readline()
             line = f.readline()     
-            while line != "\n":
+            while len(states) < k:
                 temp = line.split()
                 if len(temp) == 3:
+                    states.append(temp[1])
                     ligbound.append(int(temp[2]))
                 line = f.readline()
-            if len(ligbound) == k:
-                if verbose: print ligbound
-            else:
-                print "Warning: number of states does not correspond."
+            if verbose: print 'states: ', states
+            if verbose: print 'ligandsbound=', ligbound
                 
         if "Resolution for HJC calculations" in line:
             line = f.readline()
@@ -592,7 +635,7 @@ def mec_load_from_prt(filename, verbose=False):
                 constrained.append(cnstr)
 #            print constrained
             
-        if "initial        final" in line:
+        if (version == 'dos') and ("initial        final" in line):
             line = f.readline()
             while line != "\n":
                 rate = []
@@ -612,6 +655,21 @@ def mec_load_from_prt(filename, verbose=False):
                         rates[item[0]].append(item[2])
                         rates[item[0]].append(item[3])
             if verbose: print rates
+            
+        if (version == 'win') and ("initial        final" in line):
+            while len(rates) < numrates:
+                rate = []
+                line = f.readline()
+                while line != "\n":
+                    rate.append(int(line[8:10].strip()))
+                    rate.append(int(line[11:13].strip()))
+                    rate.append(line[18:29].strip())
+                    rate.append(float(line[42:55].strip()))
+                    rates.append(rate)
+                    line = f.readline()
+                    if line != "\n":
+                        rates[-1].append(line.strip().strip('(').strip(')'))
+                        line = f.readline()
             
         if 'Total number of rates' in line:
             numrates = int(line.split()[-1])
@@ -648,7 +706,7 @@ def mec_load_from_prt(filename, verbose=False):
     RateList = []
     for i in range(numrates):
         bound = None
-        mr = False
+        mrc = False
         is_constr = False
         constr_func = None
         constr_args = None
@@ -656,8 +714,8 @@ def mec_load_from_prt(filename, verbose=False):
             if im[j] == rates[i][0] and jm[j] == rates[i][1]:
                 bound = 'c'
         for j in range(ncyc):
-            if im2[j][0] == rates[i][0] and jm2[j][0] == rates[i][1]:
-                mr = True
+            if mr[j][0] == rates[i][0] and mr[j][0] == rates[i][1]:
+                mrc = True
         if len(rates[i]) > 5 and rates[i][4] == 'constrained':
             is_constr = True
             if rates[i][5] == 'times':
@@ -667,7 +725,7 @@ def mec_load_from_prt(filename, verbose=False):
         rate = rates[i][3]
         # REMIS: please make sure the state indexing is correct
         RateList.append(dcpyps.Rate(rate, StateList[rates[i][0]-1],
-            StateList[rates[i][1]-1], name=rates[i][2], eff=bound, mr=mr,
+            StateList[rates[i][1]-1], name=rates[i][2], eff=bound, mr=mrc,
             is_constrained=is_constr, constrain_func=constr_func, constrain_args=constr_args))
             
     CycleList = []

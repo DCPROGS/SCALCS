@@ -274,7 +274,7 @@ def calc_jump (mec, reclen, step, cfunc, cargs):
 
     for i in range(1, t.shape[0]):
         mec.set_eff('c', c[i])
-        eigenvals, A = qml.eigs(mec.Q)
+        eigenvals, A = qml.eigs_sorted(mec.Q)
         w = coefficient_calc(mec.k, A, pi)
         pi = P_t(step, eigenvals, w)
         Pt = np.append(Pt, [pi.copy()], axis=0)

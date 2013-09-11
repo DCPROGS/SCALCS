@@ -267,7 +267,7 @@ class SCRecord(object):
                 openinglength += self.rtint[i]
                 #TODO: if bad opening: set burst bad
             else: # found gap
-                if self.rtint[i] < tcrit and not endburst and i != (len(self.rtint)-1):
+                if self.rtint[i] < tcrit and not endburst and i != (len(self.rtint)-1) and self.rprops[i] != 8:
                     burst.append(openinglength)
                     burst.append(self.rtint[i])
                     openinglength = 0
