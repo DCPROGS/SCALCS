@@ -47,7 +47,7 @@ def load_data(sfile, tres, tcrit):
         format(np.average(rec.shint)*1000, np.std(rec.shint)*1000))
     print('Range of shut periods from {0:.9f} ms to {1:.9f} ms'.
         format(np.min(rec.shint)*1000, np.max(rec.shint)*1000))
-    print('Last shut period = {0:.9f} ms'.format(rec.shint[-1])*1000)
+    print('Last shut period = {0:.9f} ms'.format(rec.shint[-1]*1000))
 
     rec.get_bursts(tcrit)
     print('\nNumber of bursts = {0:d}'.format(len(rec.bursts)))

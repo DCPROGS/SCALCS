@@ -45,6 +45,8 @@ import samples
 import scplotlib as scpl
 import mechanism
 
+import qtcommonlib as qtcl
+
 import optimize
 import dataset
 
@@ -72,69 +74,47 @@ class QMatGUI(QMainWindow):
         self.cjfunc = None
         self.cjargs = None
 
-        loadMenu = self.menuBar().addMenu('&Mechanims')
-        loadDemo1Action = self.createAction("&Load demo: CH82", self.onLoadDemo_CH82,
-            None, "loaddemo", "Load Demo mec")
-        loadDemo2Action = self.createAction("&Load demo: dC-K", self.onLoadDemo_dCK,
-            None, "loaddemo", "Load Demo mec")
-        loadFromMecFileAction = self.createAction("&Load from DCprogs MEC File...",
-            self.onLoadMecFile,
-            None, "loadfrommecfile", "Load from Mec file")
-        loadFromPrtFileAction = self.createAction("&Load from DCprogs PRT File...",
-            self.onLoadPrtFile,
-            None, "loadfromprtfile", "Load from Prt file")
-        loadFromModFileAction = self.createAction("&Load from ChannelLab MOD File...",
-            self.onLoadModFile,
-            None, "loadfrommodfile", "Load from ChannelLab Mod file")
-        modifyMecAction = self.createAction("&Modify loaded mec rates", self.onModifyMec,
-            None, "modifymec", "Modify mec rates")
-        modifyStatesAction = self.createAction("&Modify loaded mec states", self.onModifyStates,
-            None, "modifystates", "Modify mec states")
-        quitAction = self.createAction("&Quit", self.close,
-            "Ctrl+Q", "appquit", "Close the application")
-        self.addActions(loadMenu, (loadDemo1Action, loadDemo2Action,
-            loadFromMecFileAction, loadFromPrtFileAction, loadFromModFileAction,
-            modifyMecAction, modifyStatesAction, quitAction))
+        loadMechMenu = qtcl.addMechMenuElements(self)
 
         plotMenu = self.menuBar().addMenu('&Plot')
-        plotPopenAction = self.createAction("&Popen curve", self.onPlotPopen)
-        plotOpenTimePDFAction = self.createAction(
+        plotPopenAction = qtcl.createAction(self, "&Popen curve", self.onPlotPopen)
+        plotOpenTimePDFAction = qtcl.createAction(self, 
             "&Open time pdf", self.onPlotOpenTimePDF)
-        plotShutTimePDFAction = self.createAction(
+        plotShutTimePDFAction = qtcl.createAction(self, 
             "&Shut time pdf", self.onPlotShutTimePDF)
-        plotSubsetTimePDFAction = self.createAction(
+        plotSubsetTimePDFAction = qtcl.createAction(self, 
             "&Subset time pdf", self.onPlotSubsetTimePDF)
-        plotBurstLenPDFAction = self.createAction(
+        plotBurstLenPDFAction = qtcl.createAction(self, 
             "&Burst length pdf", self.onPlotBrstLenPDF)
-        plotBurstLenPDFActionCond = self.createAction(
+        plotBurstLenPDFActionCond = qtcl.createAction(self, 
             "&Conditional burst length pdf", self.onPlotBrstLenPDFCond)
-        plotBurstOpeningDistrAction = self.createAction(
+        plotBurstOpeningDistrAction = qtcl.createAction(self, 
             "&Burst openings distribution", self.onPlotBrstOpDistr)
-        plotBurstOpeningDistrActionCond = self.createAction(
+        plotBurstOpeningDistrActionCond = qtcl.createAction(self, 
             "&Conditional burst openings distribution", self.onPlotBrstOpDistrCond)
-        plotBurstLenVConcAction = self.createAction(
+        plotBurstLenVConcAction = qtcl.createAction(self, 
             "&Burst length vs concentration", self.onPlotBrstLenConc)
-        plotJumpPopenAction = self.createAction(
+        plotJumpPopenAction = qtcl.createAction(self, 
             "&Concentration jump: Popen", self.onPlotCJumpPopen)
-        plotJumpOccupanciesAction = self.createAction(
+        plotJumpOccupanciesAction = qtcl.createAction(self, 
             "&Concentration jump: occupancies",
             self.onPlotCJumpOccupancies)
-        plotJumpOnOffTauConc = self.createAction(
+        plotJumpOnOffTauConc = qtcl.createAction(self, 
             "&Concentration jump: weighted on/off tau versus concentration",
             self.onPlotCJumpRiseVConc)
-        plotCorrOpenShutAction = self.createAction(
+        plotCorrOpenShutAction = qtcl.createAction(self, 
             "&Correlations", self.onPlotOpShCorr)
-        plotAdjacentOpenShutAction = self.createAction(
+        plotAdjacentOpenShutAction = qtcl.createAction(self, 
             "&Open time adjacent to shut time range pdf", self.onPlotOpAdjShacent)
-        plotMeanOpenNextShutAction = self.createAction(
+        plotMeanOpenNextShutAction = qtcl.createAction(self, 
             "&Mean open time preceding/next to shut time", self.onPlotMeanOpNextShut)
-        plotDependencyAction = self.createAction(
+        plotDependencyAction = qtcl.createAction(self, 
             "&Dependency plot", self.onPlotDependency)
-#        plotJump2PopenAction = self.createAction(
+#        plotJump2PopenAction = self.createAction(self, 
 #            "&Instant rise and exponential decay concentration jump: Popen", self.onPlotCJump2Popen)
-        plotSaveASCII = self.createAction(
+        plotSaveASCII = qtcl.createAction(self, 
             "&Save current plot as ASCII file", self.onPlotSaveASCII)
-        self.addActions(plotMenu, (plotOpenTimePDFAction, plotShutTimePDFAction,
+        qtcl.addActions(plotMenu, (plotOpenTimePDFAction, plotShutTimePDFAction,
             plotAdjacentOpenShutAction, plotMeanOpenNextShutAction, 
             plotCorrOpenShutAction, plotDependencyAction,
             # setDisabled(False) to activate plotting the subset time distributions
@@ -152,35 +132,35 @@ class QMatGUI(QMainWindow):
 
 # UNCOMMENT NEXT LINES TO ENABLE DATA DISTRIBUTION PLOTTING
         dataMenu = self.menuBar().addMenu('&Data')
-        openScanAction = self.createAction("&Load single channel record from SCN file", self.onLoadData)
-        simulateScanAction = self.createAction("&Simulate single channel record",
+        openScanAction = qtcl.createAction(self, "&Load single channel record from SCN file", self.onLoadData)
+        simulateScanAction = qtcl.createAction(self, "&Simulate single channel record",
             self.onSimulateData)
-        saveScanAction = self.createAction("Save single channel record (SCN file)",
+        saveScanAction = qtcl.createAction(self, "Save single channel record (SCN file)",
             self.onSaveDataSCN)
-        imposeResolutionAction = self.createAction("&Impose resolution",
+        imposeResolutionAction = qtcl.createAction(self, "&Impose resolution",
             self.onImposeResolution)
-        plotDataOpenAction = self.createAction("&Plot open period distribution",
+        plotDataOpenAction = qtcl.createAction(self, "&Plot open period distribution",
             self.onPlotDataOpen)
-        plotDataShutAction = self.createAction("&Plot shut period distribution",
+        plotDataShutAction = qtcl.createAction(self, "&Plot shut period distribution",
             self.onPlotDataShut)
-        plotDataBurstAction = self.createAction("&Plot burst length distribution",
+        plotDataBurstAction = qtcl.createAction(self, "&Plot burst length distribution",
             self.onPlotDataBurst)
-        likelihoodAction = self.createAction("&HJCfit",
+        likelihoodAction = qtcl.createAction(self, "&HJCfit",
             self.onCalculateLikelihood)
-        self.addActions(dataMenu, (openScanAction, simulateScanAction,
+        qtcl.addActions(dataMenu, (openScanAction, simulateScanAction,
             saveScanAction,
             imposeResolutionAction, plotDataOpenAction, plotDataShutAction,
             plotDataBurstAction, likelihoodAction))
 # LINES RELATED TO DATA HISTOGRAMMS PLOTTING
 
         printOutMenu = self.menuBar().addMenu('&Printout')
-        printOutSaveAction = self.createAction("&Save", self.onPrintOutSave)
-        self.addActions(printOutMenu, (printOutSaveAction,
+        printOutSaveAction = qtcl.createAction(self, "&Save", self.onPrintOutSave)
+        qtcl.addActions(printOutMenu, (printOutSaveAction,
             None))
 
         helpMenu = self.menuBar().addMenu('&Help')
-        helpAboutAction = self.createAction("&About", self.onHelpAbout)
-        self.addActions(helpMenu, (helpAboutAction, None))
+        helpAboutAction = qtcl.createAction(self, "&About", self.onHelpAbout)
+        qtcl.addActions(helpMenu, (helpAboutAction, None))
 
         self.dpi = 85
         self.fig = Figure((6.0, 4.0), dpi=self.dpi)
@@ -198,55 +178,13 @@ class QMatGUI(QMainWindow):
         self.textBox = QTextBrowser()
         # Set here if printout to TextBox only or also to file or console.
         self.log = PrintLog(self.textBox) #, sys.stdout)
-        str1, str2, str3 = self.startInfo()
+        str1, str2, str3 = qtcl.startInfo()
         self.textBox.append(str1)
         self.textBox.append(str2)
         self.textBox.append(str3)
         self.setWindowTitle(str1)
 
         plotSetLayout = QVBoxLayout()
-        mainLabel = QLabel("Set parameters for plots:")
-#        plotSetLayout.addWidget(mainLabel)
-
-        tresBox = QHBoxLayout()
-        tresBox.addWidget(QLabel("Temporal resolution ="))
-        self.tresEdit = QLineEdit(unicode(self.tres * 1000000))
-        self.tresEdit.setMaxLength(8)
-        self.connect(self.tresEdit, SIGNAL("editingFinished()"),
-            self.on_settings_changed)
-        tresBox.addWidget(self.tresEdit)
-        tresBox.addWidget(QLabel("microsec"))
-        tresBox.addStretch()
-#        plotSetLayout.addLayout(tresBox)
-
-        concBox = QHBoxLayout()
-        concBox.addWidget(QLabel("Concentration = "))
-        self.concEdit = QLineEdit(unicode(self.conc * 1000000))
-        self.concEdit.setMaxLength(8)
-        self.connect(self.concEdit, SIGNAL("editingFinished()"),
-            self.on_settings_changed)
-        concBox.addWidget(self.concEdit)
-        concBox.addWidget(QLabel("microM"))
-        concBox.addStretch()
-#        plotSetLayout.addLayout(concBox)
-
-        fastBlkBox = QHBoxLayout()
-        self.fastBlkCheckBox = QCheckBox("&Fast block?")
-        self.fastBlkCheckBox.setChecked(self.mec.fastblk)
-        self.connect(self.fastBlkCheckBox, SIGNAL("stateChanged(int)"),
-            self.on_settings_changed)
-        fastBlkBox.addWidget(self.fastBlkCheckBox)
-        fastBlkBox.addWidget(QLabel("KB ="))
-        self.KBEdit = QLineEdit(unicode(self.mec.KBlk * 1000))
-        self.KBEdit.setMaxLength(8)
-        self.connect(self.KBEdit, SIGNAL("editingFinished()"),
-            self.on_settings_changed)
-        fastBlkBox.addWidget(self.KBEdit)
-        fastBlkBox.addWidget(QLabel("mM"))
-        fastBlkBox.addStretch()
-#        plotSetLayout.addLayout(fastBlkBox)
-################################################
-
         self.txtPltBox = QTextBrowser()
         plotSetLayout.addWidget(self.txtPltBox)
 
@@ -262,56 +200,6 @@ class QMatGUI(QMainWindow):
         self.mainFrame.setLayout(HBox)
         self.setCentralWidget(self.mainFrame)
         
-    def on_settings_changed(self):
-        """
-        Get setting values.
-        """
-        self.mec.KBlk = float(self.KBEdit.text()) / 1000.0
-        self.tres = float(self.tresEdit.text()) / 1000000.0
-        self.conc = float(self.concEdit.text()) / 1000000.0
-        self.mec.fastblk = self.fastBlkCheckBox.isChecked()
-
-    def createAction(self, text, slot=None, shortcut=None, icon=None,
-            tip=None, checkable=False, signal="triggered()"):
-        """
-        Create menu actions.
-        """
-        action = QAction(text, self)
-        if icon is not None:
-            action.setIcon(QIcon(":/%s.png" % icon))
-        if shortcut is not None:
-            action.setShortcut(shortcut)
-        if tip is not None:
-            action.setToolTip(tip)
-            action.setStatusTip(tip)
-        if slot is not None:
-            self.connect(action, SIGNAL(signal), slot)
-        if checkable:
-            action.setCheckable(True)
-        return action
-
-    def addActions(self, target, actions):
-        """
-        Add actions to menu.
-        """
-        for action in actions:
-            if action is None:
-                target.addSeparator()
-            else:
-                target.addAction(action)
-
-    def startInfo(self):
-        """
-        Get date, time, machine info, etc.
-        """
-        str1 = "DC_PyPs: Q matrix calculations."
-        str2 = ("Date and time of analysis: %4d/%02d/%02d %02d:%02d:%02d"
-            %time.localtime()[0:6])
-        machine = socket.gethostname()
-        system = sys.platform
-        str3 = "Machine: %s; System: %s" %(machine, system)
-        return str1, str2, str3
-
 # UNCOMMENT NEXT FUNCTIONS TO ENABLE DATA DISTRIBUTION PLOTTING
     def onLoadData(self):
         """
@@ -1195,14 +1083,14 @@ class QMatGUI(QMainWindow):
     def onModifyMec(self):
         """
         """
-        table = RateTableDlg(self, self.mec, self.log)
+        table = qtcl.RateTableDlg(self, self.mec, self.log)
         if table.exec_():
             self.mec = table.return_mec()
 
     def onModifyStates(self):
         """
         """
-        table = StateTableDlg(self, self.mec, self.log)
+        table = qtcl.StateTableDlg(self, self.mec, self.log)
         if table.exec_():
             self.mec = table.return_mec()
 
@@ -1219,258 +1107,6 @@ class PrintLog:
         self.out1.append(text.rstrip('\n'))
         if self.out2:
             self.out2.write(text)
-
-class RateTableDlg(QDialog):
-    """
-    """
-    def __init__(self, parent=None, mec=None, log=None):
-        super(RateTableDlg, self).__init__(parent)
-        self.mec = mec
-        self.changed = False
-        self.log = log
-
-        layoutMain = QVBoxLayout()
-        self.table = RateTable(self.mec)
-        self.table.display_data()
-        self.connect(self.table,
-                SIGNAL("cellChanged(int, int)"),
-                self.tableItemChanged)
-        layoutMain.addWidget(self.table)
-
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
-            QDialogButtonBox.Cancel)
-        self.connect(buttonBox, SIGNAL("accepted()"),
-            self, SLOT("accept()"))
-        self.connect(buttonBox, SIGNAL("rejected()"),
-            self, SLOT("reject()"))
-        layoutMain.addWidget(buttonBox)
-
-        self.setLayout(layoutMain)
-        self.setGeometry(100,100,750,550)
-        self.setWindowTitle("View and modify rate constants...")
-
-    def tableItemChanged(self, row, column):
-        # TODO: update mechanism if anything changed in table
-
-        if column == 3:
-            newratecon = float(self.table.item(row, column).text())
-            self.mec.Rates[row].rateconstants = newratecon
-
-        if column == 5:
-            value = False
-            if self.table.item(row, column).checkState() > 0:
-                value = True
-            self.mec.Rates[row].fixed = value
-            print 'fixed value=', value
-
-        if column == 6:
-            value = False
-            if self.table.item(row, column).checkState() > 0:
-                value = True
-            self.mec.Rates[row].mr = value
-            print 'mr value=', value
-
-        if column == 7 or column == 8 or column == 9:
-            #TODO: handle exceptions in this block
-            value = False
-            if self.table.item(row, 7).checkState() > 0:
-                value = True
-            self.mec.Rates[row].is_constrained = value
-            self.mec.Rates[row].constrain_func = mechanism.constrain_rate_multiple
-#            print 'is_constrained =', value
-            factor = float(self.table.item(row, 8).text())
-#            print 'factor=', factor
-            torate = int(self.table.item(row, 9).text()) - 1
-#            print 'to rate=', torate
-            self.mec.Rates[row].constrain_args = [torate, factor]
-
-        if column == 10 or column == 11:
-            newlimits = [float(self.table.item(row, 10).text()),
-                float(self.table.item(row, 11).text())]
-            self.mec.Rates[row].limits = newlimits
-
-        self.changed = True
-
-    def return_mec(self):
-        if self.changed:
-            self.mec.update_constrains()
-            self.mec.update_mr()
-            self.log.write("\n\nMechanism modified:\n")
-            self.mec.printout(self.log)
-        return self.mec
-
-class RateTable(QTableWidget):
-    """ Creates a custom table widget """
-    def __init__(self, mec=None, *args):
-        QTableWidget.__init__(self, *args)
-        self.setSelectionMode(self.ContiguousSelection)
-        self.setGeometry(0,0,700,400)
-        self.setShowGrid(False)
-        self.mec = mec
-
-    def display_data(self):
-        """ Reads in data as a 2D list and formats and displays it in
-            the table """
-
-        header = ['From State', 'To State', 'Rate name', 'Rate value',
-            'Conc depend', 'Fixed', 'MR', 'Constr.', 'Factor', 'To rate',
-            'Lower limit', 'Higher limit']
-
-        nrows = len(self.mec.Rates)
-        ncols = len(header)
-        self.setRowCount(nrows)
-        self.setColumnCount(ncols)
-        self.setHorizontalHeaderLabels(header)
-
-        for i in xrange(nrows):
-            cell = QTableWidgetItem(self.mec.Rates[i].State1.name)
-            self.setItem(i, 0, cell)
-            cell = QTableWidgetItem(self.mec.Rates[i].State2.name)
-            self.setItem(i, 1, cell)
-            cell = QTableWidgetItem(self.mec.Rates[i].name)
-            self.setItem(i, 2, cell)
-            cell = QTableWidgetItem(str(self.mec.Rates[i].unit_rate()))
-            self.setItem(i, 3, cell)
-
-            if self.mec.Rates[i].effectors[0] is None:
-                eff = ''
-            else:
-                eff = self.mec.Rates[i].effectors[0]
-            cell = QTableWidgetItem(eff)
-            self.setItem(i, 4, cell)
-
-            check = QTableWidgetItem()
-            value = Qt.Unchecked
-            if self.mec.Rates[i].fixed > 0:
-                value = Qt.Checked
-            check.setCheckState(value)
-            self.setItem(i, 5, check)
-
-            check = QTableWidgetItem()
-            value = Qt.Unchecked
-            if self.mec.Rates[i].mr:
-                value = Qt.Checked
-            check.setCheckState(value)
-            self.setItem(i, 6, check)
-
-            check = QTableWidgetItem()
-            value = Qt.Unchecked
-            if self.mec.Rates[i].is_constrained:
-                value = Qt.Checked
-            check.setCheckState(value)
-            self.setItem(i, 7, check)
-            factor = ''
-            torate = ''
-            if self.mec.Rates[i].constrain_args:
-                factor = self.mec.Rates[i].constrain_args[1]
-                torate = self.mec.Rates[i].constrain_args[0] + 1
-            cell = QTableWidgetItem(str(factor))
-            self.setItem(i, 8, cell)
-            cell = QTableWidgetItem(str(torate))
-            self.setItem(i, 9, cell)
-
-            if len(self.mec.Rates[i].limits) == 0:
-                if eff == '':
-                    limits = [[1e-3,1e+7]]
-                else:
-                    limits = [[1e-3,1e+10]]
-            else:
-                limits = self.mec.Rates[i].limits
-            cell = QTableWidgetItem(str(limits[0][0]))
-            self.setItem(i, 10, cell)
-            cell = QTableWidgetItem(str(limits[0][1]))
-            self.setItem(i, 11, cell)
-
-
-        self.resizeColumnsToContents()
-        self.resizeRowsToContents()
-
-class StateTableDlg(QDialog):
-    """
-    """
-    def __init__(self, parent=None, mec=None, log=None):
-        super(StateTableDlg, self).__init__(parent)
-        self.mec = mec
-        self.changed = False
-        self.log = log
-
-        layoutMain = QVBoxLayout()
-        self.table = StateTable(self.mec)
-        self.table.display_data()
-        self.connect(self.table,
-                SIGNAL("cellChanged(int, int)"),
-                self.tableItemChanged)
-        layoutMain.addWidget(self.table)
-
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
-            QDialogButtonBox.Cancel)
-        self.connect(buttonBox, SIGNAL("accepted()"),
-            self, SLOT("accept()"))
-        self.connect(buttonBox, SIGNAL("rejected()"),
-            self, SLOT("reject()"))
-        layoutMain.addWidget(buttonBox)
-
-        self.setLayout(layoutMain)
-        self.setGeometry(100,100,450,350)
-        self.setWindowTitle("View and modify states...")
-
-    def tableItemChanged(self, row, column):
-        # TODO: update mechanism if anything changed in table
-
-#        if column == 0:
-#            newname = self.table.item(row, column).text()
-#            self.mec.States[row].name = newname
-
-        if column == 1:
-            newtype = self.table.item(row, column).text().upper()
-            self.mec.States[row].statetype = newtype
-
-        if column == 2:
-            newgamma = float(self.table.item(row, column).text())
-            self.mec.Rates[row].conductance = newgamma
-
-        self.changed = True
-
-    def return_mec(self):
-        if self.changed:
-            self.mec.update_states()
-            self.log.write("\n\nMechanism states modified:\n")
-            self.mec.printout(self.log)
-        return self.mec
-
-class StateTable(QTableWidget):
-    """ Creates a custom table widget """
-    def __init__(self, mec=None, *args):
-        QTableWidget.__init__(self, *args)
-        self.setSelectionMode(self.ContiguousSelection)
-        self.setGeometry(0,0,700,400)
-        self.setShowGrid(False)
-        self.mec = mec
-
-    def display_data(self):
-        """ Reads in data as a 2D list and formats and displays it in
-            the table """
-
-        header = ['State name', 'State Class', 'Conductance',
-            'Number of connections']
-
-        nrows = len(self.mec.States)
-        ncols = len(header)
-        self.setRowCount(nrows)
-        self.setColumnCount(ncols)
-        self.setHorizontalHeaderLabels(header)
-
-        for i in xrange(nrows):
-            cell = QTableWidgetItem(self.mec.States[i].name)
-            self.setItem(i, 0, cell)
-            cell = QTableWidgetItem(self.mec.States[i].statetype)
-            self.setItem(i, 1, cell)
-            cell = QTableWidgetItem(str(self.mec.States[i].conductance))
-            self.setItem(i, 2, cell)
-
-        self.resizeColumnsToContents()
-        self.resizeRowsToContents()
-
 
 class CJumpParDlg(QDialog):
     """
