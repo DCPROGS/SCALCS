@@ -1,0 +1,140 @@
+import time
+import sys
+import os
+import socket
+import math
+
+try:
+#    from PyQt4.QtCore import *
+#    from PyQt4.QtGui import *
+    from PySide.QtGui import *
+    from PySide.QtCore import *
+except:
+    raise ImportError("pyqt module is missing")
+
+try:
+    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+    from matplotlib.figure import Figure
+    from matplotlib import scale as mscale
+    from mpl_toolkits.mplot3d import Axes3D
+    from matplotlib import cm
+    from matplotlib.ticker import LinearLocator, FormatStrFormatter, FuncFormatter
+    import matplotlib.pyplot as plt
+#    from matplotlib import transforms as mtransforms
+#    from matplotlib import ticker
+except:
+    raise ImportError("matplotlib module is missing")
+
+import numpy as np
+
+from scipy.optimize import curve_fit
+from scipy.optimize import leastsq
+
+from dcpyps import scalcslib as scl
+from dcpyps import cjumps
+from dcpyps import scburst
+from dcpyps import popen
+from dcpyps import dcio
+from dcpyps import samples
+from dcpyps import scplotlib as scpl
+from dcpyps import mechanism
+
+from dcpyps import optimize
+from dcpyps import dataset
+
+
+def startInfo():
+    """
+    Get date, time, machine info, etc.
+    """
+    str1 = "DC_PyPs: HJCFIT, Q matrix calculations, etc."
+    str2 = ("Date and time of analysis: %4d/%02d/%02d %02d:%02d:%02d"
+        %time.localtime()[0:6])
+    machine = socket.gethostname()
+    system = sys.platform
+    str3 = "Machine: %s; System: %s" %(machine, system)
+    return str1, str2, str3
+
+
+def createAction(self, text, slot=None, shortcut=None, icon=None,
+        tip=None, checkable=False, signal="triggered()"):
+    """
+    Create menu actions.
+    """
+    action = QAction(text, self)
+    if icon is not None:
+        action.setIcon(QIcon(":/%s.png" % icon))
+    if shortcut is not None:
+        action.setShortcut(shortcut)
+    if tip is not None:
+        action.setToolTip(tip)
+        action.setStatusTip(tip)
+    if slot is not None:
+        self.connect(action, SIGNAL(signal), slot)
+    if checkable:
+        action.setCheckable(True)
+    return action
+
+def addActions(target, actions):
+    """
+    Add actions to menu.
+    """
+    for action in actions:
+        if action is None:
+            target.addSeparator()
+        else:
+            target.addAction(action)
+
+
+class PrintLog:
+    """
+    Write stdout to a QTextEdit.
+    out1 = QTextEdit, QTextBrowser, etc.
+    out2 = sys.stdout, file, etc.
+    """
+    def __init__(self, out1, out2=None):
+        self.out1 = out1
+        self.out2 = out2
+    def write(self, text):
+        self.out1.append(text.rstrip('\n'))
+        if self.out2:
+            self.out2.write(text)
+            
+
+class AboutDlg(QDialog):
+    def __init__(self, parent=None):
+        QDialog.__init__(self)
+
+        okButton = QPushButton("&OK")
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        button_layout.addWidget(okButton)
+        button_layout.addStretch()
+
+        movie_screen = self.movie_screen()
+        layout = QVBoxLayout(self)
+        layout.addWidget(QLabel("<p align=center><b>Welcome to DC_PyPs: "
+        "Q matrix calculations!</b></p>"))
+        layout.addWidget(movie_screen)
+        layout.addLayout(button_layout)
+
+        self.connect(okButton, SIGNAL("clicked()"),
+        self, SLOT("accept()"))
+        self.setStyleSheet("QWidget { background-color: %s }"% "white")
+        self.setWindowTitle("About DC_PyPs: Q matrix calculations")
+
+    def movie_screen(self):
+        """
+        Set up the gif movie screen.
+        """
+        movie_screen = QLabel()
+        # Expand and center the label
+        movie_screen.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        movie_screen.setAlignment(Qt.AlignCenter)
+        movie = QMovie("dca2.gif", QByteArray(), self)
+        movie.setCacheMode(QMovie.CacheAll)
+        movie.setSpeed(100)
+        movie_screen.setMovie(movie)
+        movie.start()
+        return movie_screen

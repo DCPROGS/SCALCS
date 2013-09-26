@@ -45,7 +45,9 @@ import samples
 import scplotlib as scpl
 import mechanism
 
-import qtcommonlib as qtcl
+import myqtlibs.mechmenu as mechmenu
+import myqtlibs.datamenu as datamenu
+import myqtlibs.myqtcommon as myqtcommon
 
 import optimize
 import dataset
@@ -74,47 +76,50 @@ class QMatGUI(QMainWindow):
         self.cjfunc = None
         self.cjargs = None
 
-        loadMechMenu = qtcl.addMechMenuElements(self)
+        loadMechMenu = mechmenu.addMechMenuElements(self)
+        quitAction = myqtcommon.createAction(self, "&Quit", self.close,
+            "Ctrl+Q", "appquit", "Close the application")
+        loadMechMenu.addAction(quitAction)
 
         plotMenu = self.menuBar().addMenu('&Plot')
-        plotPopenAction = qtcl.createAction(self, "&Popen curve", self.onPlotPopen)
-        plotOpenTimePDFAction = qtcl.createAction(self, 
+        plotPopenAction = myqtcommon.createAction(self, "&Popen curve", self.onPlotPopen)
+        plotOpenTimePDFAction = myqtcommon.createAction(self, 
             "&Open time pdf", self.onPlotOpenTimePDF)
-        plotShutTimePDFAction = qtcl.createAction(self, 
+        plotShutTimePDFAction = myqtcommon.createAction(self, 
             "&Shut time pdf", self.onPlotShutTimePDF)
-        plotSubsetTimePDFAction = qtcl.createAction(self, 
+        plotSubsetTimePDFAction = myqtcommon.createAction(self, 
             "&Subset time pdf", self.onPlotSubsetTimePDF)
-        plotBurstLenPDFAction = qtcl.createAction(self, 
+        plotBurstLenPDFAction = myqtcommon.createAction(self, 
             "&Burst length pdf", self.onPlotBrstLenPDF)
-        plotBurstLenPDFActionCond = qtcl.createAction(self, 
+        plotBurstLenPDFActionCond = myqtcommon.createAction(self, 
             "&Conditional burst length pdf", self.onPlotBrstLenPDFCond)
-        plotBurstOpeningDistrAction = qtcl.createAction(self, 
+        plotBurstOpeningDistrAction = myqtcommon.createAction(self, 
             "&Burst openings distribution", self.onPlotBrstOpDistr)
-        plotBurstOpeningDistrActionCond = qtcl.createAction(self, 
+        plotBurstOpeningDistrActionCond = myqtcommon.createAction(self, 
             "&Conditional burst openings distribution", self.onPlotBrstOpDistrCond)
-        plotBurstLenVConcAction = qtcl.createAction(self, 
+        plotBurstLenVConcAction = myqtcommon.createAction(self, 
             "&Burst length vs concentration", self.onPlotBrstLenConc)
-        plotJumpPopenAction = qtcl.createAction(self, 
+        plotJumpPopenAction = myqtcommon.createAction(self, 
             "&Concentration jump: Popen", self.onPlotCJumpPopen)
-        plotJumpOccupanciesAction = qtcl.createAction(self, 
+        plotJumpOccupanciesAction = myqtcommon.createAction(self, 
             "&Concentration jump: occupancies",
             self.onPlotCJumpOccupancies)
-        plotJumpOnOffTauConc = qtcl.createAction(self, 
+        plotJumpOnOffTauConc = myqtcommon.createAction(self, 
             "&Concentration jump: weighted on/off tau versus concentration",
             self.onPlotCJumpRiseVConc)
-        plotCorrOpenShutAction = qtcl.createAction(self, 
+        plotCorrOpenShutAction = myqtcommon.createAction(self, 
             "&Correlations", self.onPlotOpShCorr)
-        plotAdjacentOpenShutAction = qtcl.createAction(self, 
+        plotAdjacentOpenShutAction = myqtcommon.createAction(self, 
             "&Open time adjacent to shut time range pdf", self.onPlotOpAdjShacent)
-        plotMeanOpenNextShutAction = qtcl.createAction(self, 
+        plotMeanOpenNextShutAction = myqtcommon.createAction(self, 
             "&Mean open time preceding/next to shut time", self.onPlotMeanOpNextShut)
-        plotDependencyAction = qtcl.createAction(self, 
+        plotDependencyAction = myqtcommon.createAction(self, 
             "&Dependency plot", self.onPlotDependency)
 #        plotJump2PopenAction = self.createAction(self, 
 #            "&Instant rise and exponential decay concentration jump: Popen", self.onPlotCJump2Popen)
-        plotSaveASCII = qtcl.createAction(self, 
+        plotSaveASCII = myqtcommon.createAction(self, 
             "&Save current plot as ASCII file", self.onPlotSaveASCII)
-        qtcl.addActions(plotMenu, (plotOpenTimePDFAction, plotShutTimePDFAction,
+        myqtcommon.addActions(plotMenu, (plotOpenTimePDFAction, plotShutTimePDFAction,
             plotAdjacentOpenShutAction, plotMeanOpenNextShutAction, 
             plotCorrOpenShutAction, plotDependencyAction,
             # setDisabled(False) to activate plotting the subset time distributions
@@ -132,35 +137,35 @@ class QMatGUI(QMainWindow):
 
 # UNCOMMENT NEXT LINES TO ENABLE DATA DISTRIBUTION PLOTTING
         dataMenu = self.menuBar().addMenu('&Data')
-        openScanAction = qtcl.createAction(self, "&Load single channel record from SCN file", self.onLoadData)
-        simulateScanAction = qtcl.createAction(self, "&Simulate single channel record",
+        openScanAction = myqtcommon.createAction(self, "&Load single channel record from SCN file", self.onLoadData)
+        simulateScanAction = myqtcommon.createAction(self, "&Simulate single channel record",
             self.onSimulateData)
-        saveScanAction = qtcl.createAction(self, "Save single channel record (SCN file)",
+        saveScanAction = myqtcommon.createAction(self, "Save single channel record (SCN file)",
             self.onSaveDataSCN)
-        imposeResolutionAction = qtcl.createAction(self, "&Impose resolution",
+        imposeResolutionAction = myqtcommon.createAction(self, "&Impose resolution",
             self.onImposeResolution)
-        plotDataOpenAction = qtcl.createAction(self, "&Plot open period distribution",
+        plotDataOpenAction = myqtcommon.createAction(self, "&Plot open period distribution",
             self.onPlotDataOpen)
-        plotDataShutAction = qtcl.createAction(self, "&Plot shut period distribution",
+        plotDataShutAction = myqtcommon.createAction(self, "&Plot shut period distribution",
             self.onPlotDataShut)
-        plotDataBurstAction = qtcl.createAction(self, "&Plot burst length distribution",
+        plotDataBurstAction = myqtcommon.createAction(self, "&Plot burst length distribution",
             self.onPlotDataBurst)
-        likelihoodAction = qtcl.createAction(self, "&HJCfit",
+        likelihoodAction = myqtcommon.createAction(self, "&HJCfit",
             self.onCalculateLikelihood)
-        qtcl.addActions(dataMenu, (openScanAction, simulateScanAction,
+        myqtcommon.addActions(dataMenu, (openScanAction, simulateScanAction,
             saveScanAction,
             imposeResolutionAction, plotDataOpenAction, plotDataShutAction,
             plotDataBurstAction, likelihoodAction))
 # LINES RELATED TO DATA HISTOGRAMMS PLOTTING
 
         printOutMenu = self.menuBar().addMenu('&Printout')
-        printOutSaveAction = qtcl.createAction(self, "&Save", self.onPrintOutSave)
-        qtcl.addActions(printOutMenu, (printOutSaveAction,
+        printOutSaveAction = myqtcommon.createAction(self, "&Save", self.onPrintOutSave)
+        myqtcommon.addActions(printOutMenu, (printOutSaveAction,
             None))
 
         helpMenu = self.menuBar().addMenu('&Help')
-        helpAboutAction = qtcl.createAction(self, "&About", self.onHelpAbout)
-        qtcl.addActions(helpMenu, (helpAboutAction, None))
+        helpAboutAction = myqtcommon.createAction(self, "&About", self.onHelpAbout)
+        myqtcommon.addActions(helpMenu, (helpAboutAction, None))
 
         self.dpi = 85
         self.fig = Figure((6.0, 4.0), dpi=self.dpi)
@@ -177,8 +182,8 @@ class QMatGUI(QMainWindow):
 
         self.textBox = QTextBrowser()
         # Set here if printout to TextBox only or also to file or console.
-        self.log = PrintLog(self.textBox) #, sys.stdout)
-        str1, str2, str3 = qtcl.startInfo()
+        self.log = myqtcommon.PrintLog(self.textBox) #, sys.stdout)
+        str1, str2, str3 = myqtcommon.startInfo()
         self.textBox.append(str1)
         self.textBox.append(str2)
         self.textBox.append(str3)
@@ -1004,7 +1009,7 @@ class QMatGUI(QMainWindow):
         Display About dialog.
         Called from menu Help|About.
         """
-        dialog = AboutDlg(self)
+        dialog = myqtcommon.AboutDlg(self)
         if dialog.exec_():
             pass
 
@@ -1094,19 +1099,6 @@ class QMatGUI(QMainWindow):
         if table.exec_():
             self.mec = table.return_mec()
 
-class PrintLog:
-    """
-    Write stdout to a QTextEdit.
-    out1 = QTextEdit, QTextBrowser, etc.
-    out2 = sys.stdout, file, etc.
-    """
-    def __init__(self, out1, out2=None):
-        self.out1 = out1
-        self.out2 = out2
-    def write(self, text):
-        self.out1.append(text.rstrip('\n'))
-        if self.out2:
-            self.out2.write(text)
 
 class CJumpParDlg(QDialog):
     """
@@ -1804,111 +1796,4 @@ class ResDlg(QDialog):
     def return_par(self):
         return self.tres * 1e-6 # Return tcrit in sec
 
-class MecListDlg(QDialog):
-    """
-    Dialog to choose mechansim and rates saved in a DC's mec file.
-    """
-    def __init__(self, meclist, max_mecnum, parent=None):
-        super(MecListDlg, self).__init__(parent)
 
-        self.nmec = 1
-        self.nrate = 0
-        self.meclist = meclist
-
-        self.mList = QListWidget()
-        for i in range(1, (max_mecnum + 1)):
-                present = False
-                id = 0
-                for j in range(len(self.meclist)):
-                    if i == self.meclist[j][1]:
-                        present = True
-                        id = j
-                if present:
-                    self.mList.addItem(str(i) + " "+ self.meclist[id][2])
-        self.connect(self.mList,
-            SIGNAL("itemSelectionChanged()"),
-            self.mecSelected)
-
-        self.rList = QListWidget()
-        self.connect(self.rList,
-            SIGNAL("itemSelectionChanged()"),
-            self.rateSelected)
-
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
-            QDialogButtonBox.Cancel)
-        self.connect(buttonBox, SIGNAL("accepted()"),
-            self, SLOT("accept()"))
-        self.connect(buttonBox, SIGNAL("rejected()"),
-            self, SLOT("reject()"))
-
-        layout1 = QHBoxLayout()
-        layout1.addWidget(self.mList)
-        layout1.addWidget(self.rList)
-        layout2 = QVBoxLayout()
-        layout2.addLayout(layout1)
-        layout2.addWidget(buttonBox)
-
-        self.setLayout(layout2)
-        self.resize(1000, 500)
-        self.setWindowTitle("Choose mechanisms and rates...")
-
-    def mecSelected(self):
-        """
-        Populate rate list when a mechanism selected.
-        """
-        self.nmec = self.mList.currentRow() + 1
-        self.rList.clear()
-        for i in range(len(self.meclist)):
-           if self.meclist[i][1] == self.nmec:
-               self.rList.addItem(str(i+1) + " "+ self.meclist[i][3])
-               self.nrate = i + 1
-
-    def rateSelected(self):
-        """
-        Get selected rates.
-        """
-        str1 = self.rList.currentItem().text()
-        self.nrate = int(str1.split(" ")[0]) - 1
-
-    def returnRates(self):
-        """
-        Return rates on exit.
-        """
-        return self.nrate
-
-class AboutDlg(QDialog):
-    def __init__(self, parent=None):
-        QDialog.__init__(self)
-
-        okButton = QPushButton("&OK")
-        button_layout = QHBoxLayout()
-        button_layout.addStretch()
-        button_layout.addWidget(okButton)
-        button_layout.addStretch()
-
-        movie_screen = self.movie_screen()
-        layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("<p align=center><b>Welcome to DC_PyPs: "
-        "Q matrix calculations!</b></p>"))
-        layout.addWidget(movie_screen)
-        layout.addLayout(button_layout)
-
-        self.connect(okButton, SIGNAL("clicked()"),
-        self, SLOT("accept()"))
-        self.setStyleSheet("QWidget { background-color: %s }"% "white")
-        self.setWindowTitle("About DC_PyPs: Q matrix calculations")
-
-    def movie_screen(self):
-        """
-        Set up the gif movie screen.
-        """
-        movie_screen = QLabel()
-        # Expand and center the label
-        movie_screen.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        movie_screen.setAlignment(Qt.AlignCenter)
-        movie = QMovie("dca2.gif", QByteArray(), self)
-        movie.setCacheMode(QMovie.CacheAll)
-        movie.setSpeed(100)
-        movie_screen.setMovie(movie)
-        movie.start()
-        return movie_screen

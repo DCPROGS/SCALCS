@@ -6,7 +6,6 @@ Depends on pyqt and matplotlib modules.
 import time
 import sys
 import os
-import socket
 import math
 
 try:
@@ -32,24 +31,16 @@ except:
     raise ImportError("matplotlib module is missing")
 
 import numpy as np
-
-from scipy.optimize import curve_fit
-from scipy.optimize import leastsq
 from scipy.optimize import minimize
 
-import scalcslib as scl
-import cjumps
-import scburst
-import popen
 import dcio
 import samples
 import scplotlib as scpl
 import mechanism
-
-import optimize
+import myqtlibs.mechmenu as mechmenu
+import myqtlibs.datamenu as datamenu
+import myqtlibs.myqtcommon as myqtcommon
 import dataset
-import qtcommonlib as qtcl
-
 from dcprogs.likelihood import Log10Likelihood
 
 class QhjcGUI(QMainWindow):
@@ -61,11 +52,13 @@ class QhjcGUI(QMainWindow):
         #self.setWindowIcon(QIcon("./dcpyps/samples/HJCFIT.ICO"))
         
         self.mec = None
+        self.path = None
         self.scnfiles = []
         self.tres = []
         self.tcrit = []
         self.conc = []
         self.recs = []
+        self.recs_old = []
         self.bursts = []
         self.iternum = 0
         self.likelihood = []
@@ -73,28 +66,40 @@ class QhjcGUI(QMainWindow):
 
 
         loadMenu = self.menuBar().addMenu('&Load Fit')
-        loadDemo1Action = qtcl.createAction(self,
+        loadDemo1Action = myqtcommon.createAction(self,
             "&Load demo fit: Burzomato 2004", self.onLoadDemo_Burzomato,
             None, "loaddemoburz", "Load Demo Burzomato")
-        quitAction = qtcl.createAction(self, "&Quit", self.close,
+        quitAction = myqtcommon.createAction(self, "&Quit", self.close,
             "Ctrl+Q", "appquit", "Close the application")
-        qtcl.addActions(loadMenu, (loadDemo1Action, quitAction))
+        myqtcommon.addActions(loadMenu, (loadDemo1Action, quitAction))
         
-        loadMechMenu = qtcl.addMechMenuElements(self)
+        loadMechMenu = mechmenu.addMechMenuElements(self)
+        
+        loadMenu = self.menuBar().addMenu('&Load Data')
+        loadDataAction = myqtcommon.createAction(self,
+            "&New Set", self.onLoadNewSet,
+            None, "newset", "New Set")
+        loadSavedAction = myqtcommon.createAction(self,
+            "Load Saved Set", self.onLoadSavedSet,
+            None, "loadsavedset", "Load Saved Set")
+        saveSetAction = myqtcommon.createAction(self,
+            "Save Set", self.onSaveSet,
+            None, "saveset", "Save Set")
+        myqtcommon.addActions(loadMenu, (loadDataAction, loadSavedAction, saveSetAction))
         
         loadMenu = self.menuBar().addMenu('&Run Fit')
-        loadDemo2Action = qtcl.createAction(self,
+        loadDemo2Action = myqtcommon.createAction(self,
             "&Run Fit", self.onStartFitting,
             None, "startfit", "Start Fitting")
-        quitAction = qtcl.createAction(self, "&Fit Settings", self.onFittingSettings,
+        quitAction = myqtcommon.createAction(self, "&Fit Settings", self.onFittingSettings,
             None, "setfit", "Fitting settings")
-        qtcl.addActions(loadMenu, (loadDemo2Action, quitAction))
+        myqtcommon.addActions(loadMenu, (loadDemo2Action, quitAction))
         
         
         self.textBox = QTextBrowser()
         # Set here if printout to TextBox only or also to file or console.
-        self.log = qtcl.PrintLog(self.textBox) #, sys.stdout)
-        str1, str2, str3 = qtcl.startInfo()
+        self.log = myqtcommon.PrintLog(self.textBox) #, sys.stdout)
+        str1, str2, str3 = myqtcommon.startInfo()
         self.textBox.append(str1)
         self.textBox.append(str2)
         self.textBox.append(str3)
@@ -104,6 +109,7 @@ class QhjcGUI(QMainWindow):
         self.mainFrame.setLayout(rightVBox)
         self.setCentralWidget(self.mainFrame)
 
+###########  Called by menu 'LoadFit'
     def onLoadDemo_Burzomato(self):
         """
         Load demo fit - GlyR set BGVH from Burzomato 2004.
@@ -160,23 +166,9 @@ class QhjcGUI(QMainWindow):
         self.tcrit = [0.004, -1, -0.06, -0.02]
         self.conc = [10e-6, 30e-6, 100e-6, 1000e-6]
         
-        for i in range(len(self.scnfiles)):
-            rec = load_data(self.scnfiles[i], self.tres[i], math.fabs(self.tcrit[i]), output=self.log)
-            self.recs.append(rec)
-            self.bursts.append(rec.bursts)
-
-        self.theta = np.log(self.mec.theta())
-
-        kwargs = {'nmax': 2, 'xtol': 1e-12, 'rtol': 1e-12, 'itermax': 100,
-            'lower_bound': -1e6, 'upper_bound': 0}
         
-        for i in range(len(self.conc)):
-            self.likelihood.append(Log10Likelihood(self.bursts[i], self.mec.kA,
-                self.tres[i], self.tcrit[i], **kwargs))
-                
-        lik = self.dcprogslik(self.theta)
-        self.textBox.append("\nStarting likelihood (DCprogs)= {0:.6f}".format(-lik))
-        
+
+#################### Called by menu 'Load Mech'
     def onLoadDemo_CH82(self):
         """
         Load demo mechanism (C&H82 numerical example).
@@ -211,7 +203,7 @@ class QhjcGUI(QMainWindow):
         self.textBox.append("Mec file version: %d; contains %d mechanisms."
             %(version, max_mecnum))
 
-        dialog = MecListDlg(meclist, max_mecnum, self)
+        dialog = mechmenu.MecListDlg(meclist, max_mecnum, self)
         if dialog.exec_():
             nrate = dialog.returnRates()
 
@@ -262,8 +254,41 @@ class QhjcGUI(QMainWindow):
         table = qtcl.StateTableDlg(self, self.mec, self.log)
         if table.exec_():
             self.mec = table.return_mec()
+            
+#################### Called by menu 'Load Data'
+    def onLoadNewSet(self):
+        self.recs_old = self.recs
+        self.recs = []
+        dialog = datamenu.NewSetDlg(self, self.recs, self.log)
+        if dialog.exec_():
+            self.scnfiles, self.conc, self.tres, self.tcrit = dialog.return_set()
+    
+    def onLoadSavedSet(self):
+        pass
+    
+    def onSaveSet(self):
+        pass
         
+#################### Called by menu 'Run Fit'
     def onStartFitting(self):
+        
+        for i in range(len(self.scnfiles)):
+            #TODO: load more than one scan file per concentration
+            rec = load_data(self.scnfiles[i][0], self.tres[i], math.fabs(self.tcrit[i]), output=self.log)
+            self.recs.append(rec)
+            self.bursts.append(rec.bursts)
+
+        self.theta = np.log(self.mec.theta())
+
+        kwargs = {'nmax': 2, 'xtol': 1e-12, 'rtol': 1e-12, 'itermax': 100,
+            'lower_bound': -1e6, 'upper_bound': 0}
+        
+        for i in range(len(self.conc)):
+            self.likelihood.append(Log10Likelihood(self.bursts[i], self.mec.kA,
+                self.tres[i], self.tcrit[i], **kwargs))
+                
+        lik = self.dcprogslik(self.theta)
+        self.textBox.append("\nStarting likelihood (DCprogs)= {0:.6f}".format(-lik))
 
         start = time.clock()
         success = False

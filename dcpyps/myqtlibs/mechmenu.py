@@ -31,101 +31,116 @@ import numpy as np
 from scipy.optimize import curve_fit
 from scipy.optimize import leastsq
 
-import scalcslib as scl
-import cjumps
-import scburst
-import popen
-import dcio
-import samples
-import scplotlib as scpl
-import mechanism
+from dcpyps import scalcslib as scl
+from dcpyps import cjumps
+from dcpyps import scburst
+from dcpyps import popen
+from dcpyps import dcio
+from dcpyps import samples
+from dcpyps import scplotlib as scpl
+from dcpyps import mechanism
 
-import optimize
-import dataset
+from dcpyps import optimize
+from dcpyps import dataset
 
-
-def startInfo():
-    """
-    Get date, time, machine info, etc.
-    """
-    str1 = "DC_PyPs: HJCFIT, Q matrix calculations, etc."
-    str2 = ("Date and time of analysis: %4d/%02d/%02d %02d:%02d:%02d"
-        %time.localtime()[0:6])
-    machine = socket.gethostname()
-    system = sys.platform
-    str3 = "Machine: %s; System: %s" %(machine, system)
-    return str1, str2, str3
+import myqtcommon
 
 
-def createAction(self, text, slot=None, shortcut=None, icon=None,
-        tip=None, checkable=False, signal="triggered()"):
-    """
-    Create menu actions.
-    """
-    action = QAction(text, self)
-    if icon is not None:
-        action.setIcon(QIcon(":/%s.png" % icon))
-    if shortcut is not None:
-        action.setShortcut(shortcut)
-    if tip is not None:
-        action.setToolTip(tip)
-        action.setStatusTip(tip)
-    if slot is not None:
-        self.connect(action, SIGNAL(signal), slot)
-    if checkable:
-        action.setCheckable(True)
-    return action
-
-def addActions(target, actions):
-    """
-    Add actions to menu.
-    """
-    for action in actions:
-        if action is None:
-            target.addSeparator()
-        else:
-            target.addAction(action)
-
-
-class PrintLog:
-    """
-    Write stdout to a QTextEdit.
-    out1 = QTextEdit, QTextBrowser, etc.
-    out2 = sys.stdout, file, etc.
-    """
-    def __init__(self, out1, out2=None):
-        self.out1 = out1
-        self.out2 = out2
-    def write(self, text):
-        self.out1.append(text.rstrip('\n'))
-        if self.out2:
-            self.out2.write(text)
-            
 def addMechMenuElements(self):
     loadMechMenu = self.menuBar().addMenu('&Load Mec')
-    loadDemo1Action = createAction(self, "&Load demo: CH82", self.onLoadDemo_CH82,
+    loadDemo1Action = myqtcommon.createAction(self, "&Load demo: CH82", self.onLoadDemo_CH82,
         None, "loaddemo", "Load Demo mec")
-    loadDemo2Action = createAction(self, "&Load demo: dC-K", self.onLoadDemo_dCK,
+    loadDemo2Action = myqtcommon.createAction(self, "&Load demo: dC-K", self.onLoadDemo_dCK,
         None, "loaddemo", "Load Demo mec")
-    loadFromMecFileAction = createAction(self, "&Load from DCprogs MEC File...",
+    loadFromMecFileAction = myqtcommon.createAction(self, "&Load from DCprogs MEC File...",
         self.onLoadMecFile,
         None, "loadfrommecfile", "Load from Mec file")
-    loadFromPrtFileAction = createAction(self, "&Load from DCprogs PRT File...",
+    loadFromPrtFileAction = myqtcommon.createAction(self, "&Load from DCprogs PRT File...",
         self.onLoadPrtFile,
         None, "loadfromprtfile", "Load from Prt file")
-    loadFromModFileAction = createAction(self, "&Load from ChannelLab MOD File...",
+    loadFromModFileAction = myqtcommon.createAction(self, "&Load from ChannelLab MOD File...",
         self.onLoadModFile,
         None, "loadfrommodfile", "Load from ChannelLab Mod file")
-    modifyMecAction = createAction(self, "&Modify loaded mec rates", self.onModifyMec,
+    modifyMecAction = myqtcommon.createAction(self, "&Modify loaded mec rates", self.onModifyMec,
         None, "modifymec", "Modify mec rates")
-    modifyStatesAction = createAction(self, "&Modify loaded mec states", self.onModifyStates,
+    modifyStatesAction = myqtcommon.createAction(self, "&Modify loaded mec states", self.onModifyStates,
         None, "modifystates", "Modify mec states")
-    quitAction = createAction(self, "&Quit", self.close,
-        "Ctrl+Q", "appquit", "Close the application")
-    addActions(loadMechMenu, (loadDemo1Action, loadDemo2Action,
+    myqtcommon.addActions(loadMechMenu, (loadDemo1Action, loadDemo2Action,
         loadFromMecFileAction, loadFromPrtFileAction, loadFromModFileAction,
-        modifyMecAction, modifyStatesAction, quitAction))
+        modifyMecAction, modifyStatesAction))
     return loadMechMenu
+
+class MecListDlg(QDialog):
+    """
+    Dialog to choose mechansim and rates saved in a DC's mec file.
+    """
+    def __init__(self, meclist, max_mecnum, parent=None):
+        super(MecListDlg, self).__init__(parent)
+
+        self.nmec = 1
+        self.nrate = 0
+        self.meclist = meclist
+
+        self.mList = QListWidget()
+        for i in range(1, (max_mecnum + 1)):
+                present = False
+                id = 0
+                for j in range(len(self.meclist)):
+                    if i == self.meclist[j][1]:
+                        present = True
+                        id = j
+                if present:
+                    self.mList.addItem(str(i) + " "+ self.meclist[id][2])
+        self.connect(self.mList,
+            SIGNAL("itemSelectionChanged()"),
+            self.mecSelected)
+
+        self.rList = QListWidget()
+        self.connect(self.rList,
+            SIGNAL("itemSelectionChanged()"),
+            self.rateSelected)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+
+        layout1 = QHBoxLayout()
+        layout1.addWidget(self.mList)
+        layout1.addWidget(self.rList)
+        layout2 = QVBoxLayout()
+        layout2.addLayout(layout1)
+        layout2.addWidget(buttonBox)
+
+        self.setLayout(layout2)
+        self.resize(1000, 500)
+        self.setWindowTitle("Choose mechanisms and rates...")
+
+    def mecSelected(self):
+        """
+        Populate rate list when a mechanism selected.
+        """
+        self.nmec = self.mList.currentRow() + 1
+        self.rList.clear()
+        for i in range(len(self.meclist)):
+           if self.meclist[i][1] == self.nmec:
+               self.rList.addItem(str(i+1) + " "+ self.meclist[i][3])
+               self.nrate = i + 1
+
+    def rateSelected(self):
+        """
+        Get selected rates.
+        """
+        str1 = self.rList.currentItem().text()
+        self.nrate = int(str1.split(" ")[0]) - 1
+
+    def returnRates(self):
+        """
+        Return rates on exit.
+        """
+        return self.nrate
 
 
 class RateTableDlg(QDialog):
@@ -378,3 +393,5 @@ class StateTable(QTableWidget):
 
         self.resizeColumnsToContents()
         self.resizeRowsToContents()
+
+
