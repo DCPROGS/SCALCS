@@ -139,13 +139,13 @@ def stats_continuous_printout(X, Y, paired, output=sys.stdout):
     if paired:
         tval, P = ttest_rel(X, Y)
         output.write('\n Paired Student''s t-test:' +
-            '\n t = \t {0:.6f}'.format(tval) +
+            '\n t = \t {0:.6f}'.format(float(tval)) +
             '\n two tail P = \t {0:.6f}'.format(P))
 
     else:
         tval, P = ttest_ind(X, Y)
         output.write('\n Two-sample unpaired Student''s t-test:' +
-            '\n t = \t {0:.6f}'.format(tval) +
+            '\n t = \t {0:.6f}'.format(float(tval)) +
             '\n two tail P = \t {0:.6f}'.format(P))
 
 def rantest_continuous_printout(X, Y, paired, nran, output=sys.stdout):
