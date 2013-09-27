@@ -219,7 +219,7 @@ class RateTableDlg(QDialog):
             self.mec.update_constrains()
             self.mec.update_mr()
             self.log.write("\n\nMechanism modified:\n")
-            self.mec.printout(self.log)
+#            self.mec.printout(self.log)
         return self.mec
 
 class RateTable(QTableWidget):

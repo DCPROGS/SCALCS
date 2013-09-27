@@ -69,7 +69,7 @@ for i in range(len(scnfiles)):
     bursts.append(rec.bursts)
 
 # LOAD FLIP MECHANISM USED Burzomato et al 2004
-mecfn = "Y:/ELIC/AleFit/mec52/ke10.mec"
+mecfn = "./dcpyps/samples/ke10.mec"
 version, meclist, max_mecnum = dcio.mec_get_list(mecfn)
 mec = dcio.mec_load(mecfn, meclist[10][0])
 #mec.printout(sys.stdout)

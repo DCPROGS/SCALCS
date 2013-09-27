@@ -1,25 +1,15 @@
-import time
+
 import sys
 import os
-import socket
-import math
-
 try:
-#    from PyQt4.QtCore import *
-#    from PyQt4.QtGui import *
     from PySide.QtGui import *
     from PySide.QtCore import *
 except:
     raise ImportError("pyqt module is missing")
-
 import numpy as np
 
 from dcpyps import dcio
-from dcpyps import samples
-from dcpyps import mechanism
 from dcpyps import dataset
-import myqtcommon
-
 
 class NewSetDlg(QDialog):
     """
@@ -34,11 +24,20 @@ class NewSetDlg(QDialog):
         self.tres = []
         self.tcrit = []
         self.conc = []
+        self.recordsIn = []
 
-        self.layoutMain = QVBoxLayout()
-        bttnAdd = QPushButton('Add Record', self)
-        bttnAdd.clicked.connect(self.onAddBttn)
-        self.layoutMain.addWidget(bttnAdd)
+        layoutMain = QVBoxLayout()
+        layoutMain.addWidget(QLabel("Specify records: "))
+
+        self.layoutIn1 = QHBoxLayout()
+        self.layoutIn2 = QHBoxLayout()
+        for i in range(10):
+            self.recordsIn.append(AddRecordDlg())
+        for i in range(5):
+            self.layoutIn1.addWidget(self.recordsIn[i])
+            self.layoutIn2.addWidget(self.recordsIn[i+5])
+        layoutMain.addLayout(self.layoutIn1)
+        layoutMain.addLayout(self.layoutIn2)
 
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
             QDialogButtonBox.Cancel)
@@ -46,42 +45,34 @@ class NewSetDlg(QDialog):
             self, SLOT("accept()"))
         self.connect(buttonBox, SIGNAL("rejected()"),
             self, SLOT("reject()"))
-        self.layoutMain.addWidget(buttonBox)
+        layoutMain.addWidget(buttonBox)
 
-        self.setLayout(self.layoutMain)
+        self.setLayout(layoutMain)
         self.setGeometry(100,100,750,550)
         self.setWindowTitle("Choose and add a single channel record...")
         
-    def onAddBttn(self):
-        filenames = None
-        dialog = AddRecordDlg(self)
-        if dialog.exec_():
-            filenames, tres, conc, tcrit, onechan, chs, badend = dialog.return_record()
-        self.scnfiles.append(filenames)
-        self.tres.append(tres)
-        self.conc.append(conc)
-        if not chs: tcrit *= -1
-        self.tcrit.append(tcrit)
-        
-        textBox = QTextBrowser()
-        for name in filenames:
-            textBox.append(name)
-        textBox.append('Concentration: {0:.6f} microM'.format(conc * 1e6))
-        textBox.append('Resolution: {0:.6f} microseconds'.format(tres * 1e6))
-        textBox.append('Critical time: {0:.6f} milliseconds'.format(conc * 1e3))
-        textBox.append('Use CHS vectors: {}'.format(chs))
-        self.layoutMain.addWidget(textBox)
-
     def return_set(self):
+
+        for i in range(len(self.recordsIn)):
+            if self.recordsIn[i].recfile:
+                self.scnfiles.append(self.recordsIn[i].recfile)
+                self.tres.append(self.recordsIn[i].tres)
+                self.tcrit.append(self.recordsIn[i].tcrit)
+                self.conc.append(self.recordsIn[i].conc)
+
+        self.conc, self.scnfiles, self.tres, self.tcrit = (
+            list(t) for t in zip(*sorted(zip(
+            self.conc, self.scnfiles, self.tres, self.tcrit))))
         return self.scnfiles, self.conc, self.tres, self.tcrit
      
-class AddRecordDlg(QDialog):
+class AddRecordDlg(QWidget):
     """
 
     """
-    def __init__(self, parent=None, filename=None):
+    def __init__(self, parent=None, path=None):
         super(AddRecordDlg, self).__init__(parent)
 
+        self.path = path
         self.recfile = []
         self.tres = 20 # resolution in microsec
         self.conc = 1 # concentration in mM.
@@ -91,7 +82,6 @@ class AddRecordDlg(QDialog):
         self.badend = Qt.Checked # bad shutting can terminate burst?
 
         layoutMain = QVBoxLayout()
-        layoutMain.addWidget(QLabel("Specify record: "))
         
         layoutBttnFiles = QHBoxLayout()
         bttnAdd = QPushButton('Add file', self)
@@ -146,22 +136,14 @@ class AddRecordDlg(QDialog):
         self.badendCheck.setCheckState(self.badend)
         layoutMain.addWidget(self.badendCheck)
 
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
-            QDialogButtonBox.Cancel)
-        self.connect(buttonBox, SIGNAL("accepted()"),
-            self, SLOT("accept()"))
-        self.connect(buttonBox, SIGNAL("rejected()"),
-            self, SLOT("reject()"))
-        layoutMain.addWidget(buttonBox)
-
         self.setLayout(layoutMain)
         self.setWindowTitle("Enter record parameters...")
         
     def onAddBttn(self):
         filename, filt = QFileDialog.getOpenFileName(self,
-            "Open SCN File...", "", "DC SCN Files (*.scn)")
+            "Open SCN File...", self.path, "DC SCN Files (*.scn)")
         self.recfile.append(filename)
-        self.textBox.append(filename)
+        self.textBox.append(os.path.split(str(filename))[1])
         
     def onClearBttn(self):
         self.recfile = []
@@ -185,12 +167,37 @@ class AddRecordDlg(QDialog):
             self.badend = True
         else:
             self.badend = False
-            
-    def return_record(self):
-        """
-        Return parameter dictionary on exit.
-        """
-        self.on_par_changed()
-        return self.recfile, self.conc, self.tres, self.tcrit, self.onechan, self.chs, self.badend
 
 
+def load_data(sfile, tres, tcrit, output=sys.stdout):
+    output.write('\n\n Loading '+sfile)
+    ioffset, nint, calfac, header = dcio.scn_read_header(sfile)
+    tint, iampl, iprops = dcio.scn_read_data(sfile, ioffset, nint, calfac)
+    rec = dataset.SCRecord(sfile, header, tint, iampl, iprops)
+    # Impose resolution, get open/shut times and bursts.
+    rec.impose_resolution(tres)
+    output.write('\nNumber of resolved intervals = {0:d}'.format(len(rec.rtint)))
+
+    rec.get_open_shut_periods()
+    output.write('\nNumber of resolved periods = {0:d}'.format(len(rec.opint) + len(rec.shint)))
+    output.write('\nNumber of open periods = {0:d}'.format(len(rec.opint)))
+    output.write('Mean and SD of open periods = {0:.9f} +/- {1:.9f} ms'.
+        format(np.average(rec.opint)*1000, np.std(rec.opint)*1000))
+    output.write('Range of open periods from {0:.9f} ms to {1:.9f} ms'.
+        format(np.min(rec.opint)*1000, np.max(rec.opint)*1000))
+    output.write('\nNumber of shut intervals = {0:d}'.format(len(rec.shint)))
+    output.write('Mean and SD of shut periods = {0:.9f} +/- {1:.9f} ms'.
+        format(np.average(rec.shint)*1000, np.std(rec.shint)*1000))
+    output.write('Range of shut periods from {0:.9f} ms to {1:.9f} ms'.
+        format(np.min(rec.shint)*1000, np.max(rec.shint)*1000))
+    output.write('Last shut period = {0:.9f} ms'.format(rec.shint[-1]*1000))
+
+    rec.get_bursts(tcrit)
+    output.write('\nNumber of bursts = {0:d}'.format(len(rec.bursts)))
+    blength = rec.get_burst_length_list()
+    output.write('Average length = {0:.9f} ms'.format(np.average(blength)*1000))
+    output.write('Range: {0:.3f}'.format(min(blength)*1000) +
+            ' to {0:.3f} millisec'.format(max(blength)*1000))
+    openings = rec.get_openings_burst_list()
+    output.write('Average number of openings= {0:.9f}'.format(np.average(openings)))
+    return rec

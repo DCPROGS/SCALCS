@@ -1088,14 +1088,14 @@ class QMatGUI(QMainWindow):
     def onModifyMec(self):
         """
         """
-        table = qtcl.RateTableDlg(self, self.mec, self.log)
+        table = mechmenu.RateTableDlg(self, self.mec, self.log)
         if table.exec_():
             self.mec = table.return_mec()
 
     def onModifyStates(self):
         """
         """
-        table = qtcl.StateTableDlg(self, self.mec, self.log)
+        table = mechmenu.StateTableDlg(self, self.mec, self.log)
         if table.exec_():
             self.mec = table.return_mec()
 

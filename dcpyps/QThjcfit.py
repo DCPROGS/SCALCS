@@ -16,20 +16,21 @@ try:
 except:
     raise ImportError("pyqt module is missing")
 
-try:
-    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-    from matplotlib.figure import Figure
-    from matplotlib import scale as mscale
-    from mpl_toolkits.mplot3d import Axes3D
-    from matplotlib import cm
-    from matplotlib.ticker import LinearLocator, FormatStrFormatter, FuncFormatter
-    import matplotlib.pyplot as plt
-#    from matplotlib import transforms as mtransforms
-#    from matplotlib import ticker
-except:
-    raise ImportError("matplotlib module is missing")
+#try:
+#    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+#    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+#    from matplotlib.figure import Figure
+#    from matplotlib import scale as mscale
+#    from mpl_toolkits.mplot3d import Axes3D
+#    from matplotlib import cm
+#    from matplotlib.ticker import LinearLocator, FormatStrFormatter, FuncFormatter
+#    import matplotlib.pyplot as plt
+##    from matplotlib import transforms as mtransforms
+##    from matplotlib import ticker
+#except:
+#    raise ImportError("matplotlib module is missing")
 
+from pylab import*
 import numpy as np
 from scipy.optimize import minimize
 
@@ -52,6 +53,7 @@ class QhjcGUI(QMainWindow):
         #self.setWindowIcon(QIcon("./dcpyps/samples/HJCFIT.ICO"))
         
         self.mec = None
+        self.mecfn = None
         self.path = None
         self.scnfiles = []
         self.tres = []
@@ -99,10 +101,10 @@ class QhjcGUI(QMainWindow):
         self.textBox = QTextBrowser()
         # Set here if printout to TextBox only or also to file or console.
         self.log = myqtcommon.PrintLog(self.textBox) #, sys.stdout)
-        str1, str2, str3 = myqtcommon.startInfo()
-        self.textBox.append(str1)
-        self.textBox.append(str2)
-        self.textBox.append(str3)
+        self.str1, self.str2, self.str3 = myqtcommon.startInfo()
+        self.textBox.append(self.str1)
+        self.textBox.append(self.str2)
+        self.textBox.append(self.str3)
         
         rightVBox = QVBoxLayout()
         rightVBox.addWidget(self.textBox)
@@ -116,7 +118,7 @@ class QhjcGUI(QMainWindow):
         """
 
         # LOAD FLIP MECHANISM USED Burzomato et al 2004
-        mecfn = "./dcpyps/samples/demomec.mec"
+        self.mecfn = "./dcpyps/samples/demomec.mec"
         version, meclist, max_mecnum = dcio.mec_get_list(mecfn)
         self.mec = dcio.mec_load(mecfn, meclist[2][0])
         rates = [5000.0, 500.0, 2700.0, 2000.0, 800.0, 15000.0, 300.0, 0.1200E+06, 6000.0, 0.4500E+09, 1500.0, 12000.0, 4000.0, 0.9000E+09, 7500.0, 1200.0, 3000.0, 0.4500E+07, 2000.0, 0.9000E+07, 1000, 0.135000E+08]
@@ -165,7 +167,12 @@ class QhjcGUI(QMainWindow):
         self.tres = [0.000030, 0.000030, 0.000030, 0.000030]
         self.tcrit = [0.004, -1, -0.06, -0.02]
         self.conc = [10e-6, 30e-6, 100e-6, 1000e-6]
-        
+
+        for i in range(len(self.scnfiles)):
+            #TODO: load more than one scan file per concentration
+            rec = load_data(self.scnfiles[i][0], self.tres[i], math.fabs(self.tcrit[i]), output=self.log)
+            self.recs.append(rec)
+            self.bursts.append(rec.bursts)
         
 
 #################### Called by menu 'Load Mech'
@@ -176,6 +183,8 @@ class QhjcGUI(QMainWindow):
         """
 
         self.mec = samples.CH82()
+        self.mecfn = 'CH82.mec'
+        self.onModifyMec()
         self.textBox.append("\nLoaded Colquhoun&Hawkes 82 numerical example.\n")
         self.mec.printout(self.log)
 
@@ -186,6 +195,8 @@ class QhjcGUI(QMainWindow):
         """
 
         self.mec = samples.CCO()
+        self.mecfn = 'CCO.mec'
+        self.onModifyMec()
         self.textBox.append("\nLoaded del Castillo-Katz mechanism.\n")
         self.mec.printout(self.log)
 
@@ -194,12 +205,12 @@ class QhjcGUI(QMainWindow):
         Load a mechanism and rates from DC's mec file.
         Called from menu Load|From DCPROGS .MEC File...
         """
-        filename, filt = QFileDialog.getOpenFileName(self,
+        self.mecfn, filt = QFileDialog.getOpenFileName(self,
             "Open Mec File...", self.path, "DC Mec Files (*.mec *.MEC)")
-        self.path = os.path.split(str(filename))[0]
-        self.textBox.append("\nFile to read: " + os.path.split(str(filename))[1])
+        self.path = os.path.split(str(self.mecfn))[0]
+        self.textBox.append("\nFile to read: " + os.path.split(str(self.mecfn))[1])
 
-        version, meclist, max_mecnum = dcio.mec_get_list(filename)
+        version, meclist, max_mecnum = dcio.mec_get_list(self.mecfn)
         self.textBox.append("Mec file version: %d; contains %d mechanisms."
             %(version, max_mecnum))
 
@@ -208,6 +219,8 @@ class QhjcGUI(QMainWindow):
             nrate = dialog.returnRates()
 
         self.mec = dcio.mec_load(filename, meclist[nrate][0])
+
+        self.onModifyMec()
 
         self.textBox.append("Loaded mec: " + meclist[nrate][2])
         self.textBox.append("Loaded rates: " + meclist[nrate][3] + "\n")
@@ -224,6 +237,7 @@ class QhjcGUI(QMainWindow):
         self.textBox.append("\nFile to read: " + os.path.split(str(filename))[1])
 
         self.mec = dcio.mec_load_from_prt(filename)
+        self.onModifyMec()
         self.textBox.append("Loaded mec and rates from PRT file: " + filename)
         self.mec.printout(self.log)
 
@@ -238,20 +252,21 @@ class QhjcGUI(QMainWindow):
         self.textBox.append("\nFile to read: " + os.path.split(str(filename))[1])
 
         self.mec, title = dcio.mod_load(filename)
+        self.onModifyMec()
         self.textBox.append("\n" + title + "\n")
         self.mec.printout(self.log)
 
     def onModifyMec(self):
         """
         """
-        table = qtcl.RateTableDlg(self, self.mec, self.log)
+        table = mechmenu.RateTableDlg(self, self.mec, self.log)
         if table.exec_():
             self.mec = table.return_mec()
 
     def onModifyStates(self):
         """
         """
-        table = qtcl.StateTableDlg(self, self.mec, self.log)
+        table = mechmenu.StateTableDlg(self, self.mec, self.log)
         if table.exec_():
             self.mec = table.return_mec()
             
@@ -262,6 +277,12 @@ class QhjcGUI(QMainWindow):
         dialog = datamenu.NewSetDlg(self, self.recs, self.log)
         if dialog.exec_():
             self.scnfiles, self.conc, self.tres, self.tcrit = dialog.return_set()
+
+        for i in range(len(self.scnfiles)):
+            #TODO: load more than one scan file per concentration
+            rec = datamenu.load_data(self.scnfiles[i][0], self.tres[i], math.fabs(self.tcrit[i]), output=self.log)
+            self.recs.append(rec)
+            self.bursts.append(rec.bursts)
     
     def onLoadSavedSet(self):
         pass
@@ -272,11 +293,7 @@ class QhjcGUI(QMainWindow):
 #################### Called by menu 'Run Fit'
     def onStartFitting(self):
         
-        for i in range(len(self.scnfiles)):
-            #TODO: load more than one scan file per concentration
-            rec = load_data(self.scnfiles[i][0], self.tres[i], math.fabs(self.tcrit[i]), output=self.log)
-            self.recs.append(rec)
-            self.bursts.append(rec.bursts)
+        
 
         self.theta = np.log(self.mec.theta())
 
@@ -306,22 +323,25 @@ class QhjcGUI(QMainWindow):
         self.textBox.append("\nDCPROGS Fitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
                 %time.localtime()[0:6])
         self.textBox.append('time in simplex= {0:.6f}'.format(time.clock() - start))
-        self.textBox.append('\n\nresult=')
-        self.textBox.append(result)
+#        self.textBox.append('\n\nresult=')
+#        self.textBox.append(result)
 
         self.textBox.append('\n Final log-likelihood = {0:.6f}'.format(-result.fun))
         self.textBox.append('\n Number of iterations = {0:d}'.format(result.nit))
         self.textBox.append('\n Number of evaluations = {0:d}'.format(result.nfev))
-        self.mec.theta_unsqueeze(np.array_str(np.exp(result.x)))
+
+        self.mec.theta_unsqueeze(np.exp(result.x))
         self.textBox.append("\n Final rate constants:")
         self.mec.printout(self.log)
         self.textBox.append('\n\n')
         
         open_pdfs, shut_pdfs = [], []
-        for i in range(len(scnfiles)):
-            open_pdfs.append(save_pdf_fig(scnfiles[i], recs[i].opint, mec, conc[i], tres[i], 'open'))
-            shut_pdfs.append(save_pdf_fig(scnfiles[i], recs[i].shint, mec, conc[i], tres[i], 'shut'))
-        resulthtml = save_html(str2, str3, mecfn, scnfiles, open_pdfs, shut_pdfs)
+        for i in range(len(self.scnfiles)):
+            open_pdfs.append(save_pdf_fig(self.scnfiles[i], self.recs[i].opint,
+                self.mec, self.conc[i], self.tres[i], 'open'))
+            shut_pdfs.append(save_pdf_fig(self.scnfiles[i], self.recs[i].shint,
+                self.mec, self.conc[i], self.tres[i], 'shut'))
+        resulthtml = save_html(self.str2, self.str3, self.mecfn, self.scnfiles, open_pdfs, shut_pdfs)
         self.textBox.append('\n\n Results saved in Loading '+resulthtml)
 
 
@@ -353,7 +373,8 @@ def save_html(str2, str3, mecfn, scnfiles, open_pdfs, shut_pdfs):
     
     htmlstr = ("""<html>
     <p>HJCFIT: Fit of model to open-shut times with missed events
-    (Uses HJC distributions, exact for first two deadtimes then asymptotic, to calculate likelihood of record)</p>""" +
+    (Uses HJC distributions, exact for first two deadtimes then asymptotic,
+    to calculate likelihood of record)</p>""" +
     '<p>'+ str2 + '<p></p>' + str3 + """</p></html>""" )
 
     htmlfile = mecfn[:-4] + '.html'
@@ -384,40 +405,9 @@ def save_pdf_fig(scnfile, ints, mec, conc, tres, type):
     figure(figsize=(6, 4))
     semilogx(x*1000, y, 'k-', t, sipdf, 'r--', t, sepdf, 'b-')
 
-    outfile = scnfile[:-4] + '_' + type + '.png'
+    outfile = scnfile[0][:-4] + '_' + type + '.png'
     savefig(outfile, bbox_inches=0)
     return outfile
         
         
-def load_data(sfile, tres, tcrit, output=sys.stdout):
-    output.write('\n\n Loading '+sfile)
-    ioffset, nint, calfac, header = dcio.scn_read_header(sfile)
-    tint, iampl, iprops = dcio.scn_read_data(sfile, ioffset, nint, calfac)
-    rec = dataset.SCRecord(sfile, header, tint, iampl, iprops)
-    # Impose resolution, get open/shut times and bursts.
-    rec.impose_resolution(tres)
-    output.write('\nNumber of resolved intervals = {0:d}'.format(len(rec.rtint)))
 
-    rec.get_open_shut_periods()
-    output.write('\nNumber of resolved periods = {0:d}'.format(len(rec.opint) + len(rec.shint)))
-    output.write('\nNumber of open periods = {0:d}'.format(len(rec.opint)))
-    output.write('Mean and SD of open periods = {0:.9f} +/- {1:.9f} ms'.
-        format(np.average(rec.opint)*1000, np.std(rec.opint)*1000))
-    output.write('Range of open periods from {0:.9f} ms to {1:.9f} ms'.
-        format(np.min(rec.opint)*1000, np.max(rec.opint)*1000))
-    output.write('\nNumber of shut intervals = {0:d}'.format(len(rec.shint)))
-    output.write('Mean and SD of shut periods = {0:.9f} +/- {1:.9f} ms'.
-        format(np.average(rec.shint)*1000, np.std(rec.shint)*1000))
-    output.write('Range of shut periods from {0:.9f} ms to {1:.9f} ms'.
-        format(np.min(rec.shint)*1000, np.max(rec.shint)*1000))
-    output.write('Last shut period = {0:.9f} ms'.format(rec.shint[-1]*1000))
-
-    rec.get_bursts(tcrit)
-    output.write('\nNumber of bursts = {0:d}'.format(len(rec.bursts)))
-    blength = rec.get_burst_length_list()
-    output.write('Average length = {0:.9f} ms'.format(np.average(blength)*1000))
-    output.write('Range: {0:.3f}'.format(min(blength)*1000) +
-            ' to {0:.3f} millisec'.format(max(blength)*1000))
-    openings = rec.get_openings_burst_list()
-    output.write('Average number of openings= {0:.9f}'.format(np.average(openings)))
-    return rec
