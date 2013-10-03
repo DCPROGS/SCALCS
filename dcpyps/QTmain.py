@@ -1047,7 +1047,7 @@ class QMatGUI(QMainWindow):
         self.textBox.append("Mec file version: %d; contains %d mechanisms."
             %(version, max_mecnum))
 
-        dialog = MecListDlg(meclist, max_mecnum, self)
+        dialog = mechmenu.MecListDlg(meclist, max_mecnum, self)
         if dialog.exec_():
             nrate = dialog.returnRates()
 
@@ -1152,24 +1152,6 @@ class CJumpParDlg(QDialog):
         layoutMain.addWidget(QLabel("Concentration pulse profile:"))
 
         layout = QHBoxLayout()
-        layout.addWidget(QLabel("Record length (millisec):"))
-        self.reclengthEdit = QLineEdit(unicode(self.reclength))
-        self.reclengthEdit.setMaxLength(12)
-        self.connect(self.reclengthEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.reclengthEdit)
-        layoutMain.addLayout(layout)
-
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Sampling interval (microsec):"))
-        self.stepEdit = QLineEdit(unicode(self.step))
-        self.stepEdit.setMaxLength(12)
-        self.connect(self.stepEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.stepEdit)
-        layoutMain.addLayout(layout)
-
-        layout = QHBoxLayout()
         layout.addWidget(QLabel("Pulse concentration (mM):"))
         self.concEdit = QLineEdit(unicode(self.cmax))
         self.concEdit.setMaxLength(12)
@@ -1178,16 +1160,18 @@ class CJumpParDlg(QDialog):
         layout.addWidget(self.concEdit)
         layoutMain.addLayout(layout)
 
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Background concentration (mM):"))
-        self.bckgrconcEdit = QLineEdit(unicode(self.cb))
-        self.bckgrconcEdit.setMaxLength(12)
-        self.connect(self.bckgrconcEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.bckgrconcEdit)
-        layoutMain.addLayout(layout)
+
 
         if self.profile == 'rcj':
+
+            layout = QHBoxLayout()
+            layout.addWidget(QLabel("Concentration pulse width (millisec):"))
+            self.widthEdit = QLineEdit(unicode(self.width))
+            self.widthEdit.setMaxLength(12)
+            self.connect(self.widthEdit, SIGNAL("editingFinished()"),
+                self.on_par_changed)
+            layout.addWidget(self.widthEdit)
+            layoutMain.addLayout(layout)
 
             layout = QHBoxLayout()
             layout.addWidget(QLabel("Pulse centre position (millisec):"))
@@ -1215,16 +1199,7 @@ class CJumpParDlg(QDialog):
                 self.on_par_changed)
             layout.addWidget(self.decayEdit)
             layoutMain.addLayout(layout)
-
-            layout = QHBoxLayout()
-            layout.addWidget(QLabel("Concentration pulse width (millisec):"))
-            self.widthEdit = QLineEdit(unicode(self.width))
-            self.widthEdit.setMaxLength(12)
-            self.connect(self.widthEdit, SIGNAL("editingFinished()"),
-                self.on_par_changed)
-            layout.addWidget(self.widthEdit)
-            layoutMain.addLayout(layout)
-
+            
         elif self.profile == 'instexp':
 
             layout = QHBoxLayout()
@@ -1293,6 +1268,33 @@ class CJumpParDlg(QDialog):
                 self.on_par_changed)
             layout.addWidget(self.interEdit)
             layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Record length (millisec):"))
+        self.reclengthEdit = QLineEdit(unicode(self.reclength))
+        self.reclengthEdit.setMaxLength(12)
+        self.connect(self.reclengthEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.reclengthEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Sampling interval (microsec):"))
+        self.stepEdit = QLineEdit(unicode(self.step))
+        self.stepEdit.setMaxLength(12)
+        self.connect(self.stepEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.stepEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Background concentration (mM):"))
+        self.bckgrconcEdit = QLineEdit(unicode(self.cb))
+        self.bckgrconcEdit.setMaxLength(12)
+        self.connect(self.bckgrconcEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.bckgrconcEdit)
+        layoutMain.addLayout(layout)
 
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
             QDialogButtonBox.Cancel)
