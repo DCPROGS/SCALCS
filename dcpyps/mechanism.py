@@ -131,6 +131,9 @@ class Rate(object):
         self.constrain_args = constrain_args
 
         self._limits = limits
+        if not limits:
+            self._set_default_limits()
+            
         self._check_limits()
         self._check_rateconstants()
 
@@ -238,7 +241,13 @@ class Rate(object):
         self._limits = limits
         if check:
             self._check_limits()
-
+            
+    def _set_default_limits(self):
+        if self._effectors[0] == 'c':
+            self._limits = [1e-15,1e+9]
+        else:
+            self._limits = [1e-15,1e+6]
+            
     def _get_limits(self):
         return self._limits
 
@@ -729,3 +738,18 @@ class Mechanism(object):
                     bprod *= rate.rateconstants
 
         return fprod[0], bprod[0]
+    
+    def check_limits(self):
+        """
+        Check if current rate constants are within specified limits.
+        Returns 'True' if all rate constants are within the specified limits. 
+        Returns 'False' if any of rate constants is outside the specified
+        limits.
+        """
+        
+        withinLimits = True
+        for i in range(len(self.Rates)):
+            if ((self.Rates[i].unit_rate() < self.Rates[i].limits[0][0]) or
+                (self.Rates[i].unit_rate() > self.Rates[i].limits[0][1])):
+                withinLimits = False
+        return withinLimits

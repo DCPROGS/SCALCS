@@ -115,9 +115,12 @@ for i in range(len(conc)):
 def dcprogslik(x, args=None):
     mec.theta_unsqueeze(np.exp(x))
     lik = 0
-    for i in range(len(conc)):
-        mec.set_eff('c', conc[i])
-        lik += -likelihood[i](mec.Q) * math.log(10)
+    if mec.check_limits():
+        for i in range(len(conc)):
+            mec.set_eff('c', conc[i])
+            lik += -likelihood[i](mec.Q) * math.log(10)
+    else:
+        lik = 1e7
     return lik
 
 def dcprogslikall(x, args=None):
