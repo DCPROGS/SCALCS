@@ -45,30 +45,143 @@ from dcpyps import dataset
 
 import myqtcommon
 
+class MechMenu(QMenu):
+    """
+    """
+    def __init__(self, parent):
+        super(MechMenu, self).__init__(parent) 
+        self.parent = parent
+        self.setTitle('&Load Mec')
+        
+        loadDemo1Action = myqtcommon.createAction(parent, "&Load demo: CH82",
+            self.onLoadDemo_CH82)
+        loadDemo2Action = myqtcommon.createAction(parent, "&Load demo: dC-K",
+            self.onLoadDemo_dCK)
+            
+        loadFromMecFileAction = myqtcommon.createAction(parent,
+            "&Load from DCprogs MEC File...", self.onLoadMecFile)
+        loadFromPrtFileAction = myqtcommon.createAction(parent, 
+            "&Load from DCprogs PRT File...", self.onLoadPrtFile)
+        loadFromModFileAction = myqtcommon.createAction(parent, 
+            "&Load from ChannelLab MOD File...", self.onLoadModFile)
+        modifyMecAction = myqtcommon.createAction(parent, 
+            "&Modify loaded mec rates", self.onModifyMec)
+        modifyStatesAction = myqtcommon.createAction(parent, 
+            "&Modify loaded mec states", self.onModifyStates)
+            
+        self.addActions([loadDemo1Action, loadDemo2Action,
+            loadFromMecFileAction, loadFromPrtFileAction, loadFromModFileAction,
+            modifyMecAction, modifyStatesAction])
+            
+    def onLoadDemo_CH82(self):
+        """
+        Load demo mechanism (C&H82 numerical example).
+        Called from menu Load|Demo.
+        """
+        self.parent.mec = self.load_demo_mec('CH82', self.parent.log)
+        self.parent.log.write("\nLoaded Colquhoun&Hawkes 82 numerical example.\n")
+        
+    def onLoadDemo_dCK(self):
+        """
+        Load del Castillo - Katz mechanism.
+        """
+        self.parent.mec = self.load_demo_mec('dCK', self.parent.log)
+        self.parent.log.write("\nLoaded del Castillo-Katz mechanism.\n")
+        
+    def onLoadMecFile(self):
+        """
+        Load a mechanism and rates from DC's mec file.
+        """
+        self.parent.mecfn, filt = QFileDialog.getOpenFileName(self,
+            "Open Mec File...", self.parent.path, "DC Mec Files (*.mec *.MEC)")
+        self.parent.path = os.path.split(str(self.parent.mecfn))[0]
+        self.parent.log.write("\nFile to read: " + 
+            os.path.split(str(self.parent.mecfn))[1])
 
-def addMechMenuElements(self):
-    loadMechMenu = self.menuBar().addMenu('&Load Mec')
-    loadDemo1Action = myqtcommon.createAction(self, "&Load demo: CH82", self.onLoadDemo_CH82,
-        None, "loaddemo", "Load Demo mec")
-    loadDemo2Action = myqtcommon.createAction(self, "&Load demo: dC-K", self.onLoadDemo_dCK,
-        None, "loaddemo", "Load Demo mec")
-    loadFromMecFileAction = myqtcommon.createAction(self, "&Load from DCprogs MEC File...",
-        self.onLoadMecFile,
-        None, "loadfrommecfile", "Load from Mec file")
-    loadFromPrtFileAction = myqtcommon.createAction(self, "&Load from DCprogs PRT File...",
-        self.onLoadPrtFile,
-        None, "loadfromprtfile", "Load from Prt file")
-    loadFromModFileAction = myqtcommon.createAction(self, "&Load from ChannelLab MOD File...",
-        self.onLoadModFile,
-        None, "loadfrommodfile", "Load from ChannelLab Mod file")
-    modifyMecAction = myqtcommon.createAction(self, "&Modify loaded mec rates", self.onModifyMec,
-        None, "modifymec", "Modify mec rates")
-    modifyStatesAction = myqtcommon.createAction(self, "&Modify loaded mec states", self.onModifyStates,
-        None, "modifystates", "Modify mec states")
-    myqtcommon.addActions(loadMechMenu, (loadDemo1Action, loadDemo2Action,
-        loadFromMecFileAction, loadFromPrtFileAction, loadFromModFileAction,
-        modifyMecAction, modifyStatesAction))
-    return loadMechMenu
+        version, meclist, max_mecnum = dcio.mec_get_list(self.parent.mecfn)
+        self.parent.log.write("Mec file version: %d; contains %d mechanisms."
+            %(version, max_mecnum))
+
+        dialog = MecListDlg(meclist, max_mecnum, self)
+        if dialog.exec_():
+            nrate = dialog.returnRates()
+
+        self.parent.mec = dcio.mec_load(self.parent.mecfn, meclist[nrate][0])
+
+        self.modifyMec(self.parent.mec, self.parent.log)
+
+        self.parent.log.write("Loaded mec: " + meclist[nrate][2])
+        self.parent.log.write("Loaded rates: " + meclist[nrate][3] + "\n")
+        self.parent.mec.printout(self.parent.log)
+        
+    def onLoadPrtFile(self):
+        """
+        Load a mechanism and rates from DC's HJCFIT.PRT file.
+        """
+        filename, filt = QFileDialog.getOpenFileName(self,
+            "Open Mec File...", self.parent.path, 
+            "DC Mec Files (*.prt *.PRT *.txt *.TXT)")
+        self.parent.path = os.path.split(str(filename))[0]
+        self.parent.log.write("\nFile to read: " + os.path.split(str(filename))[1])
+
+        self.parent.mec = dcio.mec_load_from_prt(filename)
+        self.modifyMec(self.parent.mec, self.parent.log)
+        self.parent.log.write("Loaded mec and rates from PRT file: " + filename)
+        self.parent.mec.printout(self.parent.log)
+
+    def onLoadModFile(self):
+        """
+        Load a mechanism and rates from Channel Lab .mod file.
+        Called from menu Load|From Channel Lab .MOD File...
+        """
+        filename, filt = QFileDialog.getOpenFileName(self,
+            "Open MOD File...", self.parent.path,
+            "Channel Lab MOD Files (*.mod *.MOD)")
+        self.parent.path = os.path.split(str(filename))[0]
+        self.parent.log.write("\nFile to read: " + 
+            os.path.split(str(filename))[1])
+
+        self.parent.mec, title = dcio.mod_load(filename)
+        self.modifyMec(self.parent.mec, self.parent.log)
+        self.parent.log.write("\n" + title + "\n")
+        self.parent.mec.printout(self.parent.log)
+
+    def onModifyMec(self):
+        """
+        """
+        self.parent.mec = self.modifyMec(self.parent.mec, self.parent.log)
+
+    def onModifyStates(self):
+        """
+        """
+        table = StateTableDlg(self, self.parent.mec, self.parent.log)
+        if table.exec_():
+            self.parent.mec = table.return_mec()
+
+    #######################
+        
+    def load_demo_mec(self, demo, out):
+        """
+        Load demo mechanism: 'CH82'- C&H82 numerical example, 'dCK'- 
+        delCastillo-Katz mechanism.
+        """
+        if demo == 'CH82':
+            mec = samples.CH82()
+        elif demo == 'dCK':
+            mec = samples.CCO()
+        mec = self.modifyMec(mec, out)
+        mec.printout(out)
+        return mec
+    
+    def modifyMec(self, mec, out):
+        """
+        """
+        table = RateTableDlg(mec, out)
+        if table.exec_():
+            mec = table.return_mec()
+        mec.printout(out)
+        return mec
+
 
 class MecListDlg(QDialog):
     """
@@ -146,7 +259,7 @@ class MecListDlg(QDialog):
 class RateTableDlg(QDialog):
     """
     """
-    def __init__(self, parent=None, mec=None, log=None):
+    def __init__(self, mec=None, log=None, parent=None):
         super(RateTableDlg, self).__init__(parent)
         self.mec = mec
         self.changed = False

@@ -45,7 +45,7 @@ import samples
 import scplotlib as scpl
 import mechanism
 
-import myqtlibs.mechmenu as mechmenu
+from myqtlibs.mechmenu import MechMenu
 import myqtlibs.datamenu as datamenu
 import myqtlibs.myqtcommon as myqtcommon
 
@@ -76,10 +76,11 @@ class QMatGUI(QMainWindow):
         self.cjfunc = None
         self.cjargs = None
 
-        loadMechMenu = mechmenu.addMechMenuElements(self)
-        quitAction = myqtcommon.createAction(self, "&Quit", self.close,
-            "Ctrl+Q", "appquit", "Close the application")
-        loadMechMenu.addAction(quitAction)
+        #loadMechMenu = mechmenu.addMechMenuElements(self)
+        loadMechMenu = self.menuBar().addMenu(MechMenu(self))
+#        quitAction = myqtcommon.createAction(self, "&Quit", self.close,
+#            "Ctrl+Q", "appquit", "Close the application")
+#        loadMechMenu.addAction(quitAction)
 
         plotMenu = self.menuBar().addMenu('&Plot')
         plotPopenAction = myqtcommon.createAction(self, "&Popen curve", self.onPlotPopen)
@@ -1013,91 +1014,6 @@ class QMatGUI(QMainWindow):
         if dialog.exec_():
             pass
 
-    def onLoadDemo_CH82(self):
-        """
-        Load demo mechanism (C&H82 numerical example).
-        Called from menu Load|Demo.
-        """
-
-        self.mec = samples.CH82()
-        self.textBox.append("\nLoaded Colquhoun&Hawkes 82 numerical example.\n")
-        self.mec.printout(self.log)
-
-    def onLoadDemo_dCK(self):
-        """
-        Load del Castillo - Katz mechanism.
-        Called from menu Load|Demo.
-        """
-
-        self.mec = samples.CCO()
-        self.textBox.append("\nLoaded del Castillo-Katz mechanism.\n")
-        self.mec.printout(self.log)
-
-    def onLoadMecFile(self):
-        """
-        Load a mechanism and rates from DC's mec file.
-        Called from menu Load|From DCPROGS .MEC File...
-        """
-        filename, filt = QFileDialog.getOpenFileName(self,
-            "Open Mec File...", self.path, "DC Mec Files (*.mec *.MEC)")
-        self.path = os.path.split(str(filename))[0]
-        self.textBox.append("\nFile to read: " + os.path.split(str(filename))[1])
-
-        version, meclist, max_mecnum = dcio.mec_get_list(filename)
-        self.textBox.append("Mec file version: %d; contains %d mechanisms."
-            %(version, max_mecnum))
-
-        dialog = mechmenu.MecListDlg(meclist, max_mecnum, self)
-        if dialog.exec_():
-            nrate = dialog.returnRates()
-
-        self.mec = dcio.mec_load(filename, meclist[nrate][0])
-
-        self.textBox.append("Loaded mec: " + meclist[nrate][2])
-        self.textBox.append("Loaded rates: " + meclist[nrate][3] + "\n")
-        self.mec.printout(self.log)
-        
-    def onLoadPrtFile(self):
-        """
-        Load a mechanism and rates from DC's HJCFIT.PRT file.
-        Called from menu Load|From DCPROGS .PRT File...
-        """
-        filename, filt = QFileDialog.getOpenFileName(self,
-            "Open Mec File...", self.path, "DC Mec Files (*.prt *.PRT *.txt *.TXT)")
-        self.path = os.path.split(str(filename))[0]
-        self.textBox.append("\nFile to read: " + os.path.split(str(filename))[1])
-
-        self.mec = dcio.mec_load_from_prt(filename)
-        self.textBox.append("Loaded mec and rates from PRT file: " + filename)
-        self.mec.printout(self.log)
-
-    def onLoadModFile(self):
-        """
-        Load a mechanism and rates from Channel Lab .mod file.
-        Called from menu Load|From Channel Lab .MOD File...
-        """
-        filename, filt = QFileDialog.getOpenFileName(self,
-            "Open MOD File...", self.path, "Channel Lab MOD Files (*.mod *.MOD)")
-        self.path = os.path.split(str(filename))[0]
-        self.textBox.append("\nFile to read: " + os.path.split(str(filename))[1])
-
-        self.mec, title = dcio.mod_load(filename)
-        self.textBox.append("\n" + title + "\n")
-        self.mec.printout(self.log)
-
-    def onModifyMec(self):
-        """
-        """
-        table = mechmenu.RateTableDlg(self, self.mec, self.log)
-        if table.exec_():
-            self.mec = table.return_mec()
-
-    def onModifyStates(self):
-        """
-        """
-        table = mechmenu.StateTableDlg(self, self.mec, self.log)
-        if table.exec_():
-            self.mec = table.return_mec()
 
 
 class CJumpParDlg(QDialog):
