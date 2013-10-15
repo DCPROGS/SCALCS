@@ -387,41 +387,6 @@ class SCRecord(object):
     def printout(self, output=sys.stdout):
         output.write('%s' % self)
         
-def load_data(sfile, tres, tcrit, output=sys.stdout):
-    output.write('\n\n Loading '+sfile)
-    ioffset, nint, calfac, header = dcio.scn_read_header(sfile)
-    tint, iampl, iprops = dcio.scn_read_data(sfile, ioffset, nint, calfac)
-    rec = SCRecord(sfile, header, tint, iampl, iprops)
-    # Impose resolution, get open/shut times and bursts.
-    rec.impose_resolution(tres)
-    output.write('\nNumber of resolved intervals = {0:d}'.format(len(rec.rtint)))
-
-    rec.get_open_shut_periods()
-    output.write('\nNumber of resolved periods = {0:d}'.format(len(rec.opint) + len(rec.shint)))
-    output.write('\nNumber of open periods = {0:d}'.format(len(rec.opint)))
-    output.write('Mean and SD of open periods = {0:.9f} +/- {1:.9f} ms'.
-        format(np.average(rec.opint)*1000, np.std(rec.opint)*1000))
-    output.write('Range of open periods from {0:.9f} ms to {1:.9f} ms'.
-        format(np.min(rec.opint)*1000, np.max(rec.opint)*1000))
-    output.write('\nNumber of shut intervals = {0:d}'.format(len(rec.shint)))
-    output.write('Mean and SD of shut periods = {0:.9f} +/- {1:.9f} ms'.
-        format(np.average(rec.shint)*1000, np.std(rec.shint)*1000))
-    output.write('Range of shut periods from {0:.9f} ms to {1:.9f} ms'.
-        format(np.min(rec.shint)*1000, np.max(rec.shint)*1000))
-    output.write('Last shut period = {0:.9f} ms'.format(rec.shint[-1]*1000))
-
-    rec.get_bursts(tcrit)
-    output.write('\nNumber of bursts = {0:d}'.format(len(rec.bursts)))
-    blength = rec.get_burst_length_list()
-    output.write('Average length = {0:.9f} ms'.format(np.average(blength)*1000))
-    output.write('Range: {0:.3f}'.format(min(blength)*1000) +
-            ' to {0:.3f} millisec'.format(max(blength)*1000))
-    openings = rec.get_openings_burst_list()
-    output.write('Average number of openings= {0:.9f}'.format(np.average(openings)))
-    return rec
-
-
-
 def false_events(tres, fc, rms, amp):
     """
     Version for EKDIST/new SCAN (avamp, rms already in pA). \

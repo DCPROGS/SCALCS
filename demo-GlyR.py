@@ -28,46 +28,8 @@ tcrit = [0.004, -1, -0.06, -0.02]
 chs = [True, False, False, False]
 conc = [10e-6, 30e-6, 100e-6, 1000e-6]
 
-def load_data(sfile, tres, tcrit):
-    print '\n\n Loading ', sfile
-    ioffset, nint, calfac, header = dcio.scn_read_header(sfile)
-    tint, iampl, iprops = dcio.scn_read_data(sfile, ioffset, nint, calfac)
-    rec = dataset.SCRecord(sfile, header, tint, iampl, iprops)
-    # Impose resolution, get open/shut times and bursts.
-    rec.impose_resolution(tres)
-    print('\nNumber of resolved intervals = {0:d}'.format(len(rec.rtint)))
-    print'\nrprops elements =', itemfreq(rec.rprops)
-
-    rec.get_open_shut_periods()
-    print('\nNumber of resolved periods = {0:d}'.format(len(rec.opint) + len(rec.shint)))
-    print('\nNumber of open periods = {0:d}'.format(len(rec.opint)))
-    print('Mean and SD of open periods = {0:.9f} +/- {1:.9f} ms'.
-        format(np.average(rec.opint)*1000, np.std(rec.opint)*1000))
-    print('Range of open periods from {0:.9f} ms to {1:.9f} ms'.
-        format(np.min(rec.opint)*1000, np.max(rec.opint)*1000))
-    print('\nNumber of shut intervals = {0:d}'.format(len(rec.shint)))
-    print('Mean and SD of shut periods = {0:.9f} +/- {1:.9f} ms'.
-        format(np.average(rec.shint)*1000, np.std(rec.shint)*1000))
-    print('Range of shut periods from {0:.9f} ms to {1:.9f} ms'.
-        format(np.min(rec.shint)*1000, np.max(rec.shint)*1000))
-    print('Last shut period = {0:.9f} ms'.format(rec.shint[-1]*1000))
-
-    rec.get_bursts(tcrit)
-    print('\nNumber of bursts = {0:d}'.format(len(rec.bursts)))
-    blength = rec.get_burst_length_list()
-    print('Average length = {0:.9f} ms'.format(np.average(blength)*1000))
-    print('Range: {0:.3f}'.format(min(blength)*1000) +
-            ' to {0:.3f} millisec'.format(max(blength)*1000))
-    openings = rec.get_openings_burst_list()
-    print('Average number of openings= {0:.9f}'.format(np.average(openings)))
-    return rec
-
 recs = []
 bursts = []
-#for i in range(len(scnfiles)):
-#    rec = load_data(scnfiles[i], tres[i], math.fabs(tcrit[i]))
-#    recs.append(rec)
-#    bursts.append(rec.bursts) 
 for i in range(len(scnfiles)):
     rec = dataset.SCRecord(scnfiles[i], conc[i], tres[i], tcrit[i], chs[i])
     rec.record_type = 'recorded'
@@ -110,11 +72,13 @@ mec.Rates[8].constrain_args = [12, 1.5]
 mec.Rates[13].is_constrained = True
 mec.Rates[13].constrain_func = mechanism.constrain_rate_multiple
 mec.Rates[13].constrain_args = [9, 2]
-
-mec.Rates[7].mr=True
-mec.Rates[15].mr=True
 mec.update_constrains()
-mec.update_mr()
+
+mec.set_mr(True, 7)
+mec.set_mr(True, 15)
+#mec.Rates[7].mr=True
+#mec.Rates[15].mr=True
+#mec.update_mr()
 
 mec.printout(sys.stdout)
 theta = np.log(mec.theta())

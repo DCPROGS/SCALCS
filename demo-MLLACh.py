@@ -54,10 +54,10 @@ def main():
     mec.Rates[9].is_constrained = True
     mec.Rates[9].constrain_func = mechanism.constrain_rate_multiple
     mec.Rates[9].constrain_args = [13, 1]
-
-    mec.Rates[11].mr=True
-
     mec.update_constrains()
+
+    #mec.Rates[11].mr=True
+    mec.set_mr(True, 11)
     mec.update_mr()
 
     # Initial guesses. Now using rate constants from numerical example.

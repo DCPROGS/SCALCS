@@ -665,7 +665,18 @@ class Mechanism(object):
                 args = self.Rates[i].constrain_args
                 func = self.Rates[i].constrain_func
                 self.Rates[i].rateconstants = func(self.Rates[args[0]].rateconstants, args[1])
-
+                
+    def set_mr(self, mr, nrate):
+        """
+        """
+        #TODO: this will not work in case the rate to be constrained is in more
+        # than one cycle.
+        self.Rates[nrate].mr = mr
+        for i in range(len(self.Cycles)):
+            if ((self.Rates[nrate].State1.name in self.Cycles[i].states) and 
+                (self.Rates[nrate].State2.name in self.Cycles[i].states)):
+                self.Cycles[i].mrconstr = [self.Rates[nrate].State1.name, self.Rates[nrate].State2.name]
+                self.update_mr()
     def update_mr(self):
         #TODO: check for consistency between cycle.mrconstr and rate.mr.
 

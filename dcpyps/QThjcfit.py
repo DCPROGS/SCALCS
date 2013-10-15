@@ -138,11 +138,9 @@ class QhjcGUI(QMainWindow):
         self.mec.Rates[13].is_constrained = True
         self.mec.Rates[13].constrain_func = mechanism.constrain_rate_multiple
         self.mec.Rates[13].constrain_args = [9, 2]
-
-        self.mec.Rates[7].mr=True
-        self.mec.Rates[15].mr=True
         self.mec.update_constrains()
-        self.mec.update_mr()
+        mec.set_mr(True, 7)
+        mec.set_mr(True, 15)
         self.mec.printout(self.log)
         
         # LOAD DATA.
@@ -152,13 +150,7 @@ class QhjcGUI(QMainWindow):
         self.tcrit = [0.004, -1, -0.06, -0.02]
         self.conc = [10e-6, 30e-6, 100e-6, 1000e-6]
         self.chs = [True, False, False, False]
-
-#        for i in range(len(self.scnfiles)):
-#            #TODO: load more than one scan file per concentration
-#            rec = load_data(self.scnfiles[i][0], self.tres[i], math.fabs(self.tcrit[i]), output=self.log)
-#            self.recs.append(rec)
-#            self.bursts.append(rec.bursts)
-            
+          
         for i in range(len(self.scnfiles)):
             rec = dataset.SCRecord(self.scnfiles[i], self.conc[i], self.tres[i],
                 self.tcrit[i], self.chs[i])

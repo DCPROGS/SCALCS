@@ -50,12 +50,13 @@ def main():
     mec.Rates[6].constrain_func = mechanism.constrain_rate_multiple
     mec.Rates[6].constrain_args = [8, 2]
     mec.update_constrains()
-    mec.update_mr()
+    
     # Initial guesses. Now using rate constants from numerical example.
     rates = mec.unit_rates()
-#    rates = [100, 3000, 10000, 100, 1000, 1000, 1e+7, 5e+7, 6e+7, 10]
+    rates = [100, 3000, 10000, 100, 1000, 1000, 1e+7, 5e+7, 6e+7, 10]
 #    rates = [6.5, 14800, 3640, 362, 1220, 2440, 1e+7, 5e+8, 2.5e+8, 55]
     mec.set_rateconstants(rates)
+    mec.update_mr()
     mec.printout(sys.stdout)
     theta = mec.theta()
     print '\ntheta=', theta
