@@ -21,10 +21,11 @@ str3 = "Machine: %s; System: %s\n" %(machine, system)
 
 
 # LOAD DATA.
-scnfiles = ["./dcpyps/samples/A-10.scn", "./dcpyps/samples/B-30.scn",
-    "./dcpyps/samples/C-100.scn", "./dcpyps/samples/D-1000.scn"]
+scnfiles = [["./dcpyps/samples/A-10.scn"], ["./dcpyps/samples/B-30.scn"],
+    ["./dcpyps/samples/C-100.scn"], ["./dcpyps/samples/D-1000.scn"]]
 tres = [0.000030, 0.000030, 0.000030, 0.000030]
 tcrit = [0.004, -1, -0.06, -0.02]
+chs = [True, False, False, False]
 conc = [10e-6, 30e-6, 100e-6, 1000e-6]
 
 def load_data(sfile, tres, tcrit):
@@ -63,10 +64,16 @@ def load_data(sfile, tres, tcrit):
 
 recs = []
 bursts = []
+#for i in range(len(scnfiles)):
+#    rec = load_data(scnfiles[i], tres[i], math.fabs(tcrit[i]))
+#    recs.append(rec)
+#    bursts.append(rec.bursts) 
 for i in range(len(scnfiles)):
-    rec = load_data(scnfiles[i], tres[i], math.fabs(tcrit[i]))
+    rec = dataset.SCRecord(scnfiles[i], conc[i], tres[i], tcrit[i], chs[i])
+    rec.record_type = 'recorded'
     recs.append(rec)
     bursts.append(rec.bursts)
+    rec.printout()
 
 # LOAD FLIP MECHANISM USED Burzomato et al 2004
 mecfn = "./dcpyps/samples/demomec.mec"
@@ -115,8 +122,13 @@ theta = np.log(mec.theta())
 kwargs = {'nmax': 2, 'xtol': 1e-12, 'rtol': 1e-12, 'itermax': 100,
     'lower_bound': -1e6, 'upper_bound': 0}
 likelihood = []
-for i in range(len(conc)):
-    likelihood.append(Log10Likelihood(bursts[i], mec.kA, tres[i], tcrit[i], **kwargs))
+
+for i in range(len(recs)):
+    likelihood.append(Log10Likelihood(bursts[i], mec.kA,
+        recs[i].tres, recs[i].tcrit, **kwargs))
+
+#for i in range(len(conc)):
+#    likelihood.append(Log10Likelihood(bursts[i], mec.kA, tres[i], tcrit[i], **kwargs))
 
 def dcprogslik(x, args=None):
     mec.theta_unsqueeze(np.exp(x))

@@ -1,47 +1,14 @@
-import time
-import sys
 import os
-import socket
-import math
 
 try:
-#    from PyQt4.QtCore import *
-#    from PyQt4.QtGui import *
     from PySide.QtGui import *
     from PySide.QtCore import *
 except:
     raise ImportError("pyqt module is missing")
 
-try:
-    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-    from matplotlib.figure import Figure
-    from matplotlib import scale as mscale
-    from mpl_toolkits.mplot3d import Axes3D
-    from matplotlib import cm
-    from matplotlib.ticker import LinearLocator, FormatStrFormatter, FuncFormatter
-    import matplotlib.pyplot as plt
-#    from matplotlib import transforms as mtransforms
-#    from matplotlib import ticker
-except:
-    raise ImportError("matplotlib module is missing")
-
-import numpy as np
-
-from scipy.optimize import curve_fit
-from scipy.optimize import leastsq
-
-from dcpyps import scalcslib as scl
-from dcpyps import cjumps
-from dcpyps import scburst
-from dcpyps import popen
 from dcpyps import dcio
 from dcpyps import samples
-from dcpyps import scplotlib as scpl
 from dcpyps import mechanism
-
-from dcpyps import optimize
-from dcpyps import dataset
 
 import myqtcommon
 

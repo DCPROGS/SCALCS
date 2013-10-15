@@ -31,36 +31,9 @@ def main():
 
     # LOAD DATA.
     filename = "./dcpyps/samples/CH82.scn"
-    ioffset, nint, calfac, header = dcio.scn_read_header(filename)
-    tint, iampl, iprops = dcio.scn_read_data(filename, ioffset, nint, calfac)
-    rec1 = dataset.SCRecord(filename, header, tint, iampl, iprops)
-
-    print('\nNumber of all intervals = {0:d}'.format(len(tint)))
-    # Impose resolution, get open/shut times and bursts.
-    rec1.impose_resolution(tres)
-    print('\nNumber of resolved intervals = {0:d}'.format(len(rec1.rtint)))
-    rec1.get_open_shut_periods()
-    print('\nNumber of open periods = {0:d}'.format(len(rec1.opint)))
-    print('Mean and SD of open periods = {0:.9f} +/- {1:.9f} ms'.
-        format(np.average(rec1.opint)*1000, np.std(rec1.opint)*1000))
-    print('Range of open periods from {0:.9f} ms to {1:.9f} ms'.
-        format(np.min(rec1.opint)*1000, np.max(rec1.opint)*1000))
-    print('\nNumber of shut intervals = {0:d}'.format(len(rec1.shint)))
-    print('Mean and SD of shut periods = {0:.9f} +/- {1:.9f} ms'.
-        format(np.average(rec1.shint)*1000, np.std(rec1.shint)*1000))
-    print('Range of shut periods from {0:.9f} ms to {1:.9f} ms'.
-        format(np.min(rec1.shint)*1000, np.max(rec1.shint)*1000))
-    print('Last shut period = {0:.9f} ms'.format(rec1.shint[-1])*1000)
-
-    rec1.get_bursts(tcrit)
-    print('\nNumber of bursts = {0:d}'.format(len(rec1.bursts)))
-    blength = rec1.get_burst_length_list()
-    print('Average length = {0:.9f} ms'.format(np.average(blength))*1000)
-    print('Range: {0:.3f} ms'.format(min(blength)*1000) +
-            ' to {0:.3f} ms'.format(max(blength)*1000))
-    openings = rec1.get_openings_burst_list()
-    print('Average number of openings per burst = {0:.9f}'.
-        format(np.average(openings)))
+    rec1 = dataset.SCRecord([filename], conc, tres, tcrit)
+    rec1.record_type = 'recorded'
+    rec1.printout()
 
     # PREPARE RATE CONSTANTS.
     # Fixed rates.

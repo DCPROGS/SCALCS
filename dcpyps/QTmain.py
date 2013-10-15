@@ -137,7 +137,7 @@ class QMatGUI(QMainWindow):
         plotMenu.insertSeparator(plotSaveASCII)
 
 # UNCOMMENT NEXT LINES TO ENABLE DATA DISTRIBUTION PLOTTING
-        dataMenu = self.menuBar().addMenu('&Data')
+#####        dataMenu = self.menuBar().addMenu('&Data')
         openScanAction = myqtcommon.createAction(self, "&Load single channel record from SCN file", self.onLoadData)
         simulateScanAction = myqtcommon.createAction(self, "&Simulate single channel record",
             self.onSimulateData)
@@ -153,10 +153,10 @@ class QMatGUI(QMainWindow):
             self.onPlotDataBurst)
         likelihoodAction = myqtcommon.createAction(self, "&HJCfit",
             self.onCalculateLikelihood)
-        myqtcommon.addActions(dataMenu, (openScanAction, simulateScanAction,
-            saveScanAction,
-            imposeResolutionAction, plotDataOpenAction, plotDataShutAction,
-            plotDataBurstAction, likelihoodAction))
+#        myqtcommon.addActions(dataMenu, (openScanAction, simulateScanAction,
+#            saveScanAction,
+#            imposeResolutionAction, plotDataOpenAction, plotDataShutAction,
+#            plotDataBurstAction, likelihoodAction))
 # LINES RELATED TO DATA HISTOGRAMMS PLOTTING
 
         printOutMenu = self.menuBar().addMenu('&Printout')

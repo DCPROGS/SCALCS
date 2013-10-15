@@ -1661,10 +1661,7 @@ def scn_write_simulated(intervals, amplitudes, treso=0.0, tresg=0.0,
         fout.write(struct.pack('h', amplitudes[i]))
     for i in range(0, nint):
         fout.write(struct.pack('b', 0))
-
     fout.close()
-    print 'Finished writing scn file.'
-
 
 def scn_write_dummy(data, filename):
     """

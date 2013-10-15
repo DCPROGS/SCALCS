@@ -9,8 +9,6 @@ import os
 import math
 
 try:
-#    from PyQt4.QtCore import *
-#    from PyQt4.QtGui import *
     from PySide.QtGui import *
     from PySide.QtCore import *
 except:
@@ -39,7 +37,7 @@ import samples
 import scplotlib as scpl
 import mechanism
 from myqtlibs.mechmenu import MechMenu
-import myqtlibs.datamenu as datamenu
+from myqtlibs.datamenu import SCDataMenu
 import myqtlibs.myqtcommon as myqtcommon
 import dataset
 from dcprogs.likelihood import Log10Likelihood
@@ -65,7 +63,7 @@ class QhjcGUI(QMainWindow):
         self.iternum = 0
         self.likelihood = []
         self.theta = None
-
+        self.data_loaded = False
 
         loadMenu = self.menuBar().addMenu('&Load Fit')
         loadDemo1Action = myqtcommon.createAction(self,
@@ -76,18 +74,7 @@ class QhjcGUI(QMainWindow):
         myqtcommon.addActions(loadMenu, (loadDemo1Action, quitAction))
         
         loadMechMenu = self.menuBar().addMenu(MechMenu(self))
-        
-        loadMenu = self.menuBar().addMenu('&Load Data')
-        loadDataAction = myqtcommon.createAction(self,
-            "&New Set", self.onLoadNewSet,
-            None, "newset", "New Set")
-        loadSavedAction = myqtcommon.createAction(self,
-            "Load Saved Set", self.onLoadSavedSet,
-            None, "loadsavedset", "Load Saved Set")
-        saveSetAction = myqtcommon.createAction(self,
-            "Save Set", self.onSaveSet,
-            None, "saveset", "Save Set")
-        myqtcommon.addActions(loadMenu, (loadDataAction, loadSavedAction, saveSetAction))
+        loadSCDataMenu = self.menuBar().addMenu(SCDataMenu(self))
         
         loadMenu = self.menuBar().addMenu('&Run Fit')
         loadDemo2Action = myqtcommon.createAction(self,
@@ -119,12 +106,11 @@ class QhjcGUI(QMainWindow):
 
         # LOAD FLIP MECHANISM USED Burzomato et al 2004
         self.mecfn = "./dcpyps/samples/demomec.mec"
-        version, meclist, max_mecnum = dcio.mec_get_list(mecfn)
-        self.mec = dcio.mec_load(mecfn, meclist[2][0])
+        version, meclist, max_mecnum = dcio.mec_get_list(self.mecfn)
+        self.mec = dcio.mec_load(self.mecfn, meclist[2][0])
         rates = [5000.0, 500.0, 2700.0, 2000.0, 800.0, 15000.0, 300.0, 0.1200E+06, 6000.0, 0.4500E+09, 1500.0, 12000.0, 4000.0, 0.9000E+09, 7500.0, 1200.0, 3000.0, 0.4500E+07, 2000.0, 0.9000E+07, 1000, 0.135000E+08]
         self.mec.set_rateconstants(rates)
         self.textBox.append("\nLoaded Burzomato 2003 (flip) mechanism.\n")
-
 
         # Fixed rates.
         #fixed = np.array([False, False, False, False, False, False, False, True,
@@ -132,7 +118,6 @@ class QhjcGUI(QMainWindow):
         #if fixed.size == len(mec.Rates):
         for i in range(len(self.mec.Rates)):
             self.mec.Rates[i].fixed = False
-
 
         # Constrained rates.
         self.mec.Rates[21].is_constrained = True
@@ -158,58 +143,44 @@ class QhjcGUI(QMainWindow):
         self.mec.Rates[15].mr=True
         self.mec.update_constrains()
         self.mec.update_mr()
-
         self.mec.printout(self.log)
         
         # LOAD DATA.
-        self.scnfiles = ["./dcpyps/samples/A-10.scn", "./dcpyps/samples/B-30.scn",
-            "./dcpyps/samples/C-100.scn", "./dcpyps/samples/D-1000.scn"]
+        self.scnfiles = [["./dcpyps/samples/A-10.scn"], ["./dcpyps/samples/B-30.scn"],
+            ["./dcpyps/samples/C-100.scn"], ["./dcpyps/samples/D-1000.scn"]]
         self.tres = [0.000030, 0.000030, 0.000030, 0.000030]
         self.tcrit = [0.004, -1, -0.06, -0.02]
         self.conc = [10e-6, 30e-6, 100e-6, 1000e-6]
+        self.chs = [True, False, False, False]
 
-        for i in range(len(self.scnfiles)):
-            #TODO: load more than one scan file per concentration
-            rec = load_data(self.scnfiles[i][0], self.tres[i], math.fabs(self.tcrit[i]), output=self.log)
-            self.recs.append(rec)
-            self.bursts.append(rec.bursts)
-        
-
-#################### Called by menu 'Load Mech'
+#        for i in range(len(self.scnfiles)):
+#            #TODO: load more than one scan file per concentration
+#            rec = load_data(self.scnfiles[i][0], self.tres[i], math.fabs(self.tcrit[i]), output=self.log)
+#            self.recs.append(rec)
+#            self.bursts.append(rec.bursts)
             
-#################### Called by menu 'Load Data'
-    def onLoadNewSet(self):
-        self.recs_old = self.recs
-        self.recs = []
-        dialog = datamenu.NewSetDlg(self, self.recs, self.log)
-        if dialog.exec_():
-            self.scnfiles, self.conc, self.tres, self.tcrit = dialog.return_set()
-
         for i in range(len(self.scnfiles)):
-            #TODO: load more than one scan file per concentration
-            rec = datamenu.load_data(self.scnfiles[i][0], self.tres[i], math.fabs(self.tcrit[i]), output=self.log)
+            rec = dataset.SCRecord(self.scnfiles[i], self.conc[i], self.tres[i],
+                self.tcrit[i], self.chs[i])
+            rec.record_type = 'recorded'
             self.recs.append(rec)
             self.bursts.append(rec.bursts)
-    
-    def onLoadSavedSet(self):
-        pass
-    
-    def onSaveSet(self):
-        pass
+            rec.printout(self.log)
         
 #################### Called by menu 'Run Fit'
     def onStartFitting(self):
-        
-        
 
         self.theta = np.log(self.mec.theta())
+        
+        print 'theta', self.theta
+        
 
         kwargs = {'nmax': 2, 'xtol': 1e-12, 'rtol': 1e-12, 'itermax': 100,
             'lower_bound': -1e6, 'upper_bound': 0}
         
-        for i in range(len(self.conc)):
+        for i in range(len(self.recs)):
             self.likelihood.append(Log10Likelihood(self.bursts[i], self.mec.kA,
-                self.tres[i], self.tcrit[i], **kwargs))
+                self.recs[i].tres, self.recs[i].tcrit, **kwargs))
                 
         lik = self.dcprogslik(self.theta)
         self.textBox.append("\nStarting likelihood (DCprogs)= {0:.6f}".format(-lik))
@@ -242,25 +213,23 @@ class QhjcGUI(QMainWindow):
         self.mec.printout(self.log)
         self.textBox.append('\n\n')
         
-        open_pdfs, shut_pdfs = [], []
-        for i in range(len(self.scnfiles)):
-            open_pdfs.append(save_pdf_fig(self.scnfiles[i], self.recs[i].opint,
-                self.mec, self.conc[i], self.tres[i], 'open'))
-            shut_pdfs.append(save_pdf_fig(self.scnfiles[i], self.recs[i].shint,
-                self.mec, self.conc[i], self.tres[i], 'shut'))
-        resulthtml = save_html(self.str2, self.str3, self.mecfn, self.scnfiles, open_pdfs, shut_pdfs)
-        self.textBox.append('\n\n Results saved in Loading '+resulthtml)
-
+#        open_pdfs, shut_pdfs = [], []
+#        for i in range(len(self.scnfiles)):
+#            open_pdfs.append(save_pdf_fig(self.scnfiles[i], self.recs[i].opint,
+#                self.mec, self.conc[i], self.tres[i], 'open'))
+#            shut_pdfs.append(save_pdf_fig(self.scnfiles[i], self.recs[i].shint,
+#                self.mec, self.conc[i], self.tres[i], 'shut'))
+#        resulthtml = save_html(self.str2, self.str3, self.mecfn, self.scnfiles, open_pdfs, shut_pdfs)
+#        self.textBox.append('\n\n Results saved in Loading '+resulthtml)
 
     def onFittingSettings(self):
         pass
 
-
     def dcprogslik(self, x, args=None):
         self.mec.theta_unsqueeze(np.exp(x))
         lik = 0
-        for i in range(len(self.conc)):
-            self.mec.set_eff('c', self.conc[i])
+        for i in range(len(self.recs)):
+            self.mec.set_eff('c', self.recs[i].conc)
             lik += -self.likelihood[i](self.mec.Q) * math.log(10)
         return lik
 
@@ -270,12 +239,6 @@ class QhjcGUI(QMainWindow):
         print("iteration # {0:d}; log-lik = {1:.6f}".format(self.iternum, -lik))
         print(np.array_str(np.exp(theta)))        
 
-        
-
-        
-        
-        
-        
 def save_html(str2, str3, mecfn, scnfiles, open_pdfs, shut_pdfs):
     
     htmlstr = ("""<html>

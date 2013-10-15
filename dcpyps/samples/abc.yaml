@@ -1,0 +1,15 @@
+- chs: true
+  conc: 1.0e-05
+  file: [!!python/unicode 'F:/dc-pyps/dcpyps/samples/A-10.scn']
+  tcrit: 0.001
+  tres: 2.9999999999999997e-05
+- chs: true
+  conc: 3.0e-05
+  file: [!!python/unicode 'F:/dc-pyps/dcpyps/samples/B-30.scn']
+  tcrit: 0.002
+  tres: 2.9999999999999997e-05
+- chs: true
+  conc: 0.0001
+  file: [!!python/unicode 'F:/dc-pyps/dcpyps/samples/C-100.scn']
+  tcrit: 0.003
+  tres: 2.9999999999999997e-05

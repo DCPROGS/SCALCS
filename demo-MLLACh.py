@@ -32,21 +32,9 @@ def main():
 
     # LOAD DATA.
     filename = "./dcpyps/samples/AChsim.scn"
-    ioffset, nint, calfac, header = dcio.scn_read_header(filename)
-    tint, iampl, iprops = dcio.scn_read_data(filename, ioffset, nint, calfac)
-    rec1 = dataset.SCRecord(filename, header, tint, iampl, iprops)
-    # Impose resolution, get open/shut times and bursts.
-    rec1.impose_resolution(tres)
-    rec1.get_open_shut_periods()
-    rec1.get_bursts(tcrit)
-    print('\nNumber of resolved intervals = {0:d}'.format(len(rec1.rtint)))
-    print('\nNumber of bursts = {0:d}'.format(len(rec1.bursts)))
-    blength = rec1.get_burst_length_list()
-    print('Average length = {0:.9f} ms'.format(np.average(blength)*1000))
-    print('Range: {0:.3f}'.format(min(blength)*1000) +
-            ' to {0:.3f} millisec'.format(max(blength)*1000))
-    openings = rec1.get_openings_burst_list()
-    print('Average number of openings= {0:.9f}'.format(np.average(openings)))
+    rec1 = dataset.SCRecord([filename], conc, tres, tcrit)
+    rec1.record_type = 'recorded'
+    rec1.printout()
 
     # PREPARE RATE CONSTANTS.
     # Fixed rates.

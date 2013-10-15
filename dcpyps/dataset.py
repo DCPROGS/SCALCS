@@ -1,5 +1,6 @@
 #! /usr/bin/python
 
+import sys
 import math
 import random
 
@@ -15,21 +16,38 @@ class SCRecord(object):
     record.
     """
 
-    def __init__(self, filename=None, header=None, itint=None, iampl=None, iprops=None):
+    def __init__(self, filenames=None, conc=None, tres=None, tcrit=None,
+        chs=None, onechan=None, badend=None,
+        itint=None, iampl=None, iprops=None):
+        
+        self.filenames = filenames
         self.itint = itint
         self.iampl = iampl
         self.iprops = iprops
-        self.resolution_imposed = False
-        self.tres = None
-        self.tcrit = None
-        self.record_type = None
+        self.tres = tres
+        self.tcrit = tcrit
+        self.conc = conc
+        self.chs = chs # CHS vectors: yes or no
+        self.onechan = onechan # opening from one channel only?
+        self.badend = badend # bad shutting can terminate burst?
 
-    def load_from_file(self, filename):
-        self.filename = filename
-        ioffset, nint, self.calfac, self.header = dcio.scn_read_header(self.filename)
-        self.itint, self.iampl, self.iprops = dcio.scn_read_data(self.filename,
-            ioffset, nint, self.calfac)
-        self.record_type = '' # TODO: get from header if simulated or scanned
+        self.record_type = None
+        self.resolution_imposed = False
+        
+        if self.filenames and self.tres and self.tcrit:
+            self.load_from_file()
+            self.impose_resolution(self.tres)
+            self.get_open_shut_periods()
+            self.get_bursts(self.tcrit)
+        
+
+    def load_from_file(self):
+        #TODO: enable taking several scan files and join in a single record.
+        # Just a single file could be loaded at present.
+        ioffset, nint, calfac, header = dcio.scn_read_header(self.filenames[0])
+        self.itint, self.iampl, self.iprops = dcio.scn_read_data(self.filenames[0],
+            ioffset, nint, calfac)
+#        self.record_type = '' # TODO: get from header if simulated or scanned
 
     def simulate_record(self, mec, tres, state, opamp=5, nintmax=5000):
         """
@@ -300,6 +318,108 @@ class SCRecord(object):
         for ind in range(len(self.bursts)):
             print '{0:d} '.format(ind), self.bursts[ind]
         print('\n###############\n\n')
+        
+    def set_tres(self, tres):
+        self.tres = tres
+        
+    def set_tcrit(self, tcrit):
+#        self.chs = False if (tcrit < 0) else True
+        self.tcrit = math.fabs(tcrit)
+
+    def set_conc(self, conc):
+        self.conc = conc
+        
+    def set_chs(self, chs):
+        self.chs = chs # CHS vectors: yes or no
+        
+    def set_onechan(self, onechan):
+        self.onechan = onechan # opening from one channel only?
+        
+    def set_badend(self, badend):
+        self.badend = badend # bad shutting can terminate burst?
+        
+    def __repr__(self):
+        
+        str_repr = ''
+        
+        if self.record_type:
+            str_repr += '\n'
+            if self.record_type == 'simulated':
+                str_repr += '\nSimulated data loaded from file: '
+            elif self.record_type == 'recorded':
+                str_repr += '\nRecorded data loaded from file: '
+            str_repr += self.filenames[0]
+        else:
+            str_repr += '\nData not loaded...'
+
+        if self.tres:
+            str_repr += '\nNumber of resolved intervals = {0:d}'.format(len(self.rtint))
+            str_repr += '\nNumber of resolved periods = {0:d}'.format(len(self.opint) + len(self.shint))
+            str_repr += '\n\nNumber of open periods = {0:d}'.format(len(self.opint))
+            str_repr += ('\nMean and SD of open periods = {0:.9f} +/- {1:.9f} ms'.
+                format(np.average(self.opint)*1000, np.std(self.opint)*1000))
+            str_repr += ('\nRange of open periods from {0:.9f} ms to {1:.9f} ms'.
+                format(np.min(self.opint)*1000, np.max(self.opint)*1000))
+            str_repr += ('\n\nNumber of shut intervals = {0:d}'.format(len(self.shint)))
+            str_repr += ('\nMean and SD of shut periods = {0:.9f} +/- {1:.9f} ms'.
+                format(np.average(self.shint)*1000, np.std(self.shint)*1000))
+            str_repr += ('\nRange of shut periods from {0:.9f} ms to {1:.9f} ms'.
+                format(np.min(self.shint)*1000, np.max(self.shint)*1000))
+            str_repr += ('\nLast shut period = {0:.9f} ms'.format(self.shint[-1]*1000))
+        else:
+            str_repr += '\n\nTemporal resolution not imposed...'
+
+        if self.tcrit:
+            str_repr += ('\n\nNumber of bursts = {0:d}'.format(len(self.bursts)))
+            blength = self.get_burst_length_list()
+            str_repr += ('\nAverage length = {0:.9f} ms'.
+                format(np.average(blength)*1000))
+            str_repr += ('\nRange: {0:.3f}'.format(min(blength)*1000) +
+                ' to {0:.3f} millisec'.format(max(blength)*1000))
+            openings = self.get_openings_burst_list()
+            str_repr += ('\nAverage number of openings= {0:.9f}'.
+                format(np.average(openings)))
+        else:
+            str_repr += '\n\nBursts not separated...'
+
+        return str_repr
+
+    def printout(self, output=sys.stdout):
+        output.write('%s' % self)
+        
+def load_data(sfile, tres, tcrit, output=sys.stdout):
+    output.write('\n\n Loading '+sfile)
+    ioffset, nint, calfac, header = dcio.scn_read_header(sfile)
+    tint, iampl, iprops = dcio.scn_read_data(sfile, ioffset, nint, calfac)
+    rec = SCRecord(sfile, header, tint, iampl, iprops)
+    # Impose resolution, get open/shut times and bursts.
+    rec.impose_resolution(tres)
+    output.write('\nNumber of resolved intervals = {0:d}'.format(len(rec.rtint)))
+
+    rec.get_open_shut_periods()
+    output.write('\nNumber of resolved periods = {0:d}'.format(len(rec.opint) + len(rec.shint)))
+    output.write('\nNumber of open periods = {0:d}'.format(len(rec.opint)))
+    output.write('Mean and SD of open periods = {0:.9f} +/- {1:.9f} ms'.
+        format(np.average(rec.opint)*1000, np.std(rec.opint)*1000))
+    output.write('Range of open periods from {0:.9f} ms to {1:.9f} ms'.
+        format(np.min(rec.opint)*1000, np.max(rec.opint)*1000))
+    output.write('\nNumber of shut intervals = {0:d}'.format(len(rec.shint)))
+    output.write('Mean and SD of shut periods = {0:.9f} +/- {1:.9f} ms'.
+        format(np.average(rec.shint)*1000, np.std(rec.shint)*1000))
+    output.write('Range of shut periods from {0:.9f} ms to {1:.9f} ms'.
+        format(np.min(rec.shint)*1000, np.max(rec.shint)*1000))
+    output.write('Last shut period = {0:.9f} ms'.format(rec.shint[-1]*1000))
+
+    rec.get_bursts(tcrit)
+    output.write('\nNumber of bursts = {0:d}'.format(len(rec.bursts)))
+    blength = rec.get_burst_length_list()
+    output.write('Average length = {0:.9f} ms'.format(np.average(blength)*1000))
+    output.write('Range: {0:.3f}'.format(min(blength)*1000) +
+            ' to {0:.3f} millisec'.format(max(blength)*1000))
+    openings = rec.get_openings_burst_list()
+    output.write('Average number of openings= {0:.9f}'.format(np.average(openings)))
+    return rec
+
 
 
 def false_events(tres, fc, rms, amp):
