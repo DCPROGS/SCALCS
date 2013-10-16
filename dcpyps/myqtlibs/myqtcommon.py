@@ -1,61 +1,22 @@
-import time
 import sys
-import os
 import socket
-import math
+import datetime
 
 try:
-#    from PyQt4.QtCore import *
-#    from PyQt4.QtGui import *
     from PySide.QtGui import *
     from PySide.QtCore import *
 except:
     raise ImportError("pyqt module is missing")
 
-try:
-    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-    from matplotlib.figure import Figure
-    from matplotlib import scale as mscale
-    from mpl_toolkits.mplot3d import Axes3D
-    from matplotlib import cm
-    from matplotlib.ticker import LinearLocator, FormatStrFormatter, FuncFormatter
-    import matplotlib.pyplot as plt
-#    from matplotlib import transforms as mtransforms
-#    from matplotlib import ticker
-except:
-    raise ImportError("matplotlib module is missing")
-
-import numpy as np
-
-from scipy.optimize import curve_fit
-from scipy.optimize import leastsq
-
-from dcpyps import scalcslib as scl
-from dcpyps import cjumps
-from dcpyps import scburst
-from dcpyps import popen
-from dcpyps import dcio
-from dcpyps import samples
-from dcpyps import scplotlib as scpl
-from dcpyps import mechanism
-
-from dcpyps import optimize
-from dcpyps import dataset
-
-
-def startInfo():
+def startInfo(log):
     """
     Get date, time, machine info, etc.
     """
-    str1 = "DC_PyPs: HJCFIT, Q matrix calculations, etc."
-    str2 = ("Date and time of analysis: %4d/%02d/%02d %02d:%02d:%02d"
-        %time.localtime()[0:6])
+    log.write("DC_PyPs: HJCFIT, Q matrix calculations, etc.")
+    log.write("Date and time of analysis: " + str(datetime.datetime.now())[:19])
     machine = socket.gethostname()
     system = sys.platform
-    str3 = "Machine: %s; System: %s" %(machine, system)
-    return str1, str2, str3
-
+    log.write("Machine: {0};   System: {1}".format(machine, system))
 
 def createAction(self, text, slot=None, shortcut=None, icon=None,
         tip=None, checkable=False, signal="triggered()"):

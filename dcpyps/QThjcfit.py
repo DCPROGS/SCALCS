@@ -1,7 +1,7 @@
 #! /usr/bin/python
 """
-A simple GUI for DC_PyPs project.
-Depends on pyqt and matplotlib modules.
+A simple GUI for DC_PyPs  HJCFIT (maximum likelihood fit of single channel 
+records to postulated mechanisms).
 """
 import time
 import sys
@@ -13,20 +13,6 @@ try:
     from PySide.QtCore import *
 except:
     raise ImportError("pyqt module is missing")
-
-#try:
-#    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-#    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-#    from matplotlib.figure import Figure
-#    from matplotlib import scale as mscale
-#    from mpl_toolkits.mplot3d import Axes3D
-#    from matplotlib import cm
-#    from matplotlib.ticker import LinearLocator, FormatStrFormatter, FuncFormatter
-#    import matplotlib.pyplot as plt
-##    from matplotlib import transforms as mtransforms
-##    from matplotlib import ticker
-#except:
-#    raise ImportError("matplotlib module is missing")
 
 from pylab import*
 import numpy as np
@@ -48,7 +34,7 @@ class QhjcGUI(QMainWindow):
         self.resize(800, 600)     # wide, high in px
         self.mainFrame = QWidget()
         self.setWindowTitle("DC_PyPs: HJCFIT- fit of model to open-shut times with missed events")
-        #self.setWindowIcon(QIcon("./dcpyps/samples/HJCFIT.ICO"))
+        self.setWindowIcon(QIcon("./dcpyps/samples/HJCFIT.png"))
         
         self.mec = None
         self.mecfn = None
@@ -73,8 +59,8 @@ class QhjcGUI(QMainWindow):
             "Ctrl+Q", "appquit", "Close the application")
         myqtcommon.addActions(loadMenu, (loadDemo1Action, quitAction))
         
-        loadMechMenu = self.menuBar().addMenu(MechMenu(self))
-        loadSCDataMenu = self.menuBar().addMenu(SCDataMenu(self))
+        self.menuBar().addMenu(MechMenu(self))
+        self.menuBar().addMenu(SCDataMenu(self))
         
         loadMenu = self.menuBar().addMenu('&Run Fit')
         loadDemo2Action = myqtcommon.createAction(self,
@@ -87,12 +73,9 @@ class QhjcGUI(QMainWindow):
         
         self.textBox = QTextBrowser()
         # Set here if printout to TextBox only or also to file or console.
-        self.log = myqtcommon.PrintLog(self.textBox) #, sys.stdout)
-        self.str1, self.str2, self.str3 = myqtcommon.startInfo()
-        self.textBox.append(self.str1)
-        self.textBox.append(self.str2)
-        self.textBox.append(self.str3)
-        
+        self.log = myqtcommon.PrintLog(self.textBox) #, sys.stdout)    
+        myqtcommon.startInfo(self.log)
+
         rightVBox = QVBoxLayout()
         rightVBox.addWidget(self.textBox)
         self.mainFrame.setLayout(rightVBox)
