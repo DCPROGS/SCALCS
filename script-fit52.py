@@ -21,52 +21,22 @@ str3 = "Machine: %s; System: %s\n" %(machine, system)
 
 
 # LOAD DATA.
-scnfiles = ["./dcpyps/samples/G.SCN", "./dcpyps/samples/P.SCN",
-    "./dcpyps/samples/O.SCN", "./dcpyps/samples/N.SCN"]
+scnfiles = [["./dcpyps/samples/G.SCN"], ["./dcpyps/samples/P.SCN"],
+    ["./dcpyps/samples/O.SCN"], ["./dcpyps/samples/N.SCN"]]
 tres = [0.000040, 0.000035, 0.000035, 0.000030]
 tcrit = [0.01, 0.01, -0.1, -0.1]
 conc = [500e-6, 1e-3, 5e-3, 10e-3]
-
-def load_data(sfile, tres, tcrit):
-    print '\n\n Loading ', sfile
-    ioffset, nint, calfac, header = dcio.scn_read_header(sfile)
-    tint, iampl, iprops = dcio.scn_read_data(sfile, ioffset, nint, calfac)
-    rec = dataset.SCRecord(sfile, header, tint, iampl, iprops)
-    # Impose resolution, get open/shut times and bursts.
-    rec.impose_resolution(tres)
-    print('\nNumber of resolved intervals = {0:d}'.format(len(rec.rtint)))
-    print'\nrprops elements =', itemfreq(rec.rprops)
-
-    rec.get_open_shut_periods()
-    print('\nNumber of resolved periods = {0:d}'.format(len(rec.opint) + len(rec.shint)))
-    print('\nNumber of open periods = {0:d}'.format(len(rec.opint)))
-    print('Mean and SD of open periods = {0:.9f} +/- {1:.9f} ms'.
-        format(np.average(rec.opint)*1000, np.std(rec.opint)*1000))
-    print('Range of open periods from {0:.9f} ms to {1:.9f} ms'.
-        format(np.min(rec.opint)*1000, np.max(rec.opint)*1000))
-    print('\nNumber of shut intervals = {0:d}'.format(len(rec.shint)))
-    print('Mean and SD of shut periods = {0:.9f} +/- {1:.9f} ms'.
-        format(np.average(rec.shint)*1000, np.std(rec.shint)*1000))
-    print('Range of shut periods from {0:.9f} ms to {1:.9f} ms'.
-        format(np.min(rec.shint)*1000, np.max(rec.shint)*1000))
-    print('Last shut period = {0:.9f} ms'.format(rec.shint[-1]*1000))
-
-    rec.get_bursts(tcrit)
-    print('\nNumber of bursts = {0:d}'.format(len(rec.bursts)))
-    blength = rec.get_burst_length_list()
-    print('Average length = {0:.9f} ms'.format(np.average(blength)*1000))
-    print('Range: {0:.3f}'.format(min(blength)*1000) +
-            ' to {0:.3f} millisec'.format(max(blength)*1000))
-    openings = rec.get_openings_burst_list()
-    print('Average number of openings= {0:.9f}'.format(np.average(openings)))
-    return rec
+chs = [True, True, False, False]
 
 recs = []
 bursts = []
 for i in range(len(scnfiles)):
-    rec = load_data(scnfiles[i], tres[i], math.fabs(tcrit[i]))
+    rec = dataset.SCRecord(scnfiles[i], conc[i], tres[i], tcrit[i], chs[i])
+    rec.record_type = 'recorded'
     recs.append(rec)
     bursts.append(rec.bursts)
+    rec.printout()
+
 
 # LOAD FLIP MECHANISM USED Burzomato et al 2004
 mecfn = "./dcpyps/samples/ke10.mec"
@@ -99,7 +69,7 @@ mec.Rates[19].is_constrained = True
 mec.Rates[19].constrain_func = mechanism.constrain_rate_multiple
 mec.Rates[19].constrain_args = [15, 3]
 
-mec.Rates[13].mr=True
+mec.set_mr(True, 13)
 mec.update_constrains()
 mec.update_mr()
 
@@ -154,7 +124,7 @@ opts['tres'] = tres[0]
 opts['tcrit'] = tcrit[0]
 opts['isCHS'] = True
 opts['data'] = bursts[0]
-start_lik, th = scl.HJClik(np.log(theta), opts)
+start_lik, th = scl.HJClik(theta, opts)
 print ("\nStarting likelihood (dc-pyps)= {0:.6f}".format(-start_lik))
 
 start = time.clock()
@@ -207,25 +177,25 @@ def save_pdf_fig(scnfile, ints, mec, conc, tres, type):
     savefig(outfile, bbox_inches=0)
     return outfile
 
-open_pdfs = []
-shut_pdfs = []
-for i in range(len(scnfiles)):
-    open_pdfs.append(save_pdf_fig(scnfiles[i], recs[i].opint, mec, conc[i], tres[i], 'open'))
-    shut_pdfs.append(save_pdf_fig(scnfiles[i], recs[i].shint, mec, conc[i], tres[i], 'shut'))
-
-htmlstr = ("""<html>
-    <p>HJCFIT: Fit of model to open-shut times with missed events
-    (Uses HJC distributions, exact for first two deadtimes then asymptotic, to calculate likelihood of record)</p>""" +
-    '<p>'+ str2 + '<p></p>' + str3 + """</p></html>""" )
-
-htmlfile = mecfn[:-4] + '.html'
-f = open(htmlfile, 'w')
-f.write(htmlstr)
-for i in range(len(scnfiles)):
-    f.write("<p>{0} _____________________________________ {1}</p>".format(open_pdfs[i], shut_pdfs[i]))
-    f.write("<img src={0} width='450' height='300'><img src={1} width='450' height='300'>".format(os.path.abspath(open_pdfs[i]), os.path.abspath(shut_pdfs[i])))
-
-#mec.printout(f)
-f.close()
+#open_pdfs = []
+#shut_pdfs = []
+#for i in range(len(scnfiles)):
+#    open_pdfs.append(save_pdf_fig(scnfiles[i], recs[i].opint, mec, conc[i], tres[i], 'open'))
+#    shut_pdfs.append(save_pdf_fig(scnfiles[i], recs[i].shint, mec, conc[i], tres[i], 'shut'))
+#
+#htmlstr = ("""<html>
+#    <p>HJCFIT: Fit of model to open-shut times with missed events
+#    (Uses HJC distributions, exact for first two deadtimes then asymptotic, to calculate likelihood of record)</p>""" +
+#    '<p>'+ str2 + '<p></p>' + str3 + """</p></html>""" )
+#
+#htmlfile = mecfn[:-4] + '.html'
+#f = open(htmlfile, 'w')
+#f.write(htmlstr)
+#for i in range(len(scnfiles)):
+#    f.write("<p>{0} _____________________________________ {1}</p>".format(open_pdfs[i], shut_pdfs[i]))
+#    f.write("<img src={0} width='450' height='300'><img src={1} width='450' height='300'>".format(os.path.abspath(open_pdfs[i]), os.path.abspath(shut_pdfs[i])))
+#
+##mec.printout(f)
+#f.close()
 
 

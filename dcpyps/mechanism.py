@@ -532,30 +532,26 @@ class Mechanism(object):
 
     def __repr__(self):
         #TODO: need nice table format
-        str_repr = '\nclass dcpyps.Mechanism\n'
-        str_repr += 'Values of unit rates [1/sec]:\n'
+        str_repr = '\n\n\nclass dcpyps.Mechanism'
+        str_repr += '\nValues of unit rates [1/sec]:'
         for rate in self.Rates:
-            str_repr += ('From ' + rate.State1.name + '  \tto ' +
+            str_repr += ('\nFrom ' + rate.State1.name + '  \tto ' +
                          rate.State2.name + '    \t' + rate.name +
-                         '   \t{0:.5g}'.format(rate.unit_rate()) +
-                         '\n')
+                         '   \t{0:.5g}'.format(rate.unit_rate()))
 
-        str_repr += '\n'
         for state in self.States:
             if state.statetype=='A':
-                str_repr += ('Conductance of state ' + state.name + ' (pS)  = ' +
-                         '     {0:.5g}'.format(state.conductance * 1e12) +
-                         '\n')
+                str_repr += ('\n\nConductance of state ' + state.name + ' (pS)  = ' +
+                         '     {0:.5g}'.format(state.conductance * 1e12))
 
-        str_repr += ('\nNumber of open states = {0:d}'.format(self.kA))
+        str_repr += ('\n\nNumber of open states = {0:d}'.format(self.kA))
         str_repr += ('\nNumber of short-lived shut states (within burst) = {0:d}'
             .format(self.kB))
         str_repr += ('\nNumber of long-lived shut states (between bursts) = {0:d}'
             .format(self.kC))
-        str_repr += ('\nNumber of desensitised states = {0:d}'.format(self.kD) +
-            '\n')
+        str_repr += ('\nNumber of desensitised states = {0:d}'.format(self.kD))
 
-        str_repr += ('\nNumber of cycles = {0:d}'.format(len(self.Cycles)))
+        str_repr += ('\n\nNumber of cycles = {0:d}'.format(len(self.Cycles)))
         for i in range(len(self.Cycles)):
             str_repr += ('\nCycle {0:d} is formed of states: '.format(i+1))
             for j in range(len(self.Cycles[i].states)):
@@ -676,7 +672,8 @@ class Mechanism(object):
             if ((self.Rates[nrate].State1.name in self.Cycles[i].states) and 
                 (self.Rates[nrate].State2.name in self.Cycles[i].states)):
                 self.Cycles[i].mrconstr = [self.Rates[nrate].State1.name, self.Rates[nrate].State2.name]
-                self.update_mr()
+        self.update_mr()
+
     def update_mr(self):
         #TODO: check for consistency between cycle.mrconstr and rate.mr.
 

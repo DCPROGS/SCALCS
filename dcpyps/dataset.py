@@ -340,17 +340,18 @@ class SCRecord(object):
         
     def __repr__(self):
         
-        str_repr = ''
+        str_repr = '\n\n Data loaded from file: '
+        str_repr += self.filenames[0]
         
-        if self.record_type:
-            str_repr += '\n'
-            if self.record_type == 'simulated':
-                str_repr += '\nSimulated data loaded from file: '
-            elif self.record_type == 'recorded':
-                str_repr += '\nRecorded data loaded from file: '
-            str_repr += self.filenames[0]
-        else:
-            str_repr += '\nData not loaded...'
+#        if self.record_type:
+#            str_repr += '\n'
+#            if self.record_type == 'simulated':
+#                str_repr += '\nSimulated data loaded from file: '
+#            elif self.record_type == 'recorded':
+#                str_repr += '\nRecorded data loaded from file: '
+#            str_repr += self.filenames[0]
+#        else:
+#            str_repr += '\nData not loaded...'
 
         if self.tres:
             str_repr += '\nNumber of resolved intervals = {0:d}'.format(len(self.rtint))
