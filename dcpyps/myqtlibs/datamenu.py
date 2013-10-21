@@ -177,7 +177,126 @@ class SCDataMenu(QMenu):
             format(len(self.rec1.rtint)))
         self.resolution_imposed = True
         self.rec1.get_open_shut_periods()
-
+        
+##    Calculate false event rate
+#        if self.data_loaded:
+#            falsrate = dataset.false_events(self.tres,
+#                self.rec1.header['ffilt'] * 1000, self.rec1.header['rms'],
+#                self.rec1.header['avamp'] * self.rec1.calfac)
+#            trise = 0.3321 / (self.rec1.header['ffilt'] * 1000)
+#            zo = self.tres / trise
+#            aamaxo = dataset.erf(0.88604 * zo)
+#            self.textBox.append('\nAt resolution {0:.0f} microsec false event rate '.
+#                format(self.tres * 1000000) +
+#                '(per sec) for openings and shuttings is {0:.3e}'.format(falsrate)+
+#                ' ( {0:.2f} risetimes, A/Amax = {1:.2f})'.format(zo, aamaxo))
+#
+#    def onPlotDataBurst(self):
+#        """
+#        """
+#        self.textBox.append('\n\n\t===== PLOTTING DATA: BURST LENGTH =====')
+#        self.textBox.append("\nFirst burst starts only after gap > tcrit is found.")
+#        self.textBox.append("Unusable shut time treated as a valid end of burst.")
+#
+#        dialog = TcritDlg(self)
+#        if dialog.exec_():
+#            self.tcrit = dialog.return_par()
+#        self.textBox.append('\nCritical gap length = {0:.3f} millisec'.
+#            format(self.tcrit * 1000))
+#        self.rec1.get_bursts(self.tcrit)
+#        self.textBox.append('\nNumber of bursts = {0:d}'.
+#            format(len(self.rec1.bursts)))
+#        blength = self.rec1.get_burst_length_list()
+#        self.textBox.append('Average = {0:.3f} millisec'.
+#            format(np.average(blength)*1000))
+#        self.textBox.append('Range: {0:.3f}'.format(min(blength)*1000) +
+#            ' to {0:.3f} millisec'.format(max(blength)*1000))
+#
+#        x, y, dx = dataset.prepare_hist(blength, self.tres)
+#        self.axes.clear()
+#        self.axes.semilogx(x*1000, y, 'b-')
+#        self.axes.set_yscale('sqrtscale')
+#        self.axes.xaxis.set_ticks_position('bottom')
+#        self.axes.yaxis.set_ticks_position('left')
+#        self.canvas.draw()
+#
+#    def onPlotDataOpen(self):
+#        """
+#        """
+#        self.txtPltBox.clear()
+#        self.txtPltBox.append('\t===== HISTOGRAM AND DISTRIBUTION OF OPEN PERIODS =====')
+#        self.txtPltBox.append('Agonist concentration = {0:.5g} mikroM'.
+#            format(self.conc * 1000000))
+#        self.txtPltBox.append('Resolution = {0:.5g} mikrosec'.
+#            format(self.tres * 1000000))
+#        self.txtPltBox.append('Ideal pdf- red dashed line.')
+#        self.txtPltBox.append('Exact pdf- blue solid line.')
+#        self.txtPltBox.append('Data histogram- black line.')
+#
+#        self.textBox.append('\n\n\t===== PLOTTING DATA: OPEN PERIODS =====')
+#        self.textBox.append('\nNumber of open periods = {0:d}'.
+#            format(len(self.rec1.opint)))
+#        self.textBox.append('Average = {0:.3f} ms'.
+#            format(np.average(self.rec1.opint)*1000))
+#        self.textBox.append('Range: {0:.3f}'.format(min(self.rec1.opint)*1000) +
+#            ' to {0:.3f} ms'.format(max(self.rec1.opint)*1000))
+#        x, y, dx = dataset.prepare_hist(self.rec1.opint, self.tres)
+#
+#        self.mec.set_eff('c', self.conc)
+##        scl.printout_occupancies(self.mec, self.tres, output=self.log)
+##        scl.printout_distributions(self.mec, self.tres, output=self.log)
+#        t, ipdf, epdf, apdf = scpl.open_time_pdf(self.mec, self.tres)
+#        sipdf = scpl.scaled_pdf(t, ipdf, math.log10(dx), len(self.rec1.opint))
+#        sepdf = scpl.scaled_pdf(t, epdf, math.log10(dx), len(self.rec1.opint))
+##        self.present_plot = np.vstack((t, ipdf, epdf, apdf))
+#
+#        self.axes.clear()
+#        self.axes.semilogx(x*1000, y, 'k-',
+#            t, sipdf, 'r--', t, sepdf, 'b-')
+#        self.axes.set_yscale('sqrtscale')
+#        self.axes.xaxis.set_ticks_position('bottom')
+#        self.axes.yaxis.set_ticks_position('left')
+#        self.canvas.draw()
+#
+#    def onPlotDataShut(self):
+#        """
+#        """
+#
+#        self.txtPltBox.clear()
+#        self.txtPltBox.append('\t===== HISTOGRAM AND DISTRIBUTION OF SHUT TIMES =====')
+#        self.txtPltBox.append('Agonist concentration = {0:.5g} mikroM'.
+#            format(self.conc * 1000000))
+#        self.txtPltBox.append('Resolution = {0:.5g} mikrosec'.
+#            format(self.tres * 1000000))
+#        self.txtPltBox.append('Ideal pdf- red dashed line.')
+#        self.txtPltBox.append('Exact pdf- blue solid line.')
+#        self.txtPltBox.append('Data histogram- black line.')
+#
+#
+#        self.textBox.append('\n\n\t===== PLOTTING DATA: OPEN PERIODS =====')
+#        self.textBox.append('\nNumber of shut periods = {0:d}'.
+#            format(len(self.rec1.shint)))
+#        self.textBox.append('Average = {0:.3f} ms'.
+#            format(np.average(self.rec1.shint)*1000))
+#        self.textBox.append('Range: {0:.3f}'.format(min(self.rec1.shint)*1000) +
+#            ' to {0:.3f} ms'.format(max(self.rec1.shint)*1000))
+#        x, y, dx = dataset.prepare_hist(self.rec1.shint, self.tres)
+#
+#        self.mec.set_eff('c', self.conc)
+##        scl.printout_occupancies(self.mec, self.tres, output=self.log)
+##        scl.printout_distributions(self.mec, self.tres, output=self.log)
+#        t, ipdf, epdf, apdf = scpl.shut_time_pdf(self.mec, self.tres)
+#        sipdf = scpl.scaled_pdf(t, ipdf, math.log10(dx), len(self.rec1.opint))
+#        sepdf = scpl.scaled_pdf(t, epdf, math.log10(dx), len(self.rec1.opint))
+##        self.present_plot = np.vstack((t, ipdf, epdf, apdf))
+#
+#        self.axes.clear()
+#        self.axes.semilogx(x*1000, y, 'k-',
+#            t, sipdf, 'r--', t, sepdf, 'b-')
+#        self.axes.set_yscale('sqrtscale')
+#        self.axes.xaxis.set_ticks_position('bottom')
+#        self.axes.yaxis.set_ticks_position('left')
+#        self.canvas.draw()
 
 class SCNDlg(QDialog):
     """
@@ -503,3 +622,40 @@ class SimRecDlg(QDialog):
         """
         return self.tres, self.conc, self.oamp, self.nint
 
+class TcritDlg(QDialog):
+    """
+    Dialog to input burst separation and plotting parameters.
+    """
+    def __init__(self, parent=None):
+        super(TcritDlg, self).__init__(parent)
+
+        self.tcrit = 4 # Critical time interval.
+
+        layoutMain = QVBoxLayout()
+        layoutMain.addWidget(QLabel("Define burst:"))
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Critical time interval (millisec):"))
+        self.tcritEdit = QLineEdit(unicode(4))
+        self.tcritEdit.setMaxLength(10)
+        self.connect(self.tcritEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.tcritEdit)
+        layoutMain.addLayout(layout)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+
+        self.setLayout(layoutMain)
+        self.setWindowTitle("Define burst...")
+
+    def on_par_changed(self):
+        self.tcrit = float(self.tcritEdit.text())
+
+    def return_par(self):
+        return self.tcrit * 0.001 # Return tcrit in sec

@@ -3,15 +3,10 @@
 A simple GUI for DC_PyPs project.
 Depends on pyqt and matplotlib modules.
 """
-import time
 import sys
-import os
-import socket
-import math
+import numpy as np
 
 try:
-#    from PyQt4.QtCore import *
-#    from PyQt4.QtGui import *
     from PySide.QtGui import *
     from PySide.QtCore import *
 except:
@@ -22,35 +17,20 @@ try:
     from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
     from matplotlib.figure import Figure
     from matplotlib import scale as mscale
-    from mpl_toolkits.mplot3d import Axes3D
     from matplotlib import cm
-    from matplotlib.ticker import LinearLocator, FormatStrFormatter, FuncFormatter
     import matplotlib.pyplot as plt
-#    from matplotlib import transforms as mtransforms
-#    from matplotlib import ticker
 except:
     raise ImportError("matplotlib module is missing")
-
-import numpy as np
-
-from scipy.optimize import curve_fit
-from scipy.optimize import leastsq
 
 import scalcslib as scl
 import cjumps
 import scburst
 import popen
-import dcio
 import samples
 import scplotlib as scpl
-import mechanism
 
 from myqtlibs.mechmenu import MechMenu
-import myqtlibs.datamenu as datamenu
 import myqtlibs.myqtcommon as myqtcommon
-
-import optimize
-import dataset
 
 class QMatGUI(QMainWindow):
     def __init__(self, parent=None):
@@ -76,11 +56,7 @@ class QMatGUI(QMainWindow):
         self.cjfunc = None
         self.cjargs = None
 
-        #loadMechMenu = mechmenu.addMechMenuElements(self)
-        loadMechMenu = self.menuBar().addMenu(MechMenu(self))
-#        quitAction = myqtcommon.createAction(self, "&Quit", self.close,
-#            "Ctrl+Q", "appquit", "Close the application")
-#        loadMechMenu.addAction(quitAction)
+        self.menuBar().addMenu(MechMenu(self))
 
         plotMenu = self.menuBar().addMenu('&Plot')
         plotPopenAction = myqtcommon.createAction(self, "&Popen curve", self.onPlotPopen)
@@ -118,8 +94,7 @@ class QMatGUI(QMainWindow):
             "&Dependency plot", self.onPlotDependency)
 #        plotJump2PopenAction = self.createAction(self, 
 #            "&Instant rise and exponential decay concentration jump: Popen", self.onPlotCJump2Popen)
-        plotSaveASCII = myqtcommon.createAction(self, 
-            "&Save current plot as ASCII file", self.onPlotSaveASCII)
+
         myqtcommon.addActions(plotMenu, (plotOpenTimePDFAction, plotShutTimePDFAction,
             plotAdjacentOpenShutAction, plotMeanOpenNextShutAction, 
             plotCorrOpenShutAction, plotDependencyAction,
@@ -130,38 +105,15 @@ class QMatGUI(QMainWindow):
             plotBurstLenVConcAction,
             plotJumpPopenAction, plotJumpOccupanciesAction, plotJumpOnOffTauConc,
 #            plotJump2PopenAction,            
-            plotPopenAction,
-            plotSaveASCII))
+            plotPopenAction))
         plotMenu.insertSeparator(plotJumpPopenAction)
         plotMenu.insertSeparator(plotPopenAction)
-        plotMenu.insertSeparator(plotSaveASCII)
 
-# UNCOMMENT NEXT LINES TO ENABLE DATA DISTRIBUTION PLOTTING
-#####        dataMenu = self.menuBar().addMenu('&Data')
-        openScanAction = myqtcommon.createAction(self, "&Load single channel record from SCN file", self.onLoadData)
-        simulateScanAction = myqtcommon.createAction(self, "&Simulate single channel record",
-            self.onSimulateData)
-        saveScanAction = myqtcommon.createAction(self, "Save single channel record (SCN file)",
-            self.onSaveDataSCN)
-        imposeResolutionAction = myqtcommon.createAction(self, "&Impose resolution",
-            self.onImposeResolution)
-        plotDataOpenAction = myqtcommon.createAction(self, "&Plot open period distribution",
-            self.onPlotDataOpen)
-        plotDataShutAction = myqtcommon.createAction(self, "&Plot shut period distribution",
-            self.onPlotDataShut)
-        plotDataBurstAction = myqtcommon.createAction(self, "&Plot burst length distribution",
-            self.onPlotDataBurst)
-        likelihoodAction = myqtcommon.createAction(self, "&HJCfit",
-            self.onCalculateLikelihood)
-#        myqtcommon.addActions(dataMenu, (openScanAction, simulateScanAction,
-#            saveScanAction,
-#            imposeResolutionAction, plotDataOpenAction, plotDataShutAction,
-#            plotDataBurstAction, likelihoodAction))
-# LINES RELATED TO DATA HISTOGRAMMS PLOTTING
-
-        printOutMenu = self.menuBar().addMenu('&Printout')
-        printOutSaveAction = myqtcommon.createAction(self, "&Save", self.onPrintOutSave)
-        myqtcommon.addActions(printOutMenu, (printOutSaveAction,
+        saveMenu = self.menuBar().addMenu('&Save')
+        savePrintOutAction = myqtcommon.createAction(self, "&All work to text file", self.onSavePrintOut)
+        savePlotASCII = myqtcommon.createAction(self, 
+            "&Save current plot to text file", self.onSavePlotASCII)
+        myqtcommon.addActions(saveMenu, (savePrintOutAction, savePlotASCII,
             None))
 
         helpMenu = self.menuBar().addMenu('&Help')
@@ -183,12 +135,8 @@ class QMatGUI(QMainWindow):
 
         self.textBox = QTextBrowser()
         # Set here if printout to TextBox only or also to file or console.
-        self.log = myqtcommon.PrintLog(self.textBox) #, sys.stdout)
-        str1, str2, str3 = myqtcommon.startInfo()
-        self.textBox.append(str1)
-        self.textBox.append(str2)
-        self.textBox.append(str3)
-        self.setWindowTitle(str1)
+        self.log = myqtcommon.PrintLog(self.textBox) #, sys.stdout)    
+        myqtcommon.startInfo(self.log)
 
         plotSetLayout = QVBoxLayout()
         self.txtPltBox = QTextBrowser()
@@ -206,216 +154,6 @@ class QMatGUI(QMainWindow):
         self.mainFrame.setLayout(HBox)
         self.setCentralWidget(self.mainFrame)
         
-# UNCOMMENT NEXT FUNCTIONS TO ENABLE DATA DISTRIBUTION PLOTTING
-    def onLoadData(self):
-        """
-        """
-
-        self.textBox.append('\n\n\t===== LOADING DATA FILE =====')
-        filename, filt = QFileDialog.getOpenFileName(self,
-            "Open SCN File...", "", "DC SCN Files (*.scn)")
-#        self.rec1 = dataset.SCRecord(filename, header, tint, iampl, iprops)
-        self.rec1 = dataset.SCRecord()
-        self.rec1.load_from_file(filename)
-        self.textBox.append("\nLoaded record from file: " +
-            os.path.split(str(filename))[1])
-        self.data_loaded = True
-
-    def onSimulateData(self):
-        """
-        """
-        self.textBox.append('\n\n\t==== SIMULATING SINGLE CHANNEL RECORD ====')
-
-        self.tres, conc, oamp, nint = self.tres, self.conc, 5, 5000
-        dialog = SimRecDlg(self, self.tres, conc, oamp, nint)
-        if dialog.exec_():
-            tres, conc, oamp, nint = dialog.return_par()
-
-        self.rec1 = dataset.SCRecord()
-        self.mec.set_eff('c', conc)
-        startstate = self.mec.k - 1 # TODO: ask for this in dialog
-        self.rec1.simulate_record(self.mec, self.tres, startstate, oamp, nint)
-        self.textBox.append("\nSimulation finished")
-        self.textBox.append('{0:d}'.format(len(self.rec1.itint)) +
-            ' intervals were simulated')
-        self.data_loaded = True
-        self.rec1.get_open_shut_periods()
-
-    def onSaveDataSCN(self):
-        saveSCNFilename, filt = QFileDialog.getSaveFileName(self,
-                "Save as SCN file...", self.path, ".scn",
-                "SCN files (*.scn)")
-
-        dcio.scn_write_simulated(self.rec1.itint, self.rec1.iampl,
-            filename=saveSCNFilename)
-
-        self.txtPltBox.append('Current single channel record saved in SCN file:')
-        self.txtPltBox.append(saveSCNFilename)
-
-    def onImposeResolution(self):
-
-        dialog = ConcResDlg(self, self.conc, self.tres)
-        if dialog.exec_():
-            self.conc, self.tres = dialog.return_par()
-        self.rec1.impose_resolution(self.tres)
-        self.textBox.append('After imposing the resolution of original {0:d}'.
-            format(len(self.rec1.itint)) + ' intervals were left {0:d}'.
-            format(len(self.rec1.rtint)))
-        self.resolution_imposed = True
-        self.rec1.get_open_shut_periods()
-
-
-#        if self.data_loaded:
-#            falsrate = dataset.false_events(self.tres,
-#                self.rec1.header['ffilt'] * 1000, self.rec1.header['rms'],
-#                self.rec1.header['avamp'] * self.rec1.calfac)
-#            trise = 0.3321 / (self.rec1.header['ffilt'] * 1000)
-#            zo = self.tres / trise
-#            aamaxo = dataset.erf(0.88604 * zo)
-#            self.textBox.append('\nAt resolution {0:.0f} microsec false event rate '.
-#                format(self.tres * 1000000) +
-#                '(per sec) for openings and shuttings is {0:.3e}'.format(falsrate)+
-#                ' ( {0:.2f} risetimes, A/Amax = {1:.2f})'.format(zo, aamaxo))
-
-    def onCalculateLikelihood(self):
-        """
-        """
-
-        opts = {}
-        opts['mec'] = self.mec
-        opts['conc'] = self.conc
-        opts['tres'] = self.tres
-        opts['tcrit'] = self.tcrit
-        opts['isCHS'] = True
-        opts['data'] = self.rec1.bursts
-        theta = self.mec.theta()
-        start_lik, th = scl.HJClik(np.log(theta), opts)
-        self.textBox.append('\nLog Likelihood = {0:.3f}'.
-            format(-start_lik))
-        self.mec.printout(self.log)
-        self.textBox.append("\nFitting started: {0}\n".format(time.asctime()))
-        xout, fout, niter, neval = optimize.simplex(scl.HJClik,
-            np.log(theta), args=opts, display=True) #, outdev=self.log)
-        self.textBox.append("\nFitting finished: {0}\n".format(time.asctime()))
-        # Display results.
-        self.mec.theta_unsqueeze(np.exp(xout))
-        self.textBox.append("\n Final rate constants:")
-        self.mec.printout(self.log)
-        self.textBox.append('\n Final log-likelihood = {0:.6f}'.format(-fout))
-        self.textBox.append('\n Number of evaluations = {0:d}'.format(neval))
-        self.textBox.append('\n Number of iterations = {0:d}\n\n'.format(niter))
-
-    def onPlotDataBurst(self):
-        """
-        """
-        self.textBox.append('\n\n\t===== PLOTTING DATA: BURST LENGTH =====')
-        self.textBox.append("\nFirst burst starts only after gap > tcrit is found.")
-        self.textBox.append("Unusable shut time treated as a valid end of burst.")
-
-        dialog = BurstPlotDlg(self)
-        if dialog.exec_():
-            self.tcrit = dialog.return_par()
-
-        self.textBox.append('\nCritical gap length = {0:.3f} millisec'.
-            format(self.tcrit * 1000))
-        self.rec1.get_bursts(self.tcrit)
-        self.textBox.append('\nNumber of bursts = {0:d}'.
-            format(len(self.rec1.bursts)))
-        blength = self.rec1.get_burst_length_list()
-        self.textBox.append('Average = {0:.3f} millisec'.
-            format(np.average(blength)*1000))
-        self.textBox.append('Range: {0:.3f}'.format(min(blength)*1000) +
-            ' to {0:.3f} millisec'.format(max(blength)*1000))
-
-        x, y, dx = dataset.prepare_hist(blength, self.tres)
-
-        self.axes.clear()
-        self.axes.semilogx(x*1000, y, 'b-')
-        self.axes.set_yscale('sqrtscale')
-        self.axes.xaxis.set_ticks_position('bottom')
-        self.axes.yaxis.set_ticks_position('left')
-        self.canvas.draw()
-
-    def onPlotDataOpen(self):
-        """
-        """
-        self.txtPltBox.clear()
-        self.txtPltBox.append('\t===== HISTOGRAM AND DISTRIBUTION OF OPEN PERIODS =====')
-        self.txtPltBox.append('Agonist concentration = {0:.5g} mikroM'.
-            format(self.conc * 1000000))
-        self.txtPltBox.append('Resolution = {0:.5g} mikrosec'.
-            format(self.tres * 1000000))
-        self.txtPltBox.append('Ideal pdf- red dashed line.')
-        self.txtPltBox.append('Exact pdf- blue solid line.')
-        self.txtPltBox.append('Data histogram- black line.')
-
-        self.textBox.append('\n\n\t===== PLOTTING DATA: OPEN PERIODS =====')
-        self.textBox.append('\nNumber of open periods = {0:d}'.
-            format(len(self.rec1.opint)))
-        self.textBox.append('Average = {0:.3f} ms'.
-            format(np.average(self.rec1.opint)*1000))
-        self.textBox.append('Range: {0:.3f}'.format(min(self.rec1.opint)*1000) +
-            ' to {0:.3f} ms'.format(max(self.rec1.opint)*1000))
-        x, y, dx = dataset.prepare_hist(self.rec1.opint, self.tres)
-
-        self.mec.set_eff('c', self.conc)
-#        scl.printout_occupancies(self.mec, self.tres, output=self.log)
-#        scl.printout_distributions(self.mec, self.tres, output=self.log)
-        t, ipdf, epdf, apdf = scpl.open_time_pdf(self.mec, self.tres)
-        sipdf = scpl.scaled_pdf(t, ipdf, math.log10(dx), len(self.rec1.opint))
-        sepdf = scpl.scaled_pdf(t, epdf, math.log10(dx), len(self.rec1.opint))
-
-#        self.present_plot = np.vstack((t, ipdf, epdf, apdf))
-
-        self.axes.clear()
-        self.axes.semilogx(x*1000, y, 'k-',
-            t, sipdf, 'r--', t, sepdf, 'b-')
-        self.axes.set_yscale('sqrtscale')
-        self.axes.xaxis.set_ticks_position('bottom')
-        self.axes.yaxis.set_ticks_position('left')
-        self.canvas.draw()
-
-    def onPlotDataShut(self):
-        """
-        """
-
-        self.txtPltBox.clear()
-        self.txtPltBox.append('\t===== HISTOGRAM AND DISTRIBUTION OF SHUT TIMES =====')
-        self.txtPltBox.append('Agonist concentration = {0:.5g} mikroM'.
-            format(self.conc * 1000000))
-        self.txtPltBox.append('Resolution = {0:.5g} mikrosec'.
-            format(self.tres * 1000000))
-        self.txtPltBox.append('Ideal pdf- red dashed line.')
-        self.txtPltBox.append('Exact pdf- blue solid line.')
-        self.txtPltBox.append('Data histogram- black line.')
-
-
-        self.textBox.append('\n\n\t===== PLOTTING DATA: OPEN PERIODS =====')
-        self.textBox.append('\nNumber of shut periods = {0:d}'.
-            format(len(self.rec1.shint)))
-        self.textBox.append('Average = {0:.3f} ms'.
-            format(np.average(self.rec1.shint)*1000))
-        self.textBox.append('Range: {0:.3f}'.format(min(self.rec1.shint)*1000) +
-            ' to {0:.3f} ms'.format(max(self.rec1.shint)*1000))
-        x, y, dx = dataset.prepare_hist(self.rec1.shint, self.tres)
-
-        self.mec.set_eff('c', self.conc)
-#        scl.printout_occupancies(self.mec, self.tres, output=self.log)
-#        scl.printout_distributions(self.mec, self.tres, output=self.log)
-        t, ipdf, epdf, apdf = scpl.shut_time_pdf(self.mec, self.tres)
-        sipdf = scpl.scaled_pdf(t, ipdf, math.log10(dx), len(self.rec1.opint))
-        sepdf = scpl.scaled_pdf(t, epdf, math.log10(dx), len(self.rec1.opint))
-#        self.present_plot = np.vstack((t, ipdf, epdf, apdf))
-
-        self.axes.clear()
-        self.axes.semilogx(x*1000, y, 'k-',
-            t, sipdf, 'r--', t, sepdf, 'b-')
-        self.axes.set_yscale('sqrtscale')
-        self.axes.xaxis.set_ticks_position('bottom')
-        self.axes.yaxis.set_ticks_position('left')
-        self.canvas.draw()
-# LINES RELATED TO DATA HISTOGRAMMS PLOTTING
-
     def onPlotCJumpPopen(self):
         """
         Display concentration jump.
@@ -972,7 +710,7 @@ class QMatGUI(QMainWindow):
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
 
-    def onPrintOutSave(self):
+    def onSavePrintOut(self):
         """
         """
         printOutFilename, filt = QFileDialog.getSaveFileName(self,
@@ -989,7 +727,7 @@ class QMatGUI(QMainWindow):
         self.txtPltBox.append('Saved printout file:')
         self.txtPltBox.append(printOutFilename)
 
-    def onPlotSaveASCII(self):
+    def onSavePlotASCII(self):
 
         savePlotTXTFilename, filt = QFileDialog.getSaveFileName(self,
                 "Save as TXT file...", self.path, ".txt",
@@ -1505,44 +1243,6 @@ class ConcRangeDlg(QDialog):
         Return parameter dictionary on exit.
         """
         return self.cmin, self.cmax
-
-class BurstPlotDlg(QDialog):
-    """
-    Dialog to input burst separation and plotting parameters.
-    """
-    def __init__(self, parent=None):
-        super(BurstPlotDlg, self).__init__(parent)
-
-        self.tcrit = 4 # Critical time interval.
-
-        layoutMain = QVBoxLayout()
-        layoutMain.addWidget(QLabel("Define burst:"))
-
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Critical time interval (millisec):"))
-        self.tcritEdit = QLineEdit(unicode(4))
-        self.tcritEdit.setMaxLength(10)
-        self.connect(self.tcritEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.tcritEdit)
-        layoutMain.addLayout(layout)
-
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
-            QDialogButtonBox.Cancel)
-        self.connect(buttonBox, SIGNAL("accepted()"),
-            self, SLOT("accept()"))
-        self.connect(buttonBox, SIGNAL("rejected()"),
-            self, SLOT("reject()"))
-        layoutMain.addWidget(buttonBox)
-
-        self.setLayout(layoutMain)
-        self.setWindowTitle("Define burst...")
-
-    def on_par_changed(self):
-        self.tcrit = float(self.tcritEdit.text())
-
-    def return_par(self):
-        return self.tcrit * 0.001 # Return tcrit in sec
     
 class ShutRangeDlg(QDialog):
     """

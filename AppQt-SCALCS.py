@@ -4,9 +4,7 @@ An example of Qt based GUI to display single channel related plots.
 """
 
 import sys
-
 try:
-#    from PyQt4.QtGui import *
     from PySide.QtGui import *
 except:
     raise ImportError("PyQt import failed")
