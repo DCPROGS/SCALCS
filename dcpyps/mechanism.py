@@ -662,16 +662,16 @@ class Mechanism(object):
                 func = self.Rates[i].constrain_func
                 self.Rates[i].rateconstants = func(self.Rates[args[0]].rateconstants, args[1])
                 
-    def set_mr(self, mr, nrate):
+    def set_mr(self, mr, nrate, ncycle=0):
         """
         """
-        #TODO: this will not work in case the rate to be constrained is in more
-        # than one cycle.
-        self.Rates[nrate].mr = mr
-        for i in range(len(self.Cycles)):
-            if ((self.Rates[nrate].State1.name in self.Cycles[i].states) and 
-                (self.Rates[nrate].State2.name in self.Cycles[i].states)):
-                self.Cycles[i].mrconstr = [self.Rates[nrate].State1.name, self.Rates[nrate].State2.name]
+
+        self.Rates[nrate].mr = mr # redundant
+        if ((self.Rates[nrate].State1.name in self.Cycles[ncycle].states) and 
+            (self.Rates[nrate].State2.name in self.Cycles[ncycle].states)):
+            self.Cycles[ncycle].mrconstr = [self.Rates[nrate].State1.name, self.Rates[nrate].State2.name]
+        else:
+            sys.stderr.write("DCPYPS: Warning: MR1: Proposed rate to be constrained is not in the cycle.")
         self.update_mr()
 
     def update_mr(self):
@@ -697,7 +697,7 @@ class Mechanism(object):
                                 exist = True
 
                 if not exist:
-                    sys.stderr.write("DCPYPS: Warning: MR: Proposed rate to be constrained is not in the cycle.")
+                    sys.stderr.write("DCPYPS: Warning: MR2: Proposed rate to be constrained is not in the cycle.")
 
                 prod = 1
                 id = None

@@ -74,11 +74,8 @@ mec.Rates[13].constrain_func = mechanism.constrain_rate_multiple
 mec.Rates[13].constrain_args = [9, 2]
 mec.update_constrains()
 
-mec.set_mr(True, 7)
-mec.set_mr(True, 15)
-#mec.Rates[7].mr=True
-#mec.Rates[15].mr=True
-#mec.update_mr()
+mec.set_mr(True, 7, 0)
+mec.set_mr(True, 15, 1)
 
 mec.printout(sys.stdout)
 theta = np.log(mec.theta())
