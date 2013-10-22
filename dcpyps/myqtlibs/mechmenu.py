@@ -259,20 +259,26 @@ class RateTableDlg(QDialog):
             newratecon = float(self.table.item(row, column).text())
             self.mec.Rates[row].rateconstants = newratecon
 
-        if column == 5:
+        if column == 5: # Fixed rates
             value = False
             if self.table.item(row, column).checkState() > 0:
                 value = True
             self.mec.Rates[row].fixed = value
             print 'fixed value=', value
 
-        if column == 6:
+        if column == 6: # MR constrained rates
             value = False
             if self.table.item(row, column).checkState() > 0:
                 value = True
-            self.mec.Rates[row].mr = value
-            print 'mr value=', value
-
+                
+            if len(self.mec.Cycles) > 1:
+                dialog = CycleNumDlg(self, self.mec)
+                if dialog.exec_():
+                    cyclenum = dialog.return_par()
+                self.mec.set_mr(value, row, cyclenum)
+            else:
+                self.mec.set_mr(value, row)                        
+            
         if column == 7 or column == 8 or column == 9:
             #TODO: handle exceptions in this block
             value = False
@@ -475,3 +481,40 @@ class StateTable(QTableWidget):
         self.resizeRowsToContents()
 
 
+class CycleNumDlg(QDialog):
+    """
+    """
+    def __init__(self, parent=None, mec=None):
+        super(CycleNumDlg, self).__init__(parent)
+
+        self.mec = mec
+
+        layoutMain = QVBoxLayout()
+        layoutMain.addWidget(QLabel("Check cycle to which proposed rate belongs:"))
+
+        self.cyclesRB = []
+        for cycle in self.mec.Cycles:
+            states = "Cycle: " + ' - '.join(cycle.states)
+            self.cyclesRB.append(QRadioButton(states))
+        self.cyclesRB[0].setChecked(True)
+       
+        for cycle in self.cyclesRB:
+            layoutMain.addWidget(cycle)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+
+        self.setLayout(layoutMain)
+        self.setWindowTitle("Choose cycle...")
+
+    def return_par(self):
+        cyclenum = None
+        for i in range(len(self.cyclesRB)):
+            if self.cyclesRB[i].isChecked():
+                cyclenum = i
+        return cyclenum

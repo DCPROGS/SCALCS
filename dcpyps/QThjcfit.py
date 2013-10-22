@@ -122,8 +122,8 @@ class QhjcGUI(QMainWindow):
         self.mec.Rates[13].constrain_func = mechanism.constrain_rate_multiple
         self.mec.Rates[13].constrain_args = [9, 2]
         self.mec.update_constrains()
-        mec.set_mr(True, 7)
-        mec.set_mr(True, 15)
+        self.mec.set_mr(True, 7, 0)
+        self.mec.set_mr(True, 15, 1)
         self.mec.printout(self.log)
         
         # LOAD DATA.

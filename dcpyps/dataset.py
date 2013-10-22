@@ -366,22 +366,22 @@ class SCRecord(object):
                 format(np.average(self.shint)*1000, np.std(self.shint)*1000))
             str_repr += ('\nRange of shut periods from {0:.9f} ms to {1:.9f} ms'.
                 format(np.min(self.shint)*1000, np.max(self.shint)*1000))
-            str_repr += ('\nLast shut period = {0:.9f} ms'.format(self.shint[-1]*1000))
+            str_repr += ('\nLast shut period = {0:.9f} ms\n'.format(self.shint[-1]*1000))
         else:
-            str_repr += '\n\nTemporal resolution not imposed...'
+            str_repr += '\nTemporal resolution not imposed...\n'
 
         if self.tcrit:
-            str_repr += ('\n\nNumber of bursts = {0:d}'.format(len(self.bursts)))
+            str_repr += ('\nNumber of bursts = {0:d}'.format(len(self.bursts)))
             blength = self.get_burst_length_list()
             str_repr += ('\nAverage length = {0:.9f} ms'.
                 format(np.average(blength)*1000))
             str_repr += ('\nRange: {0:.3f}'.format(min(blength)*1000) +
                 ' to {0:.3f} millisec'.format(max(blength)*1000))
             openings = self.get_openings_burst_list()
-            str_repr += ('\nAverage number of openings= {0:.9f}'.
+            str_repr += ('\nAverage number of openings= {0:.9f}\n'.
                 format(np.average(openings)))
         else:
-            str_repr += '\n\nBursts not separated...'
+            str_repr += '\nBursts not separated...\n'
 
         return str_repr
 
