@@ -601,9 +601,15 @@ def AR(roots, tres, QAA, QFF, QAF, QFA, kA, kF):
     col1 = np.zeros((kA, kA))
     for i in range(kA):
         WA = W(roots[i], tres, QAA, QFF, QAF, QFA, kA, kF)
-        row[i] = pinf(WA)
+        try:
+            row[i] = pinf(WA)
+        except:
+            row[i] = pinf1(WA)
         AW = np.transpose(WA)
-        col1[i] = pinf(AW)
+        try:
+            col1[i] = pinf(AW)
+        except:
+            col1[i] = pinf1(AW)
     col = col1.transpose()
 
     for i in range(kA):

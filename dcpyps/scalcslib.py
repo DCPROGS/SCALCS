@@ -142,13 +142,16 @@ def ideal_subset_mean_life_time(Q, state1, state2):
     pstot = np.sum(p[state1-1 : state2])
 
     # Total rate out
-    s = 0.0
-    for i in range(state1-1, state2):
-        for j in range(k):
-            if (j < state1-1) or (j > state2 - 1):
-                s += Q[i, j] * p[i] / pstot
+    if pstot == 0:
+        mean = 0.0
+    else:
+        s = 0.0
+        for i in range(state1-1, state2):
+            for j in range(k):
+                if (j < state1-1) or (j > state2 - 1):
+                    s += Q[i, j] * p[i] / pstot
 
-    mean = 1 / s
+        mean = 1 / s
     return mean
 
 def ideal_mean_latency_given_start_state(mec, state):
