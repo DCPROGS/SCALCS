@@ -277,21 +277,35 @@ class RateTableDlg(QDialog):
                     cyclenum = dialog.return_par()
                 self.mec.set_mr(value, row, cyclenum)
             else:
-                self.mec.set_mr(value, row)                        
-            
-        if column == 7 or column == 8 or column == 9:
-            #TODO: handle exceptions in this block
+                self.mec.set_mr(value, row)     
+                
+        if column == 7:
             value = False
             if self.table.item(row, 7).checkState() > 0:
                 value = True
-            self.mec.Rates[row].is_constrained = value
-            self.mec.Rates[row].constrain_func = mechanism.constrain_rate_multiple
-#            print 'is_constrained =', value
-            factor = float(self.table.item(row, 8).text())
-#            print 'factor=', factor
-            torate = int(self.table.item(row, 9).text()) - 1
-#            print 'to rate=', torate
-            self.mec.Rates[row].constrain_args = [torate, factor]
+            
+            if value:
+                dialog = ConstrainMultiplyDlg(self, self.mec)
+                if dialog.exec_():
+                    factor, torate = dialog.return_par()
+
+                self.mec.Rates[row].is_constrained = value
+                self.mec.Rates[row].constrain_func = mechanism.constrain_rate_multiple
+                self.mec.Rates[row].constrain_args = [torate, factor]
+
+                cell = QTableWidgetItem(str(factor))
+                self.table.setItem(row, 8, cell)
+                cell = QTableWidgetItem(str(torate+1))
+                self.table.setItem(row, 9, cell)         
+            else:
+                self.mec.Rates[row].is_constrained = value
+                self.mec.Rates[row].constrain_func = None
+                self.mec.Rates[row].constrain_args = None
+                
+                cell = QTableWidgetItem('')
+                self.table.setItem(row, 8, cell)
+                cell = QTableWidgetItem('')
+                self.table.setItem(row, 9, cell)
 
         if column == 10 or column == 11:
             newlimits = [float(self.table.item(row, 10).text()),
@@ -518,3 +532,53 @@ class CycleNumDlg(QDialog):
             if self.cyclesRB[i].isChecked():
                 cyclenum = i
         return cyclenum
+    
+class ConstrainMultiplyDlg(QDialog):
+    """
+    """
+    def __init__(self, parent=None, mec=None):
+        super(ConstrainMultiplyDlg, self).__init__(parent)
+
+        self.mec = mec
+        self.factor = 1
+        layoutMain = QVBoxLayout()
+        
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Factor:"))
+        self.fEdit = QLineEdit(unicode(self.factor))
+        self.fEdit.setMaxLength(12)
+        self.connect(self.fEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.fEdit)
+        layoutMain.addLayout(layout)
+        
+        layoutMain.addWidget(QLabel("Check rate:"))
+        self.ratesRB = []
+        counter = 1
+        for rate in self.mec.Rates:
+            name = "{0:d}: {1}".format(counter, rate.name)
+            self.ratesRB.append(QRadioButton(name))
+            counter += 1
+        self.ratesRB[0].setChecked(True)
+        for rate in self.ratesRB:
+            layoutMain.addWidget(rate)
+            
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+        self.setLayout(layoutMain)
+        self.setWindowTitle("Specify factor and rate...")
+        
+    def on_par_changed(self):
+        self.factor = int(self.fEdit.text())
+
+    def return_par(self):
+        torate = None
+        for i in range(len(self.ratesRB)):
+            if self.ratesRB[i].isChecked():
+                torate = i
+        return self.factor, torate    

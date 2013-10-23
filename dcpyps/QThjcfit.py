@@ -4,7 +4,6 @@ A simple GUI for DC_PyPs  HJCFIT (maximum likelihood fit of single channel
 records to postulated mechanisms).
 """
 import time
-import sys
 import os
 import math
 
@@ -19,7 +18,6 @@ import numpy as np
 from scipy.optimize import minimize
 
 import dcio
-import samples
 import scplotlib as scpl
 import mechanism
 from myqtlibs.mechmenu import MechMenu

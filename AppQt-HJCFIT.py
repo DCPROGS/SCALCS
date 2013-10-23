@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 """
-An example of Qt based GUI to display single channel related plots.
+An example of Qt based GUI to run maximum likelihood fit of single channel 
+records to postulated mechanisms.
 """
 import sys
 try:
