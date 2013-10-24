@@ -1,15 +1,10 @@
 import time, math, sys, socket, os
 import numpy as np
 from scipy.optimize import minimize
-from scipy.stats import itemfreq
-from pylab import*
 
-from dcpyps.optimize import simplex
 from dcpyps import dcio
 from dcpyps import dataset
 from dcpyps import mechanism
-from dcpyps import scplotlib as scpl
-
 from dcprogs.likelihood import Log10Likelihood
 
 str1 = "DC_PyPs: Q matrix calculations.\n"
@@ -18,7 +13,6 @@ str2 = ("Date and time of analysis: %4d/%02d/%02d %02d:%02d:%02d\n"
 machine = socket.gethostname()
 system = sys.platform
 str3 = "Machine: %s; System: %s\n" %(machine, system)
-
 
 # LOAD DATA.
 scnfiles = [["./dcpyps/samples/A-10.scn"], ["./dcpyps/samples/B-30.scn"],
@@ -142,30 +136,14 @@ mec.printout(sys.stdout)
 print '\n\n'
 
 
-def save_pdf_fig(scnfile, ints, mec, conc, tres, type):
-    x, y, dx = dataset.prepare_hist(ints, tres)
-    mec.set_eff('c', conc)
-    if type == 'open':
-        t, ipdf, epdf, apdf = scpl.open_time_pdf(mec, tres)
-    elif type == 'shut':
-        t, ipdf, epdf, apdf = scpl.shut_time_pdf(mec, tres)
-    else:
-        print 'Wrong type.'
-
-    sipdf = scpl.scaled_pdf(t, ipdf, math.log10(dx), len(ints))
-    sepdf = scpl.scaled_pdf(t, epdf, math.log10(dx), len(ints))
-    figure(figsize=(6, 4))
-    semilogx(x*1000, y, 'k-', t, sipdf, 'r--', t, sepdf, 'b-')
-
-    outfile = scnfile[:-4] + '_' + type + '.png'
-    savefig(outfile, bbox_inches=0)
-    return outfile
-
 open_pdfs = []
 shut_pdfs = []
 for i in range(len(scnfiles)):
-    open_pdfs.append(save_pdf_fig(scnfiles[i], recs[i].opint, mec, conc[i], tres[i], 'open'))
-    shut_pdfs.append(save_pdf_fig(scnfiles[i], recs[i].shint, mec, conc[i], tres[i], 'shut'))
+    op_filename = scnfiles[i][0][:-4] + '_open.png'
+    sh_filename = scnfiles[i][0][:-4] + '_shut.png'
+    open_pdfs.append(dcio.png_save_pdf_fig(op_filename, recs[i].opint, mec, conc[i], tres[i], 'open'))
+    shut_pdfs.append(dcio.png_save_pdf_fig(sh_filename, recs[i].shint, mec, conc[i], tres[i], 'shut'))
+
 
 htmlstr = ("""<html>
     <p>HJCFIT: Fit of model to open-shut times with missed events

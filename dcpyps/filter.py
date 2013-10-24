@@ -211,3 +211,16 @@ def resample(fc, srate, verbose=0):
         print(" which is {0:.1f} times fc.".format(r1))
 
     return srate1, idelt
+
+def false_events(tres, fc, rms, amp):
+    """
+    Version for EKDIST/new SCAN (avamp, rms already in pA). \
+    To calc false event rate (per sec) in EKDIST (from RESINT.) \
+    First calc threshold as amp attained by pulse of length=tres (in ms).
+    """
+    u = erf(2.668 * fc * tres)
+    phi = u * amp    #'threshold' (pA)
+    var = (rms) ** 2    # noise variance (pA)**2
+    # Calc rate from C & Sigworth eq. 9, with k=1
+    frate = fc * np.exp(-(phi * phi) / (2. * var))
+    return frate    # false event rate

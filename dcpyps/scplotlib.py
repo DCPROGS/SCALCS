@@ -24,6 +24,60 @@ import popen
 import pdfs
 import cjumps
 
+def prepare_hist(X, tres):
+    """
+
+    """
+
+    n = len(X)
+    xmax = max(X)
+    xstart = tres #* 1000    # histogramm starts at
+
+    # Defines bin width and number of bins.
+    # Number of bins/decade
+    if (n <= 300): nbdec = 5
+    if (n > 300) and (n <= 1000): nbdec = 8
+    if (n > 1000) and (n <= 3000): nbdec = 10
+    if (n > 3000): nbdec = 12
+
+    # round down minimum value, so get Xmin for distribution
+    # round up maximum value, so get Xmax for distribution
+    #xmin1 = int(xmin - 1)
+    #xmax1 = int(xmax + 1)
+    
+    xend = 1. + xmax - math.fmod(xmax, 1.)    # last x value
+    dx = math.exp(math.log(10.0) / float(nbdec))
+    nbin = 1 + int(math.log(xend / xstart) / math.log(dx))
+
+    # Make bins.
+    xaxis = np.zeros(nbin+1)
+    xaxis[0] = xstart
+    # For log scale.
+    for i in range(1, nbin+1):
+        xaxis[i] = xstart * (dx**i)
+
+    # Sorts data into bins.
+    freq = np.zeros(nbin)
+    for i in range(n):
+        for j in range(nbin):
+            if X[i] >= xaxis[j] and X[i] < xaxis[j+1]:
+                freq[j] = freq[j] + 1
+
+    xout = np.zeros((nbin + 1) * 2)
+    yout = np.zeros((nbin + 1) * 2)
+
+    xout[0] = xaxis[0]
+    yout[0] = 0
+    for i in range(0, nbin):
+        xout[2*i+1] = xaxis[i]
+        xout[2*i+2] = xaxis[i+1]
+        yout[2*i+1] = freq[i]
+        yout[2*i+2] = freq[i]
+    xout[-1] = xaxis[-1]
+    yout[-1] = 0
+
+    return xout, yout, dx
+
 def Popen(mec, tres):
     """
     Calculate Popen curve parameters and data for Popen curve plot.
