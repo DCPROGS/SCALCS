@@ -48,7 +48,6 @@ import pdfs
 import popen
 # import qmatgui
 import qmatlib
-import rcj
 import scalcslib
 import scburst
 import scplotlib
