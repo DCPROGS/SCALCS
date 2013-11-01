@@ -23,12 +23,12 @@ except:
     raise ImportError("matplotlib module is missing")
 
 import scalcslib as scl
-import scburst
 import popen
 import samples
 import scplotlib as scpl
 
 from myqtlibs.mechmenu import MechMenu
+from myqtlibs.burstmenu import BurstMenu
 from myqtlibs.jumpmenu import JumpMenu
 import myqtlibs.myqtcommon as myqtcommon
 
@@ -59,17 +59,6 @@ class QMatGUI(QMainWindow):
             "&Shut time pdf", self.onPlotShutTimePDF)
         plotSubsetTimePDFAction = myqtcommon.createAction(self, 
             "&Subset time pdf", self.onPlotSubsetTimePDF)
-        plotBurstLenPDFAction = myqtcommon.createAction(self, 
-            "&Burst length pdf", self.onPlotBrstLenPDF)
-        plotBurstLenPDFActionCond = myqtcommon.createAction(self, 
-            "&Conditional burst length pdf", self.onPlotBrstLenPDFCond)
-        plotBurstOpeningDistrAction = myqtcommon.createAction(self, 
-            "&Burst openings distribution", self.onPlotBrstOpDistr)
-        plotBurstOpeningDistrActionCond = myqtcommon.createAction(self, 
-            "&Conditional burst openings distribution", self.onPlotBrstOpDistrCond)
-        plotBurstLenVConcAction = myqtcommon.createAction(self, 
-            "&Burst length vs concentration", self.onPlotBrstLenConc)
-            
         plotCorrOpenShutAction = myqtcommon.createAction(self, 
             "&Correlations", self.onPlotOpShCorr)
         plotAdjacentOpenShutAction = myqtcommon.createAction(self, 
@@ -82,14 +71,11 @@ class QMatGUI(QMainWindow):
         myqtcommon.addActions(plotMenu, (plotOpenTimePDFAction, plotShutTimePDFAction,
             plotAdjacentOpenShutAction, plotMeanOpenNextShutAction, 
             plotCorrOpenShutAction, plotDependencyAction,
-            # setDisabled(False) to activate plotting the subset time distributions
             plotSubsetTimePDFAction.setDisabled(True),
-            plotBurstLenPDFAction, plotBurstLenPDFActionCond,
-            plotBurstOpeningDistrAction, plotBurstOpeningDistrActionCond,
-            plotBurstLenVConcAction,
             plotPopenAction))
         plotMenu.insertSeparator(plotPopenAction)
-        
+
+        self.menuBar().addMenu(BurstMenu(self))
         self.menuBar().addMenu(JumpMenu(self))
 
         saveMenu = self.menuBar().addMenu('&Save')
@@ -149,7 +135,7 @@ class QMatGUI(QMainWindow):
         self.txtPltBox.append('Ideal curve- red dashed line.')
         self.txtPltBox.append('HJC curve- blue solid line.')
         
-        dialog = ResDlg(self, self.tres)
+        dialog = myqtcommon.ResDlg(self, self.tres)
         if dialog.exec_():
             self.tres = dialog.return_par()
 
@@ -177,7 +163,7 @@ class QMatGUI(QMainWindow):
         self.txtPltBox.append('Open time correlation - green circles')
         self.txtPltBox.append('Open-shut time correlation - blue circles')
         
-        dialog = ConcDlg(self, self.conc)
+        dialog = myqtcommon.ConcDlg(self, self.conc)
         if dialog.exec_():
             self.conc = dialog.return_par()
         self.mec.set_eff('c', self.conc)
@@ -206,12 +192,12 @@ class QMatGUI(QMainWindow):
         self.txtPltBox.append('Ideal open time pdf- red dashed line.')
         self.txtPltBox.append('Open times adjacent to shut time range pdf- blue solid line.')
         
-        dialog = ConcDlg(self, self.conc)
+        dialog = myqtcommon.ConcDlg(self, self.conc)
         if dialog.exec_():
             self.conc = dialog.return_par()
         self.mec.set_eff('c', self.conc)
         # TODO: need dialog to enter lag value. 
-        dialog = ShutRangeDlg(self)
+        dialog = myqtcommon.ShutRangeDlg(self)
         if dialog.exec_():
             u1, u2 = dialog.return_par()
         scl.printout_adjacent(self.mec, u1, u2, output=self.log)
@@ -237,7 +223,7 @@ class QMatGUI(QMainWindow):
         self.txtPltBox.append('Mean open time preceding specified shut time- red dashed line.')
         self.txtPltBox.append('Mean open time next to specified shut time- blue dashed line.')
 
-        dialog = ConcResDlg(self, self.conc, self.tres)
+        dialog = myqtcommon.ConcResDlg(self, self.conc, self.tres)
         if dialog.exec_():
             self.conc, self.tres = dialog.return_par()
         self.mec.set_eff('c', self.conc)
@@ -264,7 +250,7 @@ class QMatGUI(QMainWindow):
             format(self.tres * 1000000))
         self.txtPltBox.append('X and Y axis are in ms')
         
-        dialog = ConcDlg(self, self.conc)
+        dialog = myqtcommon.ConcDlg(self, self.conc)
         if dialog.exec_():
             self.conc = dialog.return_par()
         self.mec.set_eff('c', self.conc)
@@ -309,7 +295,7 @@ class QMatGUI(QMainWindow):
         self.txtPltBox.append('Exact pdf- blue solid line.')
         self.txtPltBox.append('Asymptotic pdf- green solid line.')
         
-        dialog = ConcResDlg(self, self.conc, self.tres)
+        dialog = myqtcommon.ConcResDlg(self, self.conc, self.tres)
         if dialog.exec_():
             self.conc, self.tres = dialog.return_par()
         self.mec.set_eff('c', self.conc)
@@ -343,7 +329,7 @@ class QMatGUI(QMainWindow):
         self.txtPltBox.append('Ideal pdf- red dashed line.')
         self.txtPltBox.append('Subset life time pdf- blue solid line.')
         
-        dialog = ConcDlg(self, self.conc)
+        dialog = myqtcommon.ConcDlg(self, self.conc)
         if dialog.exec_():
             self.conc = dialog.return_par()
         self.mec.set_eff('c', self.conc)
@@ -376,7 +362,7 @@ class QMatGUI(QMainWindow):
         self.txtPltBox.append('Exact pdf- blue solid line.')
         self.txtPltBox.append('Asymptotic pdf- green solid line.')
         
-        dialog = ConcResDlg(self, self.conc, self.tres)
+        dialog = myqtcommon.ConcResDlg(self, self.conc, self.tres)
         if dialog.exec_():
             self.conc, self.tres = dialog.return_par()
 
@@ -388,147 +374,6 @@ class QMatGUI(QMainWindow):
         self.axes.clear()
         self.axes.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
         self.axes.set_yscale('sqrtscale')
-        self.axes.xaxis.set_ticks_position('bottom')
-        self.axes.yaxis.set_ticks_position('left')
-        self.canvas.draw()
-
-    def onPlotBrstLenPDF(self):
-        """
-        Display the burst length distribution.
-        """
-        self.txtPltBox.clear()
-        self.txtPltBox.append('\t===== BURST LENGTH PDF =====')
-        self.txtPltBox.append('Agonist concentration = {0:.5g} microM'.
-            format(self.conc * 1000000))
-        self.txtPltBox.append('Ideal pdf- blue solid line.')
-        self.txtPltBox.append('Individual components- blue dashed lines.')
-        
-        dialog = ConcDlg(self, self.conc)
-        if dialog.exec_():
-            self.conc = dialog.return_par()
-        self.mec.set_eff('c', self.conc)
-        scburst.printout_pdfs(self.mec, output=self.log)
-        t, fbrst, mfbrst = scpl.burst_length_pdf(self.mec, multicomp=True)
-        self.present_plot = np.vstack((t, fbrst, mfbrst))
-        
-        self.axes.clear()
-        self.axes.semilogx(t, fbrst, 'b-')
-        for i in range(self.mec.kE):
-            self.axes.semilogx(t, mfbrst[i], 'b--')
-        self.axes.set_yscale('sqrtscale')
-        self.axes.xaxis.set_ticks_position('bottom')
-        self.axes.yaxis.set_ticks_position('left')
-        self.canvas.draw()
-
-    def onPlotBrstLenPDFCond(self):
-        """
-        Display the conditional burst length distribution.
-        """
-        self.txtPltBox.clear()
-        self.txtPltBox.append('===== BURST LENGTH PDF ' +
-            '\nCONDITIONAL ON STARTING STATE =====')
-        self.txtPltBox.append('Agonist concentration = {0:.5g} microM'.
-            format(self.conc * 1000000))
-        self.txtPltBox.append('Ideal pdf- blue solid line.')
-        
-        dialog = ConcDlg(self, self.conc)
-        if dialog.exec_():
-            self.conc = dialog.return_par()
-        self.mec.set_eff('c', self.conc)
-
-        t, fbst, cfbst = scpl.burst_length_pdf(self.mec, conditional=True)
-        self.present_plot = np.vstack((t, fbst, cfbst))
-        self.axes.clear()
-
-        # TODO: only 6 colours are available now.        
-        for i in range(self.mec.kA):
-            self.axes.semilogx(t, cfbst[i], self.my_colour[i]+'-',
-                label="State {0:d}".format(i+1))
-        self.axes.semilogx(t, fbst, 'k-', label="Not conditional")
-        handles, labels = self.axes.get_legend_handles_labels()
-        self.axes.legend(handles, labels, frameon=False)
-
-        self.axes.set_yscale('sqrtscale')
-        self.axes.xaxis.set_ticks_position('bottom')
-        self.axes.yaxis.set_ticks_position('left')
-        self.canvas.draw()
-
-    def onPlotBrstOpDistr(self):
-        """
-        Display the distribution of number of openings per burst.
-        """
-
-        self.txtPltBox.clear()
-        self.txtPltBox.append('===== DISTRIBUTION OF NUMBER OF OPENINGS PER BURST =====')
-        
-        dialog = ConcDlg(self, self.conc)
-        if dialog.exec_():
-            self.conc = dialog.return_par()
-        self.mec.set_eff('c', self.conc)
-        # TODO: need dialog to enter n
-        n = 10
-        r, Pr = scpl.burst_openings_pdf(self.mec, n)
-        self.present_plot = np.vstack((r, Pr))
-
-        self.axes.clear()
-        self.axes.plot(r, Pr,'ro')
-        self.axes.set_xlim(0, 11)
-        self.axes.xaxis.set_ticks_position('bottom')
-        self.axes.yaxis.set_ticks_position('left')
-        self.canvas.draw()
-
-    def onPlotBrstOpDistrCond(self):
-        """
-        Display the conditional distribution of number of openings per burst.
-        """
-
-        self.txtPltBox.clear()
-        self.txtPltBox.append('===== DISTRIBUTION OF NUMBER OF OPENINGS PER BURST' +
-        '\nCONDITIONAL ON STARTING STATE=====')
-        
-        dialog = ConcDlg(self, self.conc)
-        if dialog.exec_():
-            self.conc = dialog.return_par()
-        self.mec.set_eff('c', self.conc)
-        n = 10
-        r, Pr, cPr = scpl.burst_openings_pdf(self.mec, n, conditional=True)
-        self.present_plot = np.vstack((r, Pr, cPr))
-
-        self.axes.clear()
-        # TODO: only 6 colours are available now.
-        for i in range(self.mec.kA):
-            self.axes.plot(r, cPr[i], self.my_colour[i]+'o',
-                label="State {0:d}".format(i+1))
-        self.axes.plot(r, Pr,'ko', label="Not conditional")
-        handles, labels = self.axes.get_legend_handles_labels()
-        self.axes.legend(handles, labels, frameon=False)
-        self.axes.set_xlim(0, n+1)
-        self.axes.xaxis.set_ticks_position('bottom')
-        self.axes.yaxis.set_ticks_position('left')
-        self.canvas.draw()
-
-    def onPlotBrstLenConc(self):
-        """
-        Display mean burst length versus concentration plot.
-        """
-        self.txtPltBox.clear()
-        self.txtPltBox.append('===== MEAN BURST LENGTH VERSUS CONCENTRATION =====')
-        self.txtPltBox.append('Solid line: mean burst length versus concentration.')
-        self.txtPltBox.append('    X-axis: microMols; Y-axis: ms.')
-        self.txtPltBox.append('Dashed line: corrected for fast block.')
-
-        # TODO: need dialog to enter concentration range.
-        dialog = ConcRangeDlg(self)
-        if dialog.exec_():
-            cmin, cmax = dialog.return_par()
-
-#        cmin = 10e-9
-#        cmax = 0.005
-        c, br, brblk = scpl.burst_length_versus_conc_plot(self.mec, cmin, cmax)
-        self.present_plot = np.vstack((c, br, brblk))
-
-        self.axes.clear()
-        self.axes.plot(c, br,'r-', c, brblk, 'r--')
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
         self.canvas.draw()
@@ -574,229 +419,4 @@ class QMatGUI(QMainWindow):
         dialog = myqtcommon.AboutDlg(self)
         if dialog.exec_():
             pass
-
-class ConcRangeDlg(QDialog):
-    """
-    Dialog to get concentration range.
-    """
-    def __init__(self, parent=None, cmin=1e-6, cmax=0.001):
-        super(ConcRangeDlg, self).__init__(parent)
-
-        self.cmin = cmin * 1000 # in mM.
-        self.cmax = cmax * 1000 # in mM.
-
-        layoutMain = QVBoxLayout()
-        layoutMain.addWidget(QLabel("Enter concentrations:"))
-
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Start concentration (mM):"))
-        self.conc1Edit = QLineEdit(unicode(self.cmin))
-        self.conc1Edit.setMaxLength(12)
-        self.connect(self.conc1Edit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.conc1Edit)
-        layoutMain.addLayout(layout)
-
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("End concentration (mM):"))
-        self.conc2Edit = QLineEdit(unicode(self.cmax))
-        self.conc2Edit.setMaxLength(12)
-        self.connect(self.conc2Edit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.conc2Edit)
-        layoutMain.addLayout(layout)
-
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
-            QDialogButtonBox.Cancel)
-        self.connect(buttonBox, SIGNAL("accepted()"),
-            self, SLOT("accept()"))
-        self.connect(buttonBox, SIGNAL("rejected()"),
-            self, SLOT("reject()"))
-        layoutMain.addWidget(buttonBox)
-
-        self.setLayout(layoutMain)
-        self.setWindowTitle("Concentration range...")
-
-    def on_par_changed(self):
-        """
-        """
-        self.cmin = float(self.conc1Edit.text()) * 0.001
-        self.cmax = float(self.conc2Edit.text()) * 0.001
-
-    def return_par(self):
-        """
-        Return parameter dictionary on exit.
-        """
-        return self.cmin, self.cmax
-    
-class ShutRangeDlg(QDialog):
-    """
-    Dialog to input shut time range.
-    """
-    def __init__(self, parent=None):
-        super(ShutRangeDlg, self).__init__(parent)
-
-        self.u1 = 0.001 # 1 ms
-        self.u2 = 0.01 # 10 ms
-
-        layoutMain = QVBoxLayout()
-        layoutMain.addWidget(QLabel("Shut time range:"))
-
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("From shut time (ms):"))
-        self.u1Edit = QLineEdit(unicode(self.u1))
-        self.u1Edit.setMaxLength(10)
-        self.connect(self.u1Edit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.u1Edit)
-        
-        layout.addWidget(QLabel("To shut time (ms):"))
-        self.u2Edit = QLineEdit(unicode(self.u2))
-        self.u2Edit.setMaxLength(10)
-        self.connect(self.u2Edit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.u2Edit)
-        layoutMain.addLayout(layout)
-
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
-            QDialogButtonBox.Cancel)
-        self.connect(buttonBox, SIGNAL("accepted()"),
-            self, SLOT("accept()"))
-        self.connect(buttonBox, SIGNAL("rejected()"),
-            self, SLOT("reject()"))
-        layoutMain.addWidget(buttonBox)
-
-        self.setLayout(layoutMain)
-        self.setWindowTitle("Shut time range...")
-
-    def on_par_changed(self):
-        self.u1 = float(self.u1Edit.text())
-        self.u2 = float(self.u2Edit.text())
-
-    def return_par(self):
-        return self.u1 * 0.001, self.u2 * 0.001 # Return tcrit in sec
-
-class ConcResDlg(QDialog):
-    """
-    Dialog to input concentration and resolution.
-    """
-    def __init__(self, parent=None, conc=100e-9, tres=25e-6):
-        super(ConcResDlg, self).__init__(parent)
-
-        self.conc = conc * 1e6 # in microM
-        self.tres = tres * 1e6 # in microsec
-
-        layoutMain = QVBoxLayout()
-        layoutMain.addWidget(QLabel("Enter concentration and resolution:"))
-
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Concentration (microM):"))
-        self.cEdit = QLineEdit(unicode(self.conc))
-        self.cEdit.setMaxLength(12)
-        self.connect(self.cEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.cEdit)
-        
-        layout.addWidget(QLabel("Resolution (microsec):"))
-        self.rEdit = QLineEdit(unicode(self.tres))
-        self.rEdit.setMaxLength(12)
-        self.connect(self.rEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.rEdit)
-        layoutMain.addLayout(layout)
-
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
-            QDialogButtonBox.Cancel)
-        self.connect(buttonBox, SIGNAL("accepted()"),
-            self, SLOT("accept()"))
-        self.connect(buttonBox, SIGNAL("rejected()"),
-            self, SLOT("reject()"))
-        layoutMain.addWidget(buttonBox)
-
-        self.setLayout(layoutMain)
-        self.setWindowTitle("Concentration and resolution...")
-
-    def on_par_changed(self):
-        self.conc = float(self.cEdit.text())
-        self.tres = float(self.rEdit.text())
-
-    def return_par(self):
-        return self.conc * 1e-6, self.tres * 1e-6 # Return tcrit in sec
-    
-class ConcDlg(QDialog):
-    """
-    Dialog to input concentration.
-    """
-    def __init__(self, parent=None, conc=100e-9):
-        super(ConcDlg, self).__init__(parent)
-
-        self.conc = conc * 1e6 # in microM
-
-        layoutMain = QVBoxLayout()
-        layoutMain.addWidget(QLabel("Enter concentration:"))
-
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Concentration (microM):"))
-        self.cEdit = QLineEdit(unicode(self.conc))
-        self.cEdit.setMaxLength(12)
-        self.connect(self.cEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.cEdit)
-        layoutMain.addLayout(layout)
-
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
-            QDialogButtonBox.Cancel)
-        self.connect(buttonBox, SIGNAL("accepted()"),
-            self, SLOT("accept()"))
-        self.connect(buttonBox, SIGNAL("rejected()"),
-            self, SLOT("reject()"))
-        layoutMain.addWidget(buttonBox)
-
-        self.setLayout(layoutMain)
-        self.setWindowTitle("Concentration...")
-
-    def on_par_changed(self):
-        self.conc = float(self.cEdit.text())
-
-    def return_par(self):
-        return self.conc * 1e-6
-    
-class ResDlg(QDialog):
-    """
-    Dialog to input resolution.
-    """
-    def __init__(self, parent=None, tres=25e-6):
-        super(ResDlg, self).__init__(parent)
-
-        self.tres = tres * 1e6 # in microsec
-
-        layoutMain = QVBoxLayout()
-        layoutMain.addWidget(QLabel("Enter resolution:"))
-
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel("Resolution (microsec):"))
-        self.rEdit = QLineEdit(unicode(self.tres))
-        self.rEdit.setMaxLength(12)
-        self.connect(self.rEdit, SIGNAL("editingFinished()"),
-            self.on_par_changed)
-        layout.addWidget(self.rEdit)
-        layoutMain.addLayout(layout)
-
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
-            QDialogButtonBox.Cancel)
-        self.connect(buttonBox, SIGNAL("accepted()"),
-            self, SLOT("accept()"))
-        self.connect(buttonBox, SIGNAL("rejected()"),
-            self, SLOT("reject()"))
-        layoutMain.addWidget(buttonBox)
-
-        self.setLayout(layoutMain)
-        self.setWindowTitle("Resolution...")
-
-    def on_par_changed(self):
-        self.tres = float(self.rEdit.text())
-
-    def return_par(self):
-        return self.tres * 1e-6 # Return tcrit in sec
-
 
