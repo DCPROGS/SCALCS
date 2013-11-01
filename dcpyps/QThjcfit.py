@@ -125,8 +125,10 @@ class QhjcGUI(QMainWindow):
         self.mec.printout(self.log)
         
         # LOAD DATA.
-        self.scnfiles = [["./dcpyps/samples/A-10.scn"], ["./dcpyps/samples/B-30.scn"],
-            ["./dcpyps/samples/C-100.scn"], ["./dcpyps/samples/D-1000.scn"]]
+        self.scnfiles = [["./dcpyps/samples/glydemo/A-10.scn"], 
+            ["./dcpyps/samples/glydemo/B-30.scn"],
+            ["./dcpyps/samples/glydemo/C-100.scn"],
+            ["./dcpyps/samples/glydemo/D-1000.scn"]]
         self.tres = [0.000030, 0.000030, 0.000030, 0.000030]
         self.tcrit = [0.004, -1, -0.06, -0.02]
         self.conc = [10e-6, 30e-6, 100e-6, 1000e-6]

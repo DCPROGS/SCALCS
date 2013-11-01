@@ -1604,16 +1604,19 @@ def scn_read_data(fname, ioffset, nint, calfac2):
     iprops.fromfile(f, nint)
     f.close()
 
-    if tint[-1] == 0:
-        if iprops[-1] != 8:
-            # Last interval in file is shut an set as unusable.
-            iprops[-1] = 8        
-    else:
-        # Last interval in file is open. An unusable shut time is inserted
-        # at the end. Total number of intervals increased by one.
-        tint.append(-1.0)
-        iampl.append(0)
-        iprops.append(8)
+    tint.pop()
+    iampl.pop()
+    iprops.pop()
+#    if tint[-1] == 0:
+#        if iprops[-1] != 8:
+#            # Last interval in file is shut an set as unusable.
+#            iprops[-1] = 8        
+#    else:
+#        # Last interval in file is open. An unusable shut time is inserted
+#        # at the end. Total number of intervals increased by one.
+#        tint.append(-1.0)
+#        iampl.append(0)
+#        iprops.append(8)
 
     return np.array(tint)*0.001, np.array(iampl), np.array(iprops)
 

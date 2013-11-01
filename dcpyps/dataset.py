@@ -5,7 +5,6 @@ import math
 import random
 
 import numpy as np
-from scipy.special import erf
 
 import dcio
 import scalcslib as scl
@@ -37,7 +36,7 @@ class SCRecord(object):
         if self.filenames and self.tres and self.tcrit:
             self.load_from_file()
             self.impose_resolution(self.tres)
-            self.get_open_shut_periods()
+            self.get_periods()
             self.get_bursts(self.tcrit)
         
 
@@ -94,7 +93,7 @@ class SCRecord(object):
             if (self.rampl[i] == 0) and (self.rtint > (self.tcrit)):
                 print ('\n')
         print('\n###################\n\n')
-            
+        
     def impose_resolution(self, tres):
         """
         Impose time resolution.
@@ -115,13 +114,13 @@ class SCRecord(object):
         First interval in each concatenated group must be resolvable, but may
         be bad (in which case all group will be bad).
         """
-
+        
         # If last interval is shut, then set it as unusable.
         if self.iampl[-1] == 0: self.iprops[-1] = 8
         # Check for negative intervals and set them unusable.
         for i in range(len(self.itint)):
             if self.itint[i] < 0: self.iprops[i] = 8
-
+            
         # Find first resolvable and usable interval.
         n = 0
         firstResolved = False
@@ -132,44 +131,35 @@ class SCRecord(object):
             else:
                 n += 1
         # TODO: check if preceeding interval is resolvable and not bad.
-
-        rtint = [self.itint[n]]
-        rampl = [self.iampl[n]]
-        rprops = [self.iprops[n]]
-        ttemp = rtint[-1]
-        aavtemp = rampl[-1] * rtint[-1]
-
+        
+        rtint, rampl, rprops = [self.itint[n]], [self.iampl[n]], [self.iprops[n]]
+        ttemp, aavtemp = rtint[-1], rampl[-1] * rtint[-1]
+        
         # Start looking for unresolvable intervals.
         n += 1
         while n < (len(self.itint)-1):
 
             if self.itint[n] < tres:
                 rtint[-1] += self.itint[n]
-                if (rampl[-1] != 0) and (self.iampl[n] != 0):
-                    aavtemp += self.iampl[n] * self.itint[n]
-                    ttemp += self.itint[n]
-                    rampl[-1] = aavtemp / ttemp
-
             else:
                 if ((self.iampl[n] == 0) and (rampl[-1] == 0)):
                     rtint[-1] += self.itint[n]
-                elif (rampl[-1] == self.iampl[n]) and (rampl[-1] != 0):
-                    rtint[-1] += self.itint[n]
-                    aavtemp += self.iampl[n] * self.itint[n]
-                    ttemp += self.itint[n]
-                    rampl[-1] = aavtemp / ttemp
                 else:
+#                    if self.iprops[n] == 4:
+#                        if (self.iampl[n] != 0) and (self.iampl[-1] != 0):
+#                            rtint[-1] += self.itint[n]
+#    #                if (self.iampl[n] != 0) and (self.iprops[n-1] == 4) and (self.iampl[-1] != 0):
+#    #                    rtint[-1] += self.itint[n]
+#                    else:
                     rtint.append(self.itint[n])
                     rampl.append(self.iampl[n])
                     rprops.append(self.iprops[n])
-                    ttemp = rtint[-1]
-                    aavtemp = rampl[-1] * rtint[-1]
 
             if self.iprops[n] == 8:
                 rprops[-1] = 8
             n += 1
         # end of while
-
+        
         # TODO: check if the very last interval is closed or open.
         if rampl[0] == 0:
             rtint.pop(0)
@@ -180,14 +170,12 @@ class SCRecord(object):
             rtint.pop()
             rampl.pop()
             rprops.pop()
-
-        self.rtint = rtint
-        self.rampl = rampl
-        self.rprops = rprops
+        
+        self.rtint, self.rampl, self.rprops = rtint, rampl, rprops
         self.resolution_imposed = True
         self.tres = tres
 
-    def get_open_shut_periods(self):
+    def get_periods(self):
         """
         Separate open and shut intervals from the entire record.
         
@@ -206,43 +194,39 @@ class SCRecord(object):
         purposes of identifying the nth open period, rejected ones must be counted
         as an open period even though their length is undefined.
         """
-
-        opint = []
-        oppro = []
-        opamp = []
-        shint = []
-        shpro = []
-        n = 0
-        tint, prop, ampl = 0, 0, 0
-        first = False
+        
+        pint, pamp, popt = [], [], []
+        n = 1
+        oint, oamp, oopt = self.rtint[0], self.rampl[0], self.rprops[0]
         while n < len(self.rtint):
             if self.rampl[n] != 0:
-                tint += self.rtint[n]
-                ampl += self.rampl[n] * self.rtint[n]
-                if self.rprops[n] == 8: prop = 8
-                avamp = ampl / tint
-                first = True
+                oint += self.rtint[n]
+                oamp += self.rampl[n] * self.rtint[n]
+                if self.rprops[n] >= 8: oopt = 8
+                
                 if n == (len(self.rtint) - 1):
-                    opamp.append(avamp)
-                    opint.append(tint)
-                    oppro.append(prop)
-                n += 1
+                    pamp.append(oamp/oint)
+                    pint.append(oint)
+                    popt.append(oopt)
             else:
-                shint.append(self.rtint[n])
-                shpro.append(self.rprops[n])
-                n += 1
-                if first:
-                    opamp.append(avamp)
-                    opint.append(tint)
-                    oppro.append(prop)
-                    tint, prop, ampl = 0, 0, 0
+                pamp.append(oamp/oint)
+                pint.append(oint)
+                popt.append(oopt)
+                oint, oamp, oopt = 0.0, 0.0, 0
 
-        self.opint = opint
-        self.opamp = opamp
-        self.oppro = oppro
-        self.shint = shint
-        self.shpro = shpro
+                pamp.append(0.0)
+                pint.append(self.rtint[n])
+                popt.append(self.rprops[n])
+            n += 1
 
+        self.pint, self.pamp, self.popt = pint, pamp, popt
+        self.opint = self.pint[0::2]
+        self.opamp = self.pamp[0::2]
+        self.oppro = self.popt[0::2]
+        self.shint = self.pint[1::2]
+        self.shamp = self.pamp[1::2]
+        self.shpro = self.popt[1::2]
+        
     def get_bursts(self, tcrit):
         """
         Cut entire single channel record into bursts using critical shut time
@@ -261,7 +245,7 @@ class SCRecord(object):
         badend = True # True if unusable shut time is valid end of burst.
         firstgapfound = False
         i = 0
-        if self.rampl[0] != 0:
+        if self.pamp[0] != 0:
             firstgapfound = True
         #print("First burst starts only after gap > tcrit in each file.")
         #print("First burst starts with first good opening in each file.")
@@ -269,8 +253,8 @@ class SCRecord(object):
         #    print("Unusable shut time treated as a valid end of burst.")
         #else:
         #    print("Unusable shut time aborts a burst.")
-        while i < len(self.rtint) and not firstgapfound:
-            if self.rampl[i] == 0 and self.rtint[i] > tcrit:
+        while i < len(self.pint) and not firstgapfound:
+            if self.pamp[i] == 0 and self.pint[i] > tcrit:
                 firstgapfound = True
             i += 1
         #print ("First long gap found: n={0:d}; ".format(gap1) +
@@ -280,14 +264,14 @@ class SCRecord(object):
         burst = []
         endburst = False
         openinglength = 0
-        while i < len(self.rtint):
-            if self.rampl[i] != 0:
-                openinglength += self.rtint[i]
+        while i < len(self.pint):
+            if self.pamp[i] != 0:
+                openinglength += self.pint[i]
                 #TODO: if bad opening: set burst bad
             else: # found gap
-                if self.rtint[i] < tcrit and not endburst and i != (len(self.rtint)-1) and self.rprops[i] != 8:
+                if self.pint[i] < tcrit and not endburst and i != (len(self.pint)-1) and self.popt[i] != 8:
                     burst.append(openinglength)
-                    burst.append(self.rtint[i])
+                    burst.append(self.pint[i])
                     openinglength = 0
                 else: # gap is longer than tcrit
                     endburst = True

@@ -4,6 +4,7 @@ Gaussian filter, as in C & Sigworth (1994) Fig A3.1
 
 from math import *
 import numpy as np
+from scipy.special import erf
 
 def gfilter(input, coeffs):
     """

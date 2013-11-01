@@ -15,8 +15,8 @@ system = sys.platform
 str3 = "Machine: %s; System: %s\n" %(machine, system)
 
 # LOAD DATA.
-scnfiles = [["./dcpyps/samples/A-10.scn"], ["./dcpyps/samples/B-30.scn"],
-    ["./dcpyps/samples/C-100.scn"], ["./dcpyps/samples/D-1000.scn"]]
+scnfiles = [["./dcpyps/samples/glydemo/A-10.scn"], ["./dcpyps/samples/glydemo/B-30.scn"],
+    ["./dcpyps/samples/glydemo/C-100.scn"], ["./dcpyps/samples/glydemo/D-1000.scn"]]
 tres = [0.000030, 0.000030, 0.000030, 0.000030]
 tcrit = [0.004, -1, -0.06, -0.02]
 chs = [True, False, False, False]
