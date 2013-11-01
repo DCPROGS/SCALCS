@@ -11,7 +11,7 @@ import numpy as np
 
 from dcpyps import samples
 from dcpyps import dcio
-import scalcslib as scl
+from dcpyps import scalcslib as scl
 
 def next_state(present, picum, tmean, kA, opamp):
     """
@@ -96,23 +96,23 @@ if __name__ == "__main__":
     print '\n\t number of intervals=', len(itint)
     print '\n\t number of transitions=', ntrns
 
-    ###
-    dt = 0.00001 # 10 microsec
-    tot = np.sum(itint)
-    t = -dt
-    tsum = 0.0
-    for i in range(len(itint)):
-        tsum += itint[i]
-        while t < (tsum - dt):
-            t += dt
-            ampl.append(iampl[i])
-    trace = np.array(ampl, dtype=int16)
+#    ###
+#    dt = 0.00001 # 10 microsec
+#    tot = np.sum(itint)
+#    t = -dt
+#    tsum = 0.0
+#    for i in range(len(itint)):
+#        tsum += itint[i]
+#        while t < (tsum - dt):
+#            t += dt
+#            ampl.append(iampl[i])
+#    trace = np.array(ampl, dtype=int16)
 
     
 
 #    try:
     dcio.scn_write_simulated(itint, iampl, treso=tres/1000, tresg=tres/1000,
-        Emem=-100.0, avamp = opamp, filename='c:/remis/pySIMSCN.SCN')
-    dcio.ssd_save('c:/remis/pyCONSAM.ssd', header, trace)
+        Emem=-100.0, avamp = opamp, filename='./pySIMSCN.SCN')
+#    dcio.ssd_save('./pyCONSAM.ssd', header, trace)
 #    except:
 #        print 'SCN or CONSAM file saving problem'
