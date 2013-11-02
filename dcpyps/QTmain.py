@@ -26,6 +26,7 @@ from myqtlibs.burstmenu import BurstMenu
 from myqtlibs.jumpmenu import JumpMenu
 from myqtlibs.scalcsmenu import ScalcsMenu
 from myqtlibs.savemenu import SaveMenu
+from myqtlibs.helpmenu import HelpMenu
 import myqtlibs.myqtcommon as myqtcommon
 
 class QMatGUI(QMainWindow):
@@ -33,7 +34,8 @@ class QMatGUI(QMainWindow):
         super(QMatGUI, self).__init__(parent)
         self.resize(1000, 700)     # wide, high in px
         self.mainFrame = QWidget()
-        self.setWindowTitle("DC_PyPs: SCALCS- calculate dwell time distributions etc from Q-matrix...")
+        self.setWindowTitle("DC_PyPs: " +
+            "SCALCS- calculate dwell time distributions etc from Q-matrix...")
 
         self.path = ""
         self.mec = samples.CH82()
@@ -43,16 +45,15 @@ class QMatGUI(QMainWindow):
         self.tres = 0.0001
         self.present_plot = None
 
+        # Prepare menu
         self.menuBar().addMenu(MechMenu(self))
         self.menuBar().addMenu(ScalcsMenu(self))
         self.menuBar().addMenu(BurstMenu(self))
         self.menuBar().addMenu(JumpMenu(self))
         self.menuBar().addMenu(SaveMenu(self))
+        self.menuBar().addMenu(HelpMenu(self))
 
-        helpMenu = self.menuBar().addMenu('&Help')
-        helpAboutAction = myqtcommon.createAction(self, "&About", self.onHelpAbout)
-        myqtcommon.addActions(helpMenu, (helpAboutAction, None))
-
+        # Prepare matplotlib plot window
         self.dpi = 85
         self.fig = Figure((6.0, 4.0), dpi=self.dpi)
         self.canvas = FigureCanvas(self.fig)
@@ -66,17 +67,15 @@ class QMatGUI(QMainWindow):
         self.mplTools = NavigationToolbar(self.canvas, self.mainFrame)
         mscale.register_scale(scpl.SquareRootScale)
 
+        # Prepare text box for printout and set where printout goes
         self.textBox = QTextBrowser()
-        # Set here if printout to TextBox only or also to file or console.
         self.log = myqtcommon.PrintLog(self.textBox) #, sys.stdout)    
         myqtcommon.startInfo(self.log)
-
-        plotSetLayout = QVBoxLayout()
+        # Prepare text box for plot legend
         self.txtPltBox = QTextBrowser()
-        plotSetLayout.addWidget(self.txtPltBox)
 
         leftVBox = QVBoxLayout()
-        leftVBox.addLayout(plotSetLayout)
+        leftVBox.addWidget(self.txtPltBox)
         leftVBox.addWidget(self.canvas)
         leftVBox.addWidget(self.mplTools)
         rightVBox = QVBoxLayout()
@@ -86,14 +85,3 @@ class QMatGUI(QMainWindow):
         HBox.addLayout(rightVBox)
         self.mainFrame.setLayout(HBox)
         self.setCentralWidget(self.mainFrame)
-        
-    
-    def onHelpAbout(self):
-        """
-        Display About dialog.
-        Called from menu Help|About.
-        """
-        dialog = myqtcommon.AboutDlg(self)
-        if dialog.exec_():
-            pass
-
