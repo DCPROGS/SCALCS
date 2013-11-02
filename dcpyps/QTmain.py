@@ -25,6 +25,7 @@ from myqtlibs.mechmenu import MechMenu
 from myqtlibs.burstmenu import BurstMenu
 from myqtlibs.jumpmenu import JumpMenu
 from myqtlibs.scalcsmenu import ScalcsMenu
+from myqtlibs.savemenu import SaveMenu
 import myqtlibs.myqtcommon as myqtcommon
 
 class QMatGUI(QMainWindow):
@@ -32,6 +33,7 @@ class QMatGUI(QMainWindow):
         super(QMatGUI, self).__init__(parent)
         self.resize(1000, 700)     # wide, high in px
         self.mainFrame = QWidget()
+        self.setWindowTitle("DC_PyPs: SCALCS- calculate dwell time distributions etc from Q-matrix...")
 
         self.path = ""
         self.mec = samples.CH82()
@@ -39,22 +41,13 @@ class QMatGUI(QMainWindow):
         self.mec.fastblk = False
         self.conc = 100e-9    # 100 nM
         self.tres = 0.0001
-        self.rec1 = None
-        self.data_loaded = False
-        self.my_colour = ["r", "g", "b", "m", "c", "y"]
         self.present_plot = None
 
         self.menuBar().addMenu(MechMenu(self))
         self.menuBar().addMenu(ScalcsMenu(self))
         self.menuBar().addMenu(BurstMenu(self))
         self.menuBar().addMenu(JumpMenu(self))
-
-        saveMenu = self.menuBar().addMenu('&Save')
-        savePrintOutAction = myqtcommon.createAction(self, "&All work to text file", self.onSavePrintOut)
-        savePlotASCII = myqtcommon.createAction(self, 
-            "&Save current plot to text file", self.onSavePlotASCII)
-        myqtcommon.addActions(saveMenu, (savePrintOutAction, savePlotASCII,
-            None))
+        self.menuBar().addMenu(SaveMenu(self))
 
         helpMenu = self.menuBar().addMenu('&Help')
         helpAboutAction = myqtcommon.createAction(self, "&About", self.onHelpAbout)
@@ -94,39 +87,7 @@ class QMatGUI(QMainWindow):
         self.mainFrame.setLayout(HBox)
         self.setCentralWidget(self.mainFrame)
         
-    def onSavePrintOut(self):
-        """
-        """
-        printOutFilename, filt = QFileDialog.getSaveFileName(self,
-                "Save as PRT file...", ".prt",
-                "PRT files (*.prt)")
-
-        self.textBox.selectAll()
-        text = self.textBox.toPlainText()
-        fout = open(printOutFilename,'w')
-        fout.write(text)
-        fout.close()
-
-        self.txtPltBox.clear()
-        self.txtPltBox.append('Saved printout file:')
-        self.txtPltBox.append(printOutFilename)
-
-    def onSavePlotASCII(self):
-
-        savePlotTXTFilename, filt = QFileDialog.getSaveFileName(self,
-                "Save as TXT file...", self.path, ".txt",
-                "TXT files (*.txt)")
-
-        fout = open(savePlotTXTFilename,'w')
-        for i in range(self.present_plot.shape[1]):
-            for j in range(self.present_plot.shape[0]):
-                fout.write('{0:.6e}\t'.format(self.present_plot[j, i]))
-            fout.write('\n')
-        fout.close()
-
-        self.txtPltBox.append('Current plot saved in text file:')
-        self.txtPltBox.append(savePlotTXTFilename)
-
+    
     def onHelpAbout(self):
         """
         Display About dialog.
