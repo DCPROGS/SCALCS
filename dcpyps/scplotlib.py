@@ -5,16 +5,8 @@ Plotting utilities for single channel currents.
 __author__="R.Lape, University College London"
 __date__ ="$07-Dec-2010 23:01:09$"
 
-import sys
 import math
-
 import numpy as np
-try:
-    from matplotlib import scale as mscale
-    from matplotlib import transforms as mtransforms
-    from matplotlib import ticker
-except:
-    raise ImportError("matplotlib module is missing")
 
 import qmatlib as qml
 import scalcslib as scl
@@ -620,57 +612,3 @@ def subset_time_pdf(mec, tres, state1, state2,
 
     return t, ipdf, spdf
 
-
-class SquareRootScale(mscale.ScaleBase):
-    """
-    Class for generating square root scaled axis for probability density
-    function plots.
-    """
-
-    name = 'sqrtscale'
-    def __init__(self, axis, **kwargs):
-        mscale.ScaleBase.__init__(self)
-    def get_transform(self):
-        """
-        Set the actual transform for the axis coordinates.
-        """
-        return self.SqrTransform()
-    def set_default_locators_and_formatters(self, axis):
-        """
-        Set the locators and formatters to reasonable defaults.
-        """
-        axis.set_major_formatter(ticker.ScalarFormatter())
-
-    class SqrTransform(mtransforms.Transform):
-        """
-        """
-        input_dims = 1
-        output_dims = 1
-        is_separable = True
-
-        def __init__(self):
-            mtransforms.Transform.__init__(self)
-        def transform(self, a):
-            """
-            Take numpy array and return transformed copy.
-            """
-            return np.sqrt(a)
-        def inverted(self):
-            """
-            Get inverse transform.
-            """
-            return SquareRootScale.InvertedSqrTransform()
-
-    class InvertedSqrTransform(mtransforms.Transform):
-        """
-        """
-        input_dims = 1
-        output_dims = 1
-        is_separable = True
-
-        def __init__(self):
-            mtransforms.Transform.__init__(self)
-        def transform(self, a):
-            return np.power(a, 2)
-        def inverted(self):
-            return SquareRootScale.SqrTransform()

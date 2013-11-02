@@ -67,11 +67,11 @@ class ScalcsMenu(QMenu):
         c, pe, pi = scpl.Popen(self.parent.mec, self.parent.tres)
         self.parent.present_plot = np.vstack((c, pe, pi))
 
-        self.parent.axes.clear()
-        self.parent.axes.semilogx(c, pe, 'b-', c , pi, 'r--')
-        self.parent.axes.set_ylim(0, 1)
-        self.parent.axes.xaxis.set_ticks_position('bottom')
-        self.parent.axes.yaxis.set_ticks_position('left')
+        self.parent.canvas.axes.clear()
+        self.parent.canvas.axes.semilogx(c, pe, 'b-', c , pi, 'r--')
+        self.parent.canvas.axes.set_ylim(0, 1)
+        self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
+        self.parent.canvas.axes.yaxis.set_ticks_position('left')
         self.parent.canvas.draw()
 
     def onPlotOpShCorr(self):
@@ -98,12 +98,12 @@ class ScalcsMenu(QMenu):
         n, roA, roF, roAF = scpl.corr_open_shut(self.parent.mec, lag)
         self.parent.present_plot = np.vstack((n, roA, roF, roAF))
 
-        self.parent.axes.clear()
-        self.parent.axes.plot(n, roA,'go', n, roF, 'ro', n, roAF, 'bo')
-        self.parent.axes.axhline(y=0, xmin=0, xmax=1, color='k')
-        self.parent.axes.set_xlim(0, 6)
-        self.parent.axes.xaxis.set_ticks_position('bottom')
-        self.parent.axes.yaxis.set_ticks_position('left')
+        self.parent.canvas.axes.clear()
+        self.parent.canvas.axes.plot(n, roA,'go', n, roF, 'ro', n, roAF, 'bo')
+        self.parent.canvas.axes.axhline(y=0, xmin=0, xmax=1, color='k')
+        self.parent.canvas.axes.set_xlim(0, 6)
+        self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
+        self.parent.canvas.axes.yaxis.set_ticks_position('left')
         self.parent.canvas.draw()
         
     def onPlotOpAdjShacent(self):
@@ -132,11 +132,11 @@ class ScalcsMenu(QMenu):
             self.parent.tres, u1, u2)
         self.parent.present_plot = np.vstack((t, ipdf, ajpdf))
 
-        self.parent.axes.clear()
-        self.parent.axes.semilogx(t, ipdf, 'r--', t, ajpdf, 'b-')
-        self.parent.axes.set_yscale('sqrtscale')
-        self.parent.axes.xaxis.set_ticks_position('bottom')
-        self.parent.axes.yaxis.set_ticks_position('left')
+        self.parent.canvas.axes.clear()
+        self.parent.canvas.axes.semilogx(t, ipdf, 'r--', t, ajpdf, 'b-')
+        self.parent.canvas.axes.set_yscale('sqrtscale')
+        self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
+        self.parent.canvas.axes.yaxis.set_ticks_position('left')
         self.parent.canvas.draw()
         
     def onPlotMeanOpNextShut(self):
@@ -158,11 +158,11 @@ class ScalcsMenu(QMenu):
         sht, mp, mn = scpl.mean_open_next_shut(self.parent.mec, self.parent.tres)
         self.parent.present_plot = np.vstack((sht, mp, mn))
 
-        self.parent.axes.clear()
-        self.parent.axes.semilogx(sht, mp, 'r--', sht, mn, 'b--')
+        self.parent.canvas.axes.clear()
+        self.parent.canvas.axes.semilogx(sht, mp, 'r--', sht, mn, 'b--')
 #        self.axes.set_ylim(bottom=0)
-        self.parent.axes.xaxis.set_ticks_position('bottom')
-        self.parent.axes.yaxis.set_ticks_position('left')
+        self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
+        self.parent.canvas.axes.yaxis.set_ticks_position('left')
         self.parent.canvas.draw()
         
     def onPlotDependency(self):
@@ -239,11 +239,11 @@ class ScalcsMenu(QMenu):
         t, ipdf, epdf, apdf = scpl.open_time_pdf(self.parent.mec, self.parent.tres)
         self.parent.present_plot = np.vstack((t, ipdf, epdf, apdf))
 
-        self.parent.axes.clear()
-        self.parent.axes.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
-        self.parent.axes.set_yscale('sqrtscale')
-        self.parent.axes.xaxis.set_ticks_position('bottom')
-        self.parent.axes.yaxis.set_ticks_position('left')
+        self.parent.canvas.axes.clear()
+        self.parent.canvas.axes.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
+        self.parent.canvas.axes.set_yscale('sqrtscale')
+        self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
+        self.parent.canvas.axes.yaxis.set_ticks_position('left')
         self.parent.canvas.draw()
 
     def onPlotSubsetTimePDF(self):
@@ -272,11 +272,11 @@ class ScalcsMenu(QMenu):
             state1, state2)
         self.parent.present_plot = np.vstack((t, ipdf, s))
 
-        self.parent.axes.clear()
-        self.parent.axes.semilogx(t, spdf, 'b-', t, ipdf, 'r--')
-        self.parent.axes.set_yscale('sqrtscale')
-        self.parent.axes.xaxis.set_ticks_position('bottom')
-        self.parent.axes.yaxis.set_ticks_position('left')
+        self.parent.canvas.axes.clear()
+        self.parent.canvas.axes.semilogx(t, spdf, 'b-', t, ipdf, 'r--')
+        self.parent.canvas.axes.set_yscale('sqrtscale')
+        self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
+        self.parent.canvas.axes.yaxis.set_ticks_position('left')
         self.parent.canvas.draw()
 
     def onPlotShutTimePDF(self):
@@ -304,9 +304,9 @@ class ScalcsMenu(QMenu):
         t, ipdf, epdf, apdf = scpl.shut_time_pdf(self.parent.mec, self.parent.tres)
         self.parent.present_plot = np.vstack((t, ipdf, epdf, apdf))
 
-        self.parent.axes.clear()
-        self.parent.axes.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
-        self.parent.axes.set_yscale('sqrtscale')
-        self.parent.axes.xaxis.set_ticks_position('bottom')
-        self.parent.axes.yaxis.set_ticks_position('left')
+        self.parent.canvas.axes.clear()
+        self.parent.canvas.axes.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
+        self.parent.canvas.axes.set_yscale('sqrtscale')
+        self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
+        self.parent.canvas.axes.yaxis.set_ticks_position('left')
         self.parent.canvas.draw()

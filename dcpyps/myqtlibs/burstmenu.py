@@ -54,13 +54,13 @@ class BurstMenu(QMenu):
         t, fbrst, mfbrst = scpl.burst_length_pdf(self.parent.mec, multicomp=True)
         self.parent.present_plot = np.vstack((t, fbrst, mfbrst))
         
-        self.parent.axes.clear()
-        self.parent.axes.semilogx(t, fbrst, 'b-')
+        self.parent.canvas.axes.clear()
+        self.parent.canvas.axes.semilogx(t, fbrst, 'b-')
         for i in range(self.parent.mec.kE):
-            self.parent.axes.semilogx(t, mfbrst[i], 'b--')
-        self.parent.axes.set_yscale('sqrtscale')
-        self.parent.axes.xaxis.set_ticks_position('bottom')
-        self.parent.axes.yaxis.set_ticks_position('left')
+            self.parent.canvas.axes.semilogx(t, mfbrst[i], 'b--')
+        self.parent.canvas.axes.set_yscale('sqrtscale')
+        self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
+        self.parent.canvas.axes.yaxis.set_ticks_position('left')
         self.parent.canvas.draw()
 
     def onPlotBrstLenPDFCond(self):
@@ -82,19 +82,19 @@ class BurstMenu(QMenu):
 
         t, fbst, cfbst = scpl.burst_length_pdf(self.parent.mec, conditional=True)
         self.parent.present_plot = np.vstack((t, fbst, cfbst))
-        self.parent.axes.clear()
+        self.parent.canvas.axes.clear()
 
         # TODO: only 6 colours are available now.        
         for i in range(self.parent.mec.kA):
-            self.parent.axes.semilogx(t, cfbst[i], self.my_colour[i]+'-',
+            self.parent.canvas.axes.semilogx(t, cfbst[i], self.my_colour[i]+'-',
                 label="State {0:d}".format(i+1))
-        self.parent.axes.semilogx(t, fbst, 'k-', label="Not conditional")
-        handles, labels = self.parent.axes.get_legend_handles_labels()
-        self.parent.axes.legend(handles, labels, frameon=False)
+        self.parent.canvas.axes.semilogx(t, fbst, 'k-', label="Not conditional")
+        handles, labels = self.parent.canvas.axes.get_legend_handles_labels()
+        self.parent.canvas.axes.legend(handles, labels, frameon=False)
 
-        self.parent.axes.set_yscale('sqrtscale')
-        self.parent.axes.xaxis.set_ticks_position('bottom')
-        self.parent.axes.yaxis.set_ticks_position('left')
+        self.parent.canvas.axes.set_yscale('sqrtscale')
+        self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
+        self.parent.canvas.axes.yaxis.set_ticks_position('left')
         self.parent.canvas.draw()
 
     def onPlotBrstOpDistr(self):
@@ -115,11 +115,11 @@ class BurstMenu(QMenu):
         r, Pr = scpl.burst_openings_pdf(self.parent.mec, n)
         self.parent.present_plot = np.vstack((r, Pr))
 
-        self.parent.axes.clear()
-        self.parent.axes.plot(r, Pr,'ro')
-        self.parent.axes.set_xlim(0, 11)
-        self.parent.axes.xaxis.set_ticks_position('bottom')
-        self.parent.axes.yaxis.set_ticks_position('left')
+        self.parent.canvas.axes.clear()
+        self.parent.canvas.axes.plot(r, Pr,'ro')
+        self.parent.canvas.axes.set_xlim(0, 11)
+        self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
+        self.parent.canvas.axes.yaxis.set_ticks_position('left')
         self.parent.canvas.draw()
 
     def onPlotBrstOpDistrCond(self):
@@ -138,17 +138,17 @@ class BurstMenu(QMenu):
         r, Pr, cPr = scpl.burst_openings_pdf(self.parent.mec, n, conditional=True)
         self.parent.present_plot = np.vstack((r, Pr, cPr))
 
-        self.parent.axes.clear()
+        self.parent.canvas.axes.clear()
         # TODO: only 6 colours are available now.
         for i in range(self.parent.mec.kA):
-            self.parent.axes.plot(r, cPr[i], self.my_colour[i]+'o',
+            self.parent.canvas.axes.plot(r, cPr[i], self.my_colour[i]+'o',
                 label="State {0:d}".format(i+1))
-        self.parent.axes.plot(r, Pr,'ko', label="Not conditional")
-        handles, labels = self.parent.axes.get_legend_handles_labels()
-        self.parent.axes.legend(handles, labels, frameon=False)
-        self.parent.axes.set_xlim(0, n+1)
-        self.parent.axes.xaxis.set_ticks_position('bottom')
-        self.parent.axes.yaxis.set_ticks_position('left')
+        self.parent.canvas.axes.plot(r, Pr,'ko', label="Not conditional")
+        handles, labels = self.parent.canvas.axes.get_legend_handles_labels()
+        self.parent.canvas.axes.legend(handles, labels, frameon=False)
+        self.parent.canvas.axes.set_xlim(0, n+1)
+        self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
+        self.parent.canvas.axes.yaxis.set_ticks_position('left')
         self.parent.canvas.draw()
 
     def onPlotBrstLenConc(self):
@@ -172,10 +172,10 @@ class BurstMenu(QMenu):
         c, br, brblk = scpl.burst_length_versus_conc_plot(self.parent.mec, cmin, cmax)
         self.parent.present_plot = np.vstack((c, br, brblk))
 
-        self.parent.axes.clear()
-        self.parent.axes.plot(c, br,'r-', c, brblk, 'r--')
-        self.parent.axes.xaxis.set_ticks_position('bottom')
-        self.parent.axes.yaxis.set_ticks_position('left')
+        self.parent.canvas.axes.clear()
+        self.parent.canvas.axes.plot(c, br,'r-', c, brblk, 'r--')
+        self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
+        self.parent.canvas.axes.yaxis.set_ticks_position('left')
         self.parent.canvas.draw()
         
         

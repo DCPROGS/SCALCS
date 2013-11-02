@@ -92,10 +92,10 @@ class JumpMenu(QMenu):
         maxC = max(c)
         c1 = (c / maxC) * 0.2 * maxP + 1.02 * maxP
 
-        self.parent.axes.clear()
-        self.parent.axes.plot(t * 1000, Popen,'b-', t * 1000, c1, 'g-')
-        self.parent.axes.xaxis.set_ticks_position('bottom')
-        self.parent.axes.yaxis.set_ticks_position('left')
+        self.parent.canvas.axes.clear()
+        self.parent.canvas.axes.plot(t * 1000, Popen,'b-', t * 1000, c1, 'g-')
+        self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
+        self.parent.canvas.axes.yaxis.set_ticks_position('left')
         self.parent.canvas.draw()
 
         if self.cjprofile == 'instexp':
@@ -157,20 +157,20 @@ class JumpMenu(QMenu):
         maxC = max(c)
         c1 = (c / maxC) * 0.2 * maxP + 1.02 * maxP
 
-        self.parent.axes.clear()
-        self.parent.axes.plot(t * 1000, c1, 'k-')
-        self.parent.axes.plot(t * 1000, Popen, 'k-')
+        self.parent.canvas.axes.clear()
+        self.parent.canvas.axes.plot(t * 1000, c1, 'k-')
+        self.parent.canvas.axes.plot(t * 1000, Popen, 'k-')
         for i in range (0, self.parent.mec.kA):
-            self.parent.axes.plot(t * 1000, P[i], 'r--')
+            self.parent.canvas.axes.plot(t * 1000, P[i], 'r--')
         for i in range (self.parent.mec.kA, self.parent.mec.kA + self.parent.mec.kB):
-            self.parent.axes.plot(t * 1000, P[i], 'g--')
+            self.parent.canvas.axes.plot(t * 1000, P[i], 'g--')
         for i in range (self.parent.mec.kA + self.parent.mec.kB, self.parent.mec.k):
-            self.parent.axes.plot(t * 1000, P[i], 'b--')
+            self.parent.canvas.axes.plot(t * 1000, P[i], 'b--')
 #        self.axes.set_ylim(0.01, maxC * 1.01)
         #self.axes.set_xlim(5, 30)
 
-        self.parent.axes.xaxis.set_ticks_position('bottom')
-        self.parent.axes.yaxis.set_ticks_position('left')
+        self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
+        self.parent.canvas.axes.yaxis.set_ticks_position('left')
         self.parent.canvas.draw()
 
         self.parent.present_plot = np.vstack((t, Popen, c, P))
@@ -200,10 +200,10 @@ class JumpMenu(QMenu):
         c, wton, ton, wtoff, toff  = scpl.conc_jump_on_off_taus_versus_conc_plot(self.parent.mec,
             cmin, cmax, self.width)
 
-        self.parent.axes.clear()
-        self.parent.axes.semilogx(c, wton,'b-', c, wtoff, 'g-', c, ton[-1], 'r--')
-        self.parent.axes.xaxis.set_ticks_position('bottom')
-        self.parent.axes.yaxis.set_ticks_position('left')
+        self.parent.canvas.axes.clear()
+        self.parent.canvas.axes.semilogx(c, wton,'b-', c, wtoff, 'g-', c, ton[-1], 'r--')
+        self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
+        self.parent.canvas.axes.yaxis.set_ticks_position('left')
         self.parent.canvas.draw()
 
         self.parent.present_plot = np.vstack((c, ton[-1], wton, wtoff))
