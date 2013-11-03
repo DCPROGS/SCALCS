@@ -1,9 +1,10 @@
 #! /usr/bin/python
 import os
-
 from PySide.QtCore import *
 from PySide.QtGui import *
+
 import dcstatslib as dcstats
+import myqtlibs.myqtcommon as myqtcommon
 
 __author__="remis"
 __date__ ="$03-Jan-2010 15:26:00$"
@@ -109,7 +110,7 @@ class rantestQT(QDialog):
         r = float(self.tb4e5.text())
         tval = float(self.tb4e6.text())
         self.tb4txt.clear()
-        log = PrintLog(self.tb4txt) #, sys.stdout)
+        log = myqtcommon.PrintLog(self.tb4txt) #, sys.stdout)
         #Call Fieller to calculate statistics.
         dcstats.fieller_printout(a,b, sa, sb, r, tval, output=log)
 #######   TAB 4: FIELLER. END  #############
@@ -221,13 +222,13 @@ class rantestQT(QDialog):
         self.X, self.Y = dcstats.data_from_txt_file(filename)
         self.tb2txt.clear()
         self.tb2txt.append('Data loaded from a text file: ' + filename + '\n')
-        log = PrintLog(self.tb2txt)
+        log = myqtcommon.PrintLog(self.tb2txt)
         dcstats.stats_continuous_printout(self.X, self.Y,
             self.paired, output=log)
         
     def callback4(self):
         """Called by RUN TEST button in Tab2."""
-        log = PrintLog(self.tb2txt)
+        log = myqtcommon.PrintLog(self.tb2txt)
         dcstats.rantest_continuous_printout(self.X, self.Y,
             self.paired, self.nran, output=log)
 
@@ -253,17 +254,3 @@ class rantestQT(QDialog):
         movie.start()
         return movie_screen
 #######   TAB 1: WELCOME!  END   ############
-    
-class PrintLog:
-    """
-    Write stdout to a QTextEdit.
-    out1 = QTextEdit, QTextBrowser, etc.
-    out2 = sys.stdout, file, etc.
-    """
-    def __init__(self, out1, out2=None):
-        self.out1 = out1
-        self.out2 = out2
-    def write(self, text):
-        self.out1.insertPlainText(text)
-        if self.out2:
-            self.out2.write(text)
