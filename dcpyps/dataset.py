@@ -356,14 +356,15 @@ class SCRecord(object):
 
         if self.tcrit:
             str_repr += ('\nNumber of bursts = {0:d}'.format(len(self.bursts)))
-            blength = self.get_burst_length_list()
-            str_repr += ('\nAverage length = {0:.9f} ms'.
-                format(np.average(blength)*1000))
-            str_repr += ('\nRange: {0:.3f}'.format(min(blength)*1000) +
-                ' to {0:.3f} millisec'.format(max(blength)*1000))
-            openings = self.get_openings_burst_list()
-            str_repr += ('\nAverage number of openings= {0:.9f}\n'.
-                format(np.average(openings)))
+            if len(self.bursts) > 1:
+                blength = self.get_burst_length_list()
+                str_repr += ('\nAverage length = {0:.9f} ms'.
+                    format(np.average(blength)*1000))
+                str_repr += ('\nRange: {0:.3f}'.format(min(blength)*1000) +
+                    ' to {0:.3f} millisec'.format(max(blength)*1000))
+                openings = self.get_openings_burst_list()
+                str_repr += ('\nAverage number of openings= {0:.9f}\n'.
+                    format(np.average(openings)))
         else:
             str_repr += '\nBursts not separated...\n'
 
