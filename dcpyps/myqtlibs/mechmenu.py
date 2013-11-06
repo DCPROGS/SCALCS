@@ -574,7 +574,7 @@ class ConstrainMultiplyDlg(QDialog):
         self.setWindowTitle("Specify factor and rate...")
         
     def on_par_changed(self):
-        self.factor = int(self.fEdit.text())
+        self.factor = float(self.fEdit.text())
 
     def return_par(self):
         torate = None

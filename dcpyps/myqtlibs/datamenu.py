@@ -319,7 +319,7 @@ class SCNDlg(QDialog):
         else:
             self.recfiles = []
             self.tres = 0.00002
-            self.conc = 0.001
+            self.conc = 1e-6
             self.tcrit = 0.001
             self.chs = True
             self.onechan = False
@@ -452,7 +452,7 @@ class AddRecordDlg(QWidget):
         self.path = path
         self.recfile = []
         self.tres = 20 # resolution in microsec
-        self.conc = 1 # concentration in mM.
+        self.conc = 1 # concentration in microM.
         self.tcrit = 1 # critical time in ms
         self.chs = Qt.Checked # CHS vectors: yes or no
         self.onechan = Qt.Unchecked # opening from one channel only?
@@ -473,7 +473,7 @@ class AddRecordDlg(QWidget):
         layoutMain.addWidget(self.textBox)
         
         layout = QHBoxLayout()
-        layout.addWidget(QLabel("Concentration (mM):"))
+        layout.addWidget(QLabel("Concentration (microM):"))
         self.concEdit = QLineEdit(unicode(self.conc))
         self.concEdit.setMaxLength(12)
         self.connect(self.concEdit, SIGNAL("editingFinished()"),
@@ -530,7 +530,7 @@ class AddRecordDlg(QWidget):
         """
         """
         self.tres = float(self.resEdit.text()) * 1e-6
-        self.conc = float(self.concEdit.text()) * 1e-3
+        self.conc = float(self.concEdit.text()) * 1e-6
         self.tcrit = float(self.tcritEdit.text()) * 1e-3
         if self.onechanCheck.checkState() > 0:
             self.onechan = True
@@ -554,7 +554,7 @@ class SimRecDlg(QDialog):
         super(SimRecDlg, self).__init__(parent)
 
         self.tres = tres * 1e6 # resolution in microsec
-        self.conc = conc * 1000 # concentration in mM.
+        self.conc = conc * 1000000 # concentration in microM.
         self.oamp = oamp # open chanel current amplitude in pA
         self.nint = nint # umber of intervals
 
@@ -571,7 +571,7 @@ class SimRecDlg(QDialog):
         layoutMain.addLayout(layout)
 
         layout = QHBoxLayout()
-        layout.addWidget(QLabel("Concentration (mM):"))
+        layout.addWidget(QLabel("Concentration (microM):"))
         self.concEdit = QLineEdit(unicode(self.conc))
         self.concEdit.setMaxLength(12)
         self.connect(self.concEdit, SIGNAL("editingFinished()"),
@@ -612,7 +612,7 @@ class SimRecDlg(QDialog):
         """
         """
         self.tres = float(self.resEdit.text()) * 1e-6
-        self.conc = float(self.concEdit.text()) * 1e-3
+        self.conc = float(self.concEdit.text()) * 1e-6
         self.oamp = float(self.ampEdit.text())
         self.nint = int(self.intEdit.text())
 
