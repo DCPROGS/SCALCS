@@ -44,8 +44,8 @@ class SCRecord(object):
         #TODO: enable taking several scan files and join in a single record.
         # Just a single file could be loaded at present.
         ioffset, nint, calfac, header = dcio.scn_read_header(self.filenames[0])
-        self.itint, self.iampl, self.iprops = dcio.scn_read_data(self.filenames[0],
-            ioffset, nint, calfac)
+        self.itint, self.iampl, self.iprops = dcio.scn_read_data(
+            self.filenames[0], header)
 #        self.record_type = '' # TODO: get from header if simulated or scanned
 
     def simulate_record(self, mec, tres, state, opamp=5, nintmax=5000):
@@ -65,9 +65,9 @@ class SCRecord(object):
         self.itint = np.array(itint, dtype=np.float)
         self.iampl = np.array(iampl, dtype=np.int16)
         self.iprops = np.zeros((len(itint)), dtype=np.int8)
-        self.rtint = self.itint
-        self.rampl = self.iampl
-        self.rprops = self.iprops
+        self.rint = self.itint
+        self.ramp = self.iampl
+        self.ropt = self.iprops
         self.resolution_imposed = True
         self.tres = tres
         self.record_type = 'simulated locally'
@@ -88,9 +88,18 @@ class SCRecord(object):
 
     def print_resolved_intervals(self):
         print('\n#########\nList of resolved intervals:\n')
-        for i in range(len(self.rtint)):
-            print i, self.rtint[i], self.rampl[i], self.rprops[i]
-            if (self.rampl[i] == 0) and (self.rtint > (self.tcrit)):
+        for i in range(len(self.rint)):
+            print i, self.rint[i], self.ramp[i], self.ropt[i]
+            if (self.ramp[i] == 0) and (self.rint[i] > (self.tcrit)):
+                print ('\n')
+        print('\n###################\n\n')
+        
+    def print_resolved_periods(self):
+        print 'tcrit=', self.tcrit
+        print('\n#########\nList of resolved periods:\n')
+        for i in range(len(self.pint)):
+            print i, self.pint[i], self.pamp[i], self.popt[i]
+            if self.pamp[i] == 0 and self.pint[i] > self.tcrit:
                 print ('\n')
         print('\n###################\n\n')
         
@@ -171,7 +180,7 @@ class SCRecord(object):
             rampl.pop()
             rprops.pop()
         
-        self.rtint, self.rampl, self.rprops = rtint, rampl, rprops
+        self.rint, self.ramp, self.ropt = rtint, rampl, rprops
         self.resolution_imposed = True
         self.tres = tres
 
@@ -196,15 +205,19 @@ class SCRecord(object):
         """
         
         pint, pamp, popt = [], [], []
+        if self.ramp[-1] != 0:
+            self.rint.pop()
+            self.ramp.pop()
+            self.ropt.pop()
         n = 1
-        oint, oamp, oopt = self.rtint[0], self.rampl[0], self.rprops[0]
-        while n < len(self.rtint):
-            if self.rampl[n] != 0:
-                oint += self.rtint[n]
-                oamp += self.rampl[n] * self.rtint[n]
-                if self.rprops[n] >= 8: oopt = 8
+        oint, oamp, oopt = self.rint[0], self.ramp[0], self.ropt[0]
+        while n < len(self.rint):
+            if self.ramp[n] != 0:
+                oint += self.rint[n]
+                oamp += self.ramp[n] * self.rint[n]
+                if self.ropt[n] >= 8: oopt = 8
                 
-                if n == (len(self.rtint) - 1):
+                if n == (len(self.rint) - 1):
                     pamp.append(oamp/oint)
                     pint.append(oint)
                     popt.append(oopt)
@@ -215,8 +228,8 @@ class SCRecord(object):
                 oint, oamp, oopt = 0.0, 0.0, 0
 
                 pamp.append(0.0)
-                pint.append(self.rtint[n])
-                popt.append(self.rprops[n])
+                pint.append(self.rint[n])
+                popt.append(self.ropt[n])
             n += 1
 
         self.pint, self.pamp, self.popt = pint, pamp, popt
@@ -241,48 +254,37 @@ class SCRecord(object):
         (5) No listing of the individual bursts.
         """
 
-        #defaultdef = True # True if default burst definition accepted.
-        badend = True # True if unusable shut time is valid end of burst.
-        firstgapfound = False
-        i = 0
-        if self.pamp[0] != 0:
-            firstgapfound = True
-        #print("First burst starts only after gap > tcrit in each file.")
-        #print("First burst starts with first good opening in each file.")
-        #if badend:
-        #    print("Unusable shut time treated as a valid end of burst.")
-        #else:
-        #    print("Unusable shut time aborts a burst.")
-        while i < len(self.pint) and not firstgapfound:
-            if self.pamp[i] == 0 and self.pint[i] > tcrit:
-                firstgapfound = True
-            i += 1
-        #print ("First long gap found: n={0:d}; ".format(gap1) +
-        #    "length = {0:.6f} ms".format(self.rtint[gap1]))
-
+        if self.pamp[0] == 0:
+            i = 1
+        else:
+            i = 0
+            
         bursts = []
         burst = []
+
         endburst = False
-        openinglength = 0
-        while i < len(self.pint):
+        
+        while i < (len(self.pint) - 1):
+
             if self.pamp[i] != 0:
-                openinglength += self.pint[i]
-                #TODO: if bad opening: set burst bad
+                burst.append(self.pint[i])
+            
             else: # found gap
-                if self.pint[i] < tcrit and not endburst and i != (len(self.pint)-1) and self.popt[i] != 8:
-                    burst.append(openinglength)
+                if self.pint[i] < tcrit and self.popt[i] < 8:
                     burst.append(self.pint[i])
-                    openinglength = 0
-                else: # gap is longer than tcrit
+                else: # gap is longer than tcrit or bad
                     endburst = True
+            
             if endburst:
-                burst.append(openinglength)
-                openinglength = 0
-                # TODO: bad/unusable gap
                 bursts.append(burst)
                 endburst = False
                 burst = []
             i += 1
+            
+        if self.pamp[i] != 0:
+            burst.append(self.pint[i])
+        if burst:
+            bursts.append(burst)
         self.bursts = bursts
 
     def get_burst_length_list(self):
@@ -338,7 +340,7 @@ class SCRecord(object):
 #            str_repr += '\nData not loaded...'
 
         if self.tres:
-            str_repr += '\nNumber of resolved intervals = {0:d}'.format(len(self.rtint))
+            str_repr += '\nNumber of resolved intervals = {0:d}'.format(len(self.rint))
             str_repr += '\nNumber of resolved periods = {0:d}'.format(len(self.opint) + len(self.shint))
             str_repr += '\n\nNumber of open periods = {0:d}'.format(len(self.opint))
             str_repr += ('\nMean and SD of open periods = {0:.9f} +/- {1:.9f} ms'.
@@ -356,8 +358,10 @@ class SCRecord(object):
 
         if self.tcrit:
             str_repr += ('\nNumber of bursts = {0:d}'.format(len(self.bursts)))
+            blength = self.get_burst_length_list()
+            openings = self.get_openings_burst_list()
+            
             if len(self.bursts) > 1:
-                blength = self.get_burst_length_list()
                 str_repr += ('\nAverage length = {0:.9f} ms'.
                     format(np.average(blength)*1000))
                 str_repr += ('\nRange: {0:.3f}'.format(min(blength)*1000) +
@@ -365,6 +369,11 @@ class SCRecord(object):
                 openings = self.get_openings_burst_list()
                 str_repr += ('\nAverage number of openings= {0:.9f}\n'.
                     format(np.average(openings)))
+            else:
+                str_repr += ('\nBurst length = {0:.9f} ms'.
+                    format(blength[0] * 1000))
+                str_repr += ('\nNumber of openings= {0:.9f}\n'.
+                    format(openings[0]))
         else:
             str_repr += '\nBursts not separated...\n'
 

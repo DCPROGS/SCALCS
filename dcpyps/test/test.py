@@ -220,7 +220,7 @@ class TestDC_PyPs(unittest.TestCase):
 
         filename = "./dcpyps/samples/CH82.scn"
         ioffset, nint, calfac, header = dcio.scn_read_header(filename)
-        tint, iampl, iprops = dcio.scn_read_data(filename, ioffset, nint, calfac)
+        tint, iampl, iprops = dcio.scn_read_data(filename, header)
         rec1 = dataset.SCRecord([filename], self.conc, self.tres, self.tcrit)
 #        rec1 = dataset.SCRecord(filename, header, tint, iampl, iprops)
 #        rec1.impose_resolution(self.tres)

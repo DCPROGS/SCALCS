@@ -1573,7 +1573,7 @@ def scn_read_header (fname):
     #return ioffset, nint, calfac2, ffilt, rms, avamp, header
     return ioffset, nint, calfac2, header
 
-def scn_read_data(fname, ioffset, nint, calfac2):
+def scn_read_data(fname, header):
     """
     Read idealised data- intervals, amplitudes, flags- rom SCN file.
 
@@ -1598,26 +1598,23 @@ def scn_read_data(fname, ioffset, nint, calfac2):
     iprops = array('b') # 1 byte integer
 
     f=open(fname, 'rb')
-    f.seek(ioffset-1)
-    tint.fromfile(f, nint)
-    iampl.fromfile(f, nint)
-    iprops.fromfile(f, nint)
+    f.seek(header['ioffset']-1)
+    tint.fromfile(f, header['nint'])
+    iampl.fromfile(f, header['nint'])
+    iprops.fromfile(f, header['nint'])
     f.close()
-
-    tint.pop()
-    iampl.pop()
-    iprops.pop()
-#    if tint[-1] == 0:
-#        if iprops[-1] != 8:
-#            # Last interval in file is shut an set as unusable.
-#            iprops[-1] = 8        
-#    else:
-#        # Last interval in file is open. An unusable shut time is inserted
-#        # at the end. Total number of intervals increased by one.
-#        tint.append(-1.0)
-#        iampl.append(0)
-#        iprops.append(8)
-
+     
+    if header['iscanver'] > 0:
+        gapnotfound = True
+        while gapnotfound:
+            if iampl[-1] == 0:
+                gapnotfound = False
+                iprops[-1] = 8
+            else:
+                tint.pop()
+                iampl.pop()
+                iprops.pop()
+        
     return np.array(tint)*0.001, np.array(iampl), np.array(iprops)
 
 def scn_write_simulated(intervals, amplitudes, treso=0.0, tresg=0.0,

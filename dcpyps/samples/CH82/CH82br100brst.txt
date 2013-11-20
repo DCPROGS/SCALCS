@@ -1,0 +1,3124 @@
+     1 open period =   1.01340    
+
+GROUP #      1:   1 openings, likelihood =   108.5633    
+ i, amp(i), length of gap that ends group=        2 0.000000      1446.61    
+
+     2 open period =  0.276209    
+
+GROUP #      2:   1 openings, likelihood =   451.4687    
+ i, amp(i), length of gap that ends group=        4 0.000000      484.796    
+
+     3 open period =   3.43648    
+     4 open period =   7.89443    
+
+GROUP #      3:   2 openings, likelihood =  0.1204626E+08
+ i, amp(i), length of gap that ends group=        8 0.000000      9753.41    
+
+     5 open period =   2.14108    
+
+GROUP #      4:   1 openings, likelihood =   58.67731    
+ i, amp(i), length of gap that ends group=       10 0.000000      6346.18    
+
+     6 open period =   6.82352    
+     7 open period =   8.07350    
+
+GROUP #      5:   2 openings, likelihood =   1534966.    
+ i, amp(i), length of gap that ends group=       14 0.000000      5795.64    
+
+     8 open period =   3.80290    
+
+GROUP #      6:   1 openings, likelihood =   43.79319    
+ i, amp(i), length of gap that ends group=       16 0.000000      2172.56    
+
+     9 open period =   2.55234    
+    10 open period =   29.1561    
+
+GROUP #      7:   2 openings, likelihood =   74589.48    
+ i, amp(i), length of gap that ends group=       20 0.000000      1622.27    
+
+    11 open period =   1.08984    
+
+GROUP #      8:   1 openings, likelihood =   99.48870    
+ i, amp(i), length of gap that ends group=       22 0.000000      1788.67    
+
+    12 open period =   1.18491    
+    13 open period =   6.09714    
+    14 open period =  0.464851    
+
+GROUP #      9:   3 openings, likelihood =  0.1099436E+14
+ i, amp(i), length of gap that ends group=       28 0.000000      6035.98    
+
+    15 open period =   5.92527    
+    16 open period =   10.2424    
+
+GROUP #     10:   2 openings, likelihood =   2140299.    
+ i, amp(i), length of gap that ends group=       32 0.000000      4473.03    
+
+    17 open period =  0.119963    
+
+GROUP #     11:   1 openings, likelihood =   681.7833    
+ i, amp(i), length of gap that ends group=       34 0.000000      16204.9    
+
+    18 open period =   2.50375    
+
+GROUP #     12:   1 openings, likelihood =   54.53007    
+ i, amp(i), length of gap that ends group=       36 0.000000      2064.77    
+
+    19 open period =   3.80995    
+    20 open period =  0.351067    
+
+GROUP #     13:   2 openings, likelihood =   91049.20    
+ i, amp(i), length of gap that ends group=       40 0.000000      3276.93    
+
+    21 open period =   14.6591    
+    22 open period =   1.88005    
+
+GROUP #     14:   2 openings, likelihood =   4022981.    
+ i, amp(i), length of gap that ends group=       44 0.000000      633.144    
+
+    23 open period =  0.629648    
+
+GROUP #     15:   1 openings, likelihood =   200.7984    
+ i, amp(i), length of gap that ends group=       46 0.000000      1596.73    
+
+    24 open period =   5.74124    
+    25 open period =   10.2631    
+
+GROUP #     16:   2 openings, likelihood =   3085973.    
+ i, amp(i), length of gap that ends group=       50 0.000000      6870.66    
+
+    26 open period =   19.0786    
+
+GROUP #     17:   1 openings, likelihood =   3.634336    
+ i, amp(i), length of gap that ends group=       52 0.000000      959.056    
+
+    27 open period =   1.29728    
+
+GROUP #     18:   1 openings, likelihood =   82.53606    
+ i, amp(i), length of gap that ends group=       54 0.000000      225.880    
+
+    28 open period =   2.54693    
+    29 open period =   10.9259    
+
+GROUP #     19:   2 openings, likelihood =   6568569.    
+ i, amp(i), length of gap that ends group=       58 0.000000      2304.92    
+
+    30 open period =  0.329189    
+
+GROUP #     20:   1 openings, likelihood =   395.1212    
+ i, amp(i), length of gap that ends group=       60 0.000000      1565.31    
+
+    31 open period =   5.10516    
+    32 open period =   1.85535    
+
+GROUP #     21:   2 openings, likelihood =  0.1457005E+08
+ i, amp(i), length of gap that ends group=       64 0.000000      4996.96    
+
+    33 open period =   8.94290    
+    34 open period =   13.3080    
+
+GROUP #     22:   2 openings, likelihood =   745784.3    
+ i, amp(i), length of gap that ends group=       68 0.000000      1820.22    
+
+    35 open period =   1.97013    
+    36 open period =   4.68352    
+
+GROUP #     23:   2 openings, likelihood =   6931945.    
+ i, amp(i), length of gap that ends group=       72 0.000000      4871.23    
+
+    37 open period =   2.58387    
+
+GROUP #     24:   1 openings, likelihood =   53.73676    
+ i, amp(i), length of gap that ends group=       74 0.000000      361.510    
+
+    38 open period =  0.101664    
+
+GROUP #     25:   1 openings, likelihood =   716.9350    
+ i, amp(i), length of gap that ends group=       76 0.000000      3145.02    
+
+    39 open period =   6.37296    
+    40 open period =   3.09176    
+
+GROUP #     26:   2 openings, likelihood =   7636991.    
+ i, amp(i), length of gap that ends group=       80 0.000000      1171.39    
+
+    41 open period =  0.313843    
+
+GROUP #     27:   1 openings, likelihood =   410.5286    
+ i, amp(i), length of gap that ends group=       82 0.000000      2423.83    
+
+    42 open period =   2.35051    
+    43 open period =   2.97656    
+
+GROUP #     28:   2 openings, likelihood =  0.2732740E+08
+ i, amp(i), length of gap that ends group=       86 0.000000      5730.47    
+
+    44 open period =  0.419139    
+
+GROUP #     29:   1 openings, likelihood =   317.8018    
+ i, amp(i), length of gap that ends group=       88 0.000000      173.531    
+
+    45 open period =  0.415718    
+
+GROUP #     30:   1 openings, likelihood =   320.3766    
+ i, amp(i), length of gap that ends group=       90 0.000000      3962.40    
+
+    46 open period =   27.3978    
+    47 open period =   1.85364    
+    48 open period =   2.74588    
+
+GROUP #     31:   3 openings, likelihood =  0.1302968E+12
+ i, amp(i), length of gap that ends group=       96 0.000000      885.389    
+
+    49 open period =   13.5797    
+    50 open period =   14.2978    
+
+GROUP #     32:   2 openings, likelihood =   152936.7    
+ i, amp(i), length of gap that ends group=      100 0.000000      533.234    
+
+    51 open period =   21.5371    
+
+GROUP #     33:   1 openings, likelihood =   2.434793    
+ i, amp(i), length of gap that ends group=      102 0.000000      3680.27    
+
+    52 open period =   1.19935    
+
+GROUP #     34:   1 openings, likelihood =   89.38926    
+ i, amp(i), length of gap that ends group=      104 0.000000      4999.17    
+
+    53 open period =  0.102799    
+
+GROUP #     35:   1 openings, likelihood =   714.6928    
+ i, amp(i), length of gap that ends group=      106 0.000000      1323.28    
+
+    54 open period =  0.420344    
+
+GROUP #     36:   1 openings, likelihood =   316.9013    
+ i, amp(i), length of gap that ends group=      108 0.000000      1663.49    
+
+    55 open period =  0.181086    
+
+GROUP #     37:   1 openings, likelihood =   578.2609    
+ i, amp(i), length of gap that ends group=      110 0.000000      1252.15    
+
+    56 open period =  0.569359    
+
+GROUP #     38:   1 openings, likelihood =   227.1923    
+ i, amp(i), length of gap that ends group=      112 0.000000      4037.05    
+
+    57 open period =  0.891760    
+
+GROUP #     39:   1 openings, likelihood =   127.6923    
+ i, amp(i), length of gap that ends group=      114 0.000000      14403.7    
+
+    58 open period =   8.87819    
+
+GROUP #     40:   1 openings, likelihood =   19.15145    
+ i, amp(i), length of gap that ends group=      116 0.000000      8266.36    
+
+    59 open period =   9.20009    
+
+GROUP #     41:   1 openings, likelihood =   18.17289    
+ i, amp(i), length of gap that ends group=      118 0.000000      787.849    
+
+    60 open period =  0.226534    
+
+GROUP #     42:   1 openings, likelihood =   513.1289    
+ i, amp(i), length of gap that ends group=      120 0.000000      1087.64    
+
+    61 open period =  0.629064    
+
+GROUP #     43:   1 openings, likelihood =   201.0322    
+ i, amp(i), length of gap that ends group=      122 0.000000      5019.49    
+
+    62 open period =   1.26148    
+    63 open period =   14.4374    
+    64 open period =   23.8114    
+
+GROUP #     44:   3 openings, likelihood =  0.1343826E+12
+ i, amp(i), length of gap that ends group=      128 0.000000      3223.30    
+
+    65 open period =  0.862617    
+    66 open period =   3.60798    
+    67 open period =   3.75429    
+    68 open period =   1.21811    
+    69 open period =   3.90368    
+    70 open period =   2.69179    
+    71 open period =   11.1483    
+
+GROUP #     45:   7 openings, likelihood =  0.8603577E+34
+ i, amp(i), length of gap that ends group=      142 0.000000      10907.8    
+
+    72 open period =   13.5200    
+
+GROUP #     46:   1 openings, likelihood =   8.989782    
+ i, amp(i), length of gap that ends group=      144 0.000000      861.623    
+
+    73 open period =   1.68618    
+
+GROUP #     47:   1 openings, likelihood =   66.91863    
+ i, amp(i), length of gap that ends group=      146 0.000000      3500.22    
+
+    74 open period =   3.15928    
+
+GROUP #     48:   1 openings, likelihood =   48.68347    
+ i, amp(i), length of gap that ends group=      148 0.000000      653.031    
+
+    75 open period =   6.17581    
+
+GROUP #     49:   1 openings, likelihood =   29.74546    
+ i, amp(i), length of gap that ends group=      150 0.000000      7706.16    
+
+    76 open period =   3.34784    
+
+GROUP #     50:   1 openings, likelihood =   47.18713    
+ i, amp(i), length of gap that ends group=      152 0.000000      19910.4    
+
+    77 open period =  0.176536    
+
+GROUP #     51:   1 openings, likelihood =   585.2992    
+ i, amp(i), length of gap that ends group=      154 0.000000      4393.94    
+
+    78 open period =   1.80322    
+
+GROUP #     52:   1 openings, likelihood =   64.22109    
+ i, amp(i), length of gap that ends group=      156 0.000000      6237.33    
+
+    79 open period =   2.22773    
+
+GROUP #     53:   1 openings, likelihood =   57.57648    
+ i, amp(i), length of gap that ends group=      158 0.000000      4301.63    
+
+    80 open period =  0.463944    
+
+GROUP #     54:   1 openings, likelihood =   286.4070    
+ i, amp(i), length of gap that ends group=      160 0.000000      691.424    
+
+    81 open period =   5.27959    
+    82 open period =   10.0086    
+
+GROUP #     55:   2 openings, likelihood =   368189.9    
+ i, amp(i), length of gap that ends group=      164 0.000000      3963.14    
+
+    83 open period =   12.1484    
+
+GROUP #     56:   1 openings, likelihood =   11.24098    
+ i, amp(i), length of gap that ends group=      166 0.000000      1441.79    
+
+    84 open period =  0.168871    
+    85 open period =   3.07486    
+
+GROUP #     57:   2 openings, likelihood =  0.2714404E+08
+ i, amp(i), length of gap that ends group=      170 0.000000      4285.82    
+
+    86 open period =   10.7057    
+    87 open period =   4.30804    
+    88 open period =   6.89583    
+
+GROUP #     58:   3 openings, likelihood =  0.7506094E+11
+ i, amp(i), length of gap that ends group=      176 0.000000      380.996    
+
+    89 open period =   1.09258    
+    90 open period =  0.570171    
+    91 open period =   29.2286    
+    92 open period =  0.410977    
+    93 open period =   4.88163    
+    94 open period =   3.79160    
+
+GROUP #     59:   6 openings, likelihood =  0.3129851E+28
+ i, amp(i), length of gap that ends group=      188 0.000000      481.562    
+
+    95 open period =   16.0217    
+    96 open period =  0.886457    
+    97 open period =   18.5459    
+    98 open period =   2.89400    
+
+GROUP #     60:   4 openings, likelihood =  0.6039243E+13
+ i, amp(i), length of gap that ends group=      196 0.000000      6427.31    
+
+    99 open period =   14.7749    
+
+GROUP #     61:   1 openings, likelihood =   7.327422    
+ i, amp(i), length of gap that ends group=      198 0.000000      6761.24    
+
+   100 open period =   4.90812    
+   101 open period =   6.49397    
+
+GROUP #     62:   2 openings, likelihood =  0.1077331E+08
+ i, amp(i), length of gap that ends group=      202 0.000000      7998.66    
+
+   102 open period =   1.57681    
+
+GROUP #     63:   1 openings, likelihood =   70.04661    
+ i, amp(i), length of gap that ends group=      204 0.000000      3527.62    
+
+   103 open period =   35.4015    
+
+GROUP #     64:   1 openings, likelihood =  0.2543500    
+ i, amp(i), length of gap that ends group=      206 0.000000      7690.21    
+
+   104 open period =   2.06416    
+   105 open period =   6.52820    
+
+GROUP #     65:   2 openings, likelihood =  0.1050217E+08
+ i, amp(i), length of gap that ends group=      210 0.000000      4733.74    
+
+   106 open period =  0.912912    
+
+GROUP #     66:   1 openings, likelihood =   123.8736    
+ i, amp(i), length of gap that ends group=      212 0.000000      2361.03    
+
+   107 open period =   6.82274    
+
+GROUP #     67:   1 openings, likelihood =   26.76975    
+ i, amp(i), length of gap that ends group=      214 0.000000      46.4359    
+
+   108 open period =   3.30227    
+   109 open period =  0.623217    
+   110 open period =   2.87910    
+   111 open period =   28.5090    
+
+GROUP #     68:   4 openings, likelihood =  0.1229041E+18
+ i, amp(i), length of gap that ends group=      222 0.000000      12825.0    
+
+   112 open period =   2.31598    
+
+GROUP #     69:   1 openings, likelihood =   56.53737    
+ i, amp(i), length of gap that ends group=      224 0.000000      567.902    
+
+   113 open period =   7.63595    
+   114 open period =   11.4996    
+   115 open period =   11.0514    
+   116 open period =   5.86793    
+
+GROUP #     70:   4 openings, likelihood =  0.5956240E+17
+ i, amp(i), length of gap that ends group=      232 0.000000      3674.87    
+
+   117 open period =   6.89373    
+
+GROUP #     71:   1 openings, likelihood =   26.46190    
+ i, amp(i), length of gap that ends group=      234 0.000000      1851.03    
+
+   118 open period =   4.39733    
+   119 open period =   9.06362    
+
+GROUP #     72:   2 openings, likelihood =   8856538.    
+ i, amp(i), length of gap that ends group=      238 0.000000      3121.83    
+
+   120 open period =  0.818378    
+
+GROUP #     73:   1 openings, likelihood =   142.8955    
+ i, amp(i), length of gap that ends group=      240 0.000000      3027.35    
+
+   121 open period =   6.53598    
+
+GROUP #     74:   1 openings, likelihood =   28.05016    
+ i, amp(i), length of gap that ends group=      242 0.000000      3558.26    
+
+   122 open period =  0.194614    
+
+GROUP #     75:   1 openings, likelihood =   557.9178    
+ i, amp(i), length of gap that ends group=      244 0.000000      8491.36    
+
+   123 open period =   3.27785    
+
+GROUP #     76:   1 openings, likelihood =   47.73561    
+ i, amp(i), length of gap that ends group=      246 0.000000      971.877    
+
+   124 open period =  0.594971    
+
+GROUP #     77:   1 openings, likelihood =   215.4009    
+ i, amp(i), length of gap that ends group=      248 0.000000      4135.86    
+
+   125 open period =   9.85877    
+
+GROUP #     78:   1 openings, likelihood =   16.32361    
+ i, amp(i), length of gap that ends group=      250 0.000000      3101.87    
+
+   126 open period =  0.537342    
+
+GROUP #     79:   1 openings, likelihood =   243.2532    
+ i, amp(i), length of gap that ends group=      252 0.000000      57.5420    
+
+   127 open period =   2.74039    
+
+GROUP #     80:   1 openings, likelihood =   52.26634    
+ i, amp(i), length of gap that ends group=      254 0.000000      5342.28    
+
+   128 open period =  0.504688    
+
+GROUP #     81:   1 openings, likelihood =   261.2905    
+ i, amp(i), length of gap that ends group=      256 0.000000      506.104    
+
+   129 open period =   2.67607    
+
+GROUP #     82:   1 openings, likelihood =   52.85931    
+ i, amp(i), length of gap that ends group=      258 0.000000      4392.26    
+
+   130 open period =   25.8274    
+
+GROUP #     83:   1 openings, likelihood =   1.210290    
+ i, amp(i), length of gap that ends group=      260 0.000000      2011.94    
+
+   131 open period =   3.88917    
+
+GROUP #     84:   1 openings, likelihood =   43.18019    
+ i, amp(i), length of gap that ends group=      262 0.000000      80.9424    
+
+   132 open period =   2.91629    
+
+GROUP #     85:   1 openings, likelihood =   50.71016    
+ i, amp(i), length of gap that ends group=      264 0.000000      3813.76    
+
+   133 open period =  0.185172    
+   134 open period =   13.9637    
+
+GROUP #     86:   2 openings, likelihood =   3873076.    
+ i, amp(i), length of gap that ends group=      268 0.000000      7784.69    
+
+   135 open period =  0.309319    
+
+GROUP #     87:   1 openings, likelihood =   415.2088    
+ i, amp(i), length of gap that ends group=      270 0.000000      1868.43    
+
+   136 open period =   16.1494    
+
+GROUP #     88:   1 openings, likelihood =   5.857313    
+ i, amp(i), length of gap that ends group=      272 0.000000      2696.88    
+
+   137 open period =  0.507392    
+
+GROUP #     89:   1 openings, likelihood =   259.7294    
+ i, amp(i), length of gap that ends group=      274 0.000000      14022.1    
+
+   138 open period =   12.7679    
+
+GROUP #     90:   1 openings, likelihood =   10.16176    
+ i, amp(i), length of gap that ends group=      276 0.000000      1031.15    
+
+   139 open period =   3.27623    
+
+GROUP #     91:   1 openings, likelihood =   47.74842    
+ i, amp(i), length of gap that ends group=      278 0.000000      3364.35    
+
+   140 open period =   25.4321    
+
+GROUP #     92:   1 openings, likelihood =   1.290801    
+ i, amp(i), length of gap that ends group=      280 0.000000      750.307    
+
+   141 open period =   18.1255    
+
+GROUP #     93:   1 openings, likelihood =   4.244914    
+ i, amp(i), length of gap that ends group=      282 0.000000      5260.97    
+
+   142 open period =   1.74774    
+   143 open period =   4.00977    
+   144 open period =   4.75562    
+
+GROUP #     94:   3 openings, likelihood =  0.2944988E+13
+ i, amp(i), length of gap that ends group=      288 0.000000      11533.9    
+
+   145 open period =  0.159092    
+
+GROUP #     95:   1 openings, likelihood =   613.2291    
+ i, amp(i), length of gap that ends group=      290 0.000000      521.358    
+
+   146 open period =   3.54477    
+
+GROUP #     96:   1 openings, likelihood =   45.68354    
+ i, amp(i), length of gap that ends group=      292 0.000000      839.562    
+
+   147 open period =  0.115992    
+
+GROUP #     97:   1 openings, likelihood =   689.2339    
+ i, amp(i), length of gap that ends group=      294 0.000000      8278.12    
+
+   148 open period =  0.213395    
+
+GROUP #     98:   1 openings, likelihood =   531.0438    
+ i, amp(i), length of gap that ends group=      296 0.000000      661.053    
+
+   149 open period =  0.514537    
+
+GROUP #     99:   1 openings, likelihood =   255.6638    
+ i, amp(i), length of gap that ends group=      298 0.000000      1298.78    
+
+   150 open period =  0.311637    
+
+GROUP #    100:   1 openings, likelihood =   412.8031    
+ i, amp(i), length of gap that ends group=      300 0.000000      6354.14    
+
+   151 open period =   1.89393    
+
+GROUP #    101:   1 openings, likelihood =   62.46916    
+ i, amp(i), length of gap that ends group=      302 0.000000      2413.64    
+
+   152 open period =   3.92390    
+   153 open period =   8.22085    
+
+GROUP #    102:   2 openings, likelihood =   266701.4    
+ i, amp(i), length of gap that ends group=      306 0.000000      9973.64    
+
+   154 open period =   7.33189    
+
+GROUP #    103:   1 openings, likelihood =   24.63867    
+ i, amp(i), length of gap that ends group=      308 0.000000      5854.34    
+
+   155 open period =  0.473086    
+
+GROUP #    104:   1 openings, likelihood =   280.5024    
+ i, amp(i), length of gap that ends group=      310 0.000000      5081.22    
+
+   156 open period =  0.228508    
+
+GROUP #    105:   1 openings, likelihood =   510.4991    
+ i, amp(i), length of gap that ends group=      312 0.000000      4080.55    
+
+   157 open period =  0.158235    
+
+GROUP #    106:   1 openings, likelihood =   614.6411    
+ i, amp(i), length of gap that ends group=      314 0.000000      2817.23    
+
+   158 open period =   4.44472    
+
+GROUP #    107:   1 openings, likelihood =   39.43884    
+ i, amp(i), length of gap that ends group=      316 0.000000      666.420    
+
+   159 open period =   4.06763    
+
+GROUP #    108:   1 openings, likelihood =   41.94031    
+ i, amp(i), length of gap that ends group=      318 0.000000      5526.99    
+
+   160 open period =   7.00107    
+
+GROUP #    109:   1 openings, likelihood =   26.00312    
+ i, amp(i), length of gap that ends group=      320 0.000000      116.272    
+
+   161 open period =   1.58125    
+
+GROUP #    110:   1 openings, likelihood =   69.90551    
+ i, amp(i), length of gap that ends group=      322 0.000000      3032.65    
+
+   162 open period =   4.41814    
+   163 open period =   2.68764    
+
+GROUP #    111:   2 openings, likelihood =  0.1550064E+08
+ i, amp(i), length of gap that ends group=      326 0.000000      13916.7    
+
+   164 open period =  0.306148    
+
+GROUP #    112:   1 openings, likelihood =   418.5270    
+ i, amp(i), length of gap that ends group=      328 0.000000      2324.65    
+
+   165 open period =   8.59207    
+
+GROUP #    113:   1 openings, likelihood =   20.06538    
+ i, amp(i), length of gap that ends group=      330 0.000000      2838.41    
+
+   166 open period =   3.82920    
+
+GROUP #    114:   1 openings, likelihood =   43.60533    
+ i, amp(i), length of gap that ends group=      332 0.000000      3509.49    
+
+   167 open period =   13.2116    
+
+GROUP #    115:   1 openings, likelihood =   9.453095    
+ i, amp(i), length of gap that ends group=      334 0.000000      4032.70    
+
+   168 open period =   8.73727    
+
+GROUP #    116:   1 openings, likelihood =   19.59624    
+ i, amp(i), length of gap that ends group=      336 0.000000      4224.40    
+
+   169 open period =  0.301090    
+
+GROUP #    117:   1 openings, likelihood =   423.8855    
+ i, amp(i), length of gap that ends group=      338 0.000000      5362.21    
+
+   170 open period =  0.887518    
+
+GROUP #    118:   1 openings, likelihood =   128.4865    
+ i, amp(i), length of gap that ends group=      340 0.000000      2881.00    
+
+   171 open period =   6.75187    
+
+GROUP #    119:   1 openings, likelihood =   27.08061    
+ i, amp(i), length of gap that ends group=      342 0.000000      6241.88    
+
+   172 open period =  0.595874    
+   173 open period =  0.227559    
+
+GROUP #    120:   2 openings, likelihood =   5016807.    
+ i, amp(i), length of gap that ends group=      346 0.000000      517.403    
+
+   174 open period =   3.92205    
+
+GROUP #    121:   1 openings, likelihood =   42.94889    
+ i, amp(i), length of gap that ends group=      348 0.000000      483.875    
+
+   175 open period =   7.58681    
+
+GROUP #    122:   1 openings, likelihood =   23.63628    
+ i, amp(i), length of gap that ends group=      350 0.000000      4659.08    
+
+   176 open period =   4.59621    
+
+GROUP #    123:   1 openings, likelihood =   38.47691    
+ i, amp(i), length of gap that ends group=      352 0.000000      8498.69    
+
+   177 open period =   3.47911    
+
+GROUP #    124:   1 openings, likelihood =   46.17868    
+ i, amp(i), length of gap that ends group=      354 0.000000      8339.05    
+
+   178 open period =   4.61691    
+
+GROUP #    125:   1 openings, likelihood =   38.34733    
+ i, amp(i), length of gap that ends group=      356 0.000000      4463.26    
+
+   179 open period =   20.8551    
+
+GROUP #    126:   1 openings, likelihood =   2.720970    
+ i, amp(i), length of gap that ends group=      358 0.000000      11796.3    
+
+   180 open period =  0.705563    
+
+GROUP #    127:   1 openings, likelihood =   173.6059    
+ i, amp(i), length of gap that ends group=      360 0.000000      874.132    
+
+   181 open period =   1.92841    
+
+GROUP #    128:   1 openings, likelihood =   61.86428    
+ i, amp(i), length of gap that ends group=      362 0.000000      6299.55    
+
+   182 open period =   14.4252    
+
+GROUP #    129:   1 openings, likelihood =   7.757092    
+ i, amp(i), length of gap that ends group=      364 0.000000      71.5507    
+
+   183 open period =   12.0463    
+
+GROUP #    130:   1 openings, likelihood =   11.42945    
+ i, amp(i), length of gap that ends group=      366 0.000000      5684.40    
+
+   184 open period =   2.70581    
+   185 open period =   4.49552    
+
+GROUP #    131:   2 openings, likelihood =   2757019.    
+ i, amp(i), length of gap that ends group=      370 0.000000      2629.23    
+
+   186 open period =  0.406942    
+
+GROUP #    132:   1 openings, likelihood =   327.1035    
+ i, amp(i), length of gap that ends group=      372 0.000000      10510.0    
+
+   187 open period =   15.4044    
+
+GROUP #    133:   1 openings, likelihood =   6.613180    
+ i, amp(i), length of gap that ends group=      374 0.000000      575.219    
+
+   188 open period =  0.575158    
+
+GROUP #    134:   1 openings, likelihood =   224.4436    
+ i, amp(i), length of gap that ends group=      376 0.000000      4069.61    
+
+   189 open period =   2.34775    
+   190 open period =   14.0689    
+   191 open period =   3.27762    
+
+GROUP #    135:   3 openings, likelihood =  0.1137674E+13
+ i, amp(i), length of gap that ends group=      382 0.000000      73.0547    
+
+   192 open period =   16.4191    
+
+GROUP #    136:   1 openings, likelihood =   5.605441    
+ i, amp(i), length of gap that ends group=      384 0.000000      5070.11    
+
+   193 open period =   2.32569    
+
+GROUP #    137:   1 openings, likelihood =   56.42740    
+ i, amp(i), length of gap that ends group=      386 0.000000      7170.72    
+
+   194 open period =   2.57502    
+
+GROUP #    138:   1 openings, likelihood =   53.82289    
+ i, amp(i), length of gap that ends group=      388 0.000000      1748.28    
+
+   195 open period =   1.50243    
+   196 open period =   13.5236    
+
+GROUP #    139:   2 openings, likelihood =   178101.0    
+ i, amp(i), length of gap that ends group=      392 0.000000      192.751    
+
+   197 open period =   10.2555    
+   198 open period =   2.23308    
+
+GROUP #    140:   2 openings, likelihood =   7771454.    
+ i, amp(i), length of gap that ends group=      396 0.000000      19674.8    
+
+   199 open period =   9.34912    
+
+GROUP #    141:   1 openings, likelihood =   17.73696    
+ i, amp(i), length of gap that ends group=      398 0.000000      1166.01    
+
+   200 open period =   5.01323    
+   201 open period =   4.78720    
+
+GROUP #    142:   2 openings, likelihood =  0.1059900E+08
+ i, amp(i), length of gap that ends group=      402 0.000000      2052.39    
+
+   202 open period =   5.66128    
+
+GROUP #    143:   1 openings, likelihood =   32.34657    
+ i, amp(i), length of gap that ends group=      404 0.000000      1207.75    
+
+   203 open period =   3.46756    
+
+GROUP #    144:   1 openings, likelihood =   46.26638    
+ i, amp(i), length of gap that ends group=      406 0.000000      596.956    
+
+   204 open period =   1.03699    
+
+GROUP #    145:   1 openings, likelihood =   105.5546    
+ i, amp(i), length of gap that ends group=      408 0.000000      4518.06    
+
+   205 open period =   5.39201    
+   206 open period =  0.418998    
+
+GROUP #    146:   2 openings, likelihood =  0.2799096E+08
+ i, amp(i), length of gap that ends group=      412 0.000000      3929.23    
+
+   207 open period =   1.39987    
+   208 open period =   1.53132    
+
+GROUP #    147:   2 openings, likelihood =  0.2654416E+08
+ i, amp(i), length of gap that ends group=      416 0.000000      4170.08    
+
+   209 open period =   10.3789    
+   210 open period =   4.84374    
+   211 open period =  0.579902    
+   212 open period =   7.17738    
+
+GROUP #    148:   4 openings, likelihood =  0.3328342E+18
+ i, amp(i), length of gap that ends group=      424 0.000000      5588.89    
+
+   213 open period =  0.472311    
+   214 open period =   2.45315    
+
+GROUP #    149:   2 openings, likelihood =  0.1104124E+08
+ i, amp(i), length of gap that ends group=      428 0.000000      2691.09    
+
+   215 open period =   5.12044    
+
+GROUP #    150:   1 openings, likelihood =   35.32641    
+ i, amp(i), length of gap that ends group=      430 0.000000      5075.51    
+
+   216 open period =   4.68909    
+
+GROUP #    151:   1 openings, likelihood =   37.89888    
+ i, amp(i), length of gap that ends group=      432 0.000000      9118.90    
+
+   217 open period =   3.87618    
+
+GROUP #    152:   1 openings, likelihood =   43.27188    
+ i, amp(i), length of gap that ends group=      434 0.000000      254.353    
+
+   218 open period =   8.94213    
+   219 open period =   12.5915    
+
+GROUP #    153:   2 openings, likelihood =   1185989.    
+ i, amp(i), length of gap that ends group=      438 0.000000      553.898    
+
+   220 open period =   8.43972    
+
+GROUP #    154:   1 openings, likelihood =   20.56968    
+ i, amp(i), length of gap that ends group=      440 0.000000      4337.56    
+
+   221 open period =   5.95153    
+   222 open period =   3.30620    
+
+GROUP #    155:   2 openings, likelihood =   7371516.    
+ i, amp(i), length of gap that ends group=      444 0.000000      3160.82    
+
+   223 open period =   7.83521    
+
+GROUP #    156:   1 openings, likelihood =   22.69877    
+ i, amp(i), length of gap that ends group=      446 0.000000      1037.37    
+
+   224 open period =   3.74950    
+
+GROUP #    157:   1 openings, likelihood =   44.17723    
+ i, amp(i), length of gap that ends group=      448 0.000000      3391.47    
+
+   225 open period =   2.52367    
+
+GROUP #    158:   1 openings, likelihood =   54.32987    
+ i, amp(i), length of gap that ends group=      450 0.000000      1802.76    
+
+   226 open period =   16.7970    
+   227 open period =   5.27290    
+
+GROUP #    159:   2 openings, likelihood =   1214364.    
+ i, amp(i), length of gap that ends group=      454 0.000000      1960.77    
+
+   228 open period =   1.33916    
+
+GROUP #    160:   1 openings, likelihood =   80.09133    
+ i, amp(i), length of gap that ends group=      456 0.000000      7213.12    
+
+   229 open period =  0.184909    
+
+GROUP #    161:   1 openings, likelihood =   572.4259    
+ i, amp(i), length of gap that ends group=      458 0.000000      8625.58    
+
+   230 open period =   5.65879    
+
+GROUP #    162:   1 openings, likelihood =   32.35974    
+ i, amp(i), length of gap that ends group=      460 0.000000      960.580    
+
+   231 open period =   4.51523    
+
+GROUP #    163:   1 openings, likelihood =   38.98811    
+ i, amp(i), length of gap that ends group=      462 0.000000      5811.16    
+
+   232 open period =   11.5633    
+   233 open period =   4.54007    
+
+GROUP #    164:   2 openings, likelihood =   2490292.    
+ i, amp(i), length of gap that ends group=      466 0.000000      5923.48    
+
+   234 open period =   2.89532    
+   235 open period =   6.28731    
+
+GROUP #    165:   2 openings, likelihood =   524005.8    
+ i, amp(i), length of gap that ends group=      470 0.000000      4542.95    
+
+   236 open period =  0.369187    
+
+GROUP #    166:   1 openings, likelihood =   358.1519    
+ i, amp(i), length of gap that ends group=      472 0.000000      4911.64    
+
+   237 open period =   3.17870    
+
+GROUP #    167:   1 openings, likelihood =   48.52650    
+ i, amp(i), length of gap that ends group=      474 0.000000      7241.16    
+
+   238 open period =   18.7093    
+   239 open period =   2.74396    
+
+GROUP #    168:   2 openings, likelihood =   1589445.    
+ i, amp(i), length of gap that ends group=      478 0.000000      738.852    
+
+   240 open period =   2.69338    
+
+GROUP #    169:   1 openings, likelihood =   52.69834    
+ i, amp(i), length of gap that ends group=      480 0.000000      1015.77    
+
+   241 open period =   10.7488    
+
+GROUP #    170:   1 openings, likelihood =   14.12015    
+ i, amp(i), length of gap that ends group=      482 0.000000      332.426    
+
+   242 open period =   4.81403    
+
+GROUP #    171:   1 openings, likelihood =   37.13497    
+ i, amp(i), length of gap that ends group=      484 0.000000      3008.15    
+
+   243 open period =   10.5995    
+
+GROUP #    172:   1 openings, likelihood =   14.46785    
+ i, amp(i), length of gap that ends group=      486 0.000000      185.281    
+
+   244 open period =   6.83773    
+
+GROUP #    173:   1 openings, likelihood =   26.70441    
+ i, amp(i), length of gap that ends group=      488 0.000000      292.668    
+
+   245 open period =   4.26722    
+
+GROUP #    174:   1 openings, likelihood =   40.59681    
+ i, amp(i), length of gap that ends group=      490 0.000000      4199.49    
+
+   246 open period =  0.209233    
+
+GROUP #    175:   1 openings, likelihood =   536.8681    
+ i, amp(i), length of gap that ends group=      492 0.000000      1739.40    
+
+   247 open period =   6.98635    
+   248 open period =   4.94567    
+
+GROUP #    176:   2 openings, likelihood =   950253.1    
+ i, amp(i), length of gap that ends group=      496 0.000000      4774.35    
+
+   249 open period =   6.71019    
+
+GROUP #    177:   1 openings, likelihood =   27.26515    
+ i, amp(i), length of gap that ends group=      498 0.000000      5451.28    
+
+   250 open period =  0.616952    
+   251 open period =   3.64396    
+   252 open period =   3.78082    
+   253 open period =   8.73214    
+   254 open period =   7.44212    
+
+GROUP #    178:   5 openings, likelihood =  0.1510325E+23
+ i, amp(i), length of gap that ends group=      508 0.000000      1844.64    
+
+   255 open period =   15.8608    
+
+GROUP #    179:   1 openings, likelihood =   6.139255    
+ i, amp(i), length of gap that ends group=      510 0.000000      1014.60    
+
+   256 open period =   2.16945    
+
+GROUP #    180:   1 openings, likelihood =   58.30683    
+ i, amp(i), length of gap that ends group=      512 0.000000      5454.69    
+
+   257 open period =   5.66451    
+
+GROUP #    181:   1 openings, likelihood =   32.32959    
+ i, amp(i), length of gap that ends group=      514 0.000000      4248.98    
+
+   258 open period =   9.47571    
+
+GROUP #    182:   1 openings, likelihood =   17.37487    
+ i, amp(i), length of gap that ends group=      516 0.000000      1103.25    
+
+   259 open period =  0.630691    
+
+GROUP #    183:   1 openings, likelihood =   200.3819    
+ i, amp(i), length of gap that ends group=      518 0.000000      464.549    
+
+   260 open period =   3.30064    
+   261 open period =   1.66066    
+   262 open period =   5.52638    
+   263 open period =  0.724743    
+
+GROUP #    184:   4 openings, likelihood =  0.2046430E+16
+ i, amp(i), length of gap that ends group=      526 0.000000      209.565    
+
+   264 open period =  0.570037    
+
+GROUP #    185:   1 openings, likelihood =   226.8687    
+ i, amp(i), length of gap that ends group=      528 0.000000      1435.90    
+
+   265 open period =  0.156895    
+
+GROUP #    186:   1 openings, likelihood =   616.8550    
+ i, amp(i), length of gap that ends group=      530 0.000000      4768.16    
+
+   266 open period =   3.52360    
+
+GROUP #    187:   1 openings, likelihood =   45.84256    
+ i, amp(i), length of gap that ends group=      532 0.000000      4921.43    
+
+   267 open period =  0.666835    
+   268 open period =   3.69975    
+
+GROUP #    188:   2 openings, likelihood =  0.4274356E+08
+ i, amp(i), length of gap that ends group=      536 0.000000      1250.02    
+
+   269 open period =   4.82481    
+   270 open period =   3.18991    
+
+GROUP #    189:   2 openings, likelihood =  0.2129744E+08
+ i, amp(i), length of gap that ends group=      540 0.000000      6542.79    
+
+   271 open period =   7.85136    
+
+GROUP #    190:   1 openings, likelihood =   22.63911    
+ i, amp(i), length of gap that ends group=      542 0.000000      536.504    
+
+   272 open period =   18.3627    
+
+GROUP #    191:   1 openings, likelihood =   4.084005    
+ i, amp(i), length of gap that ends group=      544 0.000000      464.450    
+
+   273 open period =   10.1940    
+
+GROUP #    192:   1 openings, likelihood =   15.45584    
+ i, amp(i), length of gap that ends group=      546 0.000000      4199.36    
+
+   274 open period =   13.0119    
+   275 open period =  0.123524    
+
+GROUP #    193:   2 openings, likelihood =   2289533.    
+ i, amp(i), length of gap that ends group=      550 0.000000      1747.28    
+
+   276 open period =   11.7485    
+   277 open period =   8.16077    
+
+GROUP #    194:   2 openings, likelihood =   474589.4    
+ i, amp(i), length of gap that ends group=      554 0.000000      191.376    
+
+   278 open period =  0.124896    
+
+GROUP #    195:   1 openings, likelihood =   672.6599    
+ i, amp(i), length of gap that ends group=      556 0.000000      7428.00    
+
+   279 open period =   6.70661    
+   280 open period =   2.46993    
+
+GROUP #    196:   2 openings, likelihood =   8093809.    
+ i, amp(i), length of gap that ends group=      560 0.000000      2276.72    
+
+   281 open period =  0.329795    
+   282 open period =  0.431802    
+
+GROUP #    197:   2 openings, likelihood =   3010131.    
+ i, amp(i), length of gap that ends group=      564 0.000000      5550.42    
+
+   283 open period =   4.35962    
+
+GROUP #    198:   1 openings, likelihood =   39.98977    
+ i, amp(i), length of gap that ends group=      566 0.000000      1730.87    
+
+   284 open period =  0.404928    
+
+GROUP #    199:   1 openings, likelihood =   328.6726    
+ i, amp(i), length of gap that ends group=      568 0.000000      2296.16    
+
+   285 open period =   2.83626    
+   286 open period =   3.55242    
+   287 open period =   11.9694    
+   288 open period =   2.55554    
+
+GROUP #    200:   4 openings, likelihood =  0.6019981E+18
+ i, amp(i), length of gap that ends group=      576 0.000000      2480.93    
+
+   289 open period =   29.8996    
+
+GROUP #    201:   1 openings, likelihood =  0.6233577    
+ i, amp(i), length of gap that ends group=      578 0.000000      2121.22    
+
+   290 open period =   6.13164    
+   291 open period =   2.52039    
+   292 open period =  0.792225    
+   293 open period =   1.95923    
+
+GROUP #    202:   4 openings, likelihood =  0.4143870E+18
+ i, amp(i), length of gap that ends group=      586 0.000000      1616.61    
+
+   294 open period =   7.92534    
+
+GROUP #    203:   1 openings, likelihood =   22.36787    
+ i, amp(i), length of gap that ends group=      588 0.000000      1394.68    
+
+   295 open period =   4.92945    
+
+GROUP #    204:   1 openings, likelihood =   36.44306    
+ i, amp(i), length of gap that ends group=      590 0.000000      1879.03    
+
+   296 open period =   1.98708    
+
+GROUP #    205:   1 openings, likelihood =   60.89971    
+ i, amp(i), length of gap that ends group=      592 0.000000      13686.7    
+
+   297 open period =   4.28475    
+
+GROUP #    206:   1 openings, likelihood =   40.48097    
+ i, amp(i), length of gap that ends group=      594 0.000000      3694.38    
+
+   298 open period =   2.47797    
+   299 open period =   6.95330    
+   300 open period =   6.41659    
+
+GROUP #    207:   3 openings, likelihood =  0.6559387E+10
+ i, amp(i), length of gap that ends group=      600 0.000000      7228.71    
+
+   301 open period =   1.53946    
+
+GROUP #    208:   1 openings, likelihood =   71.28796    
+ i, amp(i), length of gap that ends group=      602 0.000000      2052.07    
+
+   302 open period =   3.79517    
+
+GROUP #    209:   1 openings, likelihood =   43.84853    
+ i, amp(i), length of gap that ends group=      604 0.000000      13897.5    
+
+   303 open period =  0.777647    
+
+GROUP #    210:   1 openings, likelihood =   152.8369    
+ i, amp(i), length of gap that ends group=      606 0.000000      1721.42    
+
+   304 open period =  0.666515    
+   305 open period =   5.68530    
+
+GROUP #    211:   2 openings, likelihood =  0.1346157E+08
+ i, amp(i), length of gap that ends group=      610 0.000000      5302.61    
+
+   306 open period =  0.111897    
+
+GROUP #    212:   1 openings, likelihood =   697.0173    
+ i, amp(i), length of gap that ends group=      612 0.000000      11132.7    
+
+   307 open period =   1.32180    
+
+GROUP #    213:   1 openings, likelihood =   81.07382    
+ i, amp(i), length of gap that ends group=      614 0.000000      4802.95    
+
+   308 open period =  0.127197    
+
+GROUP #    214:   1 openings, likelihood =   668.4536    
+ i, amp(i), length of gap that ends group=      616 0.000000      120.680    
+
+   309 open period =   6.72229    
+
+GROUP #    215:   1 openings, likelihood =   27.21148    
+ i, amp(i), length of gap that ends group=      618 0.000000      2557.10    
+
+   310 open period =   1.00968    
+
+GROUP #    216:   1 openings, likelihood =   109.0562    
+ i, amp(i), length of gap that ends group=      620 0.000000      3991.27    
+
+   311 open period =   13.8850    
+   312 open period =   2.16780    
+
+GROUP #    217:   2 openings, likelihood =   1789748.    
+ i, amp(i), length of gap that ends group=      624 0.000000      2678.44    
+
+   313 open period =  0.896072    
+   314 open period =   2.66063    
+   315 open period =   1.57805    
+
+GROUP #    218:   3 openings, likelihood =  0.3302780E+13
+ i, amp(i), length of gap that ends group=      630 0.000000      3042.04    
+
+   316 open period =   3.53142    
+
+GROUP #    219:   1 openings, likelihood =   45.78376    
+ i, amp(i), length of gap that ends group=      632 0.000000      4346.03    
+
+   317 open period =   9.96757    
+
+GROUP #    220:   1 openings, likelihood =   16.03681    
+ i, amp(i), length of gap that ends group=      634 0.000000      8899.20    
+
+   318 open period =   6.78043    
+
+GROUP #    221:   1 openings, likelihood =   26.95493    
+ i, amp(i), length of gap that ends group=      636 0.000000      6075.06    
+
+   319 open period =  0.592266    
+
+GROUP #    222:   1 openings, likelihood =   216.6044    
+ i, amp(i), length of gap that ends group=      638 0.000000      198.190    
+
+   320 open period =   8.04471    
+
+GROUP #    223:   1 openings, likelihood =   21.93706    
+ i, amp(i), length of gap that ends group=      640 0.000000      9805.47    
+
+   321 open period =  0.223314    
+
+GROUP #    224:   1 openings, likelihood =   517.4540    
+ i, amp(i), length of gap that ends group=      642 0.000000      1688.10    
+
+   322 open period =  0.172933    
+
+GROUP #    225:   1 openings, likelihood =   590.9438    
+ i, amp(i), length of gap that ends group=      644 0.000000      2265.84    
+
+   323 open period =  0.260236    
+
+GROUP #    226:   1 openings, likelihood =   470.2976    
+ i, amp(i), length of gap that ends group=      646 0.000000      13392.8    
+
+   324 open period =   4.74929    
+
+GROUP #    227:   1 openings, likelihood =   37.52886    
+ i, amp(i), length of gap that ends group=      648 0.000000      1080.34    
+
+   325 open period =   5.16240    
+   326 open period =   25.4767    
+
+GROUP #    228:   2 openings, likelihood =   214.2124    
+ i, amp(i), length of gap that ends group=      652 0.000000      209.514    
+
+   327 open period =   7.64982    
+
+GROUP #    229:   1 openings, likelihood =   23.39484    
+ i, amp(i), length of gap that ends group=      654 0.000000      868.422    
+
+   328 open period =   16.1847    
+   329 open period =   1.03222    
+   330 open period =   6.60420    
+
+GROUP #    230:   3 openings, likelihood =  0.4274152E+12
+ i, amp(i), length of gap that ends group=      660 0.000000      5680.72    
+
+   331 open period =   23.0378    
+
+GROUP #    231:   1 openings, likelihood =   1.906687    
+ i, amp(i), length of gap that ends group=      662 0.000000      496.794    
+
+   332 open period =  0.750407    
+
+GROUP #    232:   1 openings, likelihood =   160.1752    
+ i, amp(i), length of gap that ends group=      664 0.000000      873.430    
+
+   333 open period =   3.84006    
+
+GROUP #    233:   1 openings, likelihood =   43.52800    
+ i, amp(i), length of gap that ends group=      666 0.000000      14018.0    
+
+   334 open period =   2.22776    
+   335 open period =   1.33799    
+
+GROUP #    234:   2 openings, likelihood =  0.3622315E+08
+ i, amp(i), length of gap that ends group=      670 0.000000      1805.05    
+
+   336 open period =   7.50428    
+   337 open period =   3.98084    
+
+GROUP #    235:   2 openings, likelihood =   2049553.    
+ i, amp(i), length of gap that ends group=      674 0.000000      8702.44    
+
+   338 open period =   5.78917    
+
+GROUP #    236:   1 openings, likelihood =   31.67956    
+ i, amp(i), length of gap that ends group=      676 0.000000      4808.95    
+
+   339 open period =   12.8715    
+   340 open period =   14.0656    
+
+GROUP #    237:   2 openings, likelihood =   833704.6    
+ i, amp(i), length of gap that ends group=      680 0.000000      3467.42    
+
+   341 open period =   9.85732    
+   342 open period =  0.388122    
+   343 open period =   2.30611    
+
+GROUP #    238:   3 openings, likelihood =  0.9633523E+11
+ i, amp(i), length of gap that ends group=      686 0.000000      401.808    
+
+   344 open period =   5.20733    
+
+GROUP #    239:   1 openings, likelihood =   34.82976    
+ i, amp(i), length of gap that ends group=      688 0.000000      4289.71    
+
+   345 open period =  0.105663    
+
+GROUP #    240:   1 openings, likelihood =   709.0712    
+ i, amp(i), length of gap that ends group=      690 0.000000      11406.4    
+
+   346 open period =   4.80047    
+
+GROUP #    241:   1 openings, likelihood =   37.21714    
+ i, amp(i), length of gap that ends group=      692 0.000000      520.032    
+
+   347 open period =   5.28376    
+
+GROUP #    242:   1 openings, likelihood =   34.39874    
+ i, amp(i), length of gap that ends group=      694 0.000000      2104.14    
+
+   348 open period =  0.414006    
+
+GROUP #    243:   1 openings, likelihood =   321.6751    
+ i, amp(i), length of gap that ends group=      696 0.000000      1304.47    
+
+   349 open period =   3.94606    
+   350 open period =   1.74139    
+
+GROUP #    244:   2 openings, likelihood =  0.2482161E+08
+ i, amp(i), length of gap that ends group=      700 0.000000      2118.79    
+
+   351 open period =   6.11547    
+
+GROUP #    245:   1 openings, likelihood =   30.03934    
+ i, amp(i), length of gap that ends group=      702 0.000000      5280.93    
+
+   352 open period =  0.175778    
+
+GROUP #    246:   1 openings, likelihood =   586.4812    
+ i, amp(i), length of gap that ends group=      704 0.000000      1099.71    
+
+   353 open period =   4.04023    
+
+GROUP #    247:   1 openings, likelihood =   42.12823    
+ i, amp(i), length of gap that ends group=      706 0.000000      400.184    
+
+   354 open period =   1.87794    
+
+GROUP #    248:   1 openings, likelihood =   62.76026    
+ i, amp(i), length of gap that ends group=      708 0.000000      1802.31    
+
+   355 open period =   1.66445    
+   356 open period =   2.47192    
+   357 open period =   11.0544    
+
+GROUP #    249:   3 openings, likelihood =  0.4589347E+12
+ i, amp(i), length of gap that ends group=      714 0.000000      26743.7    
+
+   358 open period =  0.146530    
+
+GROUP #    250:   1 openings, likelihood =   634.3136    
+ i, amp(i), length of gap that ends group=      716 0.000000      1153.51    
+
+   359 open period =  0.239561    
+
+GROUP #    251:   1 openings, likelihood =   496.0555    
+ i, amp(i), length of gap that ends group=      718 0.000000      1814.54    
+
+   360 open period =   3.10476    
+
+GROUP #    252:   1 openings, likelihood =   49.12771    
+ i, amp(i), length of gap that ends group=      720 0.000000      9284.18    
+
+   361 open period =   3.26293    
+
+GROUP #    253:   1 openings, likelihood =   47.85359    
+ i, amp(i), length of gap that ends group=      722 0.000000      3448.39    
+
+   362 open period =   12.6962    
+
+GROUP #    254:   1 openings, likelihood =   10.28115    
+ i, amp(i), length of gap that ends group=      724 0.000000      842.875    
+
+   363 open period =  0.181553    
+
+GROUP #    255:   1 openings, likelihood =   577.5453    
+ i, amp(i), length of gap that ends group=      726 0.000000      1028.75    
+
+   364 open period =   3.77881    
+
+GROUP #    256:   1 openings, likelihood =   43.96594    
+ i, amp(i), length of gap that ends group=      728 0.000000      4406.68    
+
+   365 open period =  0.965989    
+   366 open period =   13.3294    
+
+GROUP #    257:   2 openings, likelihood =   107047.0    
+ i, amp(i), length of gap that ends group=      732 0.000000      30754.2    
+
+   367 open period =   8.37393    
+
+GROUP #    258:   1 openings, likelihood =   20.79134    
+ i, amp(i), length of gap that ends group=      734 0.000000      931.196    
+
+   368 open period =   1.49684    
+
+GROUP #    259:   1 openings, likelihood =   72.83462    
+ i, amp(i), length of gap that ends group=      736 0.000000      8995.66    
+
+   369 open period =   3.96081    
+
+GROUP #    260:   1 openings, likelihood =   42.67796    
+ i, amp(i), length of gap that ends group=      738 0.000000      6291.97    
+
+   370 open period =   1.20611    
+
+GROUP #    261:   1 openings, likelihood =   88.85804    
+ i, amp(i), length of gap that ends group=      740 0.000000      21915.9    
+
+   371 open period =   7.26413    
+
+GROUP #    262:   1 openings, likelihood =   24.91215    
+ i, amp(i), length of gap that ends group=      742 0.000000      6447.92    
+
+   372 open period =   6.19179    
+
+GROUP #    263:   1 openings, likelihood =   29.66810    
+ i, amp(i), length of gap that ends group=      744 0.000000      3268.52    
+
+   373 open period =  0.566547    
+
+GROUP #    264:   1 openings, likelihood =   228.5423    
+ i, amp(i), length of gap that ends group=      746 0.000000      3884.47    
+
+   374 open period =   23.3881    
+   375 open period =   17.4259    
+   376 open period =  0.170153    
+   377 open period =   7.70627    
+
+GROUP #    265:   4 openings, likelihood =  0.2294295E+15
+ i, amp(i), length of gap that ends group=      754 0.000000      62.8392    
+
+   378 open period =  0.448721    
+
+GROUP #    266:   1 openings, likelihood =   296.6047    
+ i, amp(i), length of gap that ends group=      756 0.000000      1802.74    
+
+   379 open period =   26.5921    
+
+GROUP #    267:   1 openings, likelihood =   1.068500    
+ i, amp(i), length of gap that ends group=      758 0.000000      1474.30    
+
+   380 open period =  0.473402    
+
+GROUP #    268:   1 openings, likelihood =   280.3011    
+ i, amp(i), length of gap that ends group=      760 0.000000      947.877    
+
+   381 open period =   2.47067    
+   382 open period =   10.9228    
+   383 open period =   1.34399    
+
+GROUP #    269:   3 openings, likelihood =  0.1161651E+13
+ i, amp(i), length of gap that ends group=      766 0.000000      1510.65    
+
+   384 open period =  0.185243    
+
+GROUP #    270:   1 openings, likelihood =   571.9195    
+ i, amp(i), length of gap that ends group=      768 0.000000      11590.7    
+
+   385 open period =   2.35821    
+   386 open period =   12.1567    
+
+GROUP #    271:   2 openings, likelihood =   7221715.    
+ i, amp(i), length of gap that ends group=      772 0.000000      2153.83    
+
+   387 open period =  0.564455    
+
+GROUP #    272:   1 openings, likelihood =   229.5543    
+ i, amp(i), length of gap that ends group=      774 0.000000      1269.44    
+
+   388 open period =   8.08311    
+
+GROUP #    273:   1 openings, likelihood =   21.80021    
+ i, amp(i), length of gap that ends group=      776 0.000000      7286.06    
+
+   389 open period =  0.850309    
+   390 open period =   3.55801    
+
+GROUP #    274:   2 openings, likelihood =   281673.3    
+ i, amp(i), length of gap that ends group=      780 0.000000      2407.34    
+
+   391 open period =  0.863075    
+   392 open period =  0.770947    
+
+GROUP #    275:   2 openings, likelihood =   115201.4    
+ i, amp(i), length of gap that ends group=      784 0.000000      1062.64    
+
+   393 open period =   1.97182    
+
+GROUP #    276:   1 openings, likelihood =   61.14335    
+ i, amp(i), length of gap that ends group=      786 0.000000      3701.60    
+
+   394 open period =   21.0031    
+
+GROUP #    277:   1 openings, likelihood =   2.656140    
+ i, amp(i), length of gap that ends group=      788 0.000000      3895.24    
+
+   395 open period =  0.399717    
+
+GROUP #    278:   1 openings, likelihood =   332.7761    
+ i, amp(i), length of gap that ends group=      790 0.000000      5250.79    
+
+   396 open period =   2.11438    
+
+GROUP #    279:   1 openings, likelihood =   59.03570    
+ i, amp(i), length of gap that ends group=      792 0.000000      12856.7    
+
+   397 open period =  0.644041    
+
+GROUP #    280:   1 openings, likelihood =   195.1643    
+ i, amp(i), length of gap that ends group=      794 0.000000      1945.78    
+
+   398 open period =   26.4603    
+
+GROUP #    281:   1 openings, likelihood =   1.091695    
+ i, amp(i), length of gap that ends group=      796 0.000000      4317.25    
+
+   399 open period =   1.39702    
+
+GROUP #    282:   1 openings, likelihood =   77.10618    
+ i, amp(i), length of gap that ends group=      798 0.000000      3154.62    
+
+   400 open period =   8.58848    
+   401 open period =   11.0456    
+
+GROUP #    283:   2 openings, likelihood =   2324380.    
+ i, amp(i), length of gap that ends group=      802 0.000000      8143.60    
+
+   402 open period =  0.226251    
+
+GROUP #    284:   1 openings, likelihood =   513.5083    
+ i, amp(i), length of gap that ends group=      804 0.000000      6444.50    
+
+   403 open period =   1.45929    
+   404 open period =   5.02049    
+   405 open period =   8.68462    
+
+GROUP #    285:   3 openings, likelihood =  0.4035293E+13
+ i, amp(i), length of gap that ends group=      810 0.000000      647.894    
+
+   406 open period =   5.34796    
+
+GROUP #    286:   1 openings, likelihood =   34.04075    
+ i, amp(i), length of gap that ends group=      812 0.000000      1883.82    
+
+   407 open period =   21.9136    
+   408 open period =   6.64322    
+
+GROUP #    287:   2 openings, likelihood =   764578.7    
+ i, amp(i), length of gap that ends group=      816 0.000000      2922.70    
+
+   409 open period =   4.78633    
+
+GROUP #    288:   1 openings, likelihood =   37.30301    
+ i, amp(i), length of gap that ends group=      818 0.000000      6497.02    
+
+   410 open period =   13.1709    
+
+GROUP #    289:   1 openings, likelihood =   9.515933    
+ i, amp(i), length of gap that ends group=      820 0.000000      1776.29    
+
+   411 open period =   1.09835    
+
+GROUP #    290:   1 openings, likelihood =   98.59198    
+ i, amp(i), length of gap that ends group=      822 0.000000      1025.25    
+
+   412 open period =  0.264172    
+
+GROUP #    291:   1 openings, likelihood =   465.5736    
+ i, amp(i), length of gap that ends group=      824 0.000000      9274.20    
+
+   413 open period =  0.788253    
+   414 open period =   6.79462    
+
+GROUP #    292:   2 openings, likelihood =  0.2354752E+08
+ i, amp(i), length of gap that ends group=      828 0.000000      12753.3    
+
+   415 open period =   4.41004    
+
+GROUP #    293:   1 openings, likelihood =   39.66239    
+ i, amp(i), length of gap that ends group=      830 0.000000      11259.4    
+
+   416 open period =   7.07453    
+   417 open period =   18.0411    
+
+GROUP #    294:   2 openings, likelihood =   127650.5    
+ i, amp(i), length of gap that ends group=      834 0.000000      1923.49    
+
+   418 open period =   25.3456    
+
+GROUP #    295:   1 openings, likelihood =   1.309113    
+ i, amp(i), length of gap that ends group=      836 0.000000      4724.59    
+
+   419 open period =   4.43961    
+   420 open period =   2.84246    
+
+GROUP #    296:   2 openings, likelihood =  0.1796657E+08
+ i, amp(i), length of gap that ends group=      840 0.000000      4924.95    
+
+   421 open period =   2.56536    
+   422 open period =   7.46023    
+
+GROUP #    297:   2 openings, likelihood =   4489300.    
+ i, amp(i), length of gap that ends group=      844 0.000000      4170.58    
+
+   423 open period =   4.00197    
+
+GROUP #    298:   1 openings, likelihood =   42.39210    
+ i, amp(i), length of gap that ends group=      846 0.000000      739.422    
+
+   424 open period =   8.90863    
+   425 open period =   2.44810    
+
+GROUP #    299:   2 openings, likelihood =   8816438.    
+ i, amp(i), length of gap that ends group=      850 0.000000      54.3015    
+
+   426 open period =   5.16360    
+   427 open period =   2.36970    
+   428 open period =   16.1044    
+
+GROUP #    300:   3 openings, likelihood =  0.1015474E+13
+ i, amp(i), length of gap that ends group=      856 0.000000      8010.91    
+
+   429 open period =   26.7192    
+   430 open period =   1.79454    
+   431 open period =  0.463976    
+
+GROUP #    301:   3 openings, likelihood =  0.5770364E+12
+ i, amp(i), length of gap that ends group=      862 0.000000      191.229    
+
+   432 open period =  0.416151    
+
+GROUP #    302:   1 openings, likelihood =   320.0491    
+ i, amp(i), length of gap that ends group=      864 0.000000      8824.21    
+
+   433 open period =  0.180770    
+
+GROUP #    303:   1 openings, likelihood =   578.7466    
+ i, amp(i), length of gap that ends group=      866 0.000000      4182.20    
+
+   434 open period =   4.41458    
+   435 open period =   2.05225    
+   436 open period =   9.04752    
+
+GROUP #    304:   3 openings, likelihood =  0.1115622E+13
+ i, amp(i), length of gap that ends group=      872 0.000000      3975.43    
+
+   437 open period =   1.95329    
+   438 open period =   7.02940    
+
+GROUP #    305:   2 openings, likelihood =  0.1908174E+08
+ i, amp(i), length of gap that ends group=      876 0.000000      11649.1    
+
+   439 open period =  0.508635    
+
+GROUP #    306:   1 openings, likelihood =   259.0155    
+ i, amp(i), length of gap that ends group=      878 0.000000      225.622    
+
+   440 open period =   12.1480    
+
+GROUP #    307:   1 openings, likelihood =   11.24170    
+ i, amp(i), length of gap that ends group=      880 0.000000      2524.21    
+
+   441 open period =  0.555308    
+
+GROUP #    308:   1 openings, likelihood =   234.0527    
+ i, amp(i), length of gap that ends group=      882 0.000000      11289.9    
+
+   442 open period =   5.37578    
+
+GROUP #    309:   1 openings, likelihood =   33.88684    
+ i, amp(i), length of gap that ends group=      884 0.000000      1551.72    
+
+   443 open period =   6.31238    
+
+GROUP #    310:   1 openings, likelihood =   29.09086    
+ i, amp(i), length of gap that ends group=      886 0.000000      2173.59    
+
+   444 open period =  0.420549    
+
+GROUP #    311:   1 openings, likelihood =   316.7483    
+ i, amp(i), length of gap that ends group=      888 0.000000      808.945    
+
+   445 open period =  0.337933    
+
+GROUP #    312:   1 openings, likelihood =   386.6552    
+ i, amp(i), length of gap that ends group=      890 0.000000      2473.34    
+
+   446 open period =   4.23393    
+   447 open period =   5.56901    
+
+GROUP #    313:   2 openings, likelihood =  0.1590802E+08
+ i, amp(i), length of gap that ends group=      894 0.000000      1785.22    
+
+   448 open period =   4.17916    
+
+GROUP #    314:   1 openings, likelihood =   41.18405    
+ i, amp(i), length of gap that ends group=      896 0.000000      1528.45    
+
+   449 open period =   12.7841    
+
+GROUP #    315:   1 openings, likelihood =   10.13488    
+ i, amp(i), length of gap that ends group=      898 0.000000      4231.45    
+
+   450 open period =   15.5040    
+
+GROUP #    316:   1 openings, likelihood =   6.506736    
+ i, amp(i), length of gap that ends group=      900 0.000000      439.742    
+
+   451 open period =   4.66526    
+
+GROUP #    317:   1 openings, likelihood =   38.04633    
+ i, amp(i), length of gap that ends group=      902 0.000000      1658.67    
+
+   452 open period =  0.381341    
+
+GROUP #    318:   1 openings, likelihood =   347.7698    
+ i, amp(i), length of gap that ends group=      904 0.000000      283.784    
+
+   453 open period =   10.1289    
+
+GROUP #    319:   1 openings, likelihood =   15.62087    
+ i, amp(i), length of gap that ends group=      906 0.000000      669.283    
+
+   454 open period =  0.259437    
+
+GROUP #    320:   1 openings, likelihood =   471.2630    
+ i, amp(i), length of gap that ends group=      908 0.000000      1332.57    
+
+   455 open period =  0.178575    
+
+GROUP #    321:   1 openings, likelihood =   582.1337    
+ i, amp(i), length of gap that ends group=      910 0.000000      9021.34    
+
+   456 open period =   1.22532    
+
+GROUP #    322:   1 openings, likelihood =   87.39866    
+ i, amp(i), length of gap that ends group=      912 0.000000      6153.86    
+
+   457 open period =   2.03796    
+   458 open period =  0.826488    
+   459 open period =   5.62613    
+   460 open period =   6.05762    
+
+GROUP #    323:   4 openings, likelihood =  0.1652323E+16
+ i, amp(i), length of gap that ends group=      920 0.000000      5513.34    
+
+   461 open period =  0.157489    
+   462 open period =   22.0104    
+
+GROUP #    324:   2 openings, likelihood =   244889.0    
+ i, amp(i), length of gap that ends group=      924 0.000000      670.664    
+
+   463 open period =   6.46333    
+
+GROUP #    325:   1 openings, likelihood =   28.38416    
+ i, amp(i), length of gap that ends group=      926 0.000000      1930.72    
+
+   464 open period =  0.125141    
+
+GROUP #    326:   1 openings, likelihood =   672.2091    
+ i, amp(i), length of gap that ends group=      928 0.000000      2573.33    
+
+   465 open period =   13.4730    
+
+GROUP #    327:   1 openings, likelihood =   9.058959    
+ i, amp(i), length of gap that ends group=      930 0.000000      3468.55    
+
+   466 open period =   1.66269    
+
+GROUP #    328:   1 openings, likelihood =   67.53402    
+ i, amp(i), length of gap that ends group=      932 0.000000      3296.55    
+
+   467 open period =   5.86122    
+   468 open period =   8.81193    
+
+GROUP #    329:   2 openings, likelihood =   963217.3    
+ i, amp(i), length of gap that ends group=      936 0.000000      3407.72    
+
+   469 open period =   3.55331    
+
+GROUP #    330:   1 openings, likelihood =   45.61961    
+ i, amp(i), length of gap that ends group=      938 0.000000      2529.56    
+
+   470 open period =  0.756053    
+
+GROUP #    331:   1 openings, likelihood =   158.6058    
+ i, amp(i), length of gap that ends group=      940 0.000000      9168.50    
+
+   471 open period =   14.2748    
+
+GROUP #    332:   1 openings, likelihood =   7.949579    
+ i, amp(i), length of gap that ends group=      942 0.000000      561.924    
+
+   472 open period =   16.4205    
+
+GROUP #    333:   1 openings, likelihood =   5.604148    
+ i, amp(i), length of gap that ends group=      944 0.000000      4825.30    
+
+   473 open period =   5.51045    
+   474 open period =   1.77390    
+   475 open period =   12.5034    
+
+GROUP #    334:   3 openings, likelihood =  0.1822828E+13
+ i, amp(i), length of gap that ends group=      950 0.000000      8258.42    
+
+   476 open period =   20.0669    
+
+GROUP #    335:   1 openings, likelihood =   3.093812    
+ i, amp(i), length of gap that ends group=      952 0.000000      11661.2    
+
+   477 open period =   2.05675    
+
+GROUP #    336:   1 openings, likelihood =   59.84514    
+ i, amp(i), length of gap that ends group=      954 0.000000      5423.56    
+
+   478 open period =   6.90487    
+   479 open period =   1.70604    
+
+GROUP #    337:   2 openings, likelihood =   2310983.    
+ i, amp(i), length of gap that ends group=      958 0.000000      5259.01    
+
+   480 open period =   3.40503    
+
+GROUP #    338:   1 openings, likelihood =   46.74463    
+ i, amp(i), length of gap that ends group=      960 0.000000      2102.59    
+
+   481 open period =   3.00746    
+   482 open period =   4.01938    
+
+GROUP #    339:   2 openings, likelihood =  0.2430201E+08
+ i, amp(i), length of gap that ends group=      964 0.000000      945.979    
+
+   483 open period =  0.525634    
+
+GROUP #    340:   1 openings, likelihood =   249.5195    
+ i, amp(i), length of gap that ends group=      966 0.000000      16983.7    
+
+   484 open period =   5.22418    
+
+GROUP #    341:   1 openings, likelihood =   34.73430    
+ i, amp(i), length of gap that ends group=      968 0.000000      2539.63    
+
+   485 open period =   3.92439    
+
+GROUP #    342:   1 openings, likelihood =   42.93246    
+ i, amp(i), length of gap that ends group=      970 0.000000      7422.40    
+
+   486 open period =   11.3476    
+   487 open period =   3.62852    
+   488 open period =   4.05943    
+
+GROUP #    343:   3 openings, likelihood =  0.1843854E+12
+ i, amp(i), length of gap that ends group=      976 0.000000      3497.11    
+
+   489 open period =   18.6212    
+
+GROUP #    344:   1 openings, likelihood =   3.915570    
+ i, amp(i), length of gap that ends group=      978 0.000000      7082.79    
+
+   490 open period =   10.8955    
+
+GROUP #    345:   1 openings, likelihood =   13.78671    
+ i, amp(i), length of gap that ends group=      980 0.000000      2894.87    
+
+   491 open period =   22.0353    
+
+GROUP #    346:   1 openings, likelihood =   2.244978    
+ i, amp(i), length of gap that ends group=      982 0.000000      3311.40    
+
+   492 open period =   6.99131    
+   493 open period =   18.7092    
+
+GROUP #    347:   2 openings, likelihood =   291927.3    
+ i, amp(i), length of gap that ends group=      986 0.000000      829.999    
+
+   494 open period =  0.150152    
+
+GROUP #    348:   1 openings, likelihood =   628.1473    
+ i, amp(i), length of gap that ends group=      988 0.000000      4465.84    
+
+   495 open period =   7.74887    
+
+GROUP #    349:   1 openings, likelihood =   23.02032    
+ i, amp(i), length of gap that ends group=      990 0.000000      857.255    
+
+   496 open period =   3.35965    
+
+GROUP #    350:   1 openings, likelihood =   47.09537    
+ i, amp(i), length of gap that ends group=      992 0.000000      30.5508    
+
+   497 open period =   3.50960    
+   498 open period =   4.00987    
+   499 open period =   1.98719    
+
+GROUP #    351:   3 openings, likelihood =  0.3709287E+13
+ i, amp(i), length of gap that ends group=      998 0.000000      972.719    
+
+   500 open period =   7.52561    
+
+GROUP #    352:   1 openings, likelihood =   23.87312    
+ i, amp(i), length of gap that ends group=     1000 0.000000      13314.3    
+
+   501 open period =   1.74850    
+   502 open period =   3.31147    
+   503 open period =   1.35056    
+
+GROUP #    353:   3 openings, likelihood =  0.7713296E+13
+ i, amp(i), length of gap that ends group=     1006 0.000000      8082.00    
+
+   504 open period =   2.64286    
+
+GROUP #    354:   1 openings, likelihood =   53.17145    
+ i, amp(i), length of gap that ends group=     1008 0.000000      3106.26    
+
+   505 open period =   2.64791    
+
+GROUP #    355:   1 openings, likelihood =   53.12364    
+ i, amp(i), length of gap that ends group=     1010 0.000000      4448.51    
+
+   506 open period =   19.2924    
+   507 open period =   2.23562    
+   508 open period =   17.9791    
+
+GROUP #    356:   3 openings, likelihood =  0.2127294E+11
+ i, amp(i), length of gap that ends group=     1016 0.000000      2000.55    
+
+   509 open period =   6.43122    
+
+GROUP #    357:   1 openings, likelihood =   28.53303    
+ i, amp(i), length of gap that ends group=     1018 0.000000      782.739    
+
+   510 open period =   3.03535    
+
+GROUP #    358:   1 openings, likelihood =   49.70163    
+ i, amp(i), length of gap that ends group=     1020 0.000000      448.549    
+
+   511 open period =   24.8503    
+   512 open period =  0.164994    
+
+GROUP #    359:   2 openings, likelihood =   598620.4    
+ i, amp(i), length of gap that ends group=     1024 0.000000      3752.38    
+
+   513 open period =   10.4774    
+
+GROUP #    360:   1 openings, likelihood =   14.75857    
+ i, amp(i), length of gap that ends group=     1026 0.000000      814.593    
+
+   514 open period =   16.2774    
+
+GROUP #    361:   1 openings, likelihood =   5.736395    
+ i, amp(i), length of gap that ends group=     1028 0.000000      8588.96    
+
+   515 open period =   4.70416    
+
+GROUP #    362:   1 openings, likelihood =   37.80587    
+ i, amp(i), length of gap that ends group=     1030 0.000000      2530.54    
+
+   516 open period =   12.6762    
+   517 open period =   2.23408    
+
+GROUP #    363:   2 openings, likelihood =   611060.8    
+ i, amp(i), length of gap that ends group=     1034 0.000000      1656.26    
+
+   518 open period =   1.57572    
+   519 open period =   1.61332    
+
+GROUP #    364:   2 openings, likelihood =   8769745.    
+ i, amp(i), length of gap that ends group=     1038 0.000000      3028.69    
+
+   520 open period =  0.217677    
+
+GROUP #    365:   1 openings, likelihood =   525.1277    
+ i, amp(i), length of gap that ends group=     1040 0.000000      5894.32    
+
+   521 open period =  0.767397    
+
+GROUP #    366:   1 openings, likelihood =   155.5299    
+ i, amp(i), length of gap that ends group=     1042 0.000000      3101.26    
+
+   522 open period =   1.07180    
+
+GROUP #    367:   1 openings, likelihood =   101.4602    
+ i, amp(i), length of gap that ends group=     1044 0.000000      2511.43    
+
+   523 open period =   10.2477    
+
+GROUP #    368:   1 openings, likelihood =   15.32121    
+ i, amp(i), length of gap that ends group=     1046 0.000000      1834.47    
+
+   524 open period =  0.167976    
+
+GROUP #    369:   1 openings, likelihood =   598.8131    
+ i, amp(i), length of gap that ends group=     1048 0.000000      263.241    
+
+   525 open period =  0.204385    
+
+GROUP #    370:   1 openings, likelihood =   543.7456    
+ i, amp(i), length of gap that ends group=     1050 0.000000      1230.19    
+
+   526 open period =   18.5670    
+
+GROUP #    371:   1 openings, likelihood =   3.950299    
+ i, amp(i), length of gap that ends group=     1052 0.000000      597.663    
+
+   527 open period =   17.4878    
+
+GROUP #    372:   1 openings, likelihood =   4.709670    
+ i, amp(i), length of gap that ends group=     1054 0.000000      5425.66    
+
+   528 open period =   1.13986    
+   529 open period =   8.03342    
+
+GROUP #    373:   2 openings, likelihood =  0.1904921E+08
+ i, amp(i), length of gap that ends group=     1058 0.000000      4683.42    
+
+   530 open period =  0.217361    
+
+GROUP #    374:   1 openings, likelihood =   525.5610    
+ i, amp(i), length of gap that ends group=     1060 0.000000      14045.3    
+
+   531 open period =   2.16285    
+
+GROUP #    375:   1 openings, likelihood =   58.39207    
+ i, amp(i), length of gap that ends group=     1062 0.000000      10771.5    
+
+   532 open period =   2.35581    
+
+GROUP #    376:   1 openings, likelihood =   56.09097    
+ i, amp(i), length of gap that ends group=     1064 0.000000      14200.8    
+
+   533 open period =   9.87212    
+
+GROUP #    377:   1 openings, likelihood =   16.28815    
+ i, amp(i), length of gap that ends group=     1066 0.000000      2405.34    
+
+   534 open period =   8.10817    
+   535 open period =   3.31925    
+   536 open period =   2.43720    
+
+GROUP #    378:   3 openings, likelihood =  0.1484359E+13
+ i, amp(i), length of gap that ends group=     1072 0.000000      3217.38    
+
+   537 open period =  0.869083    
+
+GROUP #    379:   1 openings, likelihood =   132.0520    
+ i, amp(i), length of gap that ends group=     1074 0.000000      2779.99    
+
+   538 open period =   4.29807    
+
+GROUP #    380:   1 openings, likelihood =   40.39314    
+ i, amp(i), length of gap that ends group=     1076 0.000000      1009.01    
+
+   539 open period =   19.6467    
+   540 open period =   19.4521    
+   541 open period =   9.55618    
+
+GROUP #    381:   3 openings, likelihood =  0.8462565E+09
+ i, amp(i), length of gap that ends group=     1082 0.000000      10748.5    
+
+   542 open period =   4.63685    
+   543 open period =   5.13895    
+
+GROUP #    382:   2 openings, likelihood =  0.1398753E+08
+ i, amp(i), length of gap that ends group=     1086 0.000000      7663.90    
+
+   544 open period =  0.743013    
+
+GROUP #    383:   1 openings, likelihood =   162.2701    
+ i, amp(i), length of gap that ends group=     1088 0.000000      1658.87    
+
+   545 open period =   24.7705    
+   546 open period =   29.4476    
+   547 open period =   2.53667    
+   548 open period =   5.81988    
+
+GROUP #    384:   4 openings, likelihood =  0.2102290E+16
+ i, amp(i), length of gap that ends group=     1096 0.000000      404.750    
+
+   549 open period =   3.22094    
+
+GROUP #    385:   1 openings, likelihood =   48.18753    
+ i, amp(i), length of gap that ends group=     1098 0.000000      174.798    
+
+   550 open period =  0.396199    
+
+GROUP #    386:   1 openings, likelihood =   335.5831    
+ i, amp(i), length of gap that ends group=     1100 0.000000      3099.19    
+
+   551 open period =   1.40777    
+
+GROUP #    387:   1 openings, likelihood =   76.59642    
+ i, amp(i), length of gap that ends group=     1102 0.000000      7219.36    
+
+   552 open period =   13.3424    
+
+GROUP #    388:   1 openings, likelihood =   9.253715    
+ i, amp(i), length of gap that ends group=     1104 0.000000      6216.27    
+
+   553 open period =   17.7716    
+
+GROUP #    389:   1 openings, likelihood =   4.496861    
+ i, amp(i), length of gap that ends group=     1106 0.000000      8058.50    
+
+   554 open period =   2.49136    
+   555 open period =   2.45132    
+
+GROUP #    390:   2 openings, likelihood =  0.1579262E+08
+ i, amp(i), length of gap that ends group=     1110 0.000000      1287.06    
+
+   556 open period =   2.84255    
+
+GROUP #    391:   1 openings, likelihood =   51.35197    
+ i, amp(i), length of gap that ends group=     1112 0.000000      142.913    
+
+   557 open period =   5.96089    
+
+GROUP #    392:   1 openings, likelihood =   30.80549    
+ i, amp(i), length of gap that ends group=     1114 0.000000      1162.33    
+
+   558 open period =   1.07504    
+   559 open period =  0.911453    
+
+GROUP #    393:   2 openings, likelihood =  0.2162307E+08
+ i, amp(i), length of gap that ends group=     1118 0.000000      3811.83    
+
+   560 open period =   4.31073    
+
+GROUP #    394:   1 openings, likelihood =   40.30982    
+ i, amp(i), length of gap that ends group=     1120 0.000000      1947.36    
+
+   561 open period =   30.9825    
+   562 open period =   3.75713    
+   563 open period =   12.3820    
+
+GROUP #    395:   3 openings, likelihood =  0.7576016E+10
+ i, amp(i), length of gap that ends group=     1126 0.000000      4869.69    
+
+   564 open period =   8.47802    
+
+GROUP #    396:   1 openings, likelihood =   20.44172    
+ i, amp(i), length of gap that ends group=     1128 0.000000      4931.58    
+
+   565 open period =   1.41517    
+
+GROUP #    397:   1 openings, likelihood =   76.25328    
+ i, amp(i), length of gap that ends group=     1130 0.000000      2298.64    
+
+   566 open period =   7.66801    
+   567 open period =   6.44078    
+   568 open period =   3.98000    
+
+GROUP #    398:   3 openings, likelihood =  0.1709085E+13
+ i, amp(i), length of gap that ends group=     1136 0.000000      638.223    
+
+   569 open period =   7.04150    
+
+GROUP #    399:   1 openings, likelihood =   25.83241    
+ i, amp(i), length of gap that ends group=     1138 0.000000      2998.11    
+
+   570 open period =   4.31970    
+
+GROUP #    400:   1 openings, likelihood =   40.25088    
+ i, amp(i), length of gap that ends group=     1140 0.000000      3811.31    
+
+   571 open period =  0.487637    
+
+GROUP #    401:   1 openings, likelihood =   271.4310    
+ i, amp(i), length of gap that ends group=     1142 0.000000      1999.94    
+
+   572 open period =   8.11822    
+
+GROUP #    402:   1 openings, likelihood =   21.67588    
+ i, amp(i), length of gap that ends group=     1144 0.000000      1415.08    
+
+   573 open period =  0.779422    
+
+GROUP #    403:   1 openings, likelihood =   152.3787    
+ i, amp(i), length of gap that ends group=     1146 0.000000      12231.2    
+
+   574 open period =   1.20464    
+
+GROUP #    404:   1 openings, likelihood =   88.97256    
+ i, amp(i), length of gap that ends group=     1148 0.000000      9652.71    
+
+   575 open period =   7.52187    
+   576 open period =   9.88722    
+   577 open period =  0.878684    
+
+GROUP #    405:   3 openings, likelihood =  0.8928269E+12
+ i, amp(i), length of gap that ends group=     1154 0.000000      3096.85    
+
+   578 open period =   4.45929    
+   579 open period =   10.5745    
+
+GROUP #    406:   2 openings, likelihood =   1970882.    
+ i, amp(i), length of gap that ends group=     1158 0.000000      11720.8    
+
+   580 open period =   28.8869    
+   581 open period =   12.7211    
+
+GROUP #    407:   2 openings, likelihood =   46573.85    
+ i, amp(i), length of gap that ends group=     1162 0.000000      12313.3    
+
+   582 open period =   18.3370    
+   583 open period =   8.68593    
+
+GROUP #    408:   2 openings, likelihood =   871104.4    
+ i, amp(i), length of gap that ends group=     1166 0.000000      4829.95    
+
+   584 open period =   17.0571    
+
+GROUP #    409:   1 openings, likelihood =   5.052015    
+ i, amp(i), length of gap that ends group=     1168 0.000000      10528.4    
+
+   585 open period =   12.1641    
+   586 open period =  0.461421    
+
+GROUP #    410:   2 openings, likelihood =   3509844.    
+ i, amp(i), length of gap that ends group=     1172 0.000000      494.943    
+
+   587 open period =   5.32784    
+   588 open period =   6.15894    
+
+GROUP #    411:   2 openings, likelihood =   682409.0    
+ i, amp(i), length of gap that ends group=     1176 0.000000      5685.66    
+
+   589 open period =  0.816571    
+
+GROUP #    412:   1 openings, likelihood =   143.3120    
+ i, amp(i), length of gap that ends group=     1178 0.000000      1567.79    
+
+   590 open period =   4.75391    
+   591 open period =   5.96000    
+
+GROUP #    413:   2 openings, likelihood =   382580.5    
+ i, amp(i), length of gap that ends group=     1182 0.000000      5130.10    
+
+   592 open period =   2.78339    
+   593 open period =   3.66673    
+
+GROUP #    414:   2 openings, likelihood =   3923506.    
+ i, amp(i), length of gap that ends group=     1186 0.000000      313.410    
+
+   594 open period =   5.71633    
+
+GROUP #    415:   1 openings, likelihood =   32.05774    
+ i, amp(i), length of gap that ends group=     1188 0.000000      473.508    
+
+   595 open period =   2.96479    
+   596 open period =   5.92175    
+
+GROUP #    416:   2 openings, likelihood =   6227689.    
+ i, amp(i), length of gap that ends group=     1192 0.000000      4549.98    
+
+   597 open period =   10.2483    
+   598 open period =   5.94905    
+
+GROUP #    417:   2 openings, likelihood =   3883881.    
+ i, amp(i), length of gap that ends group=     1196 0.000000      6969.60    
+
+   599 open period =  0.191637    
+
+GROUP #    418:   1 openings, likelihood =   562.3216    
+ i, amp(i), length of gap that ends group=     1198 0.000000      9193.28    
+
+   600 open period =   3.73219    
+
+GROUP #    419:   1 openings, likelihood =   44.30247    
+ i, amp(i), length of gap that ends group=     1200 0.000000      17406.3    
+
+   601 open period =  0.999658    
+
+GROUP #    420:   1 openings, likelihood =   110.4096    
+ i, amp(i), length of gap that ends group=     1202 0.000000      1859.22    
+
+   602 open period =   1.85690    
+
+GROUP #    421:   1 openings, likelihood =   63.15433    
+ i, amp(i), length of gap that ends group=     1204 0.000000      4017.73    
+
+   603 open period =  0.889414    
+   604 open period =   10.6538    
+   605 open period =   18.8849    
+
+GROUP #    422:   3 openings, likelihood =  0.2278592E+12
+ i, amp(i), length of gap that ends group=     1210 0.000000      2818.18    
+
+   606 open period =   12.7932    
+
+GROUP #    423:   1 openings, likelihood =   10.11991    
+ i, amp(i), length of gap that ends group=     1212 0.000000      6157.37    
+
+   607 open period =   6.92582    
+   608 open period =   2.45710    
+   609 open period =   10.2854    
+   610 open period =   8.44598    
+   611 open period =   1.86631    
+   612 open period =   9.89548    
+
+GROUP #    424:   6 openings, likelihood =  0.1044459E+26
+ i, amp(i), length of gap that ends group=     1224 0.000000      2499.75    
+
+   613 open period =   7.00071    
+   614 open period =   5.51792    
+
+GROUP #    425:   2 openings, likelihood =   7842628.    
+ i, amp(i), length of gap that ends group=     1228 0.000000      68.4184    
+
+   615 open period =   5.90163    
+   616 open period =   3.30627    
+
+GROUP #    426:   2 openings, likelihood =   9359503.    
+ i, amp(i), length of gap that ends group=     1232 0.000000      76.3227    
+
+   617 open period =   9.72640    
+   618 open period =   7.60734    
+
+GROUP #    427:   2 openings, likelihood =   3707482.    
+ i, amp(i), length of gap that ends group=     1236 0.000000      14609.9    
+
+   619 open period =   8.97309    
+
+GROUP #    428:   1 openings, likelihood =   18.85760    
+ i, amp(i), length of gap that ends group=     1238 0.000000      471.786    
+
+   620 open period =   1.06499    
+
+GROUP #    429:   1 openings, likelihood =   102.2310    
+ i, amp(i), length of gap that ends group=     1240 0.000000      1053.51    
+
+   621 open period =  0.102439    
+
+GROUP #    430:   1 openings, likelihood =   715.4025    
+ i, amp(i), length of gap that ends group=     1242 0.000000      10154.7    
+
+   622 open period =   2.89080    
+
+GROUP #    431:   1 openings, likelihood =   50.93040    
+ i, amp(i), length of gap that ends group=     1244 0.000000      332.710    
+
+   623 open period =   8.50809    
+
+GROUP #    432:   1 openings, likelihood =   20.34181    
+ i, amp(i), length of gap that ends group=     1246 0.000000      981.489    
+
+   624 open period =   1.70794    
+
+GROUP #    433:   1 openings, likelihood =   66.37251    
+ i, amp(i), length of gap that ends group=     1248 0.000000      4635.36    
+
+   625 open period =  0.612678    
+
+GROUP #    434:   1 openings, likelihood =   207.7572    
+ i, amp(i), length of gap that ends group=     1250 0.000000      2043.29    
+
+   626 open period =   10.6041    
+
+GROUP #    435:   1 openings, likelihood =   14.45695    
+ i, amp(i), length of gap that ends group=     1252 0.000000      1862.12    
+
+   627 open period =  0.941982    
+   628 open period =   6.04237    
+   629 open period =   8.26213    
+
+GROUP #    436:   3 openings, likelihood =  0.2790859E+12
+ i, amp(i), length of gap that ends group=     1258 0.000000      3425.67    
+
+   630 open period =   6.58593    
+   631 open period =   16.2236    
+
+GROUP #    437:   2 openings, likelihood =   1881831.    
+ i, amp(i), length of gap that ends group=     1262 0.000000      4146.27    
+
+   632 open period =   10.7002    
+   633 open period =   3.01305    
+
+GROUP #    438:   2 openings, likelihood =   7987638.    
+ i, amp(i), length of gap that ends group=     1266 0.000000      3645.76    
+
+   634 open period =  0.618559    
+
+GROUP #    439:   1 openings, likelihood =   205.3059    
+ i, amp(i), length of gap that ends group=     1268 0.000000      7377.23    
+
+   635 open period =   3.25984    
+
+GROUP #    440:   1 openings, likelihood =   47.87806    
+ i, amp(i), length of gap that ends group=     1270 0.000000      6961.56    
+
+   636 open period =   1.46304    
+
+GROUP #    441:   1 openings, likelihood =   74.17137    
+ i, amp(i), length of gap that ends group=     1272 0.000000      1468.28    
+
+   637 open period =  0.747744    
+
+GROUP #    442:   1 openings, likelihood =   160.9244    
+ i, amp(i), length of gap that ends group=     1274 0.000000      5198.64    
+
+   638 open period =   3.00938    
+
+GROUP #    443:   1 openings, likelihood =   49.91893    
+ i, amp(i), length of gap that ends group=     1276 0.000000      362.190    
+
+   639 open period =   6.22245    
+
+GROUP #    444:   1 openings, likelihood =   29.52024    
+ i, amp(i), length of gap that ends group=     1278 0.000000      4333.54    
+
+   640 open period =   6.60889    
+
+GROUP #    445:   1 openings, likelihood =   27.71891    
+ i, amp(i), length of gap that ends group=     1280 0.000000      13534.6    
+
+   641 open period =   4.20761    
+
+GROUP #    446:   1 openings, likelihood =   40.99338    
+ i, amp(i), length of gap that ends group=     1282 0.000000      4903.59    
+
+   642 open period =   4.17096    
+
+GROUP #    447:   1 openings, likelihood =   41.23922    
+ i, amp(i), length of gap that ends group=     1284 0.000000      1265.42    
+
+   643 open period =   1.58167    
+
+GROUP #    448:   1 openings, likelihood =   69.89219    
+ i, amp(i), length of gap that ends group=     1286 0.000000      5561.71    
+
+   644 open period =   1.83733    
+
+GROUP #    449:   1 openings, likelihood =   63.53262    
+ i, amp(i), length of gap that ends group=     1288 0.000000      1511.38    
+
+   645 open period =   19.0462    
+   646 open period =   3.17763    
+   647 open period =   1.83338    
+   648 open period =   2.19200    
+
+GROUP #    450:   4 openings, likelihood =  0.1936294E+18
+ i, amp(i), length of gap that ends group=     1296 0.000000      1630.59    
+
+   649 open period =   3.76619    
+
+GROUP #    451:   1 openings, likelihood =   44.05679    
+ i, amp(i), length of gap that ends group=     1298 0.000000      660.291    
+
+   650 open period =   1.76940    
+
+GROUP #    452:   1 openings, likelihood =   64.94381    
+ i, amp(i), length of gap that ends group=     1300 0.000000      4818.13    
+
+   651 open period =   3.50299    
+   652 open period =   14.8672    
+
+GROUP #    453:   2 openings, likelihood =   4098643.    
+ i, amp(i), length of gap that ends group=     1304 0.000000      1674.01    
+
+   653 open period =  0.719826    
+   654 open period =   4.34101    
+   655 open period =   7.11667    
+
+GROUP #    454:   3 openings, likelihood =  0.1025560E+12
+ i, amp(i), length of gap that ends group=     1310 0.000000      2364.60    
+
+   656 open period =   3.57991    
+   657 open period =   6.76683    
+
+GROUP #    455:   2 openings, likelihood =   9685077.    
+ i, amp(i), length of gap that ends group=     1314 0.000000      496.470    
+
+   658 open period =   15.8039    
+   659 open period =   2.19535    
+   660 open period =   7.54703    
+   661 open period =   6.58053    
+
+GROUP #    456:   4 openings, likelihood =  0.5188705E+16
+ i, amp(i), length of gap that ends group=     1322 0.000000      1669.74    
+
+   662 open period =   7.52336    
+   663 open period =   1.00592    
+
+GROUP #    457:   2 openings, likelihood =   6241910.    
+ i, amp(i), length of gap that ends group=     1326 0.000000      4328.68    
+
+   664 open period =   3.57387    
+   665 open period =   1.29556    
+
+GROUP #    458:   2 openings, likelihood =  0.1056651E+08
+ i, amp(i), length of gap that ends group=     1330 0.000000      2448.01    
+
+   666 open period =   2.66713    
+   667 open period =  0.292675    
+
+GROUP #    459:   2 openings, likelihood =   4276168.    
+ i, amp(i), length of gap that ends group=     1334 0.000000      6755.31    
+
+   668 open period =  0.433134    
+
+GROUP #    460:   1 openings, likelihood =   307.5391    
+ i, amp(i), length of gap that ends group=     1336 0.000000      65.1960    
+
+   669 open period =   14.4673    
+   670 open period =  0.727540    
+
+GROUP #    461:   2 openings, likelihood =   126574.5    
+ i, amp(i), length of gap that ends group=     1340 0.000000      506.887    
+
+   671 open period =   6.09348    
+
+GROUP #    462:   1 openings, likelihood =   30.14714    
+ i, amp(i), length of gap that ends group=     1342 0.000000      5470.09    
+
+   672 open period =   1.04620    
+   673 open period =   6.57863    
+
+GROUP #    463:   2 openings, likelihood =   4128879.    
+ i, amp(i), length of gap that ends group=     1346 0.000000      1168.01    
+
+   674 open period =  0.180271    
+   675 open period =  0.500459    
+
+GROUP #    464:   2 openings, likelihood =  0.3746294E+08
+ i, amp(i), length of gap that ends group=     1350 0.000000      8916.38    
+
+   676 open period =   4.40584    
+   677 open period =   10.4191    
+
+GROUP #    465:   2 openings, likelihood =   1554448.    
+ i, amp(i), length of gap that ends group=     1354 0.000000      1365.81    
+
+   678 open period =   3.54016    
+
+GROUP #    466:   1 openings, likelihood =   45.71816    
+ i, amp(i), length of gap that ends group=     1356 0.000000      6863.67    
+
+   679 open period =  0.122431    
+
+GROUP #    467:   1 openings, likelihood =   677.1997    
+ i, amp(i), length of gap that ends group=     1358 0.000000      5993.98    
+
+   680 open period =  0.749366    
+   681 open period =   5.67737    
+
+GROUP #    468:   2 openings, likelihood =   1318923.    
+ i, amp(i), length of gap that ends group=     1362 0.000000      1727.52    
+
+   682 open period =  0.317324    
+
+GROUP #    469:   1 openings, likelihood =   406.9717    
+ i, amp(i), length of gap that ends group=     1364 0.000000      3336.22    
+
+   683 open period =  0.194976    
+
+GROUP #    470:   1 openings, likelihood =   557.3847    
+ i, amp(i), length of gap that ends group=     1366 0.000000      2380.29    
+
+   684 open period =   4.89179    
+
+GROUP #    471:   1 openings, likelihood =   36.66742    
+ i, amp(i), length of gap that ends group=     1368 0.000000      146.291    
+
+   685 open period =  0.652518    
+   686 open period =   6.72293    
+
+GROUP #    472:   2 openings, likelihood =   6989454.    
+ i, amp(i), length of gap that ends group=     1372 0.000000      598.818    
+
+   687 open period =   5.42345    
+   688 open period =   3.01207    
+   689 open period =   1.55402    
+
+GROUP #    473:   3 openings, likelihood =  0.4418478E+13
+ i, amp(i), length of gap that ends group=     1378 0.000000      6857.77    
+
+   690 open period =   15.8598    
+   691 open period =   11.5165    
+
+GROUP #    474:   2 openings, likelihood =   429370.7    
+ i, amp(i), length of gap that ends group=     1382 0.000000      1278.90    
+
+   692 open period =  0.223999    
+
+GROUP #    475:   1 openings, likelihood =   516.5305    
+ i, amp(i), length of gap that ends group=     1384 0.000000      7183.85    
+
+   693 open period =   3.58186    
+   694 open period =   1.97069    
+
+GROUP #    476:   2 openings, likelihood =  0.2442969E+08
+ i, amp(i), length of gap that ends group=     1388 0.000000      784.882    
+
+   695 open period =   9.40171    
+   696 open period =  0.814290    
+
+GROUP #    477:   2 openings, likelihood =   4827643.    
+ i, amp(i), length of gap that ends group=     1392 0.000000      5721.07    
+
+   697 open period =   18.7276    
+
+GROUP #    478:   1 openings, likelihood =   3.848261    
+ i, amp(i), length of gap that ends group=     1394 0.000000      3314.53    
+
+   698 open period =  0.325344    
+
+GROUP #    479:   1 openings, likelihood =   398.9155    
+ i, amp(i), length of gap that ends group=     1396 0.000000      894.811    
+
+   699 open period =   6.25067    
+
+GROUP #    480:   1 openings, likelihood =   29.38487    
+ i, amp(i), length of gap that ends group=     1398 0.000000      672.922    
+
+   700 open period =   4.36654    
+
+GROUP #    481:   1 openings, likelihood =   39.94466    
+ i, amp(i), length of gap that ends group=     1400 0.000000      4868.69    
+
+   701 open period =   2.26149    
+
+GROUP #    482:   1 openings, likelihood =   57.17015    
+ i, amp(i), length of gap that ends group=     1402 0.000000      3451.47    
+
+   702 open period =   10.8986    
+
+GROUP #    483:   1 openings, likelihood =   13.77963    
+ i, amp(i), length of gap that ends group=     1404 0.000000      332.112    
+
+   703 open period =  0.535676    
+
+GROUP #    484:   1 openings, likelihood =   244.1319    
+ i, amp(i), length of gap that ends group=     1406 0.000000      1533.56    
+
+   704 open period =   2.96963    
+
+GROUP #    485:   1 openings, likelihood =   50.25430    
+ i, amp(i), length of gap that ends group=     1408 0.000000      199.243    
+
+   705 open period =  0.239420    
+
+GROUP #    486:   1 openings, likelihood =   496.2366    
+ i, amp(i), length of gap that ends group=     1410 0.000000      3288.73    
+
+   706 open period =   3.53970    
+
+GROUP #    487:   1 openings, likelihood =   45.72159    
+ i, amp(i), length of gap that ends group=     1412 0.000000      6047.80    
+
+   707 open period =   5.82748    
+
+GROUP #    488:   1 openings, likelihood =   31.48241    
+ i, amp(i), length of gap that ends group=     1414 0.000000      4382.49    
+
+   708 open period =   7.42231    
+   709 open period =   6.05266    
+
+GROUP #    489:   2 openings, likelihood =   2107844.    
+ i, amp(i), length of gap that ends group=     1418 0.000000      561.157    
+
+   710 open period =   11.8639    
+
+GROUP #    490:   1 openings, likelihood =   11.77432    
+ i, amp(i), length of gap that ends group=     1420 0.000000      3272.77    
+
+   711 open period =  0.992011    
+   712 open period =   1.51218    
+
+GROUP #    491:   2 openings, likelihood =  0.2707544E+08
+ i, amp(i), length of gap that ends group=     1424 0.000000      5938.25    
+
+   713 open period =   2.21492    
+
+GROUP #    492:   1 openings, likelihood =   57.73372    
+ i, amp(i), length of gap that ends group=     1426 0.000000      1830.33    
+
+   714 open period =   6.40928    
+   715 open period =   3.94329    
+
+GROUP #    493:   2 openings, likelihood =   962087.5    
+ i, amp(i), length of gap that ends group=     1430 0.000000      3748.96    
+
+   716 open period =   7.63563    
+   717 open period =   1.51071    
+   718 open period =   33.5543    
+   719 open period =   4.99377    
+   720 open period =   4.81843    
+
+GROUP #    494:   5 openings, likelihood =  0.2453801E+19
+ i, amp(i), length of gap that ends group=     1440 0.000000      5035.11    
+
+   721 open period =   5.85218    
+
+GROUP #    495:   1 openings, likelihood =   31.35599    
+ i, amp(i), length of gap that ends group=     1442 0.000000      1129.55    
+
+   722 open period =   15.8366    
+
+GROUP #    496:   1 openings, likelihood =   6.163473    
+ i, amp(i), length of gap that ends group=     1444 0.000000      4631.17    
+
+   723 open period =   6.34519    
+   724 open period =   2.29787    
+   725 open period =   17.5055    
+   726 open period =   7.33463    
+   727 open period =  0.950447    
+   728 open period =   5.06288    
+   729 open period =   1.20486    
+
+GROUP #    497:   7 openings, likelihood =  0.4764552E+33
+ i, amp(i), length of gap that ends group=     1458 0.000000      2374.87    
+
+   730 open period =   33.4772    
+   731 open period =   6.73481    
+
+GROUP #    498:   2 openings, likelihood =   63253.71    
+ i, amp(i), length of gap that ends group=     1462 0.000000      4197.42    
+
+   732 open period =  0.570965    
+
+GROUP #    499:   1 openings, likelihood =   226.4263    
+ i, amp(i), length of gap that ends group=     1464 0.000000      2980.86    
+
+   733 open period =  0.189420    
+
+GROUP #    500:   1 openings, likelihood =   565.6280    
+ i, amp(i), length of gap that ends group=     1466 0.000000      3668.61    
+
+   734 open period =   12.7207    
+   735 open period =   1.19526    
+
+GROUP #    501:   2 openings, likelihood =   8204860.    
+ i, amp(i), length of gap that ends group=     1470 0.000000      4108.41    
+
+   736 open period =   4.94744    
+   737 open period =   2.30352    
+
+GROUP #    502:   2 openings, likelihood =   1818206.    
+ i, amp(i), length of gap that ends group=     1474 0.000000      29925.8    
+
+   738 open period =  0.180520    
+
+GROUP #    503:   1 openings, likelihood =   579.1322    
+ i, amp(i), length of gap that ends group=     1476 0.000000      5120.20    
+
+   739 open period =   3.69669    
+
+GROUP #    504:   1 openings, likelihood =   44.56051    
+ i, amp(i), length of gap that ends group=     1478 0.000000      6932.28    
+
+   740 open period =   36.7454    
+   741 open period =   3.71603    
+   742 open period =  0.121923    
+
+GROUP #    505:   3 openings, likelihood =  0.3247031E+09
+ i, amp(i), length of gap that ends group=     1484 0.000000      8106.44    
+
+   743 open period =   2.43619    
+   744 open period =  0.838324    
+
+GROUP #    506:   2 openings, likelihood =  0.1287261E+08
+ i, amp(i), length of gap that ends group=     1488 0.000000      1002.90    
+
+   745 open period =  0.599997    
+   746 open period =   1.41002    
+   747 open period =   8.00491    
+
+GROUP #    507:   3 openings, likelihood =  0.1763867E+13
+ i, amp(i), length of gap that ends group=     1494 0.000000      19074.1    
+
+   748 open period =   21.4454    
+   749 open period =   1.13530    
+   750 open period =   1.45835    
+
+GROUP #    508:   3 openings, likelihood =  0.1095723E+13
+ i, amp(i), length of gap that ends group=     1500 0.000000      1937.65    
+
+   751 open period =   12.6899    
+
+GROUP #    509:   1 openings, likelihood =   10.29173    
+ i, amp(i), length of gap that ends group=     1502 0.000000      1823.60    
+
+   752 open period =   1.55011    
+
+GROUP #    510:   1 openings, likelihood =   70.92378    
+ i, amp(i), length of gap that ends group=     1504 0.000000      1073.19    
+
+   753 open period =  0.331954    
+
+GROUP #    511:   1 openings, likelihood =   392.4200    
+ i, amp(i), length of gap that ends group=     1506 0.000000      2716.79    
+
+   754 open period =   1.51404    
+
+GROUP #    512:   1 openings, likelihood =   72.19274    
+ i, amp(i), length of gap that ends group=     1508 0.000000      118.251    
+
+   755 open period =   4.11121    
+
+GROUP #    513:   1 openings, likelihood =   41.64309    
+ i, amp(i), length of gap that ends group=     1510 0.000000      1023.97    
+
+   756 open period =  0.670668    
+
+GROUP #    514:   1 openings, likelihood =   185.3522    
+ i, amp(i), length of gap that ends group=     1512 0.000000      6368.46    
+
+   757 open period =  0.158882    
+
+GROUP #    515:   1 openings, likelihood =   613.5742    
+ i, amp(i), length of gap that ends group=     1514 0.000000      7558.33    
+
+   758 open period =   2.49956    
+   759 open period =   4.67547    
+   760 open period =   21.5120    
+   761 open period =   3.28433    
+
+GROUP #    516:   4 openings, likelihood =  0.1442699E+17
+ i, amp(i), length of gap that ends group=     1522 0.000000      7763.89    
+
+   762 open period =  0.157140    
+
+GROUP #    517:   1 openings, likelihood =   616.4499    
+ i, amp(i), length of gap that ends group=     1524 0.000000      3611.37    
+
+   763 open period =   16.2030    
+
+GROUP #    518:   1 openings, likelihood =   5.806367    
+ i, amp(i), length of gap that ends group=     1526 0.000000      1012.86    
+
+   764 open period =   2.44719    
+
+GROUP #    519:   1 openings, likelihood =   55.11051    
+ i, amp(i), length of gap that ends group=     1528 0.000000      2106.39    
+
+   765 open period =  0.175729    
+   766 open period =   13.3345    
+
+GROUP #    520:   2 openings, likelihood =   94301.77    
+ i, amp(i), length of gap that ends group=     1532 0.000000      2809.62    
+
+   767 open period =   1.92675    
+
+GROUP #    521:   1 openings, likelihood =   61.89264    
+ i, amp(i), length of gap that ends group=     1534 0.000000      1398.47    
+
+   768 open period =   7.18723    
+   769 open period =   2.24151    
+
+GROUP #    522:   2 openings, likelihood =  0.1227490E+08
+ i, amp(i), length of gap that ends group=     1538 0.000000      2690.16    
+
+   770 open period =   4.05652    
+
+GROUP #    523:   1 openings, likelihood =   42.01635    
+ i, amp(i), length of gap that ends group=     1540 0.000000      4502.53    
+
+   771 open period =   3.16633    
+
+GROUP #    524:   1 openings, likelihood =   48.62641    
+ i, amp(i), length of gap that ends group=     1542 0.000000      1063.96    
+
+   772 open period =   3.02633    
+
+GROUP #    525:   1 openings, likelihood =   49.77692    
+ i, amp(i), length of gap that ends group=     1544 0.000000      59.3637    
+
+   773 open period =   1.31060    
+
+GROUP #    526:   1 openings, likelihood =   81.73038    
+ i, amp(i), length of gap that ends group=     1546 0.000000      9459.48    
+
+   774 open period =  0.129219    
+
+GROUP #    527:   1 openings, likelihood =   664.7830    
+ i, amp(i), length of gap that ends group=     1548 0.000000      5195.21    
+
+   775 open period =   2.56954    
+
+GROUP #    528:   1 openings, likelihood =   53.87633    
+ i, amp(i), length of gap that ends group=     1550 0.000000      8230.30    
+
+   776 open period =   1.83973    
+
+GROUP #    529:   1 openings, likelihood =   63.48558    
+ i, amp(i), length of gap that ends group=     1552 0.000000      1120.87    
+
+   777 open period =   4.02594    
+
+GROUP #    530:   1 openings, likelihood =   42.22659    
+ i, amp(i), length of gap that ends group=     1554 0.000000      719.352    
+
+   778 open period =   10.4999    
+   779 open period =   7.82930    
+
+GROUP #    531:   2 openings, likelihood =   3073489.    
+ i, amp(i), length of gap that ends group=     1558 0.000000      90.6851    
+
+   780 open period =   2.58975    
+   781 open period =   5.08243    
+
+GROUP #    532:   2 openings, likelihood =  0.2341340E+08
+ i, amp(i), length of gap that ends group=     1562 0.000000      1398.32    
+
+   782 open period =   4.77982    
+
+GROUP #    533:   1 openings, likelihood =   37.34259    
+ i, amp(i), length of gap that ends group=     1564 0.000000      18023.2    
+
+   783 open period =  0.211405    
+
+GROUP #    534:   1 openings, likelihood =   533.8197    
+ i, amp(i), length of gap that ends group=     1566 0.000000      1415.55    
+
+   784 open period =   9.34776    
+   785 open period =  0.510450    
+
+GROUP #    535:   2 openings, likelihood =  0.1183539E+08
+ i, amp(i), length of gap that ends group=     1570 0.000000      5522.37    
+
+   786 open period =   5.37810    
+   787 open period =  0.581223    
+
+GROUP #    536:   2 openings, likelihood =  0.2320401E+08
+ i, amp(i), length of gap that ends group=     1574 0.000000      4377.72    
+
+   788 open period =   1.20926    
+   789 open period =   6.15600    
+   790 open period =  0.970897    
+
+GROUP #    537:   3 openings, likelihood =  0.8320354E+12
+ i, amp(i), length of gap that ends group=     1580 0.000000      13671.9    
+
+   791 open period =   13.6162    
+
+GROUP #    538:   1 openings, likelihood =   8.849957    
+ i, amp(i), length of gap that ends group=     1582 0.000000      7371.17    
+
+   792 open period =   4.83902    
+
+GROUP #    539:   1 openings, likelihood =   36.98411    
+ i, amp(i), length of gap that ends group=     1584 0.000000      9321.33    
+
+   793 open period =  0.330554    
+
+GROUP #    540:   1 openings, likelihood =   393.7856    
+ i, amp(i), length of gap that ends group=     1586 0.000000      509.320    
+
+   794 open period =   1.26241    
+
+GROUP #    541:   1 openings, likelihood =   84.77960    
+ i, amp(i), length of gap that ends group=     1588 0.000000      144.729    
+
+   795 open period =  0.103052    
+
+GROUP #    542:   1 openings, likelihood =   714.1940    
+ i, amp(i), length of gap that ends group=     1590 0.000000      3396.10    
+
+   796 open period =  0.338863    
+
+GROUP #    543:   1 openings, likelihood =   385.7682    
+ i, amp(i), length of gap that ends group=     1592 0.000000      835.300    
+
+   797 open period =   6.81648    
+
+GROUP #    544:   1 openings, likelihood =   26.79705    
+ i, amp(i), length of gap that ends group=     1594 0.000000      19549.5    
+
+   798 open period =   6.41707    
+   799 open period =   3.13505    
+
+GROUP #    545:   2 openings, likelihood =   7047464.    
+ i, amp(i), length of gap that ends group=     1598 0.000000      544.223    
+
+   800 open period =   5.77317    
+   801 open period =   2.20503    
+
+GROUP #    546:   2 openings, likelihood =  0.2212480E+08
+ i, amp(i), length of gap that ends group=     1602 0.000000      3042.82    
+
+   802 open period =   2.25388    
+
+GROUP #    547:   1 openings, likelihood =   57.26077    
+ i, amp(i), length of gap that ends group=     1604 0.000000      5987.03    
+
+   803 open period =   3.25927    
+   804 open period =  0.563288    
+
+GROUP #    548:   2 openings, likelihood =  0.1089946E+08
+ i, amp(i), length of gap that ends group=     1608 0.000000      581.259    
+
+   805 open period =   10.6945    
+
+GROUP #    549:   1 openings, likelihood =   14.24558    
+ i, amp(i), length of gap that ends group=     1610 0.000000      16677.7    
+
+   806 open period =   4.17177    
+
+GROUP #    550:   1 openings, likelihood =   41.23377    
+ i, amp(i), length of gap that ends group=     1612 0.000000      1834.88    
+
+   807 open period =   3.57250    
+
+GROUP #    551:   1 openings, likelihood =   45.47630    
+ i, amp(i), length of gap that ends group=     1614 0.000000      5872.55    
+
+   808 open period =   2.05722    
+
+GROUP #    552:   1 openings, likelihood =   59.83838    
+ i, amp(i), length of gap that ends group=     1616 0.000000      1653.33    
+
+   809 open period =   5.30753    
+
+GROUP #    553:   1 openings, likelihood =   34.26577    
+ i, amp(i), length of gap that ends group=     1618 0.000000      407.263    
+
+   810 open period =  0.762013    
+
+GROUP #    554:   1 openings, likelihood =   156.9771    
+ i, amp(i), length of gap that ends group=     1620 0.000000      6980.77    
+
+   811 open period =   2.47963    
+
+GROUP #    555:   1 openings, likelihood =   54.77537    
+ i, amp(i), length of gap that ends group=     1622 0.000000      2816.62    
+
+   812 open period =  0.658560    
+
+GROUP #    556:   1 openings, likelihood =   189.7186    
+ i, amp(i), length of gap that ends group=     1624 0.000000      7877.80    
+
+   813 open period =   1.91690    
+
+GROUP #    557:   1 openings, likelihood =   62.06290    
+ i, amp(i), length of gap that ends group=     1626 0.000000      484.722    
+
+   814 open period =   3.90786    
+
+GROUP #    558:   1 openings, likelihood =   43.04854    
+ i, amp(i), length of gap that ends group=     1628 0.000000      560.831    
+
+   815 open period =  0.245036    
+
+GROUP #    559:   1 openings, likelihood =   489.0772    
+ i, amp(i), length of gap that ends group=     1630 0.000000      550.591    
+
+   816 open period =   2.24447    
+   817 open period =   3.41715    
+
+GROUP #    560:   2 openings, likelihood =   2479306.    
+ i, amp(i), length of gap that ends group=     1634 0.000000      1927.56    
+
+   818 open period =   4.39589    
+   819 open period =   17.9939    
+
+GROUP #    561:   2 openings, likelihood =   1631507.    
+ i, amp(i), length of gap that ends group=     1638 0.000000      662.233    
+
+   820 open period =  0.590138    
+
+GROUP #    562:   1 openings, likelihood =   217.5579    
+ i, amp(i), length of gap that ends group=     1640 0.000000      2633.51    
+
+   821 open period =   22.7692    
+
+GROUP #    563:   1 openings, likelihood =   1.991979    
+ i, amp(i), length of gap that ends group=     1642 0.000000      191.292    
+
+   822 open period =   3.08767    
+
+GROUP #    564:   1 openings, likelihood =   49.26810    
+ i, amp(i), length of gap that ends group=     1644 0.000000      6294.09    
+
+   823 open period =   7.60048    
+   824 open period =   2.69464    
+
+GROUP #    565:   2 openings, likelihood =   2586723.    
+ i, amp(i), length of gap that ends group=     1648 0.000000      2441.61    
+
+   825 open period =   3.00002    
+
+GROUP #    566:   1 openings, likelihood =   49.99758    
+ i, amp(i), length of gap that ends group=     1650 0.000000      8160.81    
+
+   826 open period =   4.49154    
+
+GROUP #    567:   1 openings, likelihood =   39.13894    
+ i, amp(i), length of gap that ends group=     1652 0.000000      60.7534    
+
+   827 open period =   7.38964    
+   828 open period =   5.41897    
+
+GROUP #    568:   2 openings, likelihood =   1424985.    
+ i, amp(i), length of gap that ends group=     1656 0.000000      686.369    
+
+   829 open period =   3.21632    
+   830 open period =   5.06766    
+   831 open period =   3.91915    
+
+GROUP #    569:   3 openings, likelihood =  0.2759108E+13
+ i, amp(i), length of gap that ends group=     1662 0.000000      1815.56    
+
+   832 open period =   3.53277    
+
+GROUP #    570:   1 openings, likelihood =   45.77364    
+ i, amp(i), length of gap that ends group=     1664 0.000000      3649.33    
+
+   833 open period =  0.409698    
+
+GROUP #    571:   1 openings, likelihood =   324.9719    
+ i, amp(i), length of gap that ends group=     1666 0.000000      9108.27    
+
+   834 open period =   1.07115    
+   835 open period =  0.750990    
+   836 open period =   9.77676    
+
+GROUP #    572:   3 openings, likelihood =  0.4345257E+13
+ i, amp(i), length of gap that ends group=     1672 0.000000      3821.34    
+
