@@ -1,3 +1,0 @@
-K.scn
-200 microM glycine recording; cell-attached;  Vp -50 mV (positive Vm)
-30 microsec resolution; tcrit 1000 ms (HJCFIT gets 1 cluster); not CHS vectors

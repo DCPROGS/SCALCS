@@ -72,16 +72,16 @@ def get_periods(fper):
 
 
 # Burzomato A-10.scn
-#scn = [["../samples/glydemo/A-10.scn"], 10e-6, 30e-6, 4e-3, True]
-#fnames = ["../samples/Burzomato/Ares.txt", "../samples/Burzomato/Aper.txt"]
+scn = [["../samples/glydemo/A-10.scn"], 10e-6, 30e-6, 4e-3, True]
+fnames = ["../samples/Burzomato/Ares.txt", "../samples/Burzomato/Aper.txt"]
 
 # CH82 simulated data CH82.scn
 #scn = [["../samples/CH82/CH82.scn"], 100e-9, 100e-6, 4e-3, True]
 #fnames = ["../samples/CH82/CH82br100res.txt", "../samples/CH82/CH82br100per.txt"]
 
 # patch K
-scn = [["../samples/K.scn"], 200e-6, 30e-6, 1000e-3, False]
-fnames = ["../samples/Kres.txt", "../samples/Kper.txt"]
+#scn = [["../samples/K.scn"], 200e-6, 20e-6, 1000e-3, False]
+#fnames = ["../samples/Kres.txt", "../samples/Kper.txt"]
 
 
 # scnfile, conc, tres, tcrit, CHS
@@ -93,16 +93,29 @@ ptint, pampl, popts = get_periods(fnames[1])
 
 print "\nLength of lists:"
 print "\tHJCFIT\tDCPYPS"
-print "all\t{0:d}\t{1:d}".format(len(tint), len(rec.itint))
+
+print "\nall\t{0:d}\t{1:d}".format(len(tint), len(rec.itint))
 print "HJCFIT: last five:", tint[-5:], ampl[-5:]
 print "DCPYPS: last five:", rec.itint[-5:], rec.iampl[-5:]
-print "res\t{0:d}\t{1:d}".format(len(rtint), len(rec.rint))
-print rtint[-2:], rampl[-2:]
-print rec.rint[-2:], rec.ramp[-2:]
-print "per\t{0:d}\t{1:d}".format(len(ptint), len(rec.pint))
-print "HJCFIT: last three:", ptint[-3:], pampl[-3:]
-print "DCPYPS: last three:", rec.pint[-3:], rec.pamp[-3:]
+print "HJCFIT: first five:", tint[:5], ampl[:5]
+print "DCPYPS: first five:", rec.itint[:5], rec.iampl[:5]
 
-compare_lists(tint, ampl, rec.itint, rec.iampl)
-#compare_lists(rtint, rampl, rec.rtint, rec.rampl)
-#compare_lists(ptint, pampl, rec.pint, rec.pamp)
+print "\nres\t{0:d}\t{1:d}".format(len(rtint), len(rec.rint))
+print "HJCFIT: first five:", rtint[:5], rampl[:5]
+print "DCPYPS: first five:", rec.rint[:5], rec.ramp[:5]
+print "HJCFIT: last five:", rtint[-5:], rampl[-5:]
+print "DCPYPS: last five:", rec.rint[-5:], rec.ramp[-5:]
+
+print "\nper\t{0:d}\t{1:d}".format(len(ptint), len(rec.pint))
+print "HJCFIT: first five:", ptint[:5], pampl[:5]
+print "DCPYPS: first five:", rec.pint[:5], rec.pamp[:5]
+print "HJCFIT: last five:", ptint[-5:], pampl[-5:]
+print "DCPYPS: last five:", rec.pint[-5:], rec.pamp[-5:]
+
+#compare_lists(tint, ampl, rec.itint, rec.iampl)
+#compare_lists(rtint, rampl, rec.rint, rec.ramp)
+compare_lists(ptint, pampl, rec.pint, rec.pamp)
+
+#rec.print_resolved_intervals()
+#rec.print_resolved_periods()
+rec.print_bursts()

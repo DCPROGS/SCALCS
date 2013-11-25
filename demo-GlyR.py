@@ -32,7 +32,7 @@ for i in range(len(scnfiles)):
     rec.printout()
 
 # LOAD FLIP MECHANISM USED Burzomato et al 2004
-mecfn = "./dcpyps/samples/demomec.mec"
+mecfn = "./dcpyps/samples/mec/demomec.mec"
 version, meclist, max_mecnum = dcio.mec_get_list(mecfn)
 mec = dcio.mec_load(mecfn, meclist[2][0])
 

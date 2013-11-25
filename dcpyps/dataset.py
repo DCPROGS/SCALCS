@@ -46,7 +46,8 @@ class SCRecord(object):
         ioffset, nint, calfac, header = dcio.scn_read_header(self.filenames[0])
         self.itint, self.iampl, self.iprops = dcio.scn_read_data(
             self.filenames[0], header)
-#        self.record_type = '' # TODO: get from header if simulated or scanned
+        if header['iscanver'] == -103:
+            self.record_type = 'simulated'
 
     def simulate_record(self, mec, tres, state, opamp=5, nintmax=5000):
         """
@@ -70,7 +71,7 @@ class SCRecord(object):
         self.ropt = self.iprops
         self.resolution_imposed = True
         self.tres = tres
-        self.record_type = 'simulated locally'
+        self.record_type = 'simulated'
 
     def next_state(self, present, picum, tmean, kA, opamp):
         """
@@ -89,7 +90,7 @@ class SCRecord(object):
     def print_resolved_intervals(self):
         print('\n#########\nList of resolved intervals:\n')
         for i in range(len(self.rint)):
-            print i, self.rint[i], self.ramp[i], self.ropt[i]
+            print i+1, self.rint[i]*1000, self.ramp[i], self.ropt[i]
             if (self.ramp[i] == 0) and (self.rint[i] > (self.tcrit)):
                 print ('\n')
         print('\n###################\n\n')
@@ -98,12 +99,12 @@ class SCRecord(object):
         print 'tcrit=', self.tcrit
         print('\n#########\nList of resolved periods:\n')
         for i in range(len(self.pint)):
-            print i, self.pint[i], self.pamp[i], self.popt[i]
+            print i+1, self.pint[i], self.pamp[i], self.popt[i]
             if self.pamp[i] == 0 and self.pint[i] > self.tcrit:
                 print ('\n')
         print('\n###################\n\n')
         
-    def impose_resolution(self, tres):
+    def impose_resolution(self, tres, acrit=0):
         """
         Impose time resolution.
 
@@ -124,62 +125,116 @@ class SCRecord(object):
         be bad (in which case all group will be bad).
         """
         
-        # If last interval is shut, then set it as unusable.
-        if self.iampl[-1] == 0: self.iprops[-1] = 8
-        # Check for negative intervals and set them unusable.
         for i in range(len(self.itint)):
             if self.itint[i] < 0: self.iprops[i] = 8
             
         # Find first resolvable and usable interval.
         n = 0
         firstResolved = False
+        if ((self.itint[n] > tres) and (self.iprops[n] != 8)):
+            firstResolved = True
+        else:
+            n += 1
+            
         while not firstResolved:
-            if ((self.itint[n] > tres) and (self.iprops[n] != 8)): # and
-                #(self.itint[n-1] > tres) and (self.iprops[n-1] != 8)):
-                firstResolved = True # first interval is usable and resolvable
+            if ((self.itint[n] > tres) and (self.iprops[n] != 8) and
+#                (self.iampl[n] != 0) and 
+                (self.itint[n-1] > tres) and (self.iprops[n-1] != 8)):
+                    firstResolved = True # first interval is usable and resolvable
             else:
                 n += 1
-        # TODO: check if preceeding interval is resolvable and not bad.
         
-        rtint, rampl, rprops = [self.itint[n]], [self.iampl[n]], [self.iprops[n]]
-        ttemp, aavtemp = rtint[-1], rampl[-1] * rtint[-1]
+        rtint, rampl, rprops = [], [], []
+        ttemp, otemp = self.itint[n], self.iprops[n]
+        if (self.iampl[n] == 0):
+            atemp = 0
+        elif self.record_type == 'simulated':
+            atemp = self.iampl[n]
+        else:
+            atemp = self.iampl[n] * self.itint[n]
+        isopen = True if (self.iampl[n] != 0) else False
+        n += 1
         
         # Start looking for unresolvable intervals.
-        n += 1
-        while n < (len(self.itint)-1):
-
-            if self.itint[n] < tres:
-                rtint[-1] += self.itint[n]
-            else:
-                if ((self.iampl[n] == 0) and (rampl[-1] == 0)):
-                    rtint[-1] += self.itint[n]
+        while n < (len(self.itint)):
+            if self.itint[n] < tres: # interval is unresolvable
+            
+                if (len(self.itint) == n + 1) and self.iampl[n] == 0 and isopen:
+                    rtint.append(ttemp)
+                    if self.record_type == 'simulated':
+                        rampl.append(atemp)
+                    else:
+                        rampl.append(atemp / ttemp)
+                    rprops.append(otemp)
+                    isopen = False
+                    ttemp = self.itint[n]
+                    atemp = 0
+                    otemp = 8
+                    
                 else:
-#                    if self.iprops[n] == 4:
-#                        if (self.iampl[n] != 0) and (self.iampl[-1] != 0):
-#                            rtint[-1] += self.itint[n]
-#    #                if (self.iampl[n] != 0) and (self.iprops[n-1] == 4) and (self.iampl[-1] != 0):
-#    #                    rtint[-1] += self.itint[n]
-#                    else:
-                    rtint.append(self.itint[n])
-                    rampl.append(self.iampl[n])
-                    rprops.append(self.iprops[n])
-
-            if self.iprops[n] == 8:
-                rprops[-1] = 8
+                    ttemp += self.itint[n]
+                    if self.iprops[n] == 8: otemp = self.iprops[n]
+                    if isopen: #self.iampl[n] != 0:
+                        atemp += self.iampl[n] * self.itint[n]
+                
+            else:
+                if (self.iampl[n] == 0): # next interval is resolvable shutting
+                    if not isopen: # previous interval was shut
+                        ttemp += self.itint[n]
+                        if self.iprops[n] == 8: otemp = self.iprops[n]
+                    else: # previous interval was open
+                        rtint.append(ttemp)
+                        if self.record_type == 'simulated':
+                            rampl.append(atemp)
+                        else:
+                            rampl.append(atemp / ttemp)
+                        rprops.append(otemp)
+                        ttemp = self.itint[n]
+                        otemp = self.iprops[n]
+                        isopen = False
+                else: # interval is resolvable opening
+                    if not isopen:
+                        rtint.append(ttemp)
+                        rampl.append(0)
+                        rprops.append(otemp)
+                        ttemp, otemp = self.itint[n], self.iprops[n]
+                        if self.record_type == 'simulated':
+                            atemp = self.iampl[n]
+                        else:
+                            atemp = self.iampl[n] * self.itint[n]
+                        isopen = True
+                    else: # previous was open
+                        if self.record_type == 'simulated':
+                            ttemp += self.itint[n]
+                            if self.iprops[n] == 8: otemp = self.iprops[n]
+                        elif (math.fabs((atemp / ttemp) - self.iampl[n]) <= 1.e-5):
+                            ttemp += self.itint[n]
+                            atemp += self.iampl[n] * self.itint[n]
+                            if self.iprops[n] == 8: otemp = self.iprops[n]
+                        else:
+                            rtint.append(ttemp)
+                            rampl.append(atemp / ttemp)
+                            rprops.append(otemp)
+                            ttemp, otemp = self.itint[n], self.iprops[n]
+                            atemp = self.iampl[n] * self.itint[n]
+                       
             n += 1
         # end of while
-        
-        # TODO: check if the very last interval is closed or open.
-        if rampl[0] == 0:
-            rtint.pop(0)
-            rampl.pop(0)
-            rprops.pop(0)
 
-        if rampl[-1] != 0:
-            rtint.pop()
-            rampl.pop()
-            rprops.pop()
-        
+        # add last interval
+        if isopen:
+            rtint.append(-1)
+        else:
+            rtint.append(ttemp)
+        rprops.append(8)
+        if isopen:
+            if self.record_type == 'simulated':
+                rampl.append(atemp)
+            else:
+                rampl.append(atemp / ttemp)
+        else:
+            rampl.append(0)
+                      
         self.rint, self.ramp, self.ropt = rtint, rampl, rprops
         self.resolution_imposed = True
         self.tres = tres
@@ -209,6 +264,11 @@ class SCRecord(object):
             self.rint.pop()
             self.ramp.pop()
             self.ropt.pop()
+        if self.ramp[0] == 0:
+            self.rint.pop(0)
+            self.ramp.pop(0)
+            self.ropt.pop(0)
+        
         n = 1
         oint, oamp, oopt = self.rint[0], self.ramp[0], self.ropt[0]
         while n < len(self.rint):
@@ -254,11 +314,11 @@ class SCRecord(object):
         (5) No listing of the individual bursts.
         """
 
-        if self.pamp[0] == 0:
-            i = 1
-        else:
-            i = 0
-            
+        
+
+        #i = 1 if self.pamp[0] == 0 else 0
+        i = 0 
+        
         bursts = []
         burst = []
 
@@ -302,7 +362,9 @@ class SCRecord(object):
     def print_bursts(self):
         print('\n#####\nList of bursts:\n')
         for ind in range(len(self.bursts)):
-            print '{0:d} '.format(ind), self.bursts[ind]
+            print ('{0:d} length {1:.6f} openings {2:d} :: '.
+                format(ind+1, np.sum(self.bursts[ind]), (len(self.bursts[ind])+1)/2),
+                self.bursts[ind])
         print('\n###############\n\n')
         
     def set_tres(self, tres):

@@ -30,7 +30,7 @@ def main():
     conc = 100e-9
 
     # LOAD DATA.
-    filename = "./dcpyps/samples/CH82.scn"
+    filename = "./dcpyps/samples/scn/CH82.scn"
     rec1 = dataset.SCRecord([filename], conc, tres, tcrit)
     rec1.record_type = 'recorded'
     rec1.printout()

@@ -21,7 +21,7 @@ from dcprogs.likelihood import Log10Likelihood
 def main():
 
     # LOAD MECHANISM USED IN COLQUHOUN et al 2003.
-    mecfn = "./dcpyps/samples/demomec.mec"
+    mecfn = "./dcpyps/samples/mec/demomec.mec"
     version, meclist, max_mecnum = dcio.mec_get_list(mecfn)
     mec = dcio.mec_load(mecfn, meclist[1][0])
 
@@ -31,7 +31,7 @@ def main():
     conc = 50e-9
 
     # LOAD DATA.
-    filename = "./dcpyps/samples/AChsim.scn"
+    filename = "./dcpyps/samples/scn/AChsim.scn"
     rec1 = dataset.SCRecord([filename], conc, tres, tcrit)
     rec1.record_type = 'recorded'
     rec1.printout()

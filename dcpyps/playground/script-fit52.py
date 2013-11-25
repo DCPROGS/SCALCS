@@ -21,8 +21,8 @@ str3 = "Machine: %s; System: %s\n" %(machine, system)
 
 
 # LOAD DATA.
-scnfiles = [["../samples/G.SCN"], ["../samples/P.SCN"],
-    ["../samples/O.SCN"], ["../samples/N.SCN"]]
+scnfiles = [["../samples/scn/G.SCN"], ["../samples/scn/P.SCN"],
+    ["../samples/scn/O.SCN"], ["../samples/scn/N.SCN"]]
 tres = [0.000040, 0.000035, 0.000035, 0.000030]
 tcrit = [0.01, 0.01, -0.1, -0.1]
 conc = [500e-6, 1e-3, 5e-3, 10e-3]
@@ -39,7 +39,7 @@ for i in range(len(scnfiles)):
 
 
 # LOAD FLIP MECHANISM USED Burzomato et al 2004
-mecfn = "./ke10.mec"
+mecfn = "../samples/mec/ke10.mec"
 version, meclist, max_mecnum = dcio.mec_get_list(mecfn)
 mec = dcio.mec_load(mecfn, meclist[10][0])
 #mec.printout(sys.stdout)
