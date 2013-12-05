@@ -24,7 +24,10 @@ class SCRecord(object):
         self.iampl = iampl
         self.iprops = iprops
         self.tres = tres
-        self.tcrit = math.fabs(tcrit)
+        if tcrit:
+            self.tcrit = math.fabs(tcrit)
+        else:
+            self.tcrit = tcrit
         self.conc = conc
         self.chs = chs # CHS vectors: yes or no
         self.onechan = onechan # opening from one channel only?
@@ -32,6 +35,8 @@ class SCRecord(object):
 
         self.record_type = None
         self.resolution_imposed = False
+
+        self.bursts = []
         
         if self.filenames and self.tres and self.tcrit:
             self.load_from_file()
@@ -53,9 +58,10 @@ class SCRecord(object):
         """
         """
         picum = np.cumsum(scl.transition_probability(mec.Q), axis=1)
-        tmean = -1 / mec.Q.diagonal() # in ms
+        tmean = -1 / mec.Q.diagonal() # in s
         itint = [random.expovariate(1 / tmean[state])]
         iampl = [opamp if state < mec.kA else 0]
+        iprops = [0]
         while len(itint) < nintmax:
             state, t, a = self.next_state(state, picum, tmean, mec.kA, opamp)
             if t < tres or a == iampl[-1]:
@@ -63,15 +69,18 @@ class SCRecord(object):
             else:
                 itint.append(t)
                 iampl.append(a)
-        self.itint = np.array(itint, dtype=np.float)
-        self.iampl = np.array(iampl, dtype=np.int16)
-        self.iprops = np.zeros((len(itint)), dtype=np.int8)
+                iprops.append(0)
+        self.itint = itint
+        self.iampl = iampl
+        self.iprops = iprops
         self.rint = self.itint
         self.ramp = self.iampl
         self.ropt = self.iprops
         self.resolution_imposed = True
         self.tres = tres
         self.record_type = 'simulated'
+        self.get_periods()
+#        self.get_bursts(self.tcrit)
 
     def next_state(self, present, picum, tmean, kA, opamp):
         """
@@ -389,7 +398,10 @@ class SCRecord(object):
     def __repr__(self):
         
         str_repr = '\n\n Data loaded from file: '
-        str_repr += self.filenames[0]
+        if self.filenames:
+            str_repr += self.filenames[0]
+        else:
+            str_repr += "no file name; probably this is simulated record."
         
 #        if self.record_type:
 #            str_repr += '\n'

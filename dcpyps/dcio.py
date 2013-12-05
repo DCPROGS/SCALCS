@@ -1659,7 +1659,9 @@ def scn_write_simulated(intervals, amplitudes, treso=0.0, tresg=0.0,
     fout.write(struct.pack('f', tresg))
 
     for i in range(0, nint):
-        fout.write(struct.pack('f', intervals[i]))
+        # simulated intervals are in seconds
+        # convert to ms; intervals in scn files are kept in ms
+        fout.write(struct.pack('f', intervals[i]*1000))
     for i in range(0, nint):
         fout.write(struct.pack('h', amplitudes[i]))
     for i in range(0, nint):

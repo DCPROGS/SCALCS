@@ -130,36 +130,41 @@ class SCDataMenu(QMenu):
         """
         self.parent.log.write('\n\n\t==== SIMULATING SINGLE CHANNEL RECORD ====')
 
-        tres, conc, oamp, nint = 10e-6, 1e-6, 5, 5000
-        dialog = SimRecDlg(self, tres, conc, oamp, nint)
-        if dialog.exec_():
-            tres, conc, oamp, nint = dialog.return_par()
+        if not self.parent.mec:
+            dialog = MecWarningDlg(self)
+            if dialog.exec_():
+                pass
+        else:
+            tres, conc, oamp, nint = 10e-6, 1e-6, 5, 5000
+            dialog = SimRecDlg(self, tres, conc, oamp, nint)
+            if dialog.exec_():
+                tres, conc, oamp, nint = dialog.return_par()
 
-        rec = dataset.SCRecord()
-        #TODO: check if mechanism is loaded if not tell to load one.
-        self.parent.mec.set_eff('c', conc)
-        startstate = self.parent.mec.k - 1 # TODO: ask for this in dialog
-        rec.simulate_record(self.parent.mec, tres, startstate, oamp, nint)
-        self.parent.log.write("\nSimulation finished")
-        self.parent.log.write('{0:d}'.format(len(rec.itint)) +
-            ' intervals were simulated')
-        rec.record_type = 'simulated'
-        rec.get_open_shut_periods()
-        #TODO: get bursts
-        
-        self.parent.recs.append(rec)
-        scnfile = [self.saveSCNfile()]
-        self.parent.scnfiles.append(scnfile)
-        self.parent.data_loaded = True
-        
+            rec = dataset.SCRecord()
+            #TODO: check if mechanism is loaded if not tell to load one.
+            self.parent.mec.set_eff('c', conc)
+            startstate = self.parent.mec.k - 1 # TODO: ask for this in dialog
+            rec.simulate_record(self.parent.mec, tres, startstate, oamp, nint)
+            self.parent.log.write("\nSimulation finished")
+            self.parent.log.write('{0:d}'.format(len(rec.itint)) +
+                ' intervals were simulated')
+            rec.record_type = 'simulated'
+            rec.printout(self.parent.log)
+            #TODO: get bursts
 
+            self.parent.recs.append(rec)
+            scnfile = [self.saveSCNfile()]
+            self.parent.scnfiles.append(scnfile)
+            self.parent.data_loaded = True
+
+        
     def saveSCNfile(self):
         saveSCNFilename, filt = QFileDialog.getSaveFileName(self,
                 "Save as SCN file...", self.parent.path, ".scn",
                 "SCN files (*.scn)")
         self.parent.path = os.path.split(str(saveSCNFilename))[0]
 
-        dcio.scn_write_simulated(self.parent.recs[0].itint, 
+        dcio.scn_write_simulated(self.parent.recs[0].itint,
             self.parent.recs[0].iampl, filename=saveSCNFilename)
 
         self.parent.log.write('Current single channel record saved in SCN file:')
@@ -177,7 +182,7 @@ class SCDataMenu(QMenu):
             format(len(self.rec1.rtint)))
         self.resolution_imposed = True
         self.rec1.get_open_shut_periods()
-        
+
 ##    Calculate false event rate
 #        if self.data_loaded:
 #            falsrate = dataset.false_events(self.tres,
@@ -621,6 +626,25 @@ class SimRecDlg(QDialog):
         Return parameter dictionary on exit.
         """
         return self.tres, self.conc, self.oamp, self.nint
+
+class MecWarningDlg(QDialog):
+    def __init__(self, parent=None):
+        super(MecWarningDlg, self).__init__(parent)
+
+        layoutMain = QVBoxLayout()
+        layoutMain.addWidget(QLabel("Please, load mechanism first!"))
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+
+        self.setLayout(layoutMain)
+        self.setWindowTitle("Warning...")
+
 
 class TcritDlg(QDialog):
     """
