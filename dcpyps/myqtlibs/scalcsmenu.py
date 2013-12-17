@@ -54,14 +54,13 @@ class ScalcsMenu(QMenu):
         """
 
         self.parent.txtPltBox.clear()
+        dialog = myqtcommon.ResDlg(self, self.parent.tres)
+        if dialog.exec_():
+            self.parent.tres = dialog.return_par()
         str = ('\t===== Popen PLOT =====\n' +
             'Resolution = {0:.5g} mikrosec\n'.format(self.parent.tres * 1000000) +
             'Ideal curve- red dashed line. \nHJC curve- blue solid line.\n')
         self.parent.txtPltBox.append(str)
-        
-        dialog = myqtcommon.ResDlg(self, self.parent.tres)
-        if dialog.exec_():
-            self.parent.tres = dialog.return_par()
 
         popen.printout(self.parent.mec, self.parent.tres, output=self.parent.log)
         c, pe, pi = scpl.Popen(self.parent.mec, self.parent.tres)
@@ -80,6 +79,9 @@ class ScalcsMenu(QMenu):
         """
 
         self.parent.txtPltBox.clear()
+        dialog = myqtcommon.ConcDlg(self, self.parent.conc)
+        if dialog.exec_():
+            self.parent.conc = dialog.return_par()
         str = ('\t===== OPEN, SHUT, OPEN/SHUT CORRELATION PLOTS =====\n' +
             'Agonist concentration = {0:.5g} mikroM\n'.
             format(self.parent.conc * 1000000) +
@@ -87,10 +89,7 @@ class ScalcsMenu(QMenu):
             'Open time correlation - green circles\n' +
             'Open-shut time correlation - blue circles')
         self.parent.txtPltBox.append(str)
-        
-        dialog = myqtcommon.ConcDlg(self, self.parent.conc)
-        if dialog.exec_():
-            self.parent.conc = dialog.return_par()
+
         self.parent.mec.set_eff('c', self.parent.conc)
         scl.printout_correlations(self.parent.mec, output=self.parent.log)
         # TODO: need dialog to enter lag value. 
@@ -111,16 +110,16 @@ class ScalcsMenu(QMenu):
         Display open time adjacent to shut time range pdf.
         """
         self.parent.txtPltBox.clear()
+        dialog = myqtcommon.ConcDlg(self, self.parent.conc)
+        if dialog.exec_():
+            self.parent.conc = dialog.return_par()
         str = ('\t===== OPEN TIME ADJACENT TO SHUT TIME RANGE PDF =====\n' +
             'Agonist concentration = {0:.5g} mikroM\n'.
             format(self.parent.conc * 1000000) +
             'Ideal open time pdf- red dashed line.\n' +
             'Open times adjacent to shut time range pdf- blue solid line.\n')
         self.parent.txtPltBox.append(str)
-        
-        dialog = myqtcommon.ConcDlg(self, self.parent.conc)
-        if dialog.exec_():
-            self.parent.conc = dialog.return_par()
+
         self.parent.mec.set_eff('c', self.parent.conc)
         # TODO: need dialog to enter lag value. 
         dialog = myqtcommon.ShutRangeDlg(self)
@@ -144,6 +143,9 @@ class ScalcsMenu(QMenu):
         Display mean open time preceding / next-to shut time plot.
         """
         self.parent.txtPltBox.clear()
+        dialog = myqtcommon.ConcResDlg(self, self.parent.conc, self.parent.tres)
+        if dialog.exec_():
+            self.parent.conc, self.parent.tres = dialog.return_par()
         str = ('\t===== MEAN OPEN TIME PRECEDING / NEXT TO SHUT TIME =====\n' +
             'Agonist concentration = {0:.5g} mikroM\n'.
             format(self.parent.conc * 1000000) +
@@ -151,9 +153,6 @@ class ScalcsMenu(QMenu):
             'Mean open time next to specified shut time- blue dashed line.')
         self.parent.txtPltBox.append(str)
 
-        dialog = myqtcommon.ConcResDlg(self, self.parent.conc, self.parent.tres)
-        if dialog.exec_():
-            self.parent.conc, self.parent.tres = dialog.return_par()
         self.parent.mec.set_eff('c', self.parent.conc)
         sht, mp, mn = scpl.mean_open_next_shut(self.parent.mec, self.parent.tres)
         self.parent.present_plot = np.vstack((sht, mp, mn))
@@ -171,16 +170,16 @@ class ScalcsMenu(QMenu):
         """
         
         self.parent.txtPltBox.clear()
+        dialog = myqtcommon.ConcDlg(self, self.parent.conc)
+        if dialog.exec_():
+            self.parent.conc = dialog.return_par()
         str = ('\t===== DEPENDENCY PLOT =====\n' +
             'Agonist concentration = {0:.5g} mikroM'.
             format(self.parent.conc * 1000000) +
             'Resolution = {0:.5g} mikrosec'.format(self.parent.tres * 1000000) +
             'X and Y axis are in ms')
         self.parent.txtPltBox.append(str)
-        
-        dialog = myqtcommon.ConcDlg(self, self.parent.conc)
-        if dialog.exec_():
-            self.parent.conc = dialog.return_par()
+
         self.parent.mec.set_eff('c', self.parent.conc)
         to, ts, d = scpl.dependency_plot(self.parent.mec, self.parent.tres, points=128)
         
@@ -213,7 +212,11 @@ class ScalcsMenu(QMenu):
         """
         Display open time probability density function.
         """
+
         self.parent.txtPltBox.clear()
+        dialog = myqtcommon.ConcResDlg(self, self.parent.conc, self.parent.tres)
+        if dialog.exec_():
+            self.parent.conc, self.parent.tres = dialog.return_par()
         str = ('\t===== OPEN TIME PDF =====\n' +
             'Agonist concentration = {0:.5g} mikroM\n'.
             format(self.parent.conc * 1000000) +
@@ -222,10 +225,7 @@ class ScalcsMenu(QMenu):
             'Exact pdf- blue solid line.\n' +
             'Asymptotic pdf- green solid line.')
         self.parent.txtPltBox.append(str)
-        
-        dialog = myqtcommon.ConcResDlg(self, self.parent.conc, self.parent.tres)
-        if dialog.exec_():
-            self.parent.conc, self.parent.tres = dialog.return_par()
+
         self.parent.mec.set_eff('c', self.parent.conc)
 
         try:
@@ -249,7 +249,10 @@ class ScalcsMenu(QMenu):
     def onPlotSubsetTimePDF(self):
         """
         """
-
+        
+        dialog = myqtcommon.ConcDlg(self, self.parent.conc)
+        if dialog.exec_():
+            self.parent.conc = dialog.return_par()
         self.parent.txtPltBox.clear()
         str = ('\t===== SUBSET TIME PDF =====\n' +
             'Agonist concentration = {0:.5g} mikroM\n'.
@@ -259,10 +262,7 @@ class ScalcsMenu(QMenu):
             'Ideal pdf- red dashed line.\n' +
             'Subset life time pdf- blue solid line.')
         self.parent.txtPltBox.append(str)
-        
-        dialog = myqtcommon.ConcDlg(self, self.parent.conc)
-        if dialog.exec_():
-            self.parent.conc = dialog.return_par()
+
         self.parent.mec.set_eff('c', self.parent.conc)
         # TODO: need dialog to enter state1 and state2
         state1 = 8
@@ -285,6 +285,9 @@ class ScalcsMenu(QMenu):
         """
 
         self.parent.txtPltBox.clear()
+        dialog = myqtcommon.ConcResDlg(self, self.parent.conc, self.parent.tres)
+        if dialog.exec_():
+            self.parent.conc, self.parent.tres = dialog.return_par()
         str = ('\t===== SHUT TIME PDF =====\n' +
             'Agonist concentration = {0:.5g} mikroM\n'.
             format(self.parent.conc * 1000000) +
@@ -294,10 +297,6 @@ class ScalcsMenu(QMenu):
             'Exact pdf- blue solid line.\n' +
             'Asymptotic pdf- green solid line.')
         self.parent.txtPltBox.append(str)
-        
-        dialog = myqtcommon.ConcResDlg(self, self.parent.conc, self.parent.tres)
-        if dialog.exec_():
-            self.parent.conc, self.parent.tres = dialog.return_par()
 
         self.parent.mec.set_eff('c', self.parent.conc)
         scl.printout_tcrit(self.parent.mec, output=self.parent.log)
