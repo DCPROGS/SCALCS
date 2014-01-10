@@ -157,8 +157,8 @@ class MechMenu(QMenu):
         self.parent.mec = yaml.load(stream)
 
         self.modifyMec(self.parent.mec, self.parent.log)
-#        self.parent.log.write("Loaded mec: " + meclist[nrate][2])
-#        self.parent.log.write("Loaded rates: " + meclist[nrate][3] + "\n")
+        self.parent.log.write("Loaded mec: " + self.parent.mec.mtitle)
+        self.parent.log.write("Loaded rates: " + self.parent.mec.rtitle + "\n")
         self.parent.mec.printout(self.parent.log)
 
     #######################

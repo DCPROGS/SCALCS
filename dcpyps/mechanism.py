@@ -457,15 +457,17 @@ class Mechanism(object):
     Represents a kinetic mechanism / scheme.
     '''
 
-    def __init__(self, Rates, Cycles=[], fastblk=False, KBlk=None):
+    def __init__(self, Rates, Cycles=[], fastblk=False, KBlk=None,
+        mtitle='', rtitle=''):
 
         self.Rates = Rates
 
         # TODO: construct cycles from Rates list
 #        self.ncyc = ncyc   # number of cycles; could be deduced from the rates!
         self.Cycles = Cycles
-        #self.check_mr()
-#        self.update_mr()
+
+        self.mtitle = mtitle
+        self.rtitle = rtitle
 
         # construct States end effectors from Rates:
         self.States = []

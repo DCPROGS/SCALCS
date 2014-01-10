@@ -472,7 +472,8 @@ def mec_load(mecfile, start):
             CycleStates.append(statenames[im[i, j]-1])
         CycleList.append(dcpyps.Cycle(CycleStates))
 
-    return dcpyps.Mechanism(RateList, CycleList)
+    return dcpyps.Mechanism(RateList, CycleList,
+        mtitle=mectitle, rtitle=ratetitle)
 
 def mec_load_from_prt(filename, verbose=False):    
     f = open(filename, 'r')
@@ -975,7 +976,7 @@ def mod_load(file):
                         name='k'+str(newstates.index(newstates[i]+5))+str(i),
                         eff=bound))
 
-    return dcpyps.Mechanism(RateList), modtitle
+    return dcpyps.Mechanism(RateList, mtitle=modtitle), modtitle
 
 def scn_read_header (fname):
     """

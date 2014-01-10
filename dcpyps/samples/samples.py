@@ -28,7 +28,7 @@ def CH82():
     fastblk = False
     KBlk = 0.001
 
-    return  dcpyps.Mechanism(RateList, CycleList) #, fastblk, KBlk)
+    return  dcpyps.Mechanism(RateList, CycleList, mtitle='CH82', rtitle='CH82 numerical example') #, fastblk, KBlk)
 
 def CCO():
 
@@ -43,7 +43,7 @@ def CCO():
          dcpyps.Rate(5.0e08, R, AR, name='kon', eff='c', limits=[1e-15,1e+10]),
          ]
 
-    return  dcpyps.Mechanism(RateList)
+    return  dcpyps.Mechanism(RateList, mtitle='C-C-O', rtitle='quasi random numbers')
 
 def CO():
 
@@ -55,7 +55,7 @@ def CO():
          dcpyps.Rate(50.0, RS, R, name='alpha', limits=[1e-15,1e+7]),
          ]
 
-    return  dcpyps.Mechanism(RateList)
+    return  dcpyps.Mechanism(RateList, mtitle='C-O', rtitle='quasi random numbers')
 
 def six_cycles_mec():
 
@@ -109,4 +109,4 @@ def six_cycles_mec():
          dcpyps.Rate(25.0, L, K, name='lk')
         ]
 
-    return  dcpyps.Mechanism(RateList)
+    return  dcpyps.Mechanism(RateList, mtitle='six cycles', rtitle='quasi random numbers')
