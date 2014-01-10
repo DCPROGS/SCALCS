@@ -1,4 +1,5 @@
 import os
+import yaml
 
 try:
     from PySide.QtGui import *
@@ -24,7 +25,9 @@ class MechMenu(QMenu):
             self.onLoadDemo_CH82)
         loadDemo2Action = myqtcommon.createAction(parent, "&Load demo: dC-K",
             self.onLoadDemo_dCK)
-            
+
+        loadFromYAMLFileAction = myqtcommon.createAction(parent,
+            "&Load from YAML File...", self.onLoadYAMLmec)
         loadFromMecFileAction = myqtcommon.createAction(parent,
             "&Load from DCprogs MEC File...", self.onLoadMecFile)
         loadFromPrtFileAction = myqtcommon.createAction(parent, 
@@ -35,10 +38,13 @@ class MechMenu(QMenu):
             "&Modify loaded mec rates", self.onModifyMec)
         modifyStatesAction = myqtcommon.createAction(parent, 
             "&Modify loaded mec states", self.onModifyStates)
+        saveMecAction = myqtcommon.createAction(parent, 
+            "&Save mec as YAML file...", self.onSaveMec)
             
         self.addActions([loadDemo1Action, loadDemo2Action,
+            loadFromYAMLFileAction,
             loadFromMecFileAction, loadFromPrtFileAction, loadFromModFileAction,
-            modifyMecAction, modifyStatesAction])
+            modifyMecAction, modifyStatesAction, saveMecAction])
             
     def onLoadDemo_CH82(self):
         """
@@ -124,6 +130,36 @@ class MechMenu(QMenu):
         table = StateTableDlg(self, self.parent.mec, self.parent.log)
         if table.exec_():
             self.parent.mec = table.return_mec()
+
+    def onSaveMec(self):
+        """
+        """
+
+        fname, filt = QFileDialog.getSaveFileName(self,
+            "Save mechanism as YAML file...", self.parent.path, ".yaml",
+            "YAML files (*.yaml)")
+        self.parent.path = os.path.split(str(fname))[0]
+        stream = file(fname, 'w')
+
+        yaml.dump(self.parent.mec, stream)
+        self.parent.log.write('\n\nMechanism saved in YAML file:')
+        self.parent.log.write(fname)
+
+    def onLoadYAMLmec(self):
+        """
+        """
+        filename, filt = QFileDialog.getOpenFileName(self,
+            "Open YAML Mec File...", self.parent.path, "YAML Files (*.yaml)")
+            
+        self.parent.log.write('\n\nLoading mechanism from YAML file:')
+        self.parent.log.write(filename)
+        stream = file(filename, 'r')
+        self.parent.mec = yaml.load(stream)
+
+        self.modifyMec(self.parent.mec, self.parent.log)
+#        self.parent.log.write("Loaded mec: " + meclist[nrate][2])
+#        self.parent.log.write("Loaded rates: " + meclist[nrate][3] + "\n")
+        self.parent.mec.printout(self.parent.log)
 
     #######################
         
