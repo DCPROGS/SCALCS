@@ -107,7 +107,7 @@ def console_demo(demomec):
 
     #     POPEN CURVE CALCULATIONS
     sys.stdout.write('\n\nCalculating Popen curve parameters:')
-    popen.printout(demomec, tres)
+    sys.stdout.write(popen.printout(demomec, tres))
     c, pe, pi = scpl.Popen(demomec, tres)
 
     plt.subplot(221)
@@ -121,7 +121,7 @@ def console_demo(demomec):
     #     BURST CALCULATIONS
     sys.stdout.write('\n\nCalculating burst properties:')
     sys.stdout.write('\nAgonist concentration = %e M' %conc)
-    scburst.printout_pdfs(demomec)
+    sys.stdout.write(scburst.printout_pdfs(demomec))
 
     t, fbst = scpl.burst_length_pdf(demomec)
     plt.subplot(222)
@@ -142,9 +142,9 @@ def console_demo(demomec):
 
     #     OPEN TIME DISTRIBUTION
     sys.stdout.write('\n\nCalculating open and shut time distributions:')
-    scl.printout_occupancies(demomec, tres)
-    scl.printout_distributions(demomec, tres)
-    scl.printout_tcrit(demomec)
+    sys.stdout.write(scl.printout_occupancies(demomec, tres))
+    sys.stdout.write(scl.printout_distributions(demomec, tres))
+    sys.stdout.write(scl.printout_tcrit(demomec))
     t, ipdf, epdf, apdf = scpl.open_time_pdf(demomec, tres)
 
     plt.subplot(223)

@@ -176,26 +176,3 @@ def save_pdf_fig(scnfile, ints, mec, conc, tres, type):
     outfile = scnfile[:-4] + '_' + type + '.png'
     savefig(outfile, bbox_inches=0)
     return outfile
-
-#open_pdfs = []
-#shut_pdfs = []
-#for i in range(len(scnfiles)):
-#    open_pdfs.append(save_pdf_fig(scnfiles[i], recs[i].opint, mec, conc[i], tres[i], 'open'))
-#    shut_pdfs.append(save_pdf_fig(scnfiles[i], recs[i].shint, mec, conc[i], tres[i], 'shut'))
-#
-#htmlstr = ("""<html>
-#    <p>HJCFIT: Fit of model to open-shut times with missed events
-#    (Uses HJC distributions, exact for first two deadtimes then asymptotic, to calculate likelihood of record)</p>""" +
-#    '<p>'+ str2 + '<p></p>' + str3 + """</p></html>""" )
-#
-#htmlfile = mecfn[:-4] + '.html'
-#f = open(htmlfile, 'w')
-#f.write(htmlstr)
-#for i in range(len(scnfiles)):
-#    f.write("<p>{0} _____________________________________ {1}</p>".format(open_pdfs[i], shut_pdfs[i]))
-#    f.write("<img src={0} width='450' height='300'><img src={1} width='450' height='300'>".format(os.path.abspath(open_pdfs[i]), os.path.abspath(shut_pdfs[i])))
-#
-##mec.printout(f)
-#f.close()
-
-

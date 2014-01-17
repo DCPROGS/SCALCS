@@ -25,7 +25,7 @@ if __name__ == "__main__":
     
     print ('\nCalculating jump with {0:.6f} microsec rise...'.
         format(rise_time/1e-6))
-    cjumps.printout(mec, peak_conc, pulse_width)
+    print (cjumps.printout(mec, peak_conc, pulse_width))
     t, c, Popen, P  = cjumps.solve_jump(mec, record_length, step_size,
         cjumps.pulse_erf, cjargs)
     maxP = max(Popen)

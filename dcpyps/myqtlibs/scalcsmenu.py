@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import matplotlib.pyplot as plt
 try:
@@ -62,7 +64,7 @@ class ScalcsMenu(QMenu):
             'Ideal curve- red dashed line. \nHJC curve- blue solid line.\n')
         self.parent.txtPltBox.append(str)
 
-        popen.printout(self.parent.mec, self.parent.tres, output=self.parent.log)
+        self.parent.log.write(popen.printout(self.parent.mec, self.parent.tres))
         c, pe, pi = scpl.Popen(self.parent.mec, self.parent.tres)
         self.parent.present_plot = np.vstack((c, pe, pi))
 
@@ -91,7 +93,7 @@ class ScalcsMenu(QMenu):
         self.parent.txtPltBox.append(str)
 
         self.parent.mec.set_eff('c', self.parent.conc)
-        scl.printout_correlations(self.parent.mec, output=self.parent.log)
+        self.parent.log.write(scl.printout_correlations(self.parent.mec))
         # TODO: need dialog to enter lag value. 
         lag = 5
         n, roA, roF, roAF = scpl.corr_open_shut(self.parent.mec, lag)
@@ -125,7 +127,7 @@ class ScalcsMenu(QMenu):
         dialog = myqtcommon.ShutRangeDlg(self)
         if dialog.exec_():
             u1, u2 = dialog.return_par()
-        scl.printout_adjacent(self.parent.mec, u1, u2, output=self.parent.log)
+        self.parent.log.write(scl.printout_adjacent(self.parent.mec, u1, u2))
         
         t, ipdf, ajpdf = scpl.adjacent_open_time_pdf(self.parent.mec, 
             self.parent.tres, u1, u2)
@@ -229,10 +231,10 @@ class ScalcsMenu(QMenu):
         self.parent.mec.set_eff('c', self.parent.conc)
 
         try:
-            scl.printout_occupancies(self.parent.mec, self.parent.tres, 
-                output=self.parent.log)
-            scl.printout_distributions(self.parent.mec, self.parent.tres,
-                output=self.parent.log)
+            text = scl.printout_occupancies(self.parent.mec, self.parent.tres)
+            self.parent.log.write(text)
+            text = scl.printout_distributions(self.parent.mec, self.parent.tres)
+            self.parent.log.write(text)
         except:
             sys.stderr.write("main: Warning: unable to prepare printout.")
         
@@ -299,7 +301,7 @@ class ScalcsMenu(QMenu):
         self.parent.txtPltBox.append(str)
 
         self.parent.mec.set_eff('c', self.parent.conc)
-        scl.printout_tcrit(self.parent.mec, output=self.parent.log)
+        self.parent.log.write(scl.printout_tcrit(self.parent.mec))
         t, ipdf, epdf, apdf = scpl.shut_time_pdf(self.parent.mec, self.parent.tres)
         self.parent.present_plot = np.vstack((t, ipdf, epdf, apdf))
 

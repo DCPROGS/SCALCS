@@ -349,15 +349,15 @@ def weighted_taus(mec, cmax, width, eff='c'):
 
     return tau_on_weighted, tau_on, tau_off_weighted, tau_off
 
-def printout(mec, cmax, width, output=sys.stdout, eff='c'):
+def printout(mec, cmax, width, eff='c'):
     """
     """
 
     #TODO: on/off binding
     #TODO: move some of calculations from here to separate functions
     
-    output.write('\n*******************************************\n')
-    output.write('CONCENTRATION JUMPS\n')
+    str = ('\n*******************************************\n' +
+        'CONCENTRATION JUMPS\n')
 
     gamma = 30 # Conductance in pS
     Vm = -80e-3 # Transmembrane potential in V.
@@ -365,35 +365,32 @@ def printout(mec, cmax, width, output=sys.stdout, eff='c'):
     mec.set_eff(eff, 0)
     P0 = qml.pinf(mec.Q)
     eigs0, A0 = qml.eigs_sorted(mec.Q)
-    output.write('\nEquilibrium occupancies before t=0, at concentration = 0.0:\n')
+    str += ('\nEquilibrium occupancies before t=0, at concentration = 0.0:\n')
     for i in range(mec.k):
-        output.write('p00({0:d}) = '.format(i+1) +
-            '{0:.5g}\n'.format(P0[i]))
+        str += ('p00({0:d}) = {1:.5g}\n'.format(i+1, P0[i]))
 
     mec.set_eff(eff, cmax)
     Pinf = qml.pinf(mec.Q)
     eigsInf, Ainf = qml.eigs_sorted(mec.Q)
     w_on = coefficient_calc(mec.k, Ainf, P0)
-    output.write('\nEquilibrium occupancies at maximum concentration = {0:.5g} mM:\n'
+    str += ('\nEquilibrium occupancies at maximum concentration = {0:.5g} mM:\n'
         .format(cmax * 1000))
     for i in range(mec.k):
-        output.write('pinf({0:d}) = '.format(i+1) +
-            '{0:.5g}\n'.format(Pinf[i]))
+        str += ('pinf({0:d}) = '.format(i+1) + '{0:.5g}\n'.format(Pinf[i]))
 
     Pt = P_t(width, eigsInf, w_on)
-    output.write('\nOccupancies at the end of {0:.5g} ms pulse:\n'.
+    str += ('\nOccupancies at the end of {0:.5g} ms pulse:\n'.
         format(width * 1000))
     for i in range(mec.k):
-        output.write('pt({0:d}) = '.format(i+1) +
-            '{0:.5g}\n'.format(Pt[i]))
+        str += ('pt({0:d}) = '.format(i+1) + '{0:.5g}\n'.format(Pt[i]))
 
     tau_on_weighted, tau_on, tau_off_weighted, tau_off = weighted_taus(mec, cmax, width, eff='c')
 
-    output.write('\nON-RELAXATION for ideal step:\n')
-    output.write('Time course for current\n')
-    output.write('\nComp\tEigen\t\tTau (ms)\n')
+    str += ('\nON-RELAXATION for ideal step:\n' +
+        'Time course for current\n' +
+        '\nComp\tEigen\t\tTau (ms)\n')
     for i in range(mec.k-1):
-        output.write('{0:d}\t'.format(i+1) +
+        str += ('{0:d}\t'.format(i+1) +
             '{0:.5g}\t\t'.format(eigsInf[i]) +
             '{0:.5g}\t\n'.format(-1000 / eigsInf[i])) # convert to ms
 
@@ -402,30 +399,30 @@ def printout(mec, cmax, width, output=sys.stdout, eff='c'):
     max_ampl_on = np.max(np.abs(ampl_on))
     rel_ampl_on = ampl_on / max_ampl_on
     area_on = -cur_on[:-1] / eigsInf[:-1]
-    output.write('\nAmpl.(t=0,pA)\tRel.ampl.\t\tArea(pC)\n')
+    str += ('\nAmpl.(t=0,pA)\tRel.ampl.\t\tArea(pC)\n')
     for i in range(mec.k-1):
-        output.write('{0:.5g}\t\t'.format(cur_on[i]) +
+        str += ('{0:.5g}\t\t'.format(cur_on[i]) +
             '{0:.5g}\t\t'.format(rel_ampl_on[i]) +
             '{0:.5g}\t\n'.format(area_on[i] * 1000))
 
-    output.write('\nWeighted On Tau (ms) = {0:.5g}\n'.format(tau_on_weighted * 1000))
-    output.write('\nTotal current at t=0 (pA) = {0:.5g}\n'.
+    str += ('\nWeighted On Tau (ms) = {0:.5g}\n'.format(tau_on_weighted * 1000))
+    str += ('\nTotal current at t=0 (pA) = {0:.5g}\n'.
         format(np.sum(cur_on)))
-    output.write('Total current at equilibrium (pA) = {0:.5g}\n'.
+    str += ('Total current at equilibrium (pA) = {0:.5g}\n'.
         format(cur_on[-1]))
-    output.write('Total area (pC) = {0:.5g}\n'.
+    str += ('Total area (pC) = {0:.5g}\n'.
         format(np.sum(area_on)))
     #TODO: Current at the end of pulse
     ct = cur_on[:-1] * np.exp(width * eigsInf[:-1])
-    output.write('Current at the end of {0:.5g}'.format(width
+    str += ('Current at the end of {0:.5g}'.format(width
         * 1000) + ' ms pulse = {0:.5g}\n'.format(np.sum(ct) + cur_on[-1]))
 
     # Calculate off- relaxation.
-    output.write('\nOFF-RELAXATION for ideal step:\n')
-    output.write('Time course for current\n')
-    output.write('\nComp\tEigen\t\tTau (ms)\n')
+    str += ('\nOFF-RELAXATION for ideal step:\n' +
+        'Time course for current\n' +
+        '\nComp\tEigen\t\tTau (ms)\n')
     for i in range(mec.k-1):
-        output.write('{0:d}\t'.format(i+1) +
+        str += ('{0:d}\t'.format(i+1) +
             '{0:.5g}\t\t'.format(eigs0[i]) +
             '{0:.5g}\t\n'.format(-1000 / eigs0[i]))
 
@@ -435,17 +432,19 @@ def printout(mec, cmax, width, output=sys.stdout, eff='c'):
     max_ampl_off = np.max(np.abs(ampl_off))
     rel_ampl_off = ampl_off / max_ampl_off
     area_off = np.zeros((mec.k-1))
-    output.write('\nAmpl.(t=0,pA)\tRel.ampl.\t\tArea(pC)\n')
+    str += ('\nAmpl.(t=0,pA)\tRel.ampl.\t\tArea(pC)\n')
     for i in range(mec.k-1):
         area_off[i] = -1000 * cur_off[i] / eigs0[i]
-        output.write('{0:.5g}\t\t'.format(cur_off[i]) +
+        str += ('{0:.5g}\t\t'.format(cur_off[i]) +
             '{0:.5g}\t\t'.format(rel_ampl_off[i]) +
             '{0:.5g}\t\n'.format(area_off[i]))
             
-    output.write('\nWeighted Off Tau (ms) = {0:.5g}\n'.format(tau_off_weighted * 1000))
-    output.write('\nTotal current at t=0 (pA) = {0:.5g}\n'.
+    str += ('\nWeighted Off Tau (ms) = {0:.5g}\n'.format(tau_off_weighted * 1000))
+    str += ('\nTotal current at t=0 (pA) = {0:.5g}\n'.
         format(np.sum(cur_off)))
-    output.write('Total current at equilibrium (pA) = {0:.5g}\n'.
+    str += ('Total current at equilibrium (pA) = {0:.5g}\n'.
         format(cur_off[-1]))
-    output.write('Total area (pC) = {0:.5g}\n'.
-        format(np.sum(area_off)))
+    str += ('Total area (pC) = {0:.5g}\n'.format(np.sum(area_off)))
+ 
+    return str
+ 

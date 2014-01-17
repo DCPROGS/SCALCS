@@ -105,7 +105,8 @@ class JumpMenu(QMenu):
                 format(self.cjargs[3] * 1000) +
                 'maximal Popen- {0:.5g}'.format(maxP))
         elif ((self.cjprofile == 'rcj') or (self.cjprofile == 'square')):
-            cjumps.printout(self.parent.mec, self.cjargs[0], self.cjargs[3], output=self.parent.log)
+            self.parent.log.write(cjumps.printout(self.parent.mec,
+                self.cjargs[0], self.cjargs[3]))
         self.parent.present_plot = np.vstack((t, Popen, c, P))
 
     def onPlotCJumpOccupancies(self):

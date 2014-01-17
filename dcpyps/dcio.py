@@ -7,6 +7,7 @@ import time
 import math
 from array import array
 import numpy as np
+import yaml
 from pylab import figure, semilogx, savefig
 
 import dcpyps
@@ -977,6 +978,10 @@ def mod_load(file):
                         eff=bound))
 
     return dcpyps.Mechanism(RateList, mtitle=modtitle), modtitle
+
+def mec_save_to_yaml(mec, fname):
+    stream = file(fname, 'w')
+    yaml.dump(mec, stream)
 
 def scn_read_header (fname):
     """

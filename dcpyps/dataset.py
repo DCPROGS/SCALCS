@@ -402,6 +402,23 @@ class SCRecord(object):
             str_repr += self.filenames[0]
         else:
             str_repr += "no file name; probably this is simulated record."
+        str_repr += ('\nConcentration of agonist = {0:.3f} microMolar'.
+            format(self.conc*1e6))
+        str_repr += ('\nResolution for HJC calculations = ' + 
+            '{0:.1f} microseconds'.format(self.tres*1e6))
+        str_repr += ('\nCritical gap length to define end of group (tcrit) ' + 
+            '= {0:.3f} milliseconds'.format(self.tcrit*1e1))
+        str_repr += ('\n\t(defined so that all openings in a group prob ' + 
+            'come from same channel)')
+        if self.chs:
+            str_repr += ('\nInitial and final vectors for bursts calculated as' +
+                'in Colquhoun, Hawkes & Srodzinski, (1996, eqs 5.8, 5.11).\n')
+        else:
+            str_repr += ('\nInitial and final vectors for are calculated as ' +
+                'for steady state openings and shuttings (this involves a ' +
+                'slight approximation at start and end of bursts that are ' +
+                'defined by shut times that have been set as bad).\n')
+
         
 #        if self.record_type:
 #            str_repr += '\n'

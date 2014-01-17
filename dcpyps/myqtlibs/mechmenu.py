@@ -139,9 +139,7 @@ class MechMenu(QMenu):
             "Save mechanism as YAML file...", self.parent.path, ".yaml",
             "YAML files (*.yaml)")
         self.parent.path = os.path.split(str(fname))[0]
-        stream = file(fname, 'w')
-
-        yaml.dump(self.parent.mec, stream)
+        dcio.mec_save_to_yaml(self.parent.mec, fname)
         self.parent.log.write('\n\nMechanism saved in YAML file:')
         self.parent.log.write(fname)
 

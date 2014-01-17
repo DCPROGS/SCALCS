@@ -1,4 +1,6 @@
-import time, math, sys, socket, os
+import time
+import math
+import sys
 import numpy as np
 from scipy.optimize import minimize
 
@@ -6,13 +8,6 @@ from dcpyps import dcio
 from dcpyps import dataset
 from dcpyps import mechanism
 from dcprogs.likelihood import Log10Likelihood
-
-str1 = "DC_PyPs: Q matrix calculations.\n"
-str2 = ("Date and time of analysis: %4d/%02d/%02d %02d:%02d:%02d\n"
-    %time.localtime()[0:6])
-machine = socket.gethostname()
-system = sys.platform
-str3 = "Machine: %s; System: %s\n" %(machine, system)
 
 # LOAD DATA.
 scnfiles = [["./dcpyps/samples/glydemo/A-10.scn"], ["./dcpyps/samples/glydemo/B-30.scn"],
@@ -82,9 +77,6 @@ for i in range(len(recs)):
     likelihood.append(Log10Likelihood(bursts[i], mec.kA,
         recs[i].tres, recs[i].tcrit, **kwargs))
 
-#for i in range(len(conc)):
-#    likelihood.append(Log10Likelihood(bursts[i], mec.kA, tres[i], tcrit[i], **kwargs))
-
 def dcprogslik(x, args=None):
     mec.theta_unsqueeze(np.exp(x))
     lik = 0
@@ -103,9 +95,7 @@ def printiter(theta):
 
 lik = dcprogslik(theta)
 print ("\nStarting likelihood (DCprogs)= {0:.6f}".format(-lik))
-
 start = time.clock()
-
 success = False
 result = None
 while not success:
@@ -117,13 +107,11 @@ while not success:
         success = True
     else:
         theta = result.x
-
-#result = minimize(dcprogslik, theta, method='Nelder-Mead', callback=printiter,
-#    options={'xtol':1e-1, 'ftol':1e-1, 'maxiter': 5000, 'maxfev': 10000,
-#    'disp': True})
+        
+end = time.clock()
 print ("\nDCPROGS Fitting finished: %4d/%02d/%02d %02d:%02d:%02d\n"
         %time.localtime()[0:6])
-print 'time in simplex=', time.clock() - start
+print 'time in simplex=', end - start
 print '\n\nresult='
 print result
 
@@ -136,53 +124,3 @@ mec.printout(sys.stdout)
 print '\n\n'
 
 
-open_pdfs = []
-shut_pdfs = []
-for i in range(len(scnfiles)):
-    op_filename = scnfiles[i][0][:-4] + '_open.png'
-    sh_filename = scnfiles[i][0][:-4] + '_shut.png'
-    open_pdfs.append(dcio.png_save_pdf_fig(op_filename, recs[i].opint, mec, conc[i], tres[i], 'open'))
-    shut_pdfs.append(dcio.png_save_pdf_fig(sh_filename, recs[i].shint, mec, conc[i], tres[i], 'shut'))
-
-
-htmlstr = ("""<html>
-    <p>HJCFIT: Fit of model to open-shut times with missed events
-    (Uses HJC distributions, exact for first two deadtimes then asymptotic, to calculate likelihood of record)</p>""" +
-    '<p>'+ str2 + '<p></p>' + str3 + """</p></html>""" )
-
-htmlfile = mecfn[:-4] + '.html'
-f = open(htmlfile, 'w')
-f.write(htmlstr)
-for i in range(len(scnfiles)):
-    f.write("<p>{0} _____________________________________ {1}</p>".format(open_pdfs[i], shut_pdfs[i]))
-    f.write("<img src={0} width='450' height='300'><img src={1} width='450' height='300'>".format(os.path.abspath(open_pdfs[i]), os.path.abspath(shut_pdfs[i])))
-
-#mec.printout(f)
-f.close()
-
-
-
-
-
-""" Represents the optimization result.
-    Attributes
-    ----------
-    x : ndarray
-        The solution of the optimization.
-    success : bool
-        Whether or not the optimizer exited successfully.
-    status : int
-        Termination status of the optimizer. Its value depends on the
-        underlying solver. Refer to `message` for details.
-    message : str
-        Description of the cause of the termination.
-    fun, jac, hess : ndarray
-        Values of objective function, Jacobian and Hessian (if available).
-    nfev, njev, nhev : int
-        Number of evaluations of the objective functions and of its
-        Jacobian and Hessian.
-    nit : int
-        Number of iterations performed by the optimizer.
-    maxcv : float
-        The maximum constraint violation.
-    """
