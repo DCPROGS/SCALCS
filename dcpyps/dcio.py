@@ -504,7 +504,7 @@ def mec_load_from_prt(filename, verbose=False):
             line = line.strip("\r\n")
             linenum += 1
         except EOFError:
-            print('MOD reading finished.')
+            print('Mecanism loading from PRT (or TXT) file finished.')
             
         if "HJCFIT: Fit of model to open-shut times with missed events" in line:
             if verbose: print 'This is possibly HJCFIT printout file.'
@@ -742,6 +742,34 @@ def mec_load_from_prt(filename, verbose=False):
         CycleList.append(dcpyps.Cycle(CycleStates))
 
     return dcpyps.Mechanism(RateList, CycleList)
+
+#def set_load_from_prt(filename, verbose=False):    
+#    f = open(filename, 'r')
+#    linenum = 0
+#    
+#    scnfiles = []
+#    conc, tres, tcrit, chsvec = [], [], [], []
+#    
+#    f.readline()
+#    line = f.readline()
+#    if "Program HJCFIT Windows Version (Beta)" in line:
+#        version = 'win'
+#    else:
+#        version = 'dos'
+#    if verbose: print 'version=', version
+#
+#    while True:
+#        try:
+#            line = f.readline()
+#            #print 'line:', line
+#            if line == '':
+#                break
+#            line = line.strip("\r\n")
+#            linenum += 1
+#        except EOFError:
+#            print('Data set loading from PRT (or TXT) file finished.')
+#            
+#    return scnfiles, conc, tres, tcrit, chsvec
 
 def mod_load(file):
     """
@@ -2226,9 +2254,9 @@ def ini_HJCFIT_read(filename, verbose=False):
 
     # path names for scn files
     pfiles = []
-    for i in range(20):
+    for i in range(10):
         temp = []
-        for j in range(10):
+        for j in range(20):
             if iftype == 100:
                 temp.append(f.read(60))
             else:
@@ -2700,7 +2728,7 @@ def ini_HJCFIT_read(filename, verbose=False):
     for i in range(nset):
         temp = []
         for j in range(nfileb[i]):
-            temp.append(pfiles[j][i].strip())
+            temp.append(pfiles[i][j].strip())
         ini['scn_files'].append(temp)
     ini['mec_file'] = qmec.strip()
     ini['mec_num'] = imodold
@@ -2721,7 +2749,7 @@ def ini_HJCFIT_read(filename, verbose=False):
     for i in range(nset):
         temp = []
         for j in range(nfileb[i]):
-            temp.append(conc[j][i])
+            temp.append(conc[i][j])
         ini['conc'].append(temp)
     ini['ec50'] = ec50
     ini['cycles'] = [im2, jm2]
