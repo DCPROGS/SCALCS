@@ -218,7 +218,7 @@ class TestDC_PyPs(unittest.TestCase):
 #        self.assertAlmostEqual(eGAFt[2,0], 5.06525702e-18, 15)
 #        self.assertAlmostEqual(eGAFt[2,1], -9.02489888e-15, 12)
 
-        filename = "./dcpyps/samples/CH82.scn"
+        filename = "./dcpyps/samples/scn/CH82.scn"
         rec1 = dataset.SCRecord([filename], self.conc, self.tres, self.tcrit)
 
         # Check if burst separation is done right.

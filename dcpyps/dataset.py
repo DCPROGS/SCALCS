@@ -407,7 +407,7 @@ class SCRecord(object):
         str_repr += ('\nResolution for HJC calculations = ' + 
             '{0:.1f} microseconds'.format(self.tres*1e6))
         str_repr += ('\nCritical gap length to define end of group (tcrit) ' + 
-            '= {0:.3f} milliseconds'.format(self.tcrit*1e1))
+            '= {0:.3f} milliseconds'.format(self.tcrit*1e3))
         str_repr += ('\n\t(defined so that all openings in a group prob ' + 
             'come from same channel)')
         if self.chs:

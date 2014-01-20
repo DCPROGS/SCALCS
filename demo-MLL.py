@@ -37,11 +37,7 @@ def main():
 
     # PREPARE RATE CONSTANTS.
     # Fixed rates.
-    fixed = np.array([False, False, False, False, False,
-        False, False, True, False, False])
-    if fixed.size == len(mec.Rates):
-        for i in range(len(mec.Rates)):
-            mec.Rates[i].fixed = fixed[i]
+    mec.Rates[7].fixed = True
     # Constrained rates.
     mec.Rates[5].is_constrained = True
     mec.Rates[5].constrain_func = mechanism.constrain_rate_multiple
