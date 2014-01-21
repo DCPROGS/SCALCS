@@ -54,7 +54,7 @@ class SCRecord(object):
         if header['iscanver'] == -103:
             self.record_type = 'simulated'
 
-    def simulate_record(self, mec, tres, state, opamp=5, nintmax=5000):
+    def simulate_record(self, mec, tres, conc, state, opamp=5, nintmax=5000):
         """
         """
         picum = np.cumsum(scl.transition_probability(mec.Q), axis=1)
@@ -78,6 +78,7 @@ class SCRecord(object):
         self.ropt = self.iprops
         self.resolution_imposed = True
         self.tres = tres
+        self.conc = conc
         self.record_type = 'simulated'
         self.get_periods()
 #        self.get_bursts(self.tcrit)
@@ -406,8 +407,9 @@ class SCRecord(object):
             format(self.conc*1e6))
         str_repr += ('\nResolution for HJC calculations = ' + 
             '{0:.1f} microseconds'.format(self.tres*1e6))
-        str_repr += ('\nCritical gap length to define end of group (tcrit) ' + 
-            '= {0:.3f} milliseconds'.format(self.tcrit*1e3))
+        if self.tcrit:
+            str_repr += ('\nCritical gap length to define end of group (tcrit) ' +
+                '= {0:.3f} milliseconds'.format(self.tcrit*1e3))
         str_repr += ('\n\t(defined so that all openings in a group prob ' + 
             'come from same channel)')
         if self.chs:

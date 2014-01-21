@@ -144,7 +144,7 @@ class SCDataMenu(QMenu):
             #TODO: check if mechanism is loaded if not tell to load one.
             self.parent.mec.set_eff('c', conc)
             startstate = self.parent.mec.k - 1 # TODO: ask for this in dialog
-            rec.simulate_record(self.parent.mec, tres, startstate, oamp, nint)
+            rec.simulate_record(self.parent.mec, tres, conc, startstate, oamp, nint)
             self.parent.log.write("\nSimulation finished")
             self.parent.log.write('{0:d}'.format(len(rec.itint)) +
                 ' intervals were simulated')
