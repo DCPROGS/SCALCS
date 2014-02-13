@@ -152,20 +152,20 @@ class SCDataMenu(QMenu):
             rec.printout(self.parent.log)
             #TODO: get bursts
 
-            self.parent.recs.append(rec)
-            scnfile = [self.saveSCNfile()]
-            self.parent.scnfiles.append(scnfile)
+            self.parent.recs = [rec]
+            scnfile = [self.saveSCNfile(rec)]
+            self.parent.scnfiles = [scnfile]
             self.parent.data_loaded = True
 
         
-    def saveSCNfile(self):
+    def saveSCNfile(self, rec):
         saveSCNFilename, filt = QFileDialog.getSaveFileName(self,
                 "Save as SCN file...", self.parent.path, ".scn",
                 "SCN files (*.scn)")
         self.parent.path = os.path.split(str(saveSCNFilename))[0]
 
-        dcio.scn_write_simulated(self.parent.recs[0].itint,
-            self.parent.recs[0].iampl, filename=saveSCNFilename)
+        dcio.scn_write_simulated(rec.itint, rec.iampl,
+            filename=saveSCNFilename)
 
         self.parent.log.write('Current single channel record saved in SCN file:')
         self.parent.log.write(saveSCNFilename)
