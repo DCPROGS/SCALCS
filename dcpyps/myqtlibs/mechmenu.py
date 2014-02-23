@@ -21,10 +21,10 @@ class MechMenu(QMenu):
         self.parent = parent
         self.setTitle('&Load Mec')
         
-        loadDemo1Action = myqtcommon.createAction(parent, "&Load demo: CH82",
-            self.onLoadDemo_CH82)
-        loadDemo2Action = myqtcommon.createAction(parent, "&Load demo: dC-K",
-            self.onLoadDemo_dCK)
+        loadDemo = myqtcommon.createAction(parent, "&Load demo mec",
+            self.onLoadDemo)
+#        loadDemo2Action = myqtcommon.createAction(parent, "&Load demo: dC-K",
+#            self.onLoadDemo_dCK)
 
         loadFromYAMLFileAction = myqtcommon.createAction(parent,
             "&Load from YAML File...", self.onLoadYAMLmec)
@@ -41,11 +41,33 @@ class MechMenu(QMenu):
         saveMecAction = myqtcommon.createAction(parent, 
             "&Save mec as YAML file...", self.onSaveMec)
             
-        self.addActions([loadDemo1Action, loadDemo2Action,
+        self.addActions([loadDemo, #1Action, loadDemo2Action,
             loadFromYAMLFileAction,
             loadFromMecFileAction, loadFromPrtFileAction, loadFromModFileAction,
             modifyMecAction, modifyStatesAction, saveMecAction])
             
+    def onLoadDemo(self):
+        """
+        Load demo mechanisms from dcpyps/samples/samples.py.
+        'CH82'- C&H82 numerical example, 'dCK'- delCastillo-Katz mechanism,
+        
+        """
+        dialog = DemoMecDlg()
+        if dialog.exec_():
+            demo = dialog.return_par() 
+        if demo == 'CH82':
+            mec = samples.CH82()
+        elif demo == 'dCK':
+            mec = samples.CCO()
+        elif demo == 'CO':
+            mec = samples.CO()
+        elif demo == 'FCC':
+            mec = samples.fully_connected_cycle()
+        self.parent.mec = mec
+        mec = self.modifyMec(mec, self.parent.log)
+        mec.printout(self.parent.log)
+        return mec
+        
     def onLoadDemo_CH82(self):
         """
         Load demo mechanism (C&H82 numerical example).
@@ -160,20 +182,6 @@ class MechMenu(QMenu):
         self.parent.mec.printout(self.parent.log)
 
     #######################
-        
-    def load_demo_mec(self, demo, out):
-        """
-        Load demo mechanism: 'CH82'- C&H82 numerical example, 'dCK'- 
-        delCastillo-Katz mechanism.
-        """
-        if demo == 'CH82':
-            mec = samples.CH82()
-        elif demo == 'dCK':
-            mec = samples.CCO()
-        mec = self.modifyMec(mec, out)
-        mec.printout(out)
-        return mec
-    
     def modifyMec(self, mec, out):
         """
         """
@@ -616,3 +624,46 @@ class ConstrainMultiplyDlg(QDialog):
             if self.ratesRB[i].isChecked():
                 torate = i
         return self.factor, torate    
+    
+
+class DemoMecDlg(QDialog):
+    """
+    """
+    def __init__(self, parent=None):
+        super(DemoMecDlg, self).__init__(parent)
+
+        layoutMain = QVBoxLayout()
+        layoutMain.addWidget(QLabel("Demo mechanisms:"))
+
+        self.CH82 = QRadioButton("&CH82")
+        self.CH82.setChecked(True)
+        self.dCK = QRadioButton("&del Castillo - Katz")
+        self.CO = QRadioButton("&C(losed)-O(pen)")
+        self.FCC = QRadioButton("&Fully connected cycle")
+        
+        layoutMain.addWidget(self.CH82)
+        layoutMain.addWidget(self.dCK)
+        layoutMain.addWidget(self.CO)
+        layoutMain.addWidget(self.FCC)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+        layoutMain.addWidget(buttonBox)
+
+        self.setLayout(layoutMain)
+        self.setWindowTitle("Choose demo mechanism...")
+        
+    def return_par(self):
+        if self.CH82.isChecked():
+            mec = 'CH82'
+        elif self.CO.isChecked():
+            mec = 'CO'
+        elif self.dCK.isChecked():
+            mec = 'dCK'
+        elif self.FCC.isChecked():
+            mec = 'FCC'
+        return mec

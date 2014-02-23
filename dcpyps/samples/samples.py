@@ -1,6 +1,9 @@
 import dcpyps
 
 def CH82():
+    
+    mectitle = 'CH82'
+    ratetitle = 'CH82 numerical example'
 
     A2RS = dcpyps.State('A', 'A2R*', 60e-12)
     ARS  = dcpyps.State('A', 'AR*', 60e-12)
@@ -22,15 +25,54 @@ def CH82():
          dcpyps.Rate(0.66667, A2RS, ARS, name='2k*(-2)', mr=True, limits=[1e-15,1e+7])
          ]
 
-
     CycleList = [dcpyps.Cycle(['A2R*', 'AR*', 'AR', 'A2R'], ['A2R*', 'AR*'])]
 
     fastblk = False
     KBlk = 0.001
 
-    return  dcpyps.Mechanism(RateList, CycleList, mtitle='CH82', rtitle='CH82 numerical example') #, fastblk, KBlk)
+    return  dcpyps.Mechanism(RateList, CycleList, mtitle=mectitle, rtitle=ratetitle) #, fastblk, KBlk)
+
+def fully_connected_cycle():
+    
+    mectitle = 'Fully connected cycle'
+    ratetitle = 'JP numbers'
+
+    O2 = dcpyps.State('A', 'O2', 60e-12)
+    O1 = dcpyps.State('A', 'O1', 60e-12)
+    C2 = dcpyps.State('B', 'C2', 0.0)
+    C1 = dcpyps.State('C', 'C1', 0.0)
+    
+    KC, tKO, KO = 1.0, 0.05, 5.0
+    k12, k13, k14 = 1.2, 1.3, 1.4
+    k23, k24, k34 = 2.3, 2.4, 3.4
+
+    RateList = [
+         dcpyps.Rate(k12,      C1, C2, name='k12', eff='c', limits=[1e-15,1e+7]),
+         dcpyps.Rate(k12 / KC, C2, C1, name='k21', limits=[1e-15,1e+7]),
+         dcpyps.Rate(k24 / KC, C2, O2, name='k24', limits=[1e-15,1e+7]),
+         dcpyps.Rate(k24 / KO, O2, C2, name='k42', limits=[1e-15,1e+7]),
+         dcpyps.Rate(k34 / KO, O2, O1, name='k34', limits=[1e-15,1e+7]),
+         dcpyps.Rate(k34 /tKO, O1, O2, name='k43', eff='c', limits=[1e-15,1e+7]),
+         dcpyps.Rate(k13 /tKO, O1, C1, name='k13', limits=[1e-15,1e+10]),
+         dcpyps.Rate(k13,      C1, O1, name='k31', limits=[1e-15,1e+10]),
+         dcpyps.Rate(k14,      C1, O2, name='k14', eff='c', limits=[1e-15,1e+10]),
+         dcpyps.Rate(k14 / KO, O2, C1, name='k41', limits=[1e-15,1e+7]),
+         dcpyps.Rate(k23 / KC, C2, O1, name='k23', limits=[1e-15,1e+7]),
+         dcpyps.Rate(k23 /tKO, O1, C2, name='k32', eff='c', limits=[1e-15,1e+10]),
+         ]
+
+    CycleList = [
+        dcpyps.Cycle(['C1', 'C2', 'O2'], ['C2', 'O2']),
+        dcpyps.Cycle(['C2', 'O2', 'O1'], ['O2', 'O1']),
+        dcpyps.Cycle(['C1', 'C2', 'O1'], ['C1', 'O1']),
+        ]
+
+    return  dcpyps.Mechanism(RateList, CycleList, mtitle=mectitle, rtitle=ratetitle)
 
 def CCO():
+    
+    mectitle = 'C-C-O'
+    ratetitle = 'quasi random numbers'
 
     ARS  = dcpyps.State('A', 'AR*', 50e-12)
     AR   = dcpyps.State('B', 'AR', 0.0)
@@ -43,9 +85,12 @@ def CCO():
          dcpyps.Rate(5.0e08, R, AR, name='kon', eff='c', limits=[1e-15,1e+10]),
          ]
 
-    return  dcpyps.Mechanism(RateList, mtitle='C-C-O', rtitle='quasi random numbers')
+    return  dcpyps.Mechanism(RateList, mtitle=mectitle, rtitle=ratetitle)
 
 def CO():
+    
+    mectitle = 'C-O'
+    ratetitle = 'quasi random numbers'
 
     RS  = dcpyps.State('A', 'O', 50e-12)
     R   = dcpyps.State('B', 'C', 0.0)
@@ -55,9 +100,12 @@ def CO():
          dcpyps.Rate(50.0, RS, R, name='alpha', limits=[1e-15,1e+7]),
          ]
 
-    return  dcpyps.Mechanism(RateList, mtitle='C-O', rtitle='quasi random numbers')
+    return  dcpyps.Mechanism(RateList, mtitle=mectitle, rtitle=ratetitle)
 
 def six_cycles_mec():
+    
+    mectitle = 'six cycles'
+    ratetitle = 'quasi random numbers'
 
     A = dcpyps.State('A', 'A', 60e-12)
     B = dcpyps.State('A', 'B', 60e-12)
@@ -109,4 +157,4 @@ def six_cycles_mec():
          dcpyps.Rate(25.0, L, K, name='lk')
         ]
 
-    return  dcpyps.Mechanism(RateList, mtitle='six cycles', rtitle='quasi random numbers')
+    return  dcpyps.Mechanism(RateList, mtitle=mectitle, rtitle=ratetitle)
