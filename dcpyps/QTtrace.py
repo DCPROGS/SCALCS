@@ -4,6 +4,7 @@ A simple GUI to display and process single channel record.
 Depends on pyqt and matplotlib modules.
 """
 
+import math
 try:
     from PySide.QtCore import *
     from PySide.QtGui import *
@@ -29,24 +30,30 @@ class TraceGUI(QMainWindow):
         self.loaded = False
         self.filtered = False
 
-        self.line_length = 5 # seconds
+        self.line_length = 5.0 # seconds
         self.page_lines = 5
         self.point_every = 50
-        self.line_separ = 10 # pA
+        self.line_separ = 10.0 # pA
         self.pages = 1
         self.page = 1
+        
+        self.intervals = None
+        self.amplitudes = None
 
-        self.fc = 1000
+        self.fc = 1000.0
 
         fileMenu = self.menuBar().addMenu('&File')
         fileSSDOpenAction = self.createAction("&Open SSD file", self.onSSDFileOpen,
             None, "ssdfileopen", "File Open")
         fileABFOpenAction = self.createAction("&Open ABF file", self.onABFFileOpen,
             None, "abffileopen", "File Open")
+        fileIdealizedClampfitOpenAction = self.createAction(
+            "&Open Clampfit idealised file", self.onClampfitIdealisedOpen,
+            None, "clampfitfileopen", "File Open")
         fileSaveAsAction = self.createAction("&Save As...", self.onFileSaveAs,
             None, "filesaveas", "File Save As")
         self.addActions(fileMenu, (fileSSDOpenAction, fileABFOpenAction,
-            fileSaveAsAction))
+            fileIdealizedClampfitOpenAction, fileSaveAsAction))
 
         plotMenu = self.menuBar().addMenu('&Plot')
         nextPageAction = self.createAction("&Next page", self.onNextPage)
@@ -54,7 +61,8 @@ class TraceGUI(QMainWindow):
         printPageAction = self.createAction("&Print page", self.onPrint)
         plotOptionsAction = self.createAction("&Plot options", self.onPlotOptions)
         self.addActions(plotMenu, (nextPageAction,
-            prevPageAction, printPageAction, plotOptionsAction))
+            prevPageAction, #printPageAction, 
+            plotOptionsAction))
             
         signalMenu = self.menuBar().addMenu('&Signal')
         filterGausAction = self.createAction("&Gaussian filter", self.onFilterGaus)
@@ -136,6 +144,23 @@ class TraceGUI(QMainWindow):
         self.loaded = True
         self.page = 1
         self.update()
+        
+    def onClampfitIdealisedOpen(self):
+        self.filename, filt = QFileDialog.getOpenFileName(self,
+            "Open Data File...", "", "CSV files (*.csv)")
+        self.record = np.genfromtxt(self.filename, skip_header=1, delimiter=',')
+        self.intervals = self.record[:, 8] / 1000.0 # convert from ms to s
+        self.amplitudes = self.record[:, 6]
+        self.record_length = int(self.record[-1, 5] / 1000.0)
+        
+        self.file_type = 'csv'
+        self.loaded = True
+        self.page = 1
+        self.pages = self.record_length / (self.page_lines * self.line_length)
+        self.remainder = -1
+        self.remainder_amplitude = 0.0
+        self.remainder_length = self.line_length / 20.0
+        self.update()
 
     def onFileSaveAs(self):
         """
@@ -208,6 +233,8 @@ class TraceGUI(QMainWindow):
         dialog = PlotPageDlg(self)
         if dialog.exec_():
             self.line_length, self.page_lines, self.point_every, self.line_separ = dialog.return_par()
+        self.pages = self.record_length / (self.page_lines * self.line_length)
+        self.page = 1
         self.update()
         
     def onNextPage(self):
@@ -250,9 +277,93 @@ class TraceGUI(QMainWindow):
 
         if self.loaded:
             self.painter.begin(self)
-            self.drawSCTrace(self.painter)
+            if self.file_type == 'ssd' or self.file_type == 'abf':
+                self.drawSCTrace(self.painter)
+            elif self.file_type == 'csv':
+                self.drawIdealisedTrace(self.painter)
             self.painter.end()
+
+    def drawIdealisedTrace(self, event):
+        """
+        """
         
+        
+        average = np.average(self.amplitudes[:2])
+        yStartDbl = float((self.page_lines +1) * self.line_separ)
+        page_str = (self.filename + "; Page " + str(self.page) + " of " +
+            str(self.pages))
+        point_str = ("Seconds/line: {0:.3f}; line separation (pA): {1:.3f}".
+            format(self.line_length, self.line_separ))
+        self.painter.drawText(100, 50, page_str)
+        self.painter.drawText(100, 650, point_str)
+
+        for j in range(self.page_lines):
+            
+            xDbl1 = 0
+            yDbl1 = (self.remainder_amplitude - average) + yStartDbl - (j+1)*self.line_separ
+            line_end = False
+            running_length = self.remainder_length
+            while (not line_end) and (self.remainder < len(self.record)-1):
+                
+                if (running_length < self.line_length):
+                    xDbl2 = running_length
+                    yDbl2 = float((self.remainder_amplitude - average) + yStartDbl - (j+1)*self.line_separ)
+                    self.draw_line(xDbl1, yDbl1, xDbl2, yDbl2)
+                    
+                    self.remainder += 1
+                    
+                    if math.isnan(self.intervals[self.remainder]):
+                        self.remainder_amplitude = 0.0
+                        self.remainder_length = 0.5
+                        #self.remainder_length = self.record[self.remainder + 1, 4] - self.record[self.remainder - 1, 5]
+                    else:
+                        self.remainder_length = self.intervals[self.remainder]
+                        self.remainder_amplitude = self.amplitudes[self.remainder]
+                    running_length += self.remainder_length
+                    
+                    xDbl1 = xDbl2
+                    yDbl1 = float((self.remainder_amplitude - average) + yStartDbl - (j+1)*self.line_separ)
+                    self.draw_line(xDbl1, yDbl2, xDbl1, yDbl1)
+                    
+                else:
+                    xDbl2 = self.line_length
+                    yDbl2 = float((self.remainder_amplitude - average) + yStartDbl - (j+1)*self.line_separ)
+                    self.draw_line(xDbl1, yDbl1, xDbl2, yDbl2)
+                    line_end = True
+                    self.remainder_length = running_length - self.line_length
+                        
+                
+                
+                
+               
+
+    def draw_line(self, xDbl1, yDbl1, xDbl2, yDbl2):
+        
+        xMinPix = int(self.width() * 5 / 100)
+        xMaxPix = int(self.width() * 90 / 100)
+        yMaxPix = int(self.height() * 10 / 100)
+        yMinPix = int(self.height() * 90 / 100)
+        
+        xMinDbl = float(0)
+        xMaxDbl = float(self.line_length)
+        yMinDbl = float(0)
+        yMaxDbl = float(self.page_lines + 2) * self.line_separ
+        
+
+        xScaleDbl = float(xMaxPix - xMinPix) / float(xMaxDbl - xMinDbl)
+        yScaleDbl = float(yMaxPix - yMinPix) / float(yMaxDbl - yMinDbl)
+
+        xPix1 = xMinPix + int((xMinDbl) * xScaleDbl)
+        yPix1 = yMinPix + int((yMinDbl) * yScaleDbl)
+        xPix2 = xMinPix + int((xMaxDbl) * xScaleDbl)
+        yPix2 = yMinPix + int((yMaxDbl) * yScaleDbl)
+        
+        xPix1 = xMinPix + int((xDbl1 - xMinDbl) * xScaleDbl)
+        yPix1 = yMinPix + int((yDbl1 - yMinDbl) * yScaleDbl)
+        xPix2 = xMinPix + int((xDbl2 - xMinDbl) * xScaleDbl)
+        yPix2 = yMinPix + int((yDbl2 - yMinDbl) * yScaleDbl)
+        self.painter.drawLine(xPix1, yPix1, xPix2, yPix2)
+
     def drawSCTrace(self, event):
         """
         """
