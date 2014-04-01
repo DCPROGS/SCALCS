@@ -1,4 +1,4 @@
-import os, time, sys, socket
+import os, time, sys, socket, platform
 import numpy as np
 from pylab import figure, semilogx, savefig, hist, xlim, ylim, scatter
 from pylab import plot, text, title, xlabel, ylabel
@@ -78,6 +78,8 @@ class ClusterReportHTML():
         path, fname = os.path.split(filename)
         self.fname = fname.split('.')[0]
         os.chdir(os.path.expanduser("~"))
+        if platform.system() == 'Windows':
+            os.chdir('C://')
         if not os.path.isdir('clusters'):
             os.mkdir('clusters')
         os.chdir('clusters')
@@ -85,7 +87,8 @@ class ClusterReportHTML():
             os.mkdir(self.fname)
         os.chdir(self.fname)
         self.dir = os.getcwd()
-        htmlfile = os.path.join(self.dir, self.fname + '.html')
+        
+        htmlfile = os.path.join(self.fname + '.html')
         self.f = open(htmlfile, 'w')
         
         str1 = "DC_PyPs: Cluster Inspector.<br>"
@@ -112,11 +115,12 @@ class ClusterReportHTML():
         self.f.write ('<br>Record in ' + filename + ' contains {0:d} clusters '.
             format(len(self.clusters)) + 'with average Popen = {0:.3f}'.
             format(np.average(popens)))
+        self.f.write('<br> <br>')
         
         figure(figsize=(6, 4))
         hist(popens, bins=20)
         xlim([0, 1])
-        file_popen = os.path.join(self.dir, self.fname + '_popen.png')
+        file_popen = os.path.join(self.fname + '_popen.png')
         title(file_popen)
         xlabel('Popen')
         savefig(file_popen, bbox_inches=0)
@@ -157,7 +161,7 @@ class ClusterReportHTML():
         figure(figsize=(6, 4))
         plot(X)
         if ytitle == 'Mean Popen': ylim([0, 1])
-        filepath = os.path.join(self.dir, self.fname + '_' + type + '.png')
+        filepath = os.path.join(self.fname + '_' + type + '.png')
         title(filepath)
         text(0.5, 0.9,'Number of intervals in group = {0:d}'.format(2*N))
         xlabel(xtitle)
@@ -169,7 +173,7 @@ class ClusterReportHTML():
         
         figure(figsize=(6, 4))
         scatter(X, Y)
-        filepath = os.path.join(self.dir, self.fname + '_' + type + '.png')
+        filepath = os.path.join(self.fname + '_' + type + '.png')
         title(filepath)
         xlabel(xtitle)
         ylabel(ytitle)
@@ -180,7 +184,7 @@ class ClusterReportHTML():
         figure(figsize=(6, 4))
         x1, y1, dx = scpl.prepare_hist(X, 0.01)
         semilogx(x1, y1, 'k-')
-        filepath = os.path.join(self.dir, self.fname + '_' + type + '.png')
+        filepath = os.path.join(self.fname + '_' + type + '.png')
         title(filepath)
         xlabel(xtitle)
         savefig(filepath, bbox_inches=0)
