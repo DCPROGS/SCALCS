@@ -50,7 +50,7 @@ class BurstMenu(QMenu):
         if dialog.exec_():
             self.parent.conc = dialog.return_par()
         self.parent.mec.set_eff('c', self.parent.conc)
-        scburst.printout_pdfs(self.parent.mec, output=self.parent.log)
+        self.parent.log.write(scburst.printout_pdfs(self.parent.mec))
         t, fbrst, mfbrst = scpl.burst_length_pdf(self.parent.mec, multicomp=True)
         self.parent.present_plot = np.vstack((t, fbrst, mfbrst))
         

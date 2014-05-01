@@ -107,7 +107,7 @@ class Rate(object):
 
         self.name = name
 
-        self._set_rateconstants(rateconstants, check=False)
+        self._set_rateconstants(rateconstants)
 
         if not isinstance(State1, State) or not isinstance(State2, State):
             raise TypeError("DCPYPS: States have to be of class State")
@@ -130,12 +130,7 @@ class Rate(object):
         self.constrain_func = constrain_func
         self.constrain_args = constrain_args
 
-        self._limits = limits
-        if not limits:
-            self._set_default_limits()
-            
-        self._check_limits()
-        self._check_rateconstants()
+        self._set_limits(limits, impose=False)
 
         if func is None:
             # No function provided, set up a default function
@@ -185,17 +180,7 @@ class Rate(object):
 
     effectors = property(_get_effectors, _set_effectors)
 
-    def _check_rateconstants(self):
-        if self._limits != []:
-            for nr in range(len(self._rateconstants)):
-                if self._rateconstants[nr] < self._limits[nr][0]:
-                    self.rateconstants[nr] = self._limits[nr][0]
-                    sys.stderr.write("DCPYPS: Warning: Corrected out-of-range rate constant\n")
-                if self._rateconstants[nr] > self._limits[nr][1]:
-                    self.rateconstants[nr] = self._limits[nr][1]
-                    sys.stderr.write("DCPYPS: Warning: Corrected out-of-range rate constant\n")
-                
-    def _set_rateconstants(self, rateconstants, check=True):
+    def _set_rateconstants(self, rateconstants):
         try:
             # test whether rateconstants is a sequence:
             it = iter(rateconstants)
@@ -208,9 +193,6 @@ class Rate(object):
         except TypeError:
             # if not, convert to single-itemed list:
             self._rateconstants = np.array([rateconstants,])
-
-        if check:
-            self._check_rateconstants()
 
     def _get_rateconstants(self):
         return self._rateconstants
@@ -236,17 +218,30 @@ class Rate(object):
             elif len(self._limits) != len(self._rateconstants):
                 err = "DCPYPS: limits has to contain as many limit pairs as there are rate constants.\n"
                 raise RuntimeError(err)
+        else: # if no limits given- set default
+            self._set_default_limits()
 
-    def _set_limits(self, limits, check=True):
+    def _set_limits(self, limits, impose=False):
         self._limits = limits
-        if check:
-            self._check_limits()
+        self._check_limits()
+        if impose:
+            self._impose_limits()
+
+    def _impose_limits(self):
+        if self._limits != []:
+            for nr in range(len(self._rateconstants)):
+                if self._rateconstants[nr] < self._limits[nr][0]:
+                    self.rateconstants[nr] = self._limits[nr][0]
+                    sys.stderr.write("DCPYPS: Warning: Corrected out-of-range rate constant\n")
+                if self._rateconstants[nr] > self._limits[nr][1]:
+                    self.rateconstants[nr] = self._limits[nr][1]
+                    sys.stderr.write("DCPYPS: Warning: Corrected out-of-range rate constant\n")
             
     def _set_default_limits(self):
         if self._effectors[0] == 'c':
-            self._limits = [1e-15,1e+9]
+            self._limits = [[1e-15,1e+9]]
         else:
-            self._limits = [1e-15,1e+6]
+            self._limits = [[1e-15,1e+6]]
             
     def _get_limits(self):
         return self._limits
