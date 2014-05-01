@@ -297,6 +297,9 @@ class RateTableDlg(QDialog):
     def tableItemChanged(self, row, column):
         # TODO: update mechanism if anything changed in table
 
+        if column == 2:
+            self.mec.Rates[row].name = self.table.item(row, column).text()
+
         if column == 3:
             newratecon = float(self.table.item(row, column).text())
             self.mec.Rates[row].rateconstants = newratecon
@@ -350,9 +353,8 @@ class RateTableDlg(QDialog):
                 self.table.setItem(row, 9, cell)
 
         if column == 10 or column == 11:
-            newlimits = [float(self.table.item(row, 10).text()),
+            self.mec.Rates[row].limits = [float(self.table.item(row, 10).text()),
                 float(self.table.item(row, 11).text())]
-            self.mec.Rates[row].limits = newlimits
 
         self.changed = True
 

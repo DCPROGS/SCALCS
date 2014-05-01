@@ -106,32 +106,30 @@ class Rate(object):
                  is_constrained=False, constrain_func=None, constrain_args=None):
 
         self.name = name
-
-        self._set_rateconstants(rateconstants)
-
         if not isinstance(State1, State) or not isinstance(State2, State):
             raise TypeError("DCPYPS: States have to be of class State")
         self.State1 = State1
         self.State2 = State2
 
-        # Effector of list of effectors
-        # Examples: 
-        # 'c'
-        # 'v'
-        # ['Glu', 'Gly']
+        self._set_rateconstants(rateconstants)
+        self._set_limits(limits, impose=False)
+        # List of effectors. Eg: 'c', 'v', ['Glu', 'Gly']
         self._set_effectors(eff)
-        
+        self._set_func(func)
+
         self.fixed = fixed # for future expansion (fixed while fitting)
-
-#        self.cycle = cycle
         self.mr = mr # for future expansion (set by microscopic reversibility)
-
         self.is_constrained = is_constrained
         self.constrain_func = constrain_func
         self.constrain_args = constrain_args
 
-        self._set_limits(limits, impose=False)
+    def _set_name(self, name):
+        self._name = name
+    def _get_name(self):
+        return self._name
+    name = property(_get_name, _set_name)
 
+    def _set_func(self, func):
         if func is None:
             # No function provided, set up a default function
 
@@ -155,6 +153,9 @@ class Rate(object):
         else:
             # TODO: sanity check of func
             self._func = func # f(ratepars, amount of effector); "Rate equation" if you wish
+    def _get_func(self):
+        return self._func
+    func = property(_get_func, _set_func)
 
     def calc(self, effdict):
         return self._func(self._rateconstants, effdict)
@@ -174,10 +175,8 @@ class Rate(object):
         except TypeError:
             # if not, convert to single-itemed list:
             self._effectors = [effectors,]
-
     def _get_effectors(self):
         return self._effectors
-
     effectors = property(_get_effectors, _set_effectors)
 
     def _set_rateconstants(self, rateconstants):
@@ -193,12 +192,18 @@ class Rate(object):
         except TypeError:
             # if not, convert to single-itemed list:
             self._rateconstants = np.array([rateconstants,])
-
     def _get_rateconstants(self):
         return self._rateconstants
-
     rateconstants = property(_get_rateconstants, _set_rateconstants)
 
+    def _set_limits(self, limits, impose=False):
+        self._limits = limits
+        self._check_limits()
+        if impose:
+            self._impose_limits()
+    def _get_limits(self):
+        return self._limits
+    limits = property(_get_limits, _set_limits)
     def _check_limits(self):
         # sanity check for rate constant limits:
         if len(self._limits):
@@ -220,13 +225,6 @@ class Rate(object):
                 raise RuntimeError(err)
         else: # if no limits given- set default
             self._set_default_limits()
-
-    def _set_limits(self, limits, impose=False):
-        self._limits = limits
-        self._check_limits()
-        if impose:
-            self._impose_limits()
-
     def _impose_limits(self):
         if self._limits != []:
             for nr in range(len(self._rateconstants)):
@@ -236,17 +234,11 @@ class Rate(object):
                 if self._rateconstants[nr] > self._limits[nr][1]:
                     self.rateconstants[nr] = self._limits[nr][1]
                     sys.stderr.write("DCPYPS: Warning: Corrected out-of-range rate constant\n")
-            
     def _set_default_limits(self):
         if self._effectors[0] == 'c':
             self._limits = [[1e-15,1e+9]]
         else:
             self._limits = [[1e-15,1e+6]]
-            
-    def _get_limits(self):
-        return self._limits
-
-    limits = property(_get_limits, _set_limits)
 
     def _set_constrain(self, is_constrained, func, args):
         self.is_constrained = is_constrained
