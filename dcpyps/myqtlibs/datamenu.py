@@ -2,6 +2,7 @@ import sys
 import math
 import os
 import yaml
+import numpy as np
 
 try:
     from PySide.QtGui import *
@@ -163,10 +164,8 @@ class SCDataMenu(QMenu):
                 "Save as SCN file...", self.parent.path, ".scn",
                 "SCN files (*.scn)")
         self.parent.path = os.path.split(str(saveSCNFilename))[0]
-
-        dcio.scn_write_simulated(rec.itint, rec.iampl,
-            filename=saveSCNFilename)
-
+        dcio.scn_write(np.array(rec.itint)*1000.0, rec.iampl, rec.iprops,
+            filename=saveSCNFilename, type='simulated')
         self.parent.log.write('Current single channel record saved in SCN file:')
         self.parent.log.write(saveSCNFilename)
         return saveSCNFilename

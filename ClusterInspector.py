@@ -19,12 +19,19 @@ class Cluster(object):
     def add_interval(self, interval, amplitude):
         self.intervals.append(interval)
         self.amplitudes.append(amplitude)
+
+    def concatenate_last(self, interval, amplitude):
+        try:
+            self.intervals[-1] += interval
+        except:
+            self.intervals.append(interval)
+            self.amplitudes.append(amplitude)
         
     def get_open_intervals(self):
-        return self.intervals[1::2]
+        return self.intervals[0::2]
     
     def get_shut_intervals(self):
-        return self.intervals[0::2]
+        return self.intervals[1::2]
     
     def get_openings_number(self):
         return len(self.get_open_intervals())
@@ -57,7 +64,7 @@ class Cluster(object):
         else:
             return self.get_popen()
                 
-    def __str__(self):
+    def __repr__(self):
         ret_str = ('Cluster length = {0:.3f} ms; '.
             format(self.get_length() * 1000) +
             'number of openings = {0:d}; '.format(self.get_openings_number()) +
@@ -68,10 +75,11 @@ class Cluster(object):
 class ClusterReportHTML():
     """
     """
-    def __init__(self, filename, clusters):
+    def __init__(self, filename, clusters, tcrit):
         self.clusters = clusters
+        self.tcrit = tcrit
         self.setup(filename)
-        
+         
     def setup(self, filename):
         
         
@@ -97,8 +105,8 @@ class ClusterReportHTML():
         machine = socket.gethostname()
         system = sys.platform
         str3 = "Machine: %s; System: %s<br>" %(machine, system)
-        str = ('<html>\n' + str1 + str2 + str3)
-        self.f.write(str)
+        str4 = ('<html>\n' + str1 + str2 + str3)
+        self.f.write(str4)
         
         all_openings, all_shuttings = np.array([]), np.array([])
         popens, shav = np.array([]), np.array([])
@@ -113,8 +121,13 @@ class ClusterReportHTML():
             shav = np.append(shav, cluster.get_shuttings_average_length())
             
         self.f.write ('<br>Record in ' + filename + ' contains {0:d} clusters '.
-            format(len(self.clusters)) + 'with average Popen = {0:.3f}'.
-            format(np.average(popens)))
+            format(len(self.clusters)) + 'with average Popen = {0:.3f}; '.
+            format(np.average(popens)) + 'tcrit = {0:.1f} ms'.
+            format(self.tcrit * 1000))
+        self.f.write('<br> <br>')
+        for cluster in self.clusters:
+            self.f.write(str(cluster))
+            self.f.write('<br>')
         self.f.write('<br> <br>')
         
         figure(figsize=(6, 4))
@@ -148,7 +161,7 @@ class ClusterReportHTML():
             ytitle='Average shutting length, ms')
         self.f.write('<br> <br>')
         
-        N = 10 # number of openings
+        N = 25 # number of openings in sliding frame
         for i in range(len(self.clusters)):
             prm = self.clusters[i].get_running_mean_popen(N)
             type = 'Cluster_{0:d}'.format(i+1)
@@ -194,22 +207,49 @@ class ClusterReportHTML():
     def finalise(self):
         self.f.write('</html>')
         self.f.close()
+
+def process_csv_directly(record, tcrit, tres, minop):
+    short = False
+    clusters = []
+    cluster = Cluster()
+    for i in range(len(record)):
+        if (not np.isnan(record[i, 0])) and (i < len(record)-1) and not(record[i,8]/1000.0>tcrit and record[i,2]==0):
+            if not short and (record[i, 8] / 1000.0) > tres:
+                cluster.add_interval(record[i, 8] / 1000.0, record[i, 6] / 1000.0)
+            elif short:
+                cluster.concatenate_last(record[i, 8] / 1000.0, record[i, 6] / 1000.0)
+                short = False
+            elif not short and (record[i, 8] / 1000.0) < tres:
+                cluster.concatenate_last(record[i, 8] / 1000.0, record[i, 6] / 1000.0)
+                short = True
+
+        else:
+            print cluster
+            if cluster.get_openings_number() > minop:
+                clusters.append(cluster)
+            else:
+                print 'rejected: ', cluster
+            cluster = Cluster()
+
+    return clusters
+
+def process_convert_scn(record, tcrit, tres, minop):
+
+    clusters = []
+
+    return clusters
         
 ########################
 
 if __name__ == "__main__":
 
-    fname = "./dcpyps/samples/scn/Cevents.csv"
+    fname = "C:/clusters/2013_11_05_0001.csv"
     record = np.genfromtxt(fname, skip_header=1, delimiter=',')
 
-    clusters = []
-    cluster = Cluster()
-    for i in range(len(record)):
-        if not np.isnan(record[i, 0]) and i < len(record)-1:
-            cluster.add_interval(record[i, 8] / 1000.0, record[i, 6] / 1000.0)
-        else:
-            print cluster
-            clusters.append(cluster)
-            cluster = Cluster()
+    tcrit = 0.1 # 100 ms
+    tres = 0.0003 # 300 microsec
+    minop = 50 # minimal number of openings
 
-    ClusterReportHTML(fname, clusters)
+    clusters = process_csv_directly(record, tcrit, tres, minop)
+    ClusterReportHTML(fname, clusters, tcrit)
+    

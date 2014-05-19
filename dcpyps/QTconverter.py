@@ -1,5 +1,8 @@
 #! /usr/bin/python
 
+import os
+import numpy as np
+
 from PySide.QtCore import *
 from PySide.QtGui import *
 
@@ -60,5 +63,13 @@ class ConverterQT(QDialog):
             self.txt_to_file.setText(self.to_filename)
 
     def convert(self):
-        ""
-        dcio.scn_write_dummy(self.data, self.to_filename)
+        "One type intervals saved as shut intervals in scan file. "
+
+        nint = 2 * len(self.data) + 1
+        intervals = np.ones((nint), dtype='float') * 100
+        intervals[1::2] = self.data
+        amplitudes = np.zeros((nint), dtype='int')
+        amplitudes[0::2] += 1
+        options = np.zeros((nint), dtype='b')
+        dcio.scn_write(np.array(intervals), amplitudes, options,
+            filename=self.to_filename, type='Converted 1 type of ints')

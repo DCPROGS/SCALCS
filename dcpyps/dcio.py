@@ -1651,127 +1651,38 @@ def scn_read_data(fname, header):
         
     return np.array(tint)*0.001, np.array(iampl), np.array(iprops)
 
-def scn_write_simulated(intervals, amplitudes, treso=0.0, tresg=0.0,
-        Emem=0.0, avamp = 1.0, filename='SIMSCN.SCN'):
+def scn_write(intervals, amplitudes, flags, calfac=1.0, ffilt=-1.0, rms=0.0,
+        treso=0.0, tresg=0.0, Emem=0.0,
+        filename='new_saved.SCN', type='simulated'):
     """
-    Write binary SCAN (DCprogs) format file with simulated single channel
-    open/shut intervals.
+    Write binary SCAN (DCprogs: http://www.ucl.ac.uk/Pharmacology/dcpr95.html)
+    format file.
 
     Parameters
     ----------
-
     """
 
-    iscanver = -103
-    calfac2 = 1.0
-    ioffset = 154
-    ffilt = -1.0
-    rms = 0.0
-    title = ('Simulated data                                    ' +
-        '                    ')   #character*70
+    # Preapare header.
+    iscanver, ioffset = -103, 154
+    nint, avamp = len(intervals), np.average(amplitudes)
+    title = '{0: <70}'.format(type) # char*70
     t = time.asctime()
-    expdate = t[8:10] + '-' + t[4:7] + '-' + t[20:24] # '00-ooo-0000' character*11
-    tapeID = 'Simulated data          '      #character*24
-    ipatch = 0              #integer32
-    nint = len(intervals)
+    expdate = t[8:10] + '-' + t[4:7] + '-' + t[20:24] # '00-ooo-0000' char*11
+    tapeID = '{0: <24}'.format(type) # char*24
+    ipatch = 0 # integer32
 
+    # Write header.
     fout = open(filename, 'wb')
-    fout.write(struct.pack('i', iscanver))
-    fout.write(struct.pack('i', ioffset))
-    fout.write(struct.pack('i', nint))
-    fout.write(title)
-    fout.write(expdate)
-    fout.write(tapeID)
-    fout.write(struct.pack('i', ipatch))
-    fout.write(struct.pack('f', Emem))
-    fout.write(struct.pack('i', 0))
-    fout.write(struct.pack('f', avamp))
-    fout.write(struct.pack('f', rms))
-    fout.write(struct.pack('f', ffilt))
-    fout.write(struct.pack('f', calfac2))
-    fout.write(struct.pack('f', treso))
-    fout.write(struct.pack('f', tresg))
+    fout.write(struct.pack('iii', iscanver, ioffset, nint))
+    fout.write(title + expdate + tapeID)
+    fout.write(struct.pack('ififff', ipatch, Emem, 0, avamp, rms, ffilt))
+    fout.write(struct.pack('fff', calfac, treso, tresg))
 
-    for i in range(0, nint):
-        # simulated intervals are in seconds
-        # convert to ms; intervals in scn files are kept in ms
-        fout.write(struct.pack('f', intervals[i]*1000))
-    for i in range(0, nint):
-        fout.write(struct.pack('h', amplitudes[i]))
-    for i in range(0, nint):
-        fout.write(struct.pack('b', 0))
+    # Write data block.
+    fout.write(struct.pack('f'*nint, *intervals))
+    fout.write(struct.pack('h'*nint, *amplitudes))
+    fout.write(struct.pack('b'*nint, *flags))
     fout.close()
-
-def scn_write_dummy(data, filename):
-    """
-    Write binary SCAN (DCprogs) format file. Use this dummy file to plot one
-    type of time intervals in EKDIST (DCprogs).
-    DCprogs- http://www.ucl.ac.uk/Pharmacology/dcpr95.html
-
-    Parameters
-    ----------
-    data : list of flotas
-        Time intervals in milliseconds.
-    file : filename
-    """
-
-    iscanver = -103
-    nint = None
-    calfac2 = 1.0
-    ioffset = 154
-    ffilt = -1.0
-    rms = 0.0
-    treso = 0.0
-    tresg = 0.0
-    title = ('Converted from text file containing one column of intervals.' +
-        '          ')   #character*70
-    expdate = '00-ooo-0000'    #character*11
-    tapeID = 'Converted list          '      #character*24
-    ipatch = 0              #integer32
-    Emem = 0.0              #float
-    avamp = 1.0             #float
-
-    amplitudes = []
-    intervals = []
-    options = []
-    for d in data:
-        amplitudes.append(1)
-        intervals.append(100)
-        options.append(struct.pack("b",0)) ## int8_t
-        amplitudes.append(0)
-        intervals.append(d)
-        options.append(struct.pack("=b",0))
-    amplitudes.append(1)
-    intervals.append(100)
-    options.append(struct.pack("=b",0))
-    nint = len(intervals)
-
-    fout = open(filename, 'wb')
-    fout.write(struct.pack('i', iscanver))
-    fout.write(struct.pack('i', ioffset))
-    fout.write(struct.pack('i', nint))
-    fout.write(title)
-    fout.write(expdate)
-    fout.write(tapeID)
-    fout.write(struct.pack('i', ipatch))
-    fout.write(struct.pack('f', Emem))
-    fout.write(struct.pack('i', 0))
-    fout.write(struct.pack('f', avamp))
-    fout.write(struct.pack('f', rms))
-    fout.write(struct.pack('f', ffilt))
-    fout.write(struct.pack('f', calfac2))
-    fout.write(struct.pack('f', treso))
-    fout.write(struct.pack('f', tresg))
-
-    for i in range(0, nint):
-        fout.write(struct.pack('f', intervals[i]))
-    for i in range(0, nint):
-        fout.write(struct.pack('h', amplitudes[i]))
-    for i in range(0, nint):
-        fout.write(struct.pack('b', 0))
-
-    fout.close()
-    print 'Finished writing scn file.'
 
 def abf_read_header (filename, debug=1):
     """
