@@ -43,7 +43,13 @@ class SCRecord(object):
             self.impose_resolution(self.tres)
             self.get_periods()
             self.get_bursts(self.tcrit)
-        
+
+    def _set_resolution(self, tres):
+        self._tres = tres
+        #self.ipose_resolution()
+    def _get_resolution(self):
+        return self._tres
+    tres = property(_get_resolution, _set_resolution)
 
     def load_from_file(self):
         #TODO: enable taking several scan files and join in a single record.
@@ -356,6 +362,45 @@ class SCRecord(object):
         if burst:
             bursts.append(burst)
         self.bursts = bursts
+        
+    def _set_ctcrit(self, ctcrit):
+        self._ctcrit = ctcrit
+        self._set_clusters()
+    def _get_ctcrit(self):
+        return self._ctcrit
+    ctcrit = property(_get_ctcrit, _set_ctcrit)
+
+    def _set_clusters(self):
+        """
+        Cut entire single channel record into clusters using critical shut time
+        interval (tcrit).
+        Default definition of cluster:
+        (1) Doesn't require a gap > tcrit before the 1st cluster in each record;
+        (2) Unusable shut time is a valid end of cluster;
+        (3) Open probability of a cluster is calculated without considering
+        last opening.
+        """
+        self._clusters = []
+        cluster = Cluster()
+        i = 0
+        while i < (len(self.pint) - 1):
+            if self.pamp[i] != 0:
+                cluster.add_interval(self.pint[i], self.pamp[i])
+            else: # found gap
+                if self.pint[i] < self._ctcrit and self.popt[i] < 8:
+                    cluster.add_interval(self.pint[i], self.pamp[i])
+                else: # gap is longer than tcrit or bad
+                    self._clusters.append(cluster)
+                    cluster = Cluster()
+            i += 1
+        if self.pamp[i] != 0:
+            cluster.add_interval(self.pint[i], self.pamp[i])
+            self._clusters.append(cluster)
+        if cluster.intervals:
+            self._clusters.append(cluster)
+    def _get_clusters(self):
+        return self._clusters
+    clusters = property(_get_clusters, _set_clusters)
 
     def get_burst_length_list(self):
         blength = []
@@ -403,8 +448,11 @@ class SCRecord(object):
             str_repr += self.filenames[0]
         else:
             str_repr += "no file name; probably this is simulated record."
-        str_repr += ('\nConcentration of agonist = {0:.3f} microMolar'.
-            format(self.conc*1e6))
+        if self.conc:
+            str_repr += ('\nConcentration of agonist = {0:.3f} microMolar'.
+                format(self.conc*1e6))
+        else:
+            str_repr += '\nConcentration unknown.'
         str_repr += ('\nResolution for HJC calculations = ' + 
             '{0:.1f} microseconds'.format(self.tres*1e6))
         if self.tcrit:
@@ -474,4 +522,92 @@ class SCRecord(object):
 
     def printout(self, output=sys.stdout):
         output.write('%s' % self)
-        
+
+
+class Cluster(object):
+    """
+
+    """
+
+    def __init__(self):
+        self.setup()
+
+    def setup(self):
+        self.intervals = []
+        self.amplitudes = []
+
+    def add_interval(self, interval, amplitude):
+        self.intervals.append(interval)
+        self.amplitudes.append(amplitude)
+
+    def concatenate_last(self, interval, amplitude):
+        try:
+            self.intervals[-1] += interval
+        except:
+            self.intervals.append(interval)
+            self.amplitudes.append(amplitude)
+
+    def get_open_intervals(self):
+        return self.intervals[0::2]
+
+    def get_shut_intervals(self):
+        return self.intervals[1::2]
+
+    def get_openings_number(self):
+        return len(self.get_open_intervals())
+
+    def get_openings_average_length(self):
+        return np.average(self.get_open_intervals())
+
+    def get_shuttings_average_length(self):
+        return np.average(self.get_shut_intervals())
+
+    def get_total_open_time(self):
+        return np.sum(self.get_open_intervals())
+
+    def get_total_shut_time(self):
+        return np.sum(self.get_shut_intervals())
+
+    def get_length(self):
+        return np.sum(self.intervals)
+
+    def get_popen(self):
+        """
+        Calculate Popen by excluding very last opening. Equal number of open
+        and shut intervals are taken into account.
+        """
+        return self.get_total_open_time() / np.sum(self.intervals)
+
+    def get_popen1(self):
+        """
+        Calculate Popen by excluding very last opening. Equal number of open
+        and shut intervals are taken into account.
+        """
+        return ((self.get_total_open_time() - self.intervals[-1]) /
+            (np.sum(self.intervals) - self.intervals[-1]))
+
+    def get_running_mean_popen(self, N):
+
+        if len(self.intervals)-1 > 2*N:
+            openings = self.get_open_intervals()
+            shuttings = self.get_shut_intervals()
+            meanP = []
+            for i in range(len(openings) - N):
+                meanP.append(np.sum(openings[i: i+N]) /
+                    (np.sum(openings[i: i+N]) + np.sum(shuttings[i: i+N])))
+            return meanP
+        else:
+            return self.get_popen()
+
+    def __repr__(self):
+        ret_str = ('Cluster length = {0:.3f} ms; '.
+            format(self.get_length() * 1000) +
+            'number of openings = {0:d}; '.format(self.get_openings_number()) +
+            'Popen = {0:.3f}'.format(self.get_popen()) +
+            '\n\t(Popen omitting last opening = {0:.3f})'.
+            format(self.get_popen1()) +
+            '\n\tTotal open = {0:.3f} ms; total shut = {1:.3f} ms'.
+            format(self.get_total_open_time() * 1000,
+            self.get_total_shut_time() * 1000))
+        return ret_str
+
