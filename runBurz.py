@@ -28,7 +28,7 @@ for i in range(len(scnfiles)):
     rec = dataset.SCRecord(scnfiles[i], conc[i], tres[i], tcrit[i], chs[i])
     rec.record_type = 'simulated'
     recs.append(rec)
-    bursts.append(rec.bursts)
+    bursts.append(rec.bursts.intervals())
     rec.printout()
 
 report.dataset(recs)
@@ -38,9 +38,13 @@ report.dataset(recs)
 #version, meclist, max_mecnum = dcio.mec_get_list(mecfn)
 #mec = dcio.mec_load(mecfn, meclist[3][0])
 
-filename = 'E:/pDC/testDCpyps/Burz2004/mec-Burz-sim4fit-140124.yaml'
-stream = file(filename, 'r')
-mec = yaml.load(stream)
+mecfn = "./dcpyps/samples/mec/demomec.mec"
+version, meclist, max_mecnum = dcio.mec_get_list(mecfn)
+mec = dcio.mec_load(mecfn, meclist[2][0])
+
+#filename = 'E:/pDC/testDCpyps/Burz2004/mec-Burz-sim4fit-140124.yaml'
+#stream = file(filename, 'r')
+#mec = yaml.load(stream)
 
 # PREPARE RATE CONSTANTS.
 rates = mec.unit_rates()

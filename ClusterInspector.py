@@ -30,8 +30,8 @@ if __name__ == "__main__":
     minop = 50 # minimal number of openings
 
     rec = dataset.SCRecord([fscname], tres=0.0003, tcrit=0.1)
-    rec.ctcrit = 0.1
-    for cluster in rec.clusters:
+    rec.tcrit = 0.1
+    for cluster in rec.bursts.all():
         print cluster
 
     ClusterReportHTML(fname, rec, runwin=20)

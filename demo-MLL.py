@@ -64,7 +64,7 @@ def main():
     opts['tres'] = tres
     opts['tcrit'] = tcrit
     opts['isCHS'] = True
-    opts['data'] = rec1.bursts
+    opts['data'] = rec1.bursts.intervals()
 
     # MAXIMUM LIKELIHOOD FIT.
     start_lik, th = scl.HJClik(np.log(theta), opts)
@@ -91,7 +91,7 @@ def main():
     print '\n\n'
     
     #######   DCPROGS likelihood
-    bursts = rec1.bursts
+    bursts = rec1.bursts.intervals()
     logfac = math.log(10)
     likelihood = Log10Likelihood(bursts, mec.kA, tres, tcrit)
     def dcprogslik(x, args=None):

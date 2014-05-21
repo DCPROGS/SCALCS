@@ -101,20 +101,21 @@ class Rate(object):
     Describes a rate between two states.
     """
 
-    def __init__(self, rateconstants, State1, State2, name='', eff=None, 
+    def __init__(self, rateconstants, State1, State2, name=' ', eff=None,
                  fixed=False, mr=False, func=None, limits=[],
                  is_constrained=False, constrain_func=None, constrain_args=None):
 
-        self.name = name
+        self._set_name(name)
         if not isinstance(State1, State) or not isinstance(State2, State):
             raise TypeError("DCPYPS: States have to be of class State")
         self.State1 = State1
         self.State2 = State2
 
         self._set_rateconstants(rateconstants)
+        self._set_effectors(eff)
         self._set_limits(limits, impose=False)
         # List of effectors. Eg: 'c', 'v', ['Glu', 'Gly']
-        self._set_effectors(eff)
+        
         self._set_func(func)
 
         self.fixed = fixed # for future expansion (fixed while fitting)

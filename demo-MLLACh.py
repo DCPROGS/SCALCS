@@ -74,14 +74,14 @@ def main():
     opts['tres'] = tres
     opts['tcrit'] = tcrit
     opts['isCHS'] = True
-    opts['data'] = rec1.bursts
+    opts['data'] = rec1.bursts.intervals()
 
 #################################################
 
     start_lik, th = scl.HJClik(np.log(theta), opts)
     print ("Starting likelihood = {0:.6f}".format(-start_lik))#
 
-    bursts = rec1.bursts
+    bursts = rec1.bursts.intervals()
     likelihood = Log10Likelihood(bursts, mec.kA, tres, tcrit)
 
     def dcprogslik(x, args=None):

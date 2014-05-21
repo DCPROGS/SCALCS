@@ -15,48 +15,120 @@ class SCRecord(object):
     record.
     """
 
-    def __init__(self, filenames=None, conc=None, tres=None, tcrit=None,
+    def __init__(self, filenames=None, conc=None, tres=0.0, tcrit=None,
         chs=None, onechan=None, badend=None,
         itint=None, iampl=None, iprops=None):
-        
-        self.filenames = filenames
-        self.itint = itint
-        self.iampl = iampl
-        self.iprops = iprops
-        self.tres = tres
-        if tcrit:
-            self.tcrit = math.fabs(tcrit)
+
+        self.record_type = None
+        if filenames:
+            self.load_from_file(filenames)
+
+#        self.itint = itint
+#        self.iampl = iampl
+#        self.iprops = iprops
+
+        if tres: 
+            self._set_resolution(tres)
         else:
-            self.tcrit = tcrit
+            self._tres = None
+        if tcrit:
+            self._set_tcrit(math.fabs(tcrit))
+        else:
+            self.tcrit = None
+
         self.conc = conc
         self.chs = chs # CHS vectors: yes or no
         self.onechan = onechan # opening from one channel only?
         self.badend = badend # bad shutting can terminate burst?
 
-        self.record_type = None
-        self.resolution_imposed = False
-
-        self.bursts = []
         
-        if self.filenames and self.tres and self.tcrit:
-            self.load_from_file()
-            self.impose_resolution(self.tres)
-            self.get_periods()
-            self.get_bursts(self.tcrit)
+        self.resolution_imposed = False
 
     def _set_resolution(self, tres):
         self._tres = tres
-        #self.ipose_resolution()
+        self._impose_resolution()
+        self._set_periods()
     def _get_resolution(self):
         return self._tres
     tres = property(_get_resolution, _set_resolution)
 
-    def load_from_file(self):
+    def _set_periods(self):
+        """
+        Separate open and shut intervals from the entire record.
+
+        There may be many small amplitude transitions during one opening,
+        each of which will count as an individual opening, so generally
+        better to look at 'open periods'.
+
+        Look for start of a group of openings i.e. any opening that has
+        defined duration (i.e. usable).  A single unusable opening in a group
+        makes its length undefined so it is excluded.
+        NEW VERSION -ENSURES EACH OPEN PERIOD STARTS WITH SHUT-OPEN TRANSITION
+        Find start of a group (open period) -valid start must have a good shut
+        time followed by a good opening -if a bad opening is found as first (or
+        any later) opening then the open period is abandoned altogether, and the
+        next good shut time sought as start for next open period, but for the
+        purposes of identifying the nth open period, rejected ones must be counted
+        as an open period even though their length is undefined.
+        """
+        pint, pamp, popt = [], [], []
+        if self.ramp[-1] != 0:
+            self.rint.pop()
+            self.ramp.pop()
+            self.ropt.pop()
+        if self.ramp[0] == 0:
+            self.rint.pop(0)
+            self.ramp.pop(0)
+            self.ropt.pop(0)
+
+        n = 1
+        oint, oamp, oopt = self.rint[0], self.ramp[0], self.ropt[0]
+        while n < len(self.rint):
+            if self.ramp[n] != 0:
+                oint += self.rint[n]
+                oamp += self.ramp[n] * self.rint[n]
+                if self.ropt[n] >= 8: oopt = 8
+
+                if n == (len(self.rint) - 1):
+                    pamp.append(oamp/oint)
+                    pint.append(oint)
+                    popt.append(oopt)
+            else:
+                pamp.append(oamp/oint)
+                pint.append(oint)
+                popt.append(oopt)
+                oint, oamp, oopt = 0.0, 0.0, 0
+
+                pamp.append(0.0)
+                pint.append(self.rint[n])
+                popt.append(self.ropt[n])
+            n += 1
+
+        self.pint, self.pamp, self.popt = pint, pamp, popt
+        self.opint = self.pint[0::2]
+        self.opamp = self.pamp[0::2]
+        self.oppro = self.popt[0::2]
+        self.shint = self.pint[1::2]
+        self.shamp = self.pamp[1::2]
+        self.shpro = self.popt[1::2]
+    def _get_periods(self):
+        return self._periods
+    periods = property(_get_periods, _set_periods)
+
+    def _set_tcrit(self, tcrit):
+        self._tcrit = tcrit
+        self._set_bursts()
+    def _get_tcrit(self):
+        return self._tcrit
+    tcrit = property(_get_tcrit, _set_tcrit)
+
+    def load_from_file(self, filenames):
+        self.filenames = filenames
         #TODO: enable taking several scan files and join in a single record.
         # Just a single file could be loaded at present.
-        ioffset, nint, calfac, header = dcio.scn_read_header(self.filenames[0])
+        ioffset, nint, calfac, header = dcio.scn_read_header(filenames[0])
         self.itint, self.iampl, self.iprops = dcio.scn_read_data(
-            self.filenames[0], header)
+            filenames[0], header)
         if header['iscanver'] == -103:
             self.record_type = 'simulated'
 
@@ -69,7 +141,7 @@ class SCRecord(object):
         iampl = [opamp if state < mec.kA else 0]
         iprops = [0]
         while len(itint) < nintmax:
-            state, t, a = self.next_state(state, picum, tmean, mec.kA, opamp)
+            state, t, a = self._next_state(state, picum, tmean, mec.kA, opamp)
             if t < tres or a == iampl[-1]:
                 itint[-1] += t
             else:
@@ -89,7 +161,7 @@ class SCRecord(object):
         self.get_periods()
 #        self.get_bursts(self.tcrit)
 
-    def next_state(self, present, picum, tmean, kA, opamp):
+    def _next_state(self, present, picum, tmean, kA, opamp):
         """
         Get next state, its lifetime and amplitude.
         """
@@ -99,28 +171,7 @@ class SCRecord(object):
         a = opamp if next < kA else 0
         return next, t, a
 
-    def print_all_record(self):
-        for i in range(len(self.itint)):
-            print i, self.itint[i], self.iampl[i], self.iprops[i]
-
-    def print_resolved_intervals(self):
-        print('\n#########\nList of resolved intervals:\n')
-        for i in range(len(self.rint)):
-            print i+1, self.rint[i]*1000, self.ramp[i], self.ropt[i]
-            if (self.ramp[i] == 0) and (self.rint[i] > (self.tcrit)):
-                print ('\n')
-        print('\n###################\n\n')
-        
-    def print_resolved_periods(self):
-        print 'tcrit=', self.tcrit
-        print('\n#########\nList of resolved periods:\n')
-        for i in range(len(self.pint)):
-            print i+1, self.pint[i], self.pamp[i], self.popt[i]
-            if self.pamp[i] == 0 and self.pint[i] > self.tcrit:
-                print ('\n')
-        print('\n###################\n\n')
-        
-    def impose_resolution(self, tres, acrit=0):
+    def _impose_resolution(self):
         """
         Impose time resolution.
 
@@ -140,26 +191,25 @@ class SCRecord(object):
         First interval in each concatenated group must be resolvable, but may
         be bad (in which case all group will be bad).
         """
-        
+
         for i in range(len(self.itint)):
             if self.itint[i] < 0: self.iprops[i] = 8
-            
         # Find first resolvable and usable interval.
         n = 0
         firstResolved = False
-        if ((self.itint[n] > tres) and (self.iprops[n] != 8)):
+        if ((self.itint[n] > self._tres) and (self.iprops[n] != 8)):
             firstResolved = True
         else:
             n += 1
-            
+
         while not firstResolved:
-            if ((self.itint[n] > tres) and (self.iprops[n] != 8) and
-#                (self.iampl[n] != 0) and 
-                (self.itint[n-1] > tres) and (self.iprops[n-1] != 8)):
+            if ((self.itint[n] > self._tres) and (self.iprops[n] != 8) and
+#                (self.iampl[n] != 0) and
+                (self.itint[n-1] > self._tres) and (self.iprops[n-1] != 8)):
                     firstResolved = True # first interval is usable and resolvable
             else:
                 n += 1
-        
+
         rtint, rampl, rprops = [], [], []
         ttemp, otemp = self.itint[n], self.iprops[n]
         if (self.iampl[n] == 0):
@@ -170,11 +220,11 @@ class SCRecord(object):
             atemp = self.iampl[n] * self.itint[n]
         isopen = True if (self.iampl[n] != 0) else False
         n += 1
-        
+
         # Start looking for unresolvable intervals.
         while n < (len(self.itint)):
-            if self.itint[n] < tres: # interval is unresolvable
-            
+            if self.itint[n] < self._tres: # interval is unresolvable
+
                 if (len(self.itint) == n + 1) and self.iampl[n] == 0 and isopen:
                     rtint.append(ttemp)
                     if self.record_type == 'simulated':
@@ -186,13 +236,13 @@ class SCRecord(object):
                     ttemp = self.itint[n]
                     atemp = 0
                     otemp = 8
-                    
+
                 else:
                     ttemp += self.itint[n]
                     if self.iprops[n] == 8: otemp = self.iprops[n]
                     if isopen: #self.iampl[n] != 0:
                         atemp += self.iampl[n] * self.itint[n]
-                
+
             else:
                 if (self.iampl[n] == 0): # next interval is resolvable shutting
                     if not isopen: # previous interval was shut
@@ -233,7 +283,7 @@ class SCRecord(object):
                             rprops.append(otemp)
                             ttemp, otemp = self.itint[n], self.iprops[n]
                             atemp = self.iampl[n] * self.itint[n]
-                       
+
             n += 1
         # end of while
 
@@ -250,127 +300,31 @@ class SCRecord(object):
                 rampl.append(atemp / ttemp)
         else:
             rampl.append(0)
-                      
+
         self.rint, self.ramp, self.ropt = rtint, rampl, rprops
-        self.resolution_imposed = True
-        self.tres = tres
 
-    def get_periods(self):
-        """
-        Separate open and shut intervals from the entire record.
+    def print_all_record(self):
+        for i in range(len(self.itint)):
+            print i, self.itint[i], self.iampl[i], self.iprops[i]
+
+    def print_resolved_intervals(self):
+        print('\n#########\nList of resolved intervals:\n')
+        for i in range(len(self.rint)):
+            print i+1, self.rint[i]*1000, self.ramp[i], self.ropt[i]
+            if (self.ramp[i] == 0) and (self.rint[i] > (self.tcrit)):
+                print ('\n')
+        print('\n###################\n\n')
         
-        There may be many small amplitude transitions during one opening,
-        each of which will count as an individual opening, so generally
-        better to look at 'open periods'.
-
-        Look for start of a group of openings i.e. any opening that has
-        defined duration (i.e. usable).  A single unusable opening in a group
-        makes its length undefined so it is excluded.
-        NEW VERSION -ENSURES EACH OPEN PERIOD STARTS WITH SHUT-OPEN TRANSITION
-        Find start of a group (open period) -valid start must have a good shut
-        time followed by a good opening -if a bad opening is found as first (or
-        any later) opening then the open period is abandoned altogether, and the
-        next good shut time sought as start for next open period, but for the
-        purposes of identifying the nth open period, rejected ones must be counted
-        as an open period even though their length is undefined.
-        """
+    def print_resolved_periods(self):
+        print 'tcrit=', self.tcrit
+        print('\n#########\nList of resolved periods:\n')
+        for i in range(len(self.pint)):
+            print i+1, self.pint[i], self.pamp[i], self.popt[i]
+            if self.pamp[i] == 0 and self.pint[i] > self.tcrit:
+                print ('\n')
+        print('\n###################\n\n')
         
-        pint, pamp, popt = [], [], []
-        if self.ramp[-1] != 0:
-            self.rint.pop()
-            self.ramp.pop()
-            self.ropt.pop()
-        if self.ramp[0] == 0:
-            self.rint.pop(0)
-            self.ramp.pop(0)
-            self.ropt.pop(0)
-        
-        n = 1
-        oint, oamp, oopt = self.rint[0], self.ramp[0], self.ropt[0]
-        while n < len(self.rint):
-            if self.ramp[n] != 0:
-                oint += self.rint[n]
-                oamp += self.ramp[n] * self.rint[n]
-                if self.ropt[n] >= 8: oopt = 8
-                
-                if n == (len(self.rint) - 1):
-                    pamp.append(oamp/oint)
-                    pint.append(oint)
-                    popt.append(oopt)
-            else:
-                pamp.append(oamp/oint)
-                pint.append(oint)
-                popt.append(oopt)
-                oint, oamp, oopt = 0.0, 0.0, 0
-
-                pamp.append(0.0)
-                pint.append(self.rint[n])
-                popt.append(self.ropt[n])
-            n += 1
-
-        self.pint, self.pamp, self.popt = pint, pamp, popt
-        self.opint = self.pint[0::2]
-        self.opamp = self.pamp[0::2]
-        self.oppro = self.popt[0::2]
-        self.shint = self.pint[1::2]
-        self.shamp = self.pamp[1::2]
-        self.shpro = self.popt[1::2]
-        
-    def get_bursts(self, tcrit):
-        """
-        Cut entire single channel record into bursts using critical shut time
-        interval (tcrit).
-
-        Default definition of bursts:
-        (1) 'Burst amplitude' defined as mean current (excluding shut
-            periods) during burst;
-        (2) Bursts with any 'assumed' amplitudes are INCLUDED;
-        (3) Require a gap > tcrit before the 1st burst in each file;
-        (4) Unusable shut time NOT a valid end of burst;
-        (5) No listing of the individual bursts.
-        """
-
-        
-
-        #i = 1 if self.pamp[0] == 0 else 0
-        i = 0 
-        
-        bursts = []
-        burst = []
-
-        endburst = False
-        
-        while i < (len(self.pint) - 1):
-
-            if self.pamp[i] != 0:
-                burst.append(self.pint[i])
-            
-            else: # found gap
-                if self.pint[i] < tcrit and self.popt[i] < 8:
-                    burst.append(self.pint[i])
-                else: # gap is longer than tcrit or bad
-                    endburst = True
-            
-            if endburst:
-                bursts.append(burst)
-                endburst = False
-                burst = []
-            i += 1
-            
-        if self.pamp[i] != 0:
-            burst.append(self.pint[i])
-        if burst:
-            bursts.append(burst)
-        self.bursts = bursts
-        
-    def _set_ctcrit(self, ctcrit):
-        self._ctcrit = ctcrit
-        self._set_clusters()
-    def _get_ctcrit(self):
-        return self._ctcrit
-    ctcrit = property(_get_ctcrit, _set_ctcrit)
-
-    def _set_clusters(self):
+    def _set_bursts(self):
         """
         Cut entire single channel record into clusters using critical shut time
         interval (tcrit).
@@ -380,55 +334,28 @@ class SCRecord(object):
         (3) Open probability of a cluster is calculated without considering
         last opening.
         """
-        self._clusters = []
-        cluster = Cluster()
+        self._bursts = Bursts()
+        burst = Burst()
         i = 0
         while i < (len(self.pint) - 1):
             if self.pamp[i] != 0:
-                cluster.add_interval(self.pint[i], self.pamp[i])
+                burst.add_interval(self.pint[i], self.pamp[i])
             else: # found gap
-                if self.pint[i] < self._ctcrit and self.popt[i] < 8:
-                    cluster.add_interval(self.pint[i], self.pamp[i])
+                if self.pint[i] < self._tcrit and self.popt[i] < 8:
+                    burst.add_interval(self.pint[i], self.pamp[i])
                 else: # gap is longer than tcrit or bad
-                    self._clusters.append(cluster)
-                    cluster = Cluster()
+                    self._bursts.add_burst(burst)
+                    burst = Burst()
             i += 1
         if self.pamp[i] != 0:
-            cluster.add_interval(self.pint[i], self.pamp[i])
-            self._clusters.append(cluster)
-        if cluster.intervals:
-            self._clusters.append(cluster)
-    def _get_clusters(self):
-        return self._clusters
-    clusters = property(_get_clusters, _set_clusters)
-
-    def get_burst_length_list(self):
-        blength = []
-        for ind in range(len(self.bursts)):
-            blength.append(np.sum(self.bursts[ind]))
-        return blength
-
-    def get_openings_burst_list(self):
-        openings = []
-        for ind in range(len(self.bursts)):
-            openings.append((len(self.bursts[ind]) + 1) / 2)
-        return openings
-
-    def print_bursts(self):
-        print('\n#####\nList of bursts:\n')
-        for ind in range(len(self.bursts)):
-            print ('{0:d} length {1:.6f} openings {2:d} :: '.
-                format(ind+1, np.sum(self.bursts[ind]), (len(self.bursts[ind])+1)/2),
-                self.bursts[ind])
-        print('\n###############\n\n')
-        
-    def set_tres(self, tres):
-        self.tres = tres
-        
-    def set_tcrit(self, tcrit):
-#        self.chs = False if (tcrit < 0) else True
-        self.tcrit = math.fabs(tcrit)
-
+            burst.add_interval(self.pint[i], self.pamp[i])
+            self._bursts.add_burst(burst)
+        if burst.intervals:
+            self._bursts.add_burst(burst)
+    def _get_bursts(self):
+        return self._bursts
+    bursts = property(_get_bursts, _set_bursts)
+     
     def set_conc(self, conc):
         self.conc = conc
         
@@ -454,10 +381,10 @@ class SCRecord(object):
         else:
             str_repr += '\nConcentration unknown.'
         str_repr += ('\nResolution for HJC calculations = ' + 
-            '{0:.1f} microseconds'.format(self.tres*1e6))
-        if self.tcrit:
+            '{0:.1f} microseconds'.format(self._tres*1e6))
+        if self._tcrit:
             str_repr += ('\nCritical gap length to define end of group (tcrit) ' +
-                '= {0:.3f} milliseconds'.format(self.tcrit*1e3))
+                '= {0:.3f} milliseconds'.format(self._tcrit*1e3))
         str_repr += ('\n\t(defined so that all openings in a group prob ' + 
             'come from same channel)')
         if self.chs:
@@ -480,7 +407,7 @@ class SCRecord(object):
 #        else:
 #            str_repr += '\nData not loaded...'
 
-        if self.tres:
+        if self._tres:
             str_repr += '\nNumber of resolved intervals = {0:d}'.format(len(self.rint))
             str_repr += '\nNumber of resolved periods = {0:d}'.format(len(self.opint) + len(self.shint))
             str_repr += '\n\nNumber of open periods = {0:d}'.format(len(self.opint))
@@ -497,17 +424,18 @@ class SCRecord(object):
         else:
             str_repr += '\nTemporal resolution not imposed...\n'
 
-        if self.tcrit:
-            str_repr += ('\nNumber of bursts = {0:d}'.format(len(self.bursts)))
-            blength = self.get_burst_length_list()
-            openings = self.get_openings_burst_list()
+        if self._tcrit:
+            print '\nNumber of bursts = {0:d}'.format(self.bursts.count())
+            str_repr += ('\nNumber of bursts = {0:d}'.format(self.bursts.count()))
+            blength = self.bursts.get_length_list()
+            openings = self.bursts.get_opening_num_list()
             
-            if len(self.bursts) > 1:
+            if self.bursts.count() > 1:
                 str_repr += ('\nAverage length = {0:.9f} ms'.
                     format(np.average(blength)*1000))
                 str_repr += ('\nRange: {0:.3f}'.format(min(blength)*1000) +
                     ' to {0:.3f} millisec'.format(max(blength)*1000))
-                openings = self.get_openings_burst_list()
+                #openings = self.get_openings_burst_list()
                 str_repr += ('\nAverage number of openings= {0:.9f}\n'.
                     format(np.average(openings)))
             else:
@@ -524,7 +452,7 @@ class SCRecord(object):
         output.write('%s' % self)
 
 
-class Cluster(object):
+class Burst(object):
     """
 
     """
@@ -573,8 +501,7 @@ class Cluster(object):
 
     def get_popen(self):
         """
-        Calculate Popen by excluding very last opening. Equal number of open
-        and shut intervals are taken into account.
+        Calculate Popen.
         """
         return self.get_total_open_time() / np.sum(self.intervals)
 
@@ -600,14 +527,64 @@ class Cluster(object):
             return self.get_popen()
 
     def __repr__(self):
-        ret_str = ('Cluster length = {0:.3f} ms; '.
+        ret_str = ('Group length = {0:.3f} ms; '.
             format(self.get_length() * 1000) +
             'number of openings = {0:d}; '.format(self.get_openings_number()) +
-            'Popen = {0:.3f}'.format(self.get_popen()) +
-            '\n\t(Popen omitting last opening = {0:.3f})'.
-            format(self.get_popen1()) +
-            '\n\tTotal open = {0:.3f} ms; total shut = {1:.3f} ms'.
+            'Popen = {0:.3f}'.format(self.get_popen()))
+        if self.get_openings_number > 1:
+            ret_str += ('\n\t(Popen omitting last opening = {0:.3f})'.
+            format(self.get_popen1()))
+        ret_str += ('\n\tTotal open = {0:.3f} ms; total shut = {1:.3f} ms'.
             format(self.get_total_open_time() * 1000,
             self.get_total_shut_time() * 1000))
         return ret_str
+
+class Bursts(object):
+    """
+
+    """
+
+    def __init__(self):
+        self.bursts = []
+    def add_burst(self, burst):
+        self.bursts.append(burst)
+
+    def intervals(self):
+        list = []
+        for burst in self.bursts:
+            list.append(burst.intervals)
+        return list
+
+    def all(self):
+        return self.bursts
+
+    def count(self):
+        return len(self.bursts)
+
+    def get_length_list(self):
+        blength = []
+        for burst in self.bursts:
+            blength.append(burst.get_length())
+        return blength
+
+    def get_length_mean(self):
+        return np.average(self.get_length_list())
+
+    def get_opening_num_list(self):
+        openings = []
+        for burst in self.bursts:
+            openings.append(burst.get_openings_number())
+        return openings
+
+    def get_opening_num_mean(self):
+        return np.average(self.get_length_list())
+    
+    def get_popen_list(self):
+        popen = []
+        for burst in self.bursts:
+            popen.append(burst.get_popen())
+        return popen
+    
+    def get_popen_mean(self):
+        return np.average(self.get_popen_list())
 

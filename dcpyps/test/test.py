@@ -222,10 +222,10 @@ class TestDC_PyPs(unittest.TestCase):
         rec1 = dataset.SCRecord([filename], self.conc, self.tres, self.tcrit)
 
         # Check if burst separation is done right.
-        self.assertEqual(len(rec1.bursts), 572)
-        blength = rec1.get_burst_length_list()
+        self.assertEqual(len(rec1.bursts.intervals()), 572)
+        blength = rec1.bursts.get_length_list()
         self.assertAlmostEqual(np.average(blength)*1000, 8.425049335, 8)
-        openings = rec1.get_openings_burst_list()
+        openings = rec1.bursts.get_opening_num_list()
         self.assertAlmostEqual(np.average(openings), 1.461538462, 8)
 
         opts = {}
@@ -234,7 +234,7 @@ class TestDC_PyPs(unittest.TestCase):
         opts['tres'] = self.tres
         opts['tcrit'] = self.tcrit
         opts['isCHS'] = True
-        opts['data'] = rec1.bursts
+        opts['data'] = rec1.bursts.intervals()
         rates = np.log(self.mec.theta())
         lik, theta = scl.HJClik(rates, opts)
         print 'lik=', lik

@@ -51,6 +51,7 @@ class FitReportHTML():
         self.f.write('Values of rate constants [1/sec]:<br>')
         self.f.write('<table border="0">')
         for rate in mec.Rates:
+            print 'rate name=', rate
             self.f.write('<tr>' + '<td>From ' + rate.State1.name + '</td><td>to ' +
                          rate.State2.name + '</td><td>' + rate.name + 
                          '</td><td>{0:.5g}</td></tr>'.format(rate.unit_rate()))
@@ -135,8 +136,8 @@ class ClusterReportHTML():
     """
     def __init__(self, filename, rec, runwin=25):
         self.N = runwin # number of openings in sliding frame
-        self.clusters = rec.clusters
-        self.tcrit = rec.ctcrit
+        self.clusters = rec.bursts
+        self.tcrit = rec.tcrit
         self.setup(filename)
 
     def setup(self, filename):
@@ -170,21 +171,21 @@ class ClusterReportHTML():
         all_openings, all_shuttings = np.array([]), np.array([])
         popens, shav = np.array([]), np.array([])
         opnum, opav, optot = np.array([]), np.array([]), np.array([])
-        for cluster in self.clusters:
+        for cluster in self.clusters.all():
             all_openings = np.append(all_openings, cluster.get_open_intervals())
             all_shuttings = np.append(all_shuttings, cluster.get_shut_intervals())
-            popens = np.append(popens, cluster.get_popen())
             opnum = np.append(opnum, cluster.get_openings_number())
             opav = np.append(opav, cluster.get_openings_average_length())
             optot = np.append(optot, cluster.get_total_open_time())
             shav = np.append(shav, cluster.get_shuttings_average_length())
+        popens = self.clusters.get_popen_list()
 
         self.f.write ('<br>Record in ' + filename + ' contains {0:d} clusters '.
-            format(len(self.clusters)) + 'with average Popen = {0:.3f}; '.
+            format(self.clusters.count()) + 'with average Popen = {0:.3f}; '.
             format(np.average(popens)) + 'tcrit = {0:.1f} ms'.
             format(self.tcrit * 1000))
         self.f.write('<br> <br>')
-        for cluster in self.clusters:
+        for cluster in self.clusters.all():
             self.f.write(str(cluster))
             self.f.write('<br>')
         self.f.write('<br> <br>')
@@ -221,8 +222,8 @@ class ClusterReportHTML():
         self.f.write('<br> <br>')
 
         # N - number of openings in sliding frame
-        for i in range(len(self.clusters)):
-            prm = self.clusters[i].get_running_mean_popen(self.N)
+        for i in range(self.clusters.count()):
+            prm = self.clusters.all()[i].get_running_mean_popen(self.N)
             type = 'Cluster_{0:d}'.format(i+1)
             self.insert_stability_plot(prm, type, self.N, xtitle='Group number',
                 ytitle='Mean Popen')

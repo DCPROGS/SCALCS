@@ -23,7 +23,7 @@ for i in range(len(scnfiles)):
     rec = dataset.SCRecord(scnfiles[i], conc[i], tres[i], tcrit[i], chs[i])
     rec.record_type = 'recorded'
     recs.append(rec)
-    bursts.append(rec.bursts)
+    bursts.append(rec.bursts.intervals())
     rec.printout()
 
 # LOAD FLIP MECHANISM USED Burzomato et al 2004
