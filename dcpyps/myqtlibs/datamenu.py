@@ -58,7 +58,7 @@ class SCDataMenu(QMenu):
         rec = dataset.SCRecord(scnfiles, conc, tres, tcrit, chs)
         rec.record_type = 'recorded'
         self.parent.recs.append(rec)
-        self.parent.bursts.append(rec.bursts)
+        self.parent.bursts.append(rec.bursts.intervals())
         self.parent.data_loaded = True
         rec.printout(self.parent.log)
         
@@ -79,7 +79,7 @@ class SCDataMenu(QMenu):
             rec = dataset.SCRecord(scnfiles, conc, tres, tcrit, chs)
             rec.record_type = 'recorded'
             self.parent.recs.append(rec)
-            self.parent.bursts.append(rec.bursts)
+            self.parent.bursts.append(rec.bursts.intervals())
             self.parent.data_loaded = True
             rec.printout(self.parent.log)
             
@@ -100,7 +100,7 @@ class SCDataMenu(QMenu):
                 recs[i]['tres'], recs[i]['tcrit'], recs[i]['chs'])
             rec.record_type = 'recorded'
             self.parent.recs.append(rec)
-            self.parent.bursts.append(rec.bursts)
+            self.parent.bursts.append(rec.bursts.intervals())
             self.parent.data_loaded = True
             rec.printout(self.parent.log)
         

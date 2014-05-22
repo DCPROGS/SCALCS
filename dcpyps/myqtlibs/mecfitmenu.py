@@ -99,20 +99,16 @@ class MecFitMenu(QMenu):
                 self.tcrit[i], self.chs[i])
             rec.record_type = 'recorded'
             self.recs.append(rec)
-            self.bursts.append(rec.bursts)
+            self.bursts.append(rec.bursts.intervals())
             rec.printout(self.log)
         
 #################### Called by menu 'Run Fit'
     def onStartFitting(self):
 
         theta = np.log(self.parent.mec.theta())
-        
-        print 'theta', theta
-        
-
         kwargs = {'nmax': 2, 'xtol': 1e-12, 'rtol': 1e-12, 'itermax': 100,
             'lower_bound': -1e6, 'upper_bound': 0}
-        
+
         for i in range(len(self.parent.recs)):
             self.likelihood.append(Log10Likelihood(self.parent.bursts[i], self.parent.mec.kA,
                 self.parent.recs[i].tres, self.parent.recs[i].tcrit, **kwargs))

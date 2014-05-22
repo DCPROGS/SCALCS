@@ -2,7 +2,7 @@
 
 import sys
 import math
-import random
+
 
 import numpy as np
 
@@ -20,13 +20,12 @@ class SCRecord(object):
         itint=None, iampl=None, iprops=None):
 
         self.record_type = None
+        self.filenames = filenames
         if filenames:
             self.load_from_file(filenames)
-
 #        self.itint = itint
 #        self.iampl = iampl
 #        self.iprops = iprops
-
         if tres: 
             self._set_resolution(tres)
         else:
@@ -34,14 +33,11 @@ class SCRecord(object):
         if tcrit:
             self._set_tcrit(math.fabs(tcrit))
         else:
-            self.tcrit = None
-
+            self._tcrit = None
         self.conc = conc
         self.chs = chs # CHS vectors: yes or no
         self.onechan = onechan # opening from one channel only?
         self.badend = badend # bad shutting can terminate burst?
-
-        
         self.resolution_imposed = False
 
     def _set_resolution(self, tres):
@@ -132,44 +128,18 @@ class SCRecord(object):
         if header['iscanver'] == -103:
             self.record_type = 'simulated'
 
-    def simulate_record(self, mec, tres, conc, state, opamp=5, nintmax=5000):
+    def simulate_record(self, mec, tres, conc, state, amp=5, nmax=5000):
         """
         """
-        picum = np.cumsum(scl.transition_probability(mec.Q), axis=1)
-        tmean = -1 / mec.Q.diagonal() # in s
-        itint = [random.expovariate(1 / tmean[state])]
-        iampl = [opamp if state < mec.kA else 0]
-        iprops = [0]
-        while len(itint) < nintmax:
-            state, t, a = self._next_state(state, picum, tmean, mec.kA, opamp)
-            if t < tres or a == iampl[-1]:
-                itint[-1] += t
-            else:
-                itint.append(t)
-                iampl.append(a)
-                iprops.append(0)
-        self.itint = itint
-        self.iampl = iampl
-        self.iprops = iprops
-        self.rint = self.itint
-        self.ramp = self.iampl
-        self.ropt = self.iprops
-        self.resolution_imposed = True
-        self.tres = tres
-        self.conc = conc
-        self.record_type = 'simulated'
-        self.get_periods()
-#        self.get_bursts(self.tcrit)
 
-    def _next_state(self, present, picum, tmean, kA, opamp):
-        """
-        Get next state, its lifetime and amplitude.
-        """
-        possible = np.nonzero(picum[present] >= random.random())[0]
-        next = np.delete(possible, np.where(possible == present))[0]
-        t = random.expovariate(1 / tmean[next])
-        a = opamp if next < kA else 0
-        return next, t, a
+        ints = scl.simulate_intervals(mec, tres, state, opamp=amp, nintmax=nmax)
+        self.itint, self.iampl, self.iprops = ints[:,0], ints[:,1], np.zeros((len(ints)), dtype='b')
+        self.rint, self.ramp, self.ropt = self.itint, self.iampl, self.iprops
+        self.resolution_imposed = True
+        self._set_resolution(tres)
+        self.set_conc(conc)
+        self.record_type = 'simulated'
+#        self.get_bursts(self.tcrit)
 
     def _impose_resolution(self):
         """
@@ -550,10 +520,7 @@ class Bursts(object):
         self.bursts.append(burst)
 
     def intervals(self):
-        list = []
-        for burst in self.bursts:
-            list.append(burst.intervals)
-        return list
+        return [b.intervals for b in self.bursts]
 
     def all(self):
         return self.bursts
@@ -562,28 +529,19 @@ class Bursts(object):
         return len(self.bursts)
 
     def get_length_list(self):
-        blength = []
-        for burst in self.bursts:
-            blength.append(burst.get_length())
-        return blength
+        return [b.get_length() for b in self.bursts]
 
     def get_length_mean(self):
         return np.average(self.get_length_list())
 
     def get_opening_num_list(self):
-        openings = []
-        for burst in self.bursts:
-            openings.append(burst.get_openings_number())
-        return openings
+        return [b.get_openings_number() for b in self.bursts]
 
     def get_opening_num_mean(self):
         return np.average(self.get_length_list())
     
     def get_popen_list(self):
-        popen = []
-        for burst in self.bursts:
-            popen.append(burst.get_popen())
-        return popen
+        return [b.get_popen() for b in self.bursts]
     
     def get_popen_mean(self):
         return np.average(self.get_popen_list())

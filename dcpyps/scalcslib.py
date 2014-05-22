@@ -38,6 +38,7 @@ __date__ ="$07-Dec-2010 20:29:14$"
 import sys
 from math import*
 from decimal import*
+import random
 
 import scipy.optimize as so
 import numpy as np
@@ -913,6 +914,33 @@ def adjacent_open_to_shut_range_pdf_components(u1, u2, QAA, QAF, QFF, QFA, phiA)
     for i in range(kA):
         w[i] = np.dot(np.dot(phiA, A[i]), col) / den
     return eigs, w
+
+def simulate_intervals(mec, tres, state, opamp=5, nintmax=5000):
+    """
+
+    """
+    picum = np.cumsum(transition_probability(mec.Q), axis=1)
+    tmean = -1 / mec.Q.diagonal() # in s
+    int = random.expovariate(1 / tmean[state])
+    amp = opamp if state < mec.kA else 0
+    intervals = [[int, amp]]
+    while len(intervals) < nintmax:
+        state, t, a = next_state(state, picum, tmean, mec.kA, opamp)
+        if t < tres or a == intervals[-1][1]:
+            intervals[-1][0] += t
+        else:
+            intervals.append([t, a])
+    return np.array(intervals)
+
+def next_state(present, picum, tmean, kA, opamp):
+    """
+    Get next state, its lifetime and amplitude.
+    """
+    possible = np.nonzero(picum[present] >= random.random())[0]
+    next = np.delete(possible, np.where(possible == present))[0]
+    t = random.expovariate(1 / tmean[next])
+    a = opamp if next < kA else 0
+    return next, t, a
 
 def printout_occupancies(mec, tres):
     """
