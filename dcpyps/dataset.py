@@ -539,10 +539,20 @@ class Bursts(object):
 
     def get_opening_num_mean(self):
         return np.average(self.get_length_list())
+
+    def get_opening_length_mean_list(self):
+        return [np.average(b.get_open_intervals()) for b in self.bursts]
     
     def get_popen_list(self):
         return [b.get_popen() for b in self.bursts]
     
     def get_popen_mean(self):
         return np.average(self.get_popen_list())
+
+    def get_long(self, minop):
+        long = Bursts()
+        for b in self.bursts:
+            if b.get_openings_number() >= minop:
+                long.add_burst(b)
+        return long
 

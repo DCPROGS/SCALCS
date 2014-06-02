@@ -134,10 +134,14 @@ class FitReportHTML():
 class ClusterReportHTML():
     """
     """
-    def __init__(self, filename, rec, runwin=25):
+    def __init__(self, filename, rec, runwin=2, minop=1):
         self.N = runwin # number of openings in sliding frame
-        self.clusters = rec.bursts
+        self.minop = minop # minimum number of openings in cluster
+        self.clusters = rec.bursts.get_long(minop)
+        if self.clusters.count() < 1:
+            self.clusters = rec.bursts.get_long(10)
         self.tcrit = rec.tcrit
+
         self.setup(filename)
 
     def setup(self, filename):
@@ -145,12 +149,13 @@ class ClusterReportHTML():
 
         path, fname = os.path.split(filename)
         self.fname = fname.split('.')[0]
-        os.chdir(os.path.expanduser("~"))
-        if platform.system() == 'Windows':
-            os.chdir('C://')
-        if not os.path.isdir('clusters'):
-            os.mkdir('clusters')
-        os.chdir('clusters')
+#        os.chdir(os.path.expanduser("~"))
+#        if platform.system() == 'Windows':
+#            os.chdir('C://')
+#        if not os.path.isdir('clusters'):
+#            os.mkdir('clusters')
+#        os.chdir('clusters')
+#        os.chdir(path)
         if not os.path.isdir(self.fname):
             os.mkdir(self.fname)
         os.chdir(self.fname)
