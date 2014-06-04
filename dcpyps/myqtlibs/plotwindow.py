@@ -11,18 +11,24 @@ except:
 class MatPlotWin(FigureCanvas):
     """
     """
-    def __init__(self):
+    def __init__(self, size=(6.0, 4.0), fsize=8):
         # Prepare matplotlib plot window
-        self.fig = Figure((6.0, 4.0), dpi=85)
+        self.fig = Figure(size, dpi=85)
         self.axes = self.fig.add_subplot(111)
+        self.axes.autoscale_view(True,True,True)
+        self.fontsize = fsize
         for loc, spine in self.axes.spines.iteritems():
             if loc in ['right','top']:
                 spine.set_color('none') # don't draw spine
         self.axes.xaxis.set_ticks_position('bottom')
         self.axes.yaxis.set_ticks_position('left')
+        for label in self.axes.xaxis.get_ticklabels():
+            label.set_fontsize(self.fontsize)
+        for label in self.axes.yaxis.get_ticklabels():
+            label.set_fontsize(self.fontsize)
 #        self.mplTools = NavigationToolbar(self.canvas, self.parent)
         mscale.register_scale(SquareRootScale)
-        FigureCanvas.__init__(self, self.fig)
+        FigureCanvas.__init__(self, self.fig)        
         
 class MatPlotTools(NavigationToolbar):
     """

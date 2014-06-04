@@ -38,7 +38,7 @@ class SCRecord(object):
         self.chs = chs # CHS vectors: yes or no
         self.onechan = onechan # opening from one channel only?
         self.badend = badend # bad shutting can terminate burst?
-        self.resolution_imposed = False
+#        self.resolution_imposed = False
 
     def _set_resolution(self, tres):
         self._tres = tres
@@ -108,7 +108,7 @@ class SCRecord(object):
         self.shamp = self.pamp[1::2]
         self.shpro = self.popt[1::2]
     def _get_periods(self):
-        return self._periods
+        return self.pint
     periods = property(_get_periods, _set_periods)
 
     def _set_tcrit(self, tcrit):
@@ -127,7 +127,7 @@ class SCRecord(object):
             filenames[0], header)
         if header['iscanver'] == -103:
             self.record_type = 'simulated'
-
+            
     def simulate_record(self, mec, tres, conc, state, amp=5, nmax=5000):
         """
         """
