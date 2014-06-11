@@ -451,6 +451,9 @@ class Burst(object):
     def get_shut_intervals(self):
         return self.intervals[1::2]
 
+    def get_mean_amplitude(self):
+        return np.average(self.amplitudes[0::2])
+
     def get_openings_number(self):
         return len(self.get_open_intervals())
 
@@ -520,7 +523,22 @@ class Bursts(object):
         self.bursts.append(burst)
 
     def intervals(self):
+        """
+        Get all intervals in the record.
+        """
         return [b.intervals for b in self.bursts]
+
+    def get_op_lists(self):
+        list = []
+        for b in self.bursts:
+            list.append(b.get_open_intervals())
+        return list
+
+    def get_sh_lists(self):
+        list = []
+        for b in self.bursts:
+            list.append(b.get_shut_intervals())
+        return list
 
     def all(self):
         return self.bursts
@@ -544,7 +562,10 @@ class Bursts(object):
         return [np.average(b.get_open_intervals()) for b in self.bursts]
     
     def get_popen_list(self):
-        return [b.get_popen() for b in self.bursts]
+        return [b.get_popen1() for b in self.bursts]
+
+    def get_mean_ampl_list(self):
+        return [b.get_mean_amplitude() for b in self.bursts]
     
     def get_popen_mean(self):
         return np.average(self.get_popen_list())

@@ -31,8 +31,10 @@ class ClusterInspector(QMainWindow):
         self.recs = []
         self.tres = 1e-5
         self.tcrit = 0.1
-        self.ma_period = 10
+        self.ma_period1 = 10
+        self.ma_period2 = 2
         self.min_op = 10
+        self.curr_cluster = 0
         
         # Add widgets to left side
         self.loadBtn = QPushButton('Load idealised record')
@@ -53,7 +55,7 @@ class ClusterInspector(QMainWindow):
         self.plt3 = pg.PlotWidget()
         self.plt4 = pg.PlotWidget()
         self.plt5 = pg.PlotWidget()
-        self.spB3 = pg.SpinBox(value=self.ma_period, step=1, bounds=(1,100))
+        self.spB3 = pg.SpinBox(value=self.ma_period1, step=1, bounds=(1,100))
         self.spB3.sigValueChanged.connect(self.spinBox3Changed)
 
 
@@ -86,15 +88,29 @@ class ClusterInspector(QMainWindow):
         self.plt8 = pg.PlotWidget()
         self.plt9 = pg.PlotWidget()
         self.plt10 = pg.PlotWidget()
+        self.spB4 = pg.SpinBox(value=self.min_op, step=1, bounds=(1,100))
+        self.spB4.sigValueChanged.connect(self.spinBox4Changed)
+        self.spB5 = pg.SpinBox(value=self.ma_period2, step=1, bounds=(1,100))
+        self.spB5.sigValueChanged.connect(self.spinBox5Changed)
+        self.spB6 = pg.SpinBox(value=self.curr_cluster+1, step=1) # , bounds=(1,100))
+        self.spB6.sigValueChanged.connect(self.spinBox6Changed)
+
         d2 = Dock("Dock2", size=(1, 1))
         area.addDock(d2, 'right')
         w2 = pg.LayoutWidget()
         w2.addWidget(self.textBox, row=0, col=0, colspan=4)
         w2.addWidget(self.plt6, row=1, col=0, colspan=2)
         w2.addWidget(self.plt7, row=1, col=2, colspan=2)
-        w2.addWidget(self.plt8, row=2, col=0, colspan=2)
-        w2.addWidget(self.plt9, row=2, col=2, colspan=2)
-        w2.addWidget(self.plt10, row=3, col=0, colspan=4)
+        w2.addWidget(QLabel('Use clusters with number of openings more than:'), row=2, col=0, colspan=3)
+        w2.addWidget(self.spB4, row=2, col=3)
+        w2.addWidget(self.plt8, row=3, col=0, colspan=2)
+        w2.addWidget(self.plt9, row=3, col=2, colspan=2)
+        w2.addWidget(self.plt10, row=4, col=0, colspan=4)
+        w2.addWidget(QLabel('Moving average period for cluster:'), row=5, col=0)
+        w2.addWidget(self.spB5, row=5, col=1)
+        w2.addWidget(QLabel('Cluster #:'), row=5, col=2)
+        w2.addWidget(self.spB6, row=5, col=3)
+
         d2.addWidget(w2)
 
     def update(self):
@@ -123,6 +139,7 @@ class ClusterInspector(QMainWindow):
         self.plt1.addItem(self.tresLine1)
         self.plt1.setLogMode(x=True, y=False)
         self.plt1.setLabel('bottom', "Open periods", units='s')
+        self.plt1.setLabel('left', "Count #")
 
         sx, sy, dx = scpl.prepare_hist(np.array(self.recs[-1].shint),
             self.recs[-1].tres)
@@ -138,27 +155,77 @@ class ClusterInspector(QMainWindow):
         self.plt2.addItem(self.tcritLine)
         self.plt2.setLogMode(x=True, y=False)
         self.plt2.setLabel('bottom', "Shut periods",  units='s') #, units='ms')
+        self.plt2.setLabel('left', "Count #")
         self.spB1.setValue(self.tres)
         self.spB2.setValue(self.tcrit)
+        self.spB3.setValue(self.ma_period1)
 
-        opma = moving_average(self.recs[-1].opint, self.ma_period)
-        shma = moving_average(self.recs[-1].shint, self.ma_period)
+
+
+        opma = moving_average(self.recs[-1].opint, self.ma_period1)
+        shma = moving_average(self.recs[-1].shint, self.ma_period1)
         poma = opma / (opma + shma)
         self.plt3.plot(opma, stepMode=True,pen='r')
         self.plt3.setLabel('left', "Open periods", units='s')
+        self.plt3.setLabel('bottom', "Interval #")
         self.plt4.plot(shma, stepMode=True,pen='b')
         self.plt4.setLabel('left', "Shut periods", units='s')
+        self.plt4.setLabel('bottom', "Interval #")
         self.plt5.plot(poma, stepMode=True,pen='g')
         self.plt5.setLabel('left', "Popen")
+        self.plt5.setLabel('bottom', "Interval #")
+        self.plt5.setYRange(0, 1)
 
         all_popen = []
+        all_mean_ampl = []
+        opav = []
+        all_op_lists = []
+        all_sh_lists = []
+        cluster_num = 0
         for record in self.recs:
             clusters = record.bursts.get_long(self.min_op)
+            cluster_num += clusters.count()
             all_popen.extend(clusters.get_popen_list())
+            all_mean_ampl.extend(clusters.get_mean_ampl_list())
+            opav.extend(clusters.get_opening_length_mean_list())
+            all_op_lists.extend(clusters.get_op_lists())
+            all_sh_lists.extend(clusters.get_sh_lists())
         y,x = np.histogram(np.array(all_popen)) #, bins=np.linspace(-3, 8, 40))
         hist = pg.PlotCurveItem(x, y, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
         self.plt6.addItem(hist)
         self.plt6.setXRange(0, 1) #, padding=None, update=True)
+        self.plt6.setLabel('bottom', "Popen")
+        self.plt6.setLabel('left', "Count #")
+        
+        y,x = np.histogram(np.array(opav)) #, bins=np.linspace(-3, 8, 40))
+        hist = pg.PlotCurveItem(x, y, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
+        self.plt7.addItem(hist)
+        self.plt7.setLabel('bottom', "Opening mean length", units='s')
+        self.plt7.setLabel('left', "Count #")
+        
+        self.plt8.plot(np.array(all_popen), np.array(opav)*1000,  pen=None, symbol='o', symbolPen='b', symbolSize=5, symbolBrush='b')
+        self.plt8.setLabel('left', "Opening mean length", units='ms')
+        self.plt8.setLabel('bottom', "Popen")
+        self.plt8.setXRange(0, 1)
+
+        #self.plt9.plot(np.array(all_popen), np.array(all_mean_ampl),  pen=None, symbol='o', symbolPen='b', symbolSize=5, symbolBrush='b')
+        self.plt9.setLabel('left', "Mean amplitude", units='pA')
+        self.plt9.setLabel('bottom', "Popen")
+        self.plt9.setXRange(0, 1)
+
+        copma = moving_average(all_op_lists[self.curr_cluster][:-1], self.ma_period2)
+        cshma = moving_average(all_sh_lists[self.curr_cluster], self.ma_period2)
+        cpoma = copma / (copma + cshma)
+        self.plt10.plot(cpoma, stepMode=True,pen='g')
+        self.plt10.setLabel('left', "Popen")
+        self.plt10.setLabel('bottom', "Interval #")
+        self.plt10.setYRange(0, 1)
+
+        self.spB4.setValue(self.min_op)
+        self.spB5.setValue(self.ma_period2)
+        self.spB6.setValue(self.curr_cluster+1)
+        self.spB6.setMaximum(cluster_num)
+        self.spB6.setMinimum(1)
 
     def tresLine1Changed(self):
         val = self.tresLine1.value()
@@ -195,7 +262,19 @@ class ClusterInspector(QMainWindow):
         self.update()
     def spinBox3Changed(self):
         val = self.spB3.value()
-        self.ma_period = val
+        self.ma_period1 = val
+        self.update()
+    def spinBox4Changed(self):
+        val = self.spB4.value()
+        self.min_op = val
+        self.update()
+    def spinBox5Changed(self):
+        val = self.spB5.value()
+        self.ma_period2 = val
+        self.update()
+    def spinBox6Changed(self):
+        val = self.spB6.value()
+        self.curr_cluster = int(val-1)
         self.update()
         
     def load(self):
@@ -228,6 +307,14 @@ class ClusterInspector(QMainWindow):
     def clear(self):
         self.plt1.clear()
         self.plt2.clear()
+        self.plt3.clear()
+        self.plt4.clear()
+        self.plt5.clear()
+        self.plt6.clear()
+        self.plt7.clear()
+        self.plt8.clear()
+        self.plt9.clear()
+        self.plt10.clear()
         self.recs = []
         self.textBox.clear()
         #self.update()
