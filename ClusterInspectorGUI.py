@@ -29,15 +29,16 @@ class ClusterInspector(QMainWindow):
 
         self.path = None
         self.recs = []
-        self.tres = 1e-5
-        self.tcrit = 0.1
+#        self.tres = 1e-5
+#        self.tcrit = 0.1
         self.ma_period1 = 10
         self.ma_period2 = 2
-        self.min_op = 10
+        self.min_op = 2
         self.curr_cluster = 0
+        self.curr_rec = -1
         
         # Add widgets to left side
-        self.loadBtn = QPushButton('Load idealised record')
+        self.loadBtn = QPushButton('Load idealised record(s)')
         self.removeBtn = QPushButton('Remove last record')
         self.saveBtn = QPushButton('Save current session')
         self.clearBtn = QPushButton('Delete all records')
@@ -46,9 +47,9 @@ class ClusterInspector(QMainWindow):
         self.saveBtn.setEnabled(False)
         self.clearBtn.setEnabled(False)
         self.clearBtn.clicked.connect(self.clear)
-        self.spB1 = pg.SpinBox(value=self.tres, suffix='s', siPrefix=True, step=1e-6, bounds=(1e-6,1e-3))
+        self.spB1 = pg.SpinBox(suffix='s', siPrefix=True, step=1e-6, bounds=(1e-6,1e-3))
         self.spB1.sigValueChanged.connect(self.spinBox1Changed)
-        self.spB2 = pg.SpinBox(value=self.tcrit, suffix='s', siPrefix=True, step=1e-4, bounds=(1e-3,1))
+        self.spB2 = pg.SpinBox(suffix='s', siPrefix=True, step=1e-4, bounds=(1e-3,1))
         self.spB2.sigValueChanged.connect(self.spinBox2Changed)
         self.plt1 = pg.PlotWidget()
         self.plt2 = pg.PlotWidget()
@@ -57,28 +58,35 @@ class ClusterInspector(QMainWindow):
         self.plt5 = pg.PlotWidget()
         self.spB3 = pg.SpinBox(value=self.ma_period1, step=1, bounds=(1,100))
         self.spB3.sigValueChanged.connect(self.spinBox3Changed)
+        self.spB7 = pg.SpinBox(value=self.curr_rec+1, step=1)
+        self.spB7.sigValueChanged.connect(self.spinBox7Changed)
 
-
-
-
-        d1 = Dock("Dock1", size=(1, 1))
+        d1 = Dock("Record Inspector", size=(1, 1))
         area.addDock(d1, 'left')
         w1 = pg.LayoutWidget()
         w1.addWidget(self.loadBtn, row=0, col=0)
         w1.addWidget(self.removeBtn, row=0, col=1)
         w1.addWidget(self.saveBtn, row=0, col=2)
         w1.addWidget(self.clearBtn, row=0, col=3)
-        w1.addWidget(self.plt1, row=1, col=0, colspan=2)
-        w1.addWidget(self.plt2, row=1, col=2, colspan=2)
-        w1.addWidget(QLabel('tres:'), row=2, col=0)
-        w1.addWidget(QLabel('tcrit:'), row=2, col=2)
-        w1.addWidget(self.spB1, row=2, col=1)
-        w1.addWidget(self.spB2, row=2, col=3)
-        w1.addWidget(self.plt3, row=3, col=0, colspan=4)
-        w1.addWidget(self.plt4, row=4, col=0, colspan=4)
-        w1.addWidget(self.plt5, row=5, col=0, colspan=4)
-        w1.addWidget(QLabel('Moving average period:'), row=6, col=0, colspan=2)
-        w1.addWidget(self.spB3, row=6, col=2)
+
+        w1.addWidget(QLabel('Displaying patch '), row=1, col=0)
+        w1.addWidget(self.spB7, row=1, col=1)
+        self.label1 = QLabel(' out of {0:d}'.format(len(self.recs)))
+        w1.addWidget(self.label1, row=1, col=2)
+        self.spB7.setMaximum(len(self.recs))
+        self.spB7.setMinimum(0)
+
+        w1.addWidget(self.plt1, row=2, col=0, colspan=2)
+        w1.addWidget(self.plt2, row=2, col=2, colspan=2)
+        w1.addWidget(QLabel('tres:'), row=3, col=0)
+        w1.addWidget(QLabel('tcrit:'), row=3, col=2)
+        w1.addWidget(self.spB1, row=3, col=1)
+        w1.addWidget(self.spB2, row=3, col=3)
+        w1.addWidget(self.plt3, row=4, col=0, colspan=4)
+        w1.addWidget(self.plt4, row=5, col=0, colspan=4)
+        w1.addWidget(self.plt5, row=6, col=0, colspan=4)
+        w1.addWidget(QLabel('Moving average period:'), row=7, col=0, colspan=2)
+        w1.addWidget(self.spB3, row=7, col=2)
         d1.addWidget(w1)
 
         # Right side
@@ -88,7 +96,7 @@ class ClusterInspector(QMainWindow):
         self.plt8 = pg.PlotWidget()
         self.plt9 = pg.PlotWidget()
         self.plt10 = pg.PlotWidget()
-        self.spB4 = pg.SpinBox(value=self.min_op, step=1, bounds=(1,100))
+        self.spB4 = pg.SpinBox(value=self.min_op, step=1, bounds=(2,100))
         self.spB4.sigValueChanged.connect(self.spinBox4Changed)
         self.spB5 = pg.SpinBox(value=self.ma_period2, step=1, bounds=(1,100))
         self.spB5.sigValueChanged.connect(self.spinBox5Changed)
@@ -115,40 +123,43 @@ class ClusterInspector(QMainWindow):
 
     def update(self):
 
-        self.recs[-1].tres = self.tres
-        self.recs[-1].tcrit = self.tcrit
         self.plt1.clear()
         self.plt2.clear()
         self.plt3.clear()
         self.plt4.clear()
         self.plt5.clear()
-
         self.plt6.clear()
         self.plt7.clear()
         self.plt8.clear()
         self.plt9.clear()
         self.plt10.clear()
 
-        ox, oy, dx = scpl.prepare_hist(np.array(self.recs[-1].opint),
-            self.tres)
+        self.label1.setText(' out of {0:d}'.format(len(self.recs)))
+        self.spB7.setMaximum(len(self.recs))
+        self.spB7.setValue(self.curr_rec+1)
+        if self.recs:
+            self.spB7.setMinimum(1)
+
+        ox, oy, dx = scpl.prepare_hist(np.array(self.recs[self.curr_rec].opint),
+            self.recs[self.curr_rec].tres)
         self.plt1.plot(ox, oy, stepMode=True, fillLevel=0,
             brush=(0, 0, 255, 80))
         self.tresLine1 = pg.InfiniteLine(angle=90, movable=True, pen='r')
-        self.tresLine1.setValue(log10(self.recs[-1].tres))
+        self.tresLine1.setValue(log10(self.recs[self.curr_rec].tres))
         self.tresLine1.sigPositionChangeFinished.connect(self.tresLine1Changed)
         self.plt1.addItem(self.tresLine1)
         self.plt1.setLogMode(x=True, y=False)
         self.plt1.setLabel('bottom', "Open periods", units='s')
         self.plt1.setLabel('left', "Count #")
 
-        sx, sy, dx = scpl.prepare_hist(np.array(self.recs[-1].shint),
-            self.recs[-1].tres)
+        sx, sy, dx = scpl.prepare_hist(np.array(self.recs[self.curr_rec].shint),
+            self.recs[self.curr_rec].tres)
         self.plt2.plot(sx, sy, stepMode=True, fillLevel=0,
             brush=(0, 0, 255, 80))
         self.tresLine2 = pg.InfiniteLine(angle=90, movable=True, pen='r')
-        self.tresLine2.setValue(log10(self.recs[-1].tres))
+        self.tresLine2.setValue(log10(self.recs[self.curr_rec].tres))
         self.tcritLine = pg.InfiniteLine(angle=90, movable=True, pen='y')
-        self.tcritLine.setValue(log10(self.recs[-1].tcrit))
+        self.tcritLine.setValue(log10(self.recs[self.curr_rec].tcrit))
         self.tresLine2.sigPositionChangeFinished.connect(self.tresLine2Changed)
         self.tcritLine.sigPositionChangeFinished.connect(self.tcritLineChanged)
         self.plt2.addItem(self.tresLine2)
@@ -156,14 +167,12 @@ class ClusterInspector(QMainWindow):
         self.plt2.setLogMode(x=True, y=False)
         self.plt2.setLabel('bottom', "Shut periods",  units='s') #, units='ms')
         self.plt2.setLabel('left', "Count #")
-        self.spB1.setValue(self.tres)
-        self.spB2.setValue(self.tcrit)
+        self.spB1.setValue(self.recs[self.curr_rec].tres)
+        self.spB2.setValue(self.recs[self.curr_rec].tcrit)
         self.spB3.setValue(self.ma_period1)
 
-
-
-        opma = moving_average(self.recs[-1].opint, self.ma_period1)
-        shma = moving_average(self.recs[-1].shint, self.ma_period1)
+        opma = moving_average(self.recs[self.curr_rec].opint, self.ma_period1)
+        shma = moving_average(self.recs[self.curr_rec].shint, self.ma_period1)
         poma = opma / (opma + shma)
         self.plt3.plot(opma, stepMode=True,pen='r')
         self.plt3.setLabel('left', "Open periods", units='s')
@@ -227,39 +236,29 @@ class ClusterInspector(QMainWindow):
         self.spB6.setMaximum(cluster_num)
         self.spB6.setMinimum(1)
 
-    def tresLine1Changed(self):
-        val = self.tresLine1.value()
-        #self.tresLine2.setValue(val)
-        self.tres = pow(10, val)
-        #self.spB1.setValue(self.tres)
+    def update_tres(self, tres):
+        self.recs[self.curr_rec].tres = tres
         self.update()
-    def tresLine2Changed(self):
-        val = self.tresLine2.value()
-        #self.tresLine1.setValue(val)
-        self.tres = pow(10, val)
-        #self.rec.tres = self.tres
-        #self.spB1.setValue(self.tres)
-        self.update()
-    def tcritLineChanged(self):
-        val = self.tcritLine.value()
-        self.tcrit = pow(10, val)
-        #self.rec.tcrit = self.tcrit
-        #self.spB2.setValue(self.tcrit)
+    def update_tcrit(self, tcrit):
+        self.recs[self.curr_rec].tcrit = tcrit
         self.update()
 
+    def tresLine1Changed(self):
+        val = self.tresLine1.value()
+        self.update_tres(pow(10, val))
+    def tresLine2Changed(self):
+        val = self.tresLine2.value()
+        self.update_tres(pow(10, val))
+    def tcritLineChanged(self):
+        val = self.tcritLine.value()
+        self.update_tcrit(pow(10, val))
+
     def spinBox1Changed(self):
-        val = self.spB1.value()
-        #self.tresLine1.setValue(log10(val))
-        #self.tresLine2.setValue(log10(val))
-        self.tres = val
-        #self.rec.tres = self.tres
-        self.update()
+        tres = self.spB1.value()
+        self.update_tres(tres)
     def spinBox2Changed(self):
-        val = self.spB2.value()
-        #self.tcritLine.setValue(log10(val))
-        self.tcrit = val
-        #self.rec.tcrit = self.tcrit
-        self.update()
+        tcrit = self.spB2.value()
+        self.update_tcrit(tcrit)
     def spinBox3Changed(self):
         val = self.spB3.value()
         self.ma_period1 = val
@@ -276,16 +275,23 @@ class ClusterInspector(QMainWindow):
         val = self.spB6.value()
         self.curr_cluster = int(val-1)
         self.update()
+    def spinBox7Changed(self):
+        val = self.spB7.value()
+        self.curr_rec = int(val-1)
+        self.update()
         
     def load(self):
-        filename, filt = QFileDialog.getOpenFileName(self,
-            "Open CSV file (Clampfit idealised data saved in EXCEL csv file)...",
+        filelist, filt = QFileDialog.getOpenFileNames(self,
+            "Open CSV file(s) (Clampfit idealised data saved in EXCEL csv file)...",
             self.path, "CSV file  (*.csv)")
-        self.path, fname = os.path.split(filename)
-        #self.textBox.append('Loaded record from file: '+filename+'\n')
-        fscname = convert_clampfit_to_scn(filename)
-        self.textBox.append('Converted to SCAN file: '+fscname+'\n')
-        self.recs.append(dataset.SCRecord([fscname]))
+        for filename in filelist:
+            self.path, fname = os.path.split(filename)
+            #self.textBox.append('Loaded record from file: '+filename+'\n')
+            fscname = convert_clampfit_to_scn(filename)
+            self.textBox.append('Converted to SCAN file: '+fscname) #+'\n')
+            self.recs.append(dataset.SCRecord([fscname]))
+#            self.recs[-1].tres = self.tres
+#            self.recs[-1].tcrit = self.tcrit
         
         #self.textBox.append('Record in ' + filename + ' contains {0:d} clusters '.
         #    format(self.recs[-1].bursts.count()) + 'with average Popen = {0:.3f}; '.
@@ -293,7 +299,8 @@ class ClusterInspector(QMainWindow):
         #    format(self.recs[-1].tcrit * 1000))
         #for cluster in self.recs[-1].bursts.all():
         #    self.textBox.append(str(cluster))
-            
+
+        self.curr_rec = len(self.recs) - 1
         self.update()
         self.clearBtn.setEnabled(True)
         self.saveBtn.setEnabled(True)

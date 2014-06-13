@@ -29,11 +29,11 @@ class SCRecord(object):
         if tres: 
             self._set_resolution(tres)
         else:
-            self._tres = None
+            self._set_resolution(np.amin(self.itint))
         if tcrit:
             self._set_tcrit(math.fabs(tcrit))
         else:
-            self._tcrit = None
+            self._set_tcrit(math.fabs(np.amax(self.itint)))
         self.conc = conc
         self.chs = chs # CHS vectors: yes or no
         self.onechan = onechan # opening from one channel only?
