@@ -48,7 +48,7 @@ class BurstPlots(Dock):
         self.curr_cluster = 0
 
         # Right side
-        self.textBox = QTextBrowser()
+        
         self.plt1 = pg.PlotWidget()
         self.plt2 = pg.PlotWidget()
         self.plt3 = pg.PlotWidget()
@@ -62,7 +62,7 @@ class BurstPlots(Dock):
         self.spB3.sigValueChanged.connect(self.spinBox3Changed)
 
         w2 = pg.LayoutWidget()
-        w2.addWidget(self.textBox, row=0, col=0, colspan=4)
+        
         w2.addWidget(self.plt1, row=1, col=0, colspan=2)
         w2.addWidget(self.plt2, row=1, col=2, colspan=2)
         w2.addWidget(QLabel('Use clusters with number of openings more than:'), row=2, col=0, colspan=3)
@@ -156,6 +156,10 @@ class PatchInspector(Dock):
         #self.resize=(1, 1)
         
         self.ma_period = 10
+        self.tres_all = Qt.Unchecked
+        self.tcrit_all = Qt.Unchecked
+
+        self.textBox = QTextBrowser()
 
         self.loadBtn = QPushButton('Load idealised record(s)')
         self.removeBtn = QPushButton('Remove current record')
@@ -167,10 +171,19 @@ class PatchInspector(Dock):
         self.saveBtn.setEnabled(False)
         self.clearBtn.setEnabled(False)
         self.clearBtn.clicked.connect(self.clear)
+
         self.spB1 = pg.SpinBox(suffix='s', siPrefix=True, step=1e-6, bounds=(1e-6,1e-3))
         self.spB1.sigValueChanged.connect(self.spinBox1Changed)
+        self.ckB1 = QCheckBox('Impose to all loaded patches?', self)
+        self.ckB1.setCheckState(self.tres_all)
+        self.ckB1.stateChanged.connect(self.checkBox1Changed)
+
         self.spB2 = pg.SpinBox(suffix='s', siPrefix=True, step=1e-4, bounds=(1e-3,1))
         self.spB2.sigValueChanged.connect(self.spinBox2Changed)
+        self.ckB2 = QCheckBox('Impose to all loaded patches?', self)
+        self.ckB2.setCheckState(self.tcrit_all)
+        self.ckB2.stateChanged.connect(self.checkBox2Changed)
+
         self.plt1 = pg.PlotWidget()
         self.plt2 = pg.PlotWidget()
         self.plt3 = pg.PlotWidget()
@@ -182,29 +195,37 @@ class PatchInspector(Dock):
         self.spB7.sigValueChanged.connect(self.spinBox7Changed)
 
         w1 = pg.LayoutWidget()
+
         w1.addWidget(self.loadBtn, row=0, col=0)
         w1.addWidget(self.removeBtn, row=0, col=1)
         w1.addWidget(self.saveBtn, row=0, col=2)
         w1.addWidget(self.clearBtn, row=0, col=3)
 
-        w1.addWidget(QLabel('Displaying patch '), row=1, col=0)
-        w1.addWidget(self.spB7, row=1, col=1)
+        w1.addWidget(self.textBox, row=1, col=0, colspan=4)
+
+        w1.addWidget(QLabel('Displaying patch '), row=2, col=0)
+        w1.addWidget(self.spB7, row=2, col=1)
         self.label1 = QLabel(' out of {0:d}'.format(len(parent.recs)))
-        w1.addWidget(self.label1, row=1, col=2)
+        w1.addWidget(self.label1, row=2, col=2)
         self.spB7.setMaximum(len(parent.recs))
         self.spB7.setMinimum(0)
 
-        w1.addWidget(self.plt1, row=2, col=0, colspan=2)
-        w1.addWidget(self.plt2, row=2, col=2, colspan=2)
-        w1.addWidget(QLabel('tres:'), row=3, col=0)
-        w1.addWidget(QLabel('tcrit:'), row=3, col=2)
-        w1.addWidget(self.spB1, row=3, col=1)
-        w1.addWidget(self.spB2, row=3, col=3)
-        w1.addWidget(self.plt3, row=4, col=0, colspan=4)
-        w1.addWidget(self.plt4, row=5, col=0, colspan=4)
-        w1.addWidget(self.plt5, row=6, col=0, colspan=4)
-        w1.addWidget(QLabel('Moving average period:'), row=7, col=0, colspan=2)
-        w1.addWidget(self.spB3, row=7, col=2)
+        w1.addWidget(self.plt1, row=3, col=0, colspan=2)
+        w1.addWidget(self.plt2, row=3, col=2, colspan=2)
+        w1.addWidget(QLabel('tres:'), row=4, col=0)
+        w1.addWidget(self.spB1, row=4, col=1)
+        w1.addWidget(self.ckB1, row=4, col=2, colspan=2)
+
+
+        w1.addWidget(QLabel('tcrit:'), row=5, col=0)
+        w1.addWidget(self.spB2, row=5, col=1)
+        w1.addWidget(self.ckB2, row=5, col=2, colspan=2)
+
+        w1.addWidget(self.plt3, row=6, col=0, colspan=4)
+        w1.addWidget(self.plt4, row=7, col=0, colspan=4)
+        w1.addWidget(self.plt5, row=8, col=0, colspan=4)
+        w1.addWidget(QLabel('Moving average period:'), row=9, col=0, colspan=2)
+        w1.addWidget(self.spB3, row=9, col=2)
         self.addWidget(w1)
 
     def update(self):
@@ -273,10 +294,18 @@ class PatchInspector(Dock):
         self.parent.update()
 
     def update_tres(self, tres):
-        self.parent.recs[self.parent.curr_rec].tres = tres
+        if self.tres_all:
+            for rec in self.parent.recs:
+                rec.tres = tres
+        else:
+            self.parent.recs[self.parent.curr_rec].tres = tres
         self.update()
     def update_tcrit(self, tcrit):
-        self.parent.recs[self.parent.curr_rec].tcrit = tcrit
+        if self.tcrit_all:
+            for rec in self.parent.recs:
+                rec.tcrit = tcrit
+        else:
+            self.parent.recs[self.parent.curr_rec].tcrit = tcrit
         self.update()
 
     def tresLine1Changed(self):
@@ -304,6 +333,19 @@ class PatchInspector(Dock):
         self.parent.curr_rec = int(val-1)
         self.update()
 
+    def checkBox1Changed(self):
+        if self.ckB1.checkState() > 0:
+            self.tres_all = True
+        else:
+            self.tres_all = False
+        self.update_tres(self.spB1.value())
+    def checkBox2Changed(self):
+        if self.ckB2.checkState() > 0:
+            self.tcrit_all = True
+        else:
+            self.tcrit_all = False
+        self.update_tcrit(self.spB2.value())
+
     def load(self):
         filelist, filt = QFileDialog.getOpenFileNames(self.parent,
             "Open CSV file(s) (Clampfit idealised data saved in EXCEL csv file)...",
@@ -312,7 +354,7 @@ class PatchInspector(Dock):
             self.parent.path, fname = os.path.split(filename)
             #self.textBox.append('Loaded record from file: '+filename+'\n')
             fscname = convert_clampfit_to_scn(filename)
-#            self.parent.textBox.append('Converted to SCAN file: '+fscname) #+'\n')
+            self.textBox.append('Converted to SCAN file: '+fscname) #+'\n')
             self.parent.recs.append(dataset.SCRecord([fscname]))
         
         #self.textBox.append('Record in ' + filename + ' contains {0:d} clusters '.
