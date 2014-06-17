@@ -30,11 +30,14 @@ class DataInspector(QMainWindow):
         self.path = None
         self.recs = []
         self.curr_rec = -1
+        self.curr_burst = -1
         
+#        d1 = Dock("Dock1", size=(1, 1))
         d1 = PatchInspector(self)
         area.addDock(d1, 'left')
         self.d2 = BurstPlots(self)
         area.addDock(self.d2, 'right')
+
 
     def update(self):
         self.d2.update()
@@ -43,22 +46,15 @@ class BurstPlots(Dock):
     def __init__(self, parent):
         super(BurstPlots, self).__init__(parent)
         self.parent = parent
-        self.ma_period = 2
         self.min_op = 2
-        self.curr_cluster = 0
-
+        
         self.plt1 = pg.PlotWidget()
         self.plt2 = pg.PlotWidget()
         self.plt3 = pg.PlotWidget()
         self.plt4 = pg.PlotWidget()
-        self.plt5 = pg.PlotWidget()
         self.spB1 = pg.SpinBox(value=self.min_op, step=1, bounds=(2,100))
         self.spB1.sigValueChanged.connect(self.spinBox1Changed)
-        self.spB2 = pg.SpinBox(value=self.ma_period, step=1, bounds=(1,100))
-        self.spB2.sigValueChanged.connect(self.spinBox2Changed)
-        self.spB3 = pg.SpinBox(value=self.curr_cluster+1, step=1) # , bounds=(1,100))
-        self.spB3.sigValueChanged.connect(self.spinBox3Changed)
-
+        
         w2 = pg.LayoutWidget()
         
         w2.addWidget(self.plt1, row=1, col=0, colspan=2)
@@ -67,30 +63,23 @@ class BurstPlots(Dock):
         w2.addWidget(self.spB1, row=2, col=3)
         w2.addWidget(self.plt3, row=3, col=0, colspan=2)
         w2.addWidget(self.plt4, row=3, col=2, colspan=2)
-        w2.addWidget(self.plt5, row=4, col=0, colspan=4)
-        w2.addWidget(QLabel('Moving average period for cluster:'), row=5, col=0)
-        w2.addWidget(self.spB2, row=5, col=1)
-        w2.addWidget(QLabel('Cluster #:'), row=5, col=2)
-        w2.addWidget(self.spB3, row=5, col=3)
-        self.addWidget(w2)
 
+        self.addWidget(w2)
+        
     def update(self):
 
         self.plt1.clear()
         self.plt2.clear()
         self.plt3.clear()
         self.plt4.clear()
-        self.plt5.clear()
 
         all_popen = []
         all_mean_ampl = []
         opav = []
         all_op_lists = []
         all_sh_lists = []
-        cluster_num = 0
         for record in self.parent.recs:
             clusters = record.bursts.get_long(self.min_op)
-            cluster_num += clusters.count()
             all_popen.extend(clusters.get_popen_list())
             all_mean_ampl.extend(clusters.get_mean_ampl_list())
             opav.extend(clusters.get_opening_length_mean_list())
@@ -119,31 +108,9 @@ class BurstPlots(Dock):
         self.plt4.setLabel('bottom', "Popen")
         self.plt4.setXRange(0, 1)
 
-        copma = moving_average(all_op_lists[self.curr_cluster][:-1], self.ma_period)
-        cshma = moving_average(all_sh_lists[self.curr_cluster], self.ma_period)
-        cpoma = copma / (copma + cshma)
-        self.plt5.plot(cpoma, stepMode=True,pen='g')
-        self.plt5.setLabel('left', "Popen")
-        self.plt5.setLabel('bottom', "Interval #")
-        self.plt5.setYRange(0, 1)
-
-        self.spB1.setValue(self.min_op)
-        self.spB2.setValue(self.ma_period)
-        self.spB3.setValue(self.curr_cluster+1)
-        self.spB3.setMaximum(cluster_num)
-        self.spB3.setMinimum(1)
-
     def spinBox1Changed(self):
         val = self.spB1.value()
         self.min_op = val
-        self.update()
-    def spinBox2Changed(self):
-        val = self.spB2.value()
-        self.ma_period = val
-        self.update()
-    def spinBox3Changed(self):
-        val = self.spB3.value()
-        self.curr_cluster = int(val-1)
         self.update()
 
 class PatchInspector(Dock):
@@ -153,7 +120,8 @@ class PatchInspector(Dock):
         #self.title = "Patch Inspector"
         #self.resize=(1, 1)
         
-        self.ma_period = 10
+        self.ma_period1 = 10
+        self.ma_period2 = 2
         self.tres_all = Qt.Unchecked
         self.tcrit_all = Qt.Unchecked
 
@@ -191,9 +159,15 @@ class PatchInspector(Dock):
 
         self.plt4 = pg.PlotWidget()
         self.plt5 = pg.PlotWidget()
-        self.spB3 = pg.SpinBox(value=self.ma_period, step=1, bounds=(1,100))
+        self.spB3 = pg.SpinBox(value=self.ma_period1, step=1, bounds=(1,100))
         self.spB3.sigValueChanged.connect(self.spinBox3Changed)
-        
+
+
+        self.plt6 = pg.PlotWidget()
+        self.spB5 = pg.SpinBox(value=self.ma_period2, step=1, bounds=(1,100))
+        self.spB5.sigValueChanged.connect(self.spinBox5Changed)
+        self.spB6 = pg.SpinBox(value=self.parent.curr_burst+1, step=1) # , bounds=(1,100))
+        self.spB6.sigValueChanged.connect(self.spinBox6Changed)
 
         w1 = pg.LayoutWidget()
 
@@ -222,8 +196,15 @@ class PatchInspector(Dock):
         w1.addWidget(self.ckB2, row=5, col=2, colspan=2)
 
         w1.addWidget(self.plt3, row=6, col=0, colspan=4)
-        w1.addWidget(QLabel('Moving average period:'), row=7, col=0, colspan=2)
+        w1.addWidget(QLabel('Moving average period for all record:'), row=7, col=0, colspan=2)
         w1.addWidget(self.spB3, row=7, col=2)
+
+        w1.addWidget(self.plt6, row=8, col=0, colspan=4)
+        w1.addWidget(QLabel('Moving average period for a single burst:'), row=9, col=0)
+        w1.addWidget(self.spB5, row=9, col=1)
+        w1.addWidget(QLabel('Burst #:'), row=9, col=2)
+        w1.addWidget(self.spB6, row=9, col=3)
+
         self.addWidget(w1)
 
     def update(self):
@@ -231,6 +212,7 @@ class PatchInspector(Dock):
         self.plt1.clear()
         self.plt2.clear()
         self.plt3.clear()
+        self.plt6.clear()
 
         self.label1.setText(' out of {0:d}'.format(len(self.parent.recs)))
         self.spB4.setMaximum(len(self.parent.recs))
@@ -267,17 +249,34 @@ class PatchInspector(Dock):
         self.plt2.setLabel('left', "Count #")
         self.spB1.setValue(self.parent.recs[self.parent.curr_rec].tres)
         self.spB2.setValue(self.parent.recs[self.parent.curr_rec].tcrit)
-        self.spB3.setValue(self.ma_period)
+        self.spB3.setValue(self.ma_period1)
 
-        opma = moving_average(self.parent.recs[self.parent.curr_rec].opint, self.ma_period)
-        shma = moving_average(self.parent.recs[self.parent.curr_rec].shint, self.ma_period)
+        opma = moving_average(self.parent.recs[self.parent.curr_rec].opint, self.ma_period1)
+        shma = moving_average(self.parent.recs[self.parent.curr_rec].shint, self.ma_period1)
         poma = opma / (opma + shma)
         self.plt3.plot(opma, stepMode=True,pen='r', name='Open periods')
         self.plt3.plot(shma, stepMode=True,pen='b', name='Shut periods')
         self.plt3.plot(poma, stepMode=True,pen='g', name='Popen')
         self.plt3.setLabel('bottom', "Interval #")
         self.plt3.setLogMode(x=False, y=True)
-       
+        
+        clusters = self.parent.recs[self.parent.curr_rec].bursts.get_long(1)
+        cluster_num = clusters.count()
+        all_op_list = clusters.get_op_lists()
+        all_sh_list = clusters.get_sh_lists()
+        copma = moving_average(all_op_list[self.parent.curr_burst][:-1], self.ma_period2)
+        cshma = moving_average(all_sh_list[self.parent.curr_burst], self.ma_period2)
+        cpoma = copma / (copma + cshma)
+        self.plt6.plot(cpoma, stepMode=True,pen='g')
+        self.plt6.setLabel('left', "Popen")
+        self.plt6.setLabel('bottom', "Interval #")
+        self.plt6.setYRange(0, 1)
+
+        self.spB5.setValue(self.ma_period2)
+        self.spB6.setValue(self.parent.curr_burst+1)
+        self.spB6.setMaximum(cluster_num)
+        self.spB6.setMinimum(1)
+
         self.parent.update()
 
     def update_tres(self, tres):
@@ -313,11 +312,20 @@ class PatchInspector(Dock):
         self.update_tcrit(tcrit)
     def spinBox3Changed(self):
         val = self.spB3.value()
-        self.ma_period = val
+        self.ma_period1 = val
         self.update()
     def spinBox4Changed(self):
         val = self.spB4.value()
         self.parent.curr_rec = int(val-1)
+        self.parent.curr_burst = 0
+        self.update()
+    def spinBox5Changed(self):
+        val = self.spB5.value()
+        self.ma_period2 = val
+        self.update()
+    def spinBox6Changed(self):
+        val = self.spB6.value()
+        self.parent.curr_burst = int(val-1)
         self.update()
 
     def checkBox1Changed(self):
@@ -360,6 +368,7 @@ class PatchInspector(Dock):
         self.plt1.clear()
         self.plt2.clear()
         self.plt3.clear()
+        self.plt6.clear()
         self.parent.recs = []
         self.textBox.clear()
         self.clearBtn.setEnabled(False)
