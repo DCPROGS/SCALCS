@@ -22,7 +22,7 @@ class DataInspector(QMainWindow):
         super(DataInspector, self).__init__(parent)
         self.resize(900, 600)     # wide, high in px
         self.mainFrame = QWidget()
-        self.setWindowTitle("DC_PyPs: ClusterInspector- load idealised " +
+        self.setWindowTitle("DC_PyPs: DataInspector- load idealised " +
             "single channel records and inspect clusters/bursts.")
         area = DockArea()
         self.setCentralWidget(area)
@@ -47,8 +47,6 @@ class BurstPlots(Dock):
         self.min_op = 2
         self.curr_cluster = 0
 
-        # Right side
-        
         self.plt1 = pg.PlotWidget()
         self.plt2 = pg.PlotWidget()
         self.plt3 = pg.PlotWidget()
@@ -160,6 +158,8 @@ class PatchInspector(Dock):
         self.tcrit_all = Qt.Unchecked
 
         self.textBox = QTextBrowser()
+        self.spB4 = pg.SpinBox(value=parent.curr_rec+1, step=1)
+        self.spB4.sigValueChanged.connect(self.spinBox4Changed)
 
         self.loadBtn = QPushButton('Load idealised record(s)')
         self.removeBtn = QPushButton('Remove current record')
@@ -187,12 +187,13 @@ class PatchInspector(Dock):
         self.plt1 = pg.PlotWidget()
         self.plt2 = pg.PlotWidget()
         self.plt3 = pg.PlotWidget()
+        self.plt3.setTitle("Stability plots: open periods- red, shut periods- blue, Popen- green")
+
         self.plt4 = pg.PlotWidget()
         self.plt5 = pg.PlotWidget()
         self.spB3 = pg.SpinBox(value=self.ma_period, step=1, bounds=(1,100))
         self.spB3.sigValueChanged.connect(self.spinBox3Changed)
-        self.spB7 = pg.SpinBox(value=parent.curr_rec+1, step=1)
-        self.spB7.sigValueChanged.connect(self.spinBox7Changed)
+        
 
         w1 = pg.LayoutWidget()
 
@@ -204,11 +205,11 @@ class PatchInspector(Dock):
         w1.addWidget(self.textBox, row=1, col=0, colspan=4)
 
         w1.addWidget(QLabel('Displaying patch '), row=2, col=0)
-        w1.addWidget(self.spB7, row=2, col=1)
+        w1.addWidget(self.spB4, row=2, col=1)
         self.label1 = QLabel(' out of {0:d}'.format(len(parent.recs)))
         w1.addWidget(self.label1, row=2, col=2)
-        self.spB7.setMaximum(len(parent.recs))
-        self.spB7.setMinimum(0)
+        self.spB4.setMaximum(len(parent.recs))
+        self.spB4.setMinimum(0)
 
         w1.addWidget(self.plt1, row=3, col=0, colspan=2)
         w1.addWidget(self.plt2, row=3, col=2, colspan=2)
@@ -216,16 +217,13 @@ class PatchInspector(Dock):
         w1.addWidget(self.spB1, row=4, col=1)
         w1.addWidget(self.ckB1, row=4, col=2, colspan=2)
 
-
         w1.addWidget(QLabel('tcrit:'), row=5, col=0)
         w1.addWidget(self.spB2, row=5, col=1)
         w1.addWidget(self.ckB2, row=5, col=2, colspan=2)
 
         w1.addWidget(self.plt3, row=6, col=0, colspan=4)
-        w1.addWidget(self.plt4, row=7, col=0, colspan=4)
-        w1.addWidget(self.plt5, row=8, col=0, colspan=4)
-        w1.addWidget(QLabel('Moving average period:'), row=9, col=0, colspan=2)
-        w1.addWidget(self.spB3, row=9, col=2)
+        w1.addWidget(QLabel('Moving average period:'), row=7, col=0, colspan=2)
+        w1.addWidget(self.spB3, row=7, col=2)
         self.addWidget(w1)
 
     def update(self):
@@ -233,14 +231,12 @@ class PatchInspector(Dock):
         self.plt1.clear()
         self.plt2.clear()
         self.plt3.clear()
-        self.plt4.clear()
-        self.plt5.clear()
 
         self.label1.setText(' out of {0:d}'.format(len(self.parent.recs)))
-        self.spB7.setMaximum(len(self.parent.recs))
-        self.spB7.setValue(self.parent.curr_rec+1)
+        self.spB4.setMaximum(len(self.parent.recs))
+        self.spB4.setValue(self.parent.curr_rec+1)
         if self.parent.recs:
-            self.spB7.setMinimum(1)
+            self.spB4.setMinimum(1)
 
         ox, oy, dx = scpl.prepare_hist(np.array(self.parent.recs[self.parent.curr_rec].opint),
             self.parent.recs[self.parent.curr_rec].tres)
@@ -276,21 +272,12 @@ class PatchInspector(Dock):
         opma = moving_average(self.parent.recs[self.parent.curr_rec].opint, self.ma_period)
         shma = moving_average(self.parent.recs[self.parent.curr_rec].shint, self.ma_period)
         poma = opma / (opma + shma)
-        self.plt3.plot(opma, stepMode=True,pen='r')
-        self.plt3.plot(shma, stepMode=True,pen='b')
-        self.plt3.plot(poma, stepMode=True,pen='g')
-        
-        #self.plt3.setLabel('left', "Open periods", units='s')
+        self.plt3.plot(opma, stepMode=True,pen='r', name='Open periods')
+        self.plt3.plot(shma, stepMode=True,pen='b', name='Shut periods')
+        self.plt3.plot(poma, stepMode=True,pen='g', name='Popen')
         self.plt3.setLabel('bottom', "Interval #")
         self.plt3.setLogMode(x=False, y=True)
-#        self.plt4.plot(shma, stepMode=True,pen='b')
-#        self.plt4.setLabel('left', "Shut periods", units='s')
-#        self.plt4.setLabel('bottom', "Interval #")
-#        self.plt5.plot(poma, stepMode=True,pen='g')
-#        self.plt5.setLabel('left', "Popen")
-#        self.plt5.setLabel('bottom', "Interval #")
-#        self.plt5.setYRange(0, 1)
-        
+       
         self.parent.update()
 
     def update_tres(self, tres):
@@ -328,8 +315,8 @@ class PatchInspector(Dock):
         val = self.spB3.value()
         self.ma_period = val
         self.update()
-    def spinBox7Changed(self):
-        val = self.spB7.value()
+    def spinBox4Changed(self):
+        val = self.spB4.value()
         self.parent.curr_rec = int(val-1)
         self.update()
 
@@ -352,23 +339,15 @@ class PatchInspector(Dock):
             self.parent.path, "CSV file  (*.csv)")
         for filename in filelist:
             self.parent.path, fname = os.path.split(filename)
-            #self.textBox.append('Loaded record from file: '+filename+'\n')
             fscname = convert_clampfit_to_scn(filename)
             self.textBox.append('Converted to SCAN file: '+fscname) #+'\n')
             self.parent.recs.append(dataset.SCRecord([fscname]))
         
-        #self.textBox.append('Record in ' + filename + ' contains {0:d} clusters '.
-        #    format(self.recs[-1].bursts.count()) + 'with average Popen = {0:.3f}; '.
-        #    format(self.recs[-1].bursts.get_popen_mean()) + 'tcrit = {0:.1f} ms\n'.
-        #    format(self.recs[-1].tcrit * 1000))
-        #for cluster in self.recs[-1].bursts.all():
-        #    self.textBox.append(str(cluster))
-
         self.parent.curr_rec = len(self.parent.recs) - 1
         self.update()
         self.parent.update()
         self.clearBtn.setEnabled(True)
-        self.saveBtn.setEnabled(True)
+#        self.saveBtn.setEnabled(True)
         self.removeBtn.setEnabled(True)
         
     def save(self):
@@ -381,16 +360,8 @@ class PatchInspector(Dock):
         self.plt1.clear()
         self.plt2.clear()
         self.plt3.clear()
-        self.plt4.clear()
-        self.plt5.clear()
-        self.plt6.clear()
-        self.plt7.clear()
-        self.plt8.clear()
-        self.plt9.clear()
-        self.plt10.clear()
         self.parent.recs = []
         self.textBox.clear()
-        #self.update()
         self.clearBtn.setEnabled(False)
         self.saveBtn.setEnabled(False)
         self.removeBtn.setEnabled(False)
