@@ -41,6 +41,9 @@ class DataInspector(QMainWindow):
 
     def update(self):
         self.d2.update()
+    def clear(self):
+        self.recs = []
+        self.d2.clear()
 
 class BurstPlots(Dock):
     def __init__(self, parent):
@@ -56,13 +59,12 @@ class BurstPlots(Dock):
         self.spB1.sigValueChanged.connect(self.spinBox1Changed)
         
         w2 = pg.LayoutWidget()
-        
-        w2.addWidget(self.plt1, row=1, col=0, colspan=2)
-        w2.addWidget(self.plt2, row=1, col=2, colspan=2)
-        w2.addWidget(QLabel('Use clusters with number of openings more than:'), row=2, col=0, colspan=3)
-        w2.addWidget(self.spB1, row=2, col=3)
-        w2.addWidget(self.plt3, row=3, col=0, colspan=2)
-        w2.addWidget(self.plt4, row=3, col=2, colspan=2)
+        w2.addWidget(QLabel('Use clusters with number of openings more than:'), row=0, col=0, colspan=3)
+        w2.addWidget(self.spB1, row=0, col=3)
+        w2.addWidget(self.plt1, row=1, col=0, colspan=4)
+        w2.addWidget(self.plt2, row=2, col=0, colspan=4)
+        w2.addWidget(self.plt3, row=3, col=0, colspan=4)
+        w2.addWidget(self.plt4, row=4, col=0, colspan=4)
 
         self.addWidget(w2)
         
@@ -91,6 +93,8 @@ class BurstPlots(Dock):
         self.plt1.setXRange(0, 1) #, padding=None, update=True)
         self.plt1.setLabel('bottom', "Popen")
         self.plt1.setLabel('left', "Count #")
+        self.plt1.setTitle("Mean Popen= {0:.3f}; # of clusters= {1:d}".
+            format(np.average(np.array(all_popen)), len(all_popen)))
         
         y,x = np.histogram(np.array(opav)) #, bins=np.linspace(-3, 8, 40))
         hist = pg.PlotCurveItem(x, y, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
@@ -112,6 +116,13 @@ class BurstPlots(Dock):
         val = self.spB1.value()
         self.min_op = val
         self.update()
+
+    def clear(self):
+        self.plt1.clear()
+        self.plt2.clear()
+        self.plt3.clear()
+        self.plt4.clear()
+
 
 class PatchInspector(Dock):
     def __init__(self, parent):
@@ -155,7 +166,7 @@ class PatchInspector(Dock):
         self.plt1 = pg.PlotWidget()
         self.plt2 = pg.PlotWidget()
         self.plt3 = pg.PlotWidget()
-        self.plt3.setTitle("Stability plots: open periods- red, shut periods- blue, Popen- green")
+        self.plt3.setTitle("Stability plots: open periods- red, shut periods- green, Popen- blue")
 
         self.plt4 = pg.PlotWidget()
         self.plt5 = pg.PlotWidget()
@@ -255,22 +266,31 @@ class PatchInspector(Dock):
         shma = moving_average(self.parent.recs[self.parent.curr_rec].shint, self.ma_period1)
         poma = opma / (opma + shma)
         self.plt3.plot(opma, stepMode=True,pen='r', name='Open periods')
-        self.plt3.plot(shma, stepMode=True,pen='b', name='Shut periods')
-        self.plt3.plot(poma, stepMode=True,pen='g', name='Popen')
+        self.plt3.plot(poma, stepMode=True,pen='b', name='Popen')
+        self.plt3.plot(shma, stepMode=True,pen='g', name='Shut periods')
         self.plt3.setLabel('bottom', "Interval #")
         self.plt3.setLogMode(x=False, y=True)
+        self.tcritLine2 = pg.InfiniteLine(angle=0, movable=False, pen='y')
+        self.tcritLine2.setValue(log10(self.parent.recs[self.parent.curr_rec].tcrit))
+        self.plt3.addItem(self.tcritLine2)
         
-        clusters = self.parent.recs[self.parent.curr_rec].bursts.get_long(1)
+        clusters = self.parent.recs[self.parent.curr_rec].bursts.get_long(2)
         cluster_num = clusters.count()
         all_op_list = clusters.get_op_lists()
         all_sh_list = clusters.get_sh_lists()
-        copma = moving_average(all_op_list[self.parent.curr_burst][:-1], self.ma_period2)
-        cshma = moving_average(all_sh_list[self.parent.curr_burst], self.ma_period2)
-        cpoma = copma / (copma + cshma)
-        self.plt6.plot(cpoma, stepMode=True,pen='g')
+        if self.ma_period2 < clusters.bursts[self.parent.curr_burst].get_openings_number() - 1:
+            copma = moving_average(all_op_list[self.parent.curr_burst][:-1], self.ma_period2)
+            cshma = moving_average(all_sh_list[self.parent.curr_burst], self.ma_period2)
+            cpoma = copma / (copma + cshma)
+            self.plt6.plot(cpoma, stepMode=True,pen='g')
+        else:
+            pass
         self.plt6.setLabel('left', "Popen")
         self.plt6.setLabel('bottom', "Interval #")
         self.plt6.setYRange(0, 1)
+        self.plt6.setTitle("Single burst stability plot; Popen= {0:.3f}; # of open periods= {1:d}".
+            format(clusters.bursts[self.parent.curr_burst].get_popen1(),
+            clusters.bursts[self.parent.curr_burst].get_openings_number()))
 
         self.spB5.setValue(self.ma_period2)
         self.spB6.setValue(self.parent.curr_burst+1)
@@ -283,15 +303,19 @@ class PatchInspector(Dock):
         if self.tres_all:
             for rec in self.parent.recs:
                 rec.tres = tres
+            #self.parent.curr_rec = 0
         else:
             self.parent.recs[self.parent.curr_rec].tres = tres
+        self.parent.curr_burst = 0
         self.update()
     def update_tcrit(self, tcrit):
         if self.tcrit_all:
             for rec in self.parent.recs:
                 rec.tcrit = tcrit
+            #self.parent.curr_rec = 0
         else:
             self.parent.recs[self.parent.curr_rec].tcrit = tcrit
+        self.parent.curr_burst = 0
         self.update()
 
     def tresLine1Changed(self):
@@ -351,7 +375,7 @@ class PatchInspector(Dock):
             self.textBox.append('Converted to SCAN file: '+fscname) #+'\n')
             self.parent.recs.append(dataset.SCRecord([fscname]))
         
-        self.parent.curr_rec = len(self.parent.recs) - 1
+        self.parent.curr_rec = 0
         self.update()
         self.parent.update()
         self.clearBtn.setEnabled(True)
@@ -369,11 +393,12 @@ class PatchInspector(Dock):
         self.plt2.clear()
         self.plt3.clear()
         self.plt6.clear()
-        self.parent.recs = []
+        
         self.textBox.clear()
         self.clearBtn.setEnabled(False)
         self.saveBtn.setEnabled(False)
         self.removeBtn.setEnabled(False)
+        self.parent.clear()
 
 def convert_clampfit_to_scn(fname):
     """
