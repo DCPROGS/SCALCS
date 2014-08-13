@@ -317,14 +317,16 @@ class RateTableDlg(QDialog):
             value = False
             if self.table.item(row, column).checkState() > 0:
                 value = True
-                
-            if len(self.mec.Cycles) > 1:
+            else:
+                value = False
+
+            if value and (len(self.mec.Cycles) > 1):
                 dialog = CycleNumDlg(self, self.mec)
                 if dialog.exec_():
                     cyclenum = dialog.return_par()
                 self.mec.set_mr(value, row, cyclenum)
             else:
-                self.mec.set_mr(value, row)     
+                self.mec.set_mr(value, row)
                 
         if column == 7:
             value = False

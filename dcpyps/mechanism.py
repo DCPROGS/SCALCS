@@ -657,14 +657,15 @@ class Mechanism(object):
         """
 
         self.Rates[nrate].mr = mr # redundant
-        if ((self.Rates[nrate].State1.name in self.Cycles[ncycle].states) and 
-            (self.Rates[nrate].State2.name in self.Cycles[ncycle].states)):
-                if mr:
-                    self.Cycles[ncycle].mrconstr = [self.Rates[nrate].State1.name, self.Rates[nrate].State2.name]
-                else:
-                    self.Cycles[ncycle].mrconstr = []
-        else:
-            sys.stderr.write("DCPYPS: Warning: MR1: Proposed rate to be constrained is not in the cycle.")
+        if mr:
+            if ((self.Rates[nrate].State1.name in self.Cycles[ncycle].states) and
+                (self.Rates[nrate].State2.name in self.Cycles[ncycle].states)):
+                    if mr:
+                        self.Cycles[ncycle].mrconstr = [self.Rates[nrate].State1.name, self.Rates[nrate].State2.name]
+                    else:
+                        self.Cycles[ncycle].mrconstr = []
+            else:
+                sys.stderr.write("DCPYPS: Warning: MR1: Proposed rate to be constrained is not in the cycle.")
         self.update_mr()
 
     def update_mr(self):
