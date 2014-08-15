@@ -19,13 +19,12 @@ scnfiles = [["./dcpyps/samples/glydemo/simA.scn"], ["./dcpyps/samples/glydemo/si
     ["./dcpyps/samples/glydemo/simC.scn"], ["./dcpyps/samples/glydemo/simD.scn"]]
 tres = [0.000030, 0.000030, 0.000030, 0.000030]
 tcrit = [0.004, -1, -0.06, -0.02]
-chs = [True, False, False, False]
 conc = [10e-6, 30e-6, 100e-6, 1000e-6]
 
 recs = []
 bursts = []
 for i in range(len(scnfiles)):
-    rec = dataset.SCRecord(scnfiles[i], conc[i], tres[i], tcrit[i], chs[i])
+    rec = dataset.SCRecord(scnfiles[i], conc[i], tres[i], tcrit[i])
     rec.record_type = 'simulated'
     recs.append(rec)
     bursts.append(rec.bursts.intervals())

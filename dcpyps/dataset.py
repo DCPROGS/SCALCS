@@ -16,8 +16,7 @@ class SCRecord(object):
     """
 
     def __init__(self, filenames=None, conc=None, tres=0.0, tcrit=None,
-        chs=None, onechan=None, badend=None,
-        itint=None, iampl=None, iprops=None):
+        onechan=None, badend=None, itint=None, iampl=None, iprops=None):
 
         self.record_type = None
         self.filenames = filenames
@@ -31,11 +30,11 @@ class SCRecord(object):
         else:
             self._set_resolution(np.amin(self.itint))
         if tcrit:
-            self._set_tcrit(math.fabs(tcrit))
+            self._set_tcrit(tcrit)
         else:
-            self._set_tcrit(math.fabs(np.amax(self.itint)))
+            self._set_tcrit(np.amax(self.itint))
+        self.set_chs(tcrit)
         self.conc = conc
-        self.chs = chs # CHS vectors: yes or no
         self.onechan = onechan # opening from one channel only?
         self.badend = badend # bad shutting can terminate burst?
 #        self.resolution_imposed = False
@@ -306,12 +305,13 @@ class SCRecord(object):
         """
         self._bursts = Bursts()
         burst = Burst()
+        tcrit = math.fabs(self._tcrit)
         i = 0
         while i < (len(self.pint) - 1):
             if self.pamp[i] != 0:
                 burst.add_interval(self.pint[i], self.pamp[i])
             else: # found gap
-                if self.pint[i] < self._tcrit and self.popt[i] < 8:
+                if self.pint[i] < tcrit and self.popt[i] < 8:
                     burst.add_interval(self.pint[i], self.pamp[i])
                 else: # gap is longer than tcrit or bad
                     self._bursts.add_burst(burst)
@@ -329,9 +329,12 @@ class SCRecord(object):
     def set_conc(self, conc):
         self.conc = conc
         
-    def set_chs(self, chs):
-        self.chs = chs # CHS vectors: yes or no
-        
+    def set_chs(self, tcrit):
+        if tcrit >= 0:
+            self.chs = True # CHS vectors: yes
+        else:
+            self.chs = False
+            
     def set_onechan(self, onechan):
         self.onechan = onechan # opening from one channel only?
         

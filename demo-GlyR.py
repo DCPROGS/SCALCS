@@ -14,13 +14,12 @@ scnfiles = [["./dcpyps/samples/glydemo/A-10.scn"], ["./dcpyps/samples/glydemo/B-
     ["./dcpyps/samples/glydemo/C-100.scn"], ["./dcpyps/samples/glydemo/D-1000.scn"]]
 tres = [0.000030, 0.000030, 0.000030, 0.000030]
 tcrit = [0.004, -1, -0.06, -0.02]
-chs = [True, False, False, False]
 conc = [10e-6, 30e-6, 100e-6, 1000e-6]
 
 recs = []
 bursts = []
 for i in range(len(scnfiles)):
-    rec = dataset.SCRecord(scnfiles[i], conc[i], tres[i], tcrit[i], chs[i])
+    rec = dataset.SCRecord(scnfiles[i], conc[i], tres[i], tcrit[i])
     rec.record_type = 'recorded'
     recs.append(rec)
     bursts.append(rec.bursts.intervals())
