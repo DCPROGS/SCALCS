@@ -445,7 +445,7 @@ class Mechanism(object):
     Represents a kinetic mechanism / scheme.
     '''
 
-    def __init__(self, Rates, Cycles=[], fastblk=False, KBlk=None,
+    def __init__(self, Rates, Cycles=[], fastblock=False, fastKB=None,
         mtitle='', rtitle=''):
 
         self.Rates = Rates
@@ -456,6 +456,8 @@ class Mechanism(object):
 
         self.mtitle = mtitle
         self.rtitle = rtitle
+
+        self._set_fastKB(fastKB)
 
         # construct States end effectors from Rates:
         self.States = []
@@ -473,9 +475,25 @@ class Mechanism(object):
                     self._effdict[eff] = 1.0
 
         self.sort_states()
-        self.fastblk = fastblk
-        self.KBlk = KBlk
         self.set_Q()
+
+    def _set_fastblock(self, fastblock):
+        self._fastblock = fastblock
+    def _get_fastblock(self):
+        return self._fastblock
+    fastblock = property(_get_fastblock, _set_fastblock)
+
+    def _set_fastKB(self, fastKB):
+        self._fastKB = fastKB
+        self._fastblock = False
+        if fastKB: self._fastblock = True
+    def _get_fastKB(self):
+        return self._fastKB
+    fastKB = property(_get_fastKB, _set_fastKB)
+
+#        self.fastblk = fastblk
+#        self.KBlk = KBlk
+#        self.set_Q()
         
     def sort_states(self):
         # REMIS: please check whether this makes sense

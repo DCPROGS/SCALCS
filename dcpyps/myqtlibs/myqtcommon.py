@@ -108,6 +108,8 @@ class ResDlg(QDialog):
         super(ResDlg, self).__init__(parent)
 
         self.tres = tres * 1e6 # in microsec
+        self.KB = 1.0
+        self.fastBl = False
 
         layoutMain = QVBoxLayout()
         layoutMain.addWidget(QLabel("Enter resolution:"))
@@ -119,6 +121,24 @@ class ResDlg(QDialog):
         self.connect(self.rEdit, SIGNAL("editingFinished()"),
             self.on_par_changed)
         layout.addWidget(self.rEdit)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Correct for fast block "))
+        self.fbCheck = QCheckBox()
+        self.fbCheck.setCheckState(Qt.Unchecked)
+        self.connect(self.fbCheck, SIGNAL("stateChanged()"),
+            self.on_par_changed)
+        layout.addWidget(self.fbCheck)
+        layoutMain.addLayout(layout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel("Fast block equilibrium constant KB (mM):"))
+        self.fbEdit = QLineEdit(unicode(self.KB))
+        self.fbEdit.setMaxLength(12)
+        self.connect(self.fbEdit, SIGNAL("editingFinished()"),
+            self.on_par_changed)
+        layout.addWidget(self.fbEdit)
         layoutMain.addLayout(layout)
 
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
@@ -134,10 +154,12 @@ class ResDlg(QDialog):
 
     def on_par_changed(self):
         self.tres = float(self.rEdit.text())
+        self.fastBl = self.fbCheck.isChecked()
+        self.KB = float(self.fbEdit.text())
 
     def return_par(self):
-        return self.tres * 1e-6 # Return tcrit in sec
-
+        # Return tcrit in sec, KB in M
+        return self.tres * 1e-6, self.fastBl, self.KB * 1e-3
 
 class ConcRangeDlg(QDialog):
     """

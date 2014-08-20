@@ -45,8 +45,8 @@ def Popen(mec, tres, conc, eff='c'):
             mec.QFF, mec.QAA, mec.QFA, mec.kF, mec.kA, GFA, GAF)
         popen = (hmopen / (hmopen + hmshut))
 
-    if mec.fastblk:
-        popen = popen / (1 + conc / mec.KBlk)
+    if mec.fastblock:
+        popen = popen / (1 + conc / mec.fastKB)
     return popen
 
 def Popen0(mec, tres, eff='c'):
@@ -277,6 +277,10 @@ def printout(mec, tres, output=sys.stdout, eff='c'):
         'Popen CURVE\n')
     # Calculate EC50, nH and maxPopen for Popen curve
     # corrected for missed events.
+    if mec.fastblock:
+        str += ('\nThis Popen curve was corrected for fast block with KB = {0:.5g} mM.'
+            .format(mec.fastKB * 1000))
+
     emaxPopen, econc = maxPopen(mec, tres)
     eEC50 = EC50(mec, tres)
     enH = nH(mec, tres)

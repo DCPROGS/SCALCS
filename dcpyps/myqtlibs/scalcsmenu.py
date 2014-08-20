@@ -58,7 +58,8 @@ class ScalcsMenu(QMenu):
         self.parent.txtPltBox.clear()
         dialog = myqtcommon.ResDlg(self, self.parent.tres)
         if dialog.exec_():
-            self.parent.tres = dialog.return_par()
+            self.parent.tres, fastBl, KB = dialog.return_par()
+            if fastBl: self.parent.mec.fastKB = KB
         str = ('\t===== Popen PLOT =====\n' +
             'Resolution = {0:.5g} mikrosec\n'.format(self.parent.tres * 1000000) +
             'Ideal curve- red dashed line. \nHJC curve- blue solid line.\n')
