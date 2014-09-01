@@ -921,16 +921,16 @@ def simulate_intervals(mec, tres, state, opamp=5, nintmax=5000):
     """
     picum = np.cumsum(transition_probability(mec.Q), axis=1)
     tmean = -1 / mec.Q.diagonal() # in s
-    int = random.expovariate(1 / tmean[state])
-    amp = opamp if state < mec.kA else 0
-    intervals = [[int, amp]]
-    while len(intervals) < nintmax:
+    ints = [random.expovariate(1 / tmean[state])]
+    amps = [opamp] if state < mec.kA else [0]
+    while len(ints) < nintmax:
         state, t, a = next_state(state, picum, tmean, mec.kA, opamp)
-        if t < tres or a == intervals[-1][1]:
-            intervals[-1][0] += t
+        if t < tres or a == amps[-1]:
+            ints[-1] += t
         else:
-            intervals.append([t, a])
-    return np.array(intervals)
+            ints.append(t)
+            amps.append(a)
+    return np.array(ints), np.array(amps), np.zeros((len(ints)), dtype='b')
 
 def next_state(present, picum, tmean, kA, opamp):
     """

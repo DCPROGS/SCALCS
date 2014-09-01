@@ -1,13 +1,8 @@
 #! /usr/bin/python
-
 import sys
 import math
-
-
 import numpy as np
-
 import dcio
-import scalcslib as scl
 
 class SCRecord(object):
     """
@@ -22,9 +17,10 @@ class SCRecord(object):
         self.filenames = filenames
         if filenames:
             self.load_from_file(filenames)
-#        self.itint = itint
-#        self.iampl = iampl
-#        self.iprops = iprops
+        else:
+            if itint != None: self.itint = itint
+            if iampl != None: self.iampl = iampl
+            if iprops!= None: self.iprops = iprops
         if tres: 
             self._set_resolution(tres)
         else:
@@ -37,7 +33,6 @@ class SCRecord(object):
         self.conc = conc
         self.onechan = onechan # opening from one channel only?
         self.badend = badend # bad shutting can terminate burst?
-#        self.resolution_imposed = False
 
     def _set_resolution(self, tres):
         self._tres = tres
@@ -127,23 +122,9 @@ class SCRecord(object):
         if header['iscanver'] == -103:
             self.record_type = 'simulated'
             
-    def simulate_record(self, mec, tres, conc, state, amp=5, nmax=5000):
-        """
-        """
-
-        ints = scl.simulate_intervals(mec, tres, state, opamp=amp, nintmax=nmax)
-        self.itint, self.iampl, self.iprops = ints[:,0], ints[:,1], np.zeros((len(ints)), dtype='b')
-        self.rint, self.ramp, self.ropt = self.itint, self.iampl, self.iprops
-        self.resolution_imposed = True
-        self._set_resolution(tres)
-        self.set_conc(conc)
-        self.record_type = 'simulated'
-#        self.get_bursts(self.tcrit)
-
     def _impose_resolution(self):
         """
         Impose time resolution.
-
         First interval to start has to be resolvable, usable and preceded by
         an resolvable interval too. Otherwise its start will be defined by
         unresolvable interval and so will be unreliable.

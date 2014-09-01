@@ -3,13 +3,12 @@ import math
 import os
 import yaml
 import numpy as np
-
 try:
     from PySide.QtGui import *
     from PySide.QtCore import *
 except:
     raise ImportError("pyqt module is missing")
-
+from dcpyps import scalcslib as scl
 from dcpyps import dcio
 from dcpyps import dataset
 import myqtcommon
@@ -136,16 +135,17 @@ class SCDataMenu(QMenu):
             if dialog.exec_():
                 pass
         else:
-            tres, conc, oamp, nint = 10e-6, 1e-6, 5, 5000
-            dialog = SimRecDlg(self, tres, conc, oamp, nint)
+            dialog = SimRecDlg(self)
             if dialog.exec_():
-                tres, conc, oamp, nint = dialog.return_par()
-
-            rec = dataset.SCRecord()
-            #TODO: check if mechanism is loaded if not tell to load one.
-            self.parent.mec.set_eff('c', conc)
+                stres, sconc, samp, snint = dialog.return_par()
+           
+            self.parent.mec.set_eff('c', sconc)
             startstate = self.parent.mec.k - 1 # TODO: ask for this in dialog
-            rec.simulate_record(self.parent.mec, tres, conc, startstate, oamp, nint)
+            sints, sampl, sprop = scl.simulate_intervals(self.parent.mec,
+                stres, startstate, opamp=samp, nintmax=snint)
+            rec = dataset.SCRecord(conc=sconc, tres=stres, 
+                itint=sints, iampl=sampl, iprops=sprop)
+            
             self.parent.log.write("\nSimulation finished")
             self.parent.log.write('{0:d}'.format(len(rec.itint)) +
                 ' intervals were simulated')
@@ -157,7 +157,6 @@ class SCDataMenu(QMenu):
             scnfile = [self.saveSCNfile(rec)]
             self.parent.scnfiles = [scnfile]
             self.parent.data_loaded = True
-
         
     def saveSCNfile(self, rec):
         saveSCNFilename, filt = QFileDialog.getSaveFileName(self,
@@ -553,12 +552,12 @@ class SimRecDlg(QDialog):
     """
 
     """
-    def __init__(self, parent=None, tres=0.00001, conc=100e-9, oamp=5,
+    def __init__(self, parent=None, tres=10e-6, conc=1e-6, oamp=5,
         nint=5000):
         super(SimRecDlg, self).__init__(parent)
 
         self.tres = tres * 1e6 # resolution in microsec
-        self.conc = conc * 1000000 # concentration in microM.
+        self.conc = conc * 1e6 # concentration in microM.
         self.oamp = oamp # open chanel current amplitude in pA
         self.nint = nint # umber of intervals
 
@@ -615,8 +614,8 @@ class SimRecDlg(QDialog):
     def on_par_changed(self):
         """
         """
-        self.tres = float(self.resEdit.text()) * 1e-6
-        self.conc = float(self.concEdit.text()) * 1e-6
+        self.tres = float(self.resEdit.text())
+        self.conc = float(self.concEdit.text())
         self.oamp = float(self.ampEdit.text())
         self.nint = int(self.intEdit.text())
 
@@ -624,7 +623,7 @@ class SimRecDlg(QDialog):
         """
         Return parameter dictionary on exit.
         """
-        return self.tres, self.conc, self.oamp, self.nint
+        return self.tres * 1e-6, self.conc * 1e-6, self.oamp, self.nint
 
 class MecWarningDlg(QDialog):
     def __init__(self, parent=None):
