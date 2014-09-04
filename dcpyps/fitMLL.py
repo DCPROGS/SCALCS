@@ -13,10 +13,18 @@ from dcprogs.likelihood import Log10Likelihood
 class FittingSession():
     """
     """
+
+
     def __init__(self, mec, recs):
         self.mec = mec
         self.recs = recs
-        self.likelihood()
+        self.LL = []
+        kwargs = {'nmax': 2, 'xtol': 1e-12, 'rtol': 1e-12, 'itermax': 100,
+            'lower_bound': -1e6, 'upper_bound': 0}
+        print self.recs[0].bursts.intervals()
+        for i in range(len(self.recs)):
+            self.LL.append(Log10Likelihood(self.recs[i].bursts.intervals(), self.mec.kA,
+                self.recs[i].tres, self.recs[i].tcrit, **kwargs))
         self.report = FitReportHTML()
         self.report.dataset(self.recs)
         start_lik = self.dcprogslik(np.log(self.mec.theta()))
@@ -25,12 +33,10 @@ class FittingSession():
         self.iternum = 0
 
     def likelihood(self):
-        self.likelihood = []
-        kwargs = {'nmax': 2, 'xtol': 1e-12, 'rtol': 1e-12, 'itermax': 100,
-            'lower_bound': -1e6, 'upper_bound': 0}
+        
         for i in range(len(self.recs)):
-            self.likelihood.append(Log10Likelihood(self.recs[i].bursts, self.mec.kA,
-                self.recs[i].tres, self.recs[i].tcrit, **kwargs))
+            self.LL.append(Log10Likelihood(self.recs[i].bursts, self.mec.kA,
+                self.recs[i].tres, self.recs[i].tcrit, **self.kwargs))
 
     def run(self):
         # FITTING BIT
@@ -58,14 +64,27 @@ class FittingSession():
     def printiter(self, theta):
         self.iternum += 1
         lik = self.dcprogslik(theta)
-        print("iteration # {0:d}; log-lik = {1:.6f}".format(self.iternum, -lik))
-        print(np.exp(theta))
+        if self.iternum % 10 == 0:
+            print("iteration # {0:d}; log-lik = {1:.6f}".format(self.iternum, -lik))
+            print(np.exp(theta))
 
     def dcprogslik(self, x, args=None):
         self.mec.theta_unsqueeze(np.exp(x))
         lik = 0
         for i in range(len(self.recs)):
             self.mec.set_eff('c', self.recs[i].conc)
-            lik += -self.likelihood[i](self.mec.Q) * log(10)
+            lik += -self.LL[i](self.mec.Q) * log(10)
         return lik
+
+    def dcprogslik_all(x, args=None):
+        """
+        Return a list of separate likelihoods for each patch.
+        """
+        self.mec.theta_unsqueeze(np.exp(x))
+        lik = []
+        for i in range(len(conc)):
+            self.mec.set_eff('c', self.recs[i].conc)
+            lik.append(-self.LL[i](self.mec.Q) * log(10))
+        return lik
+
 # end of FittingSession #

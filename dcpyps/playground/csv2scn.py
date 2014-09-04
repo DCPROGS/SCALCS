@@ -1,6 +1,9 @@
 __author__="RLape"
 __date__ ="$20-Aug-2014 13:55:03$"
 
+import sys
+import time
+import struct
 import numpy as np
 
 def convert_clampfit_to_scn(fname):
@@ -54,9 +57,16 @@ def scn_write(intervals, amplitudes, flags, calfac=1.0, ffilt=-1.0, rms=0.0,
     fout.close()
 
 if __name__ == "__main__":
-    print 'Converting file: ', fname
-    fscname = convert_clampfit_to_scn(fname)
-    print 'Done!'
+
+
+    if len(sys.argv) > 1:
+        fname = sys.argv[1]
+        print 'Converting file: ', fname
+        fscname = convert_clampfit_to_scn(fname)
+        print 'Done!'
+    else:
+        print "No file was converted."
+        print "Please, use this script this way: 'python csv2scn.py path_to_file.csv'"
 
 
 

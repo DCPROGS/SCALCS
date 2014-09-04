@@ -14,20 +14,12 @@ class FitReportHTML():
     """
     """
     def __init__(self, filename=None):
-        
-        
-        if filename:
-            self.htmlfile = filename + '.html'
-            self.mecfile = filename + '.yaml'
-        if not filename:
-            self.timestr = ("%4d%02d%02d_%02d%02d%02d" %time.localtime()[0:6])
-            self.htmlfile = 'report_' + self.timestr + '.html'
-            self.mecfile = 'mec_' + self.timestr + '.yaml'
-        
-        self.folder = self.htmlfile[:-5]
-        os.mkdir(self.folder)
-        self.f = open(os.path.join(self.folder, self.htmlfile), 'w')
 
+
+        path, self.filename = set_cwd('fits-dcpyps', filename)
+        self.htmlfile = 'report_' + self.filename + '.html'
+        self.mecfile = 'mec_' + self.filename + '.yaml'
+        self.f = open(self.htmlfile, 'w')
         
         str1 = "DC_PyPs: Q matrix calculations.<br>"
         str2 = ("Date and time of analysis: %4d/%02d/%02d %02d:%02d:%02d<br>"
@@ -93,17 +85,16 @@ class FitReportHTML():
         self.f.write('<p>Final log-likelihood = {0:.6f}</p>'.format(-lik))
         self.f.write('<p>Number of iterations = {0:d}</p>'.format(niter))
         
-        mecfilename = os.path.join(self.folder, self.mecfile)  
-        dcio.mec_save_to_yaml(mec, mecfilename)
+        dcio.mec_save_to_yaml(mec, self.mecfile)
         self.f.write('<p>Fitted rates saved in YAML file: {0}</p>'.
-            format(mecfilename))
+            format(self.mecfile))
         
     def distributions(self, mec, recs):
         
         for i in range(len(recs)):
             name = recs[i].filenames[0][:-4].split('/')[-1]
-            op_filename = os.path.join(self.folder, name + '_open.png')
-            sh_filename = os.path.join(self.folder, name + '_shut.png')
+            op_filename = self.filename + '_open.png'
+            sh_filename = self.filename + '_shut.png'
             dcio.png_save_pdf_fig(op_filename, recs[i].opint, mec, 
                 recs[i].conc, recs[i].tres, 'open')
             dcio.png_save_pdf_fig(sh_filename, recs[i].shint, mec, 
@@ -271,3 +262,21 @@ class ClusterReportHTML():
     def finalise(self):
         self.f.write('</html>')
         self.f.close()
+
+
+def set_cwd(dirname, filename):
+    os.chdir(os.path.expanduser("~"))
+    if platform.system() == 'Windows':
+        os.chdir('C://')
+    if not os.path.isdir(dirname):
+        os.mkdir(dirname)
+    os.chdir(dirname)
+
+    if not filename:
+        filename = ("%4d%02d%02d_%02d%02d%02d" %time.localtime()[0:6])
+    os.mkdir(filename)
+    os.chdir(filename)
+
+    return os.getcwd(), filename
+
+
