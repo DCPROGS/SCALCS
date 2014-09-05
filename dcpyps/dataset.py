@@ -298,7 +298,8 @@ class SCRecord(object):
                     if self.pint[i] < tcrit and self.popt[i] < 8:
                         burst.add_interval(self.pint[i], self.pamp[i])
                     elif self.pint[i] > tcrit and self.popt[i] < 8:
-                        self._bursts.add_burst(burst)
+                        if burst.get_openings_number() > 0:
+                            self._bursts.add_burst(burst)
                         burst = Burst()
                     elif self.popt[i] >= 8:
                         badend = True
