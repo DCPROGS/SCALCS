@@ -288,20 +288,31 @@ class SCRecord(object):
         burst = Burst()
         tcrit = math.fabs(self._tcrit)
         i = 0
+        badend = False
         while i < (len(self.pint) - 1):
-            if self.pamp[i] != 0:
-                burst.add_interval(self.pint[i], self.pamp[i])
-            else: # found gap
-                if self.pint[i] < tcrit and self.popt[i] < 8:
+            
+            if not badend:
+                if self.pamp[i] != 0:
                     burst.add_interval(self.pint[i], self.pamp[i])
-                else: # gap is longer than tcrit or bad
-                    self._bursts.add_burst(burst)
+                else: # found gap
+                    if self.pint[i] < tcrit and self.popt[i] < 8:
+                        burst.add_interval(self.pint[i], self.pamp[i])
+                    elif self.pint[i] > tcrit and self.popt[i] < 8:
+                        self._bursts.add_burst(burst)
+                        burst = Burst()
+                    elif self.popt[i] >= 8:
+                        badend = True
+            else: # if badend
+                if self.pint[i] > tcrit and self.popt[i] < 8:
                     burst = Burst()
+                    badend = False
+
+                    
             i += 1
         if self.pamp[i] != 0:
             burst.add_interval(self.pint[i], self.pamp[i])
             self._bursts.add_burst(burst)
-        if burst.intervals:
+        if burst.intervals and self.popt[-1] < 8:
             self._bursts.add_burst(burst)
     def _get_bursts(self):
         return self._bursts
