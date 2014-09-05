@@ -291,23 +291,27 @@ class SCRecord(object):
         badend = False
         while i < (len(self.pint) - 1):
             
-            if not badend:
-                if self.pamp[i] != 0:
-                    burst.add_interval(self.pint[i], self.pamp[i])
-                else: # found gap
-                    if self.pint[i] < tcrit and self.popt[i] < 8:
+
+            if self.pamp[i] != 0:
+                if not badend:
+                    if self.popt[i] < 8:
                         burst.add_interval(self.pint[i], self.pamp[i])
-                    elif self.pint[i] > tcrit and self.popt[i] < 8:
-                        if burst.get_openings_number() > 0:
-                            self._bursts.add_burst(burst)
-                        burst = Burst()
-                    elif self.popt[i] >= 8:
+                    else:
                         badend = True
-            else: # if badend
-                if self.pint[i] > tcrit and self.popt[i] < 8:
+            else: # found gap
+                if ((self.pint[i] < tcrit) and (self.popt[i] < 8)):
+                    if not badend:
+                        burst.add_interval(self.pint[i], self.pamp[i])
+                elif self.pint[i] >= tcrit and self.popt[i] < 8:
+
+                    if ((burst.get_openings_number() > 0) and 
+                        (burst.get_openings_number() * 2 == len(burst.intervals) + 1) 
+                        and (not badend)):
+                        self._bursts.add_burst(burst)
                     burst = Burst()
                     badend = False
-
+                elif self.popt[i] >= 8:
+                    badend = True
                     
             i += 1
         if self.pamp[i] != 0:
