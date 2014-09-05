@@ -312,7 +312,7 @@ class SCRecord(object):
         if self.pamp[i] != 0:
             burst.add_interval(self.pint[i], self.pamp[i])
             self._bursts.add_burst(burst)
-        if burst.intervals and self.popt[-1] < 8:
+        if burst.intervals and not badend:
             self._bursts.add_burst(burst)
     def _get_bursts(self):
         return self._bursts
@@ -390,7 +390,6 @@ class SCRecord(object):
             str_repr += '\nTemporal resolution not imposed...\n'
 
         if self._tcrit:
-            print '\nNumber of bursts = {0:d}'.format(self.bursts.count())
             str_repr += ('\nNumber of bursts = {0:d}'.format(self.bursts.count()))
             blength = self.bursts.get_length_list()
             openings = self.bursts.get_opening_num_list()
