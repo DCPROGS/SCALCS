@@ -28,7 +28,11 @@ class FittingSession():
         self.report = FitReportHTML()
         self.report.dataset(self.recs)
         start_lik = self.dcprogslik(np.log(self.mec.theta()))
-        print ("Starting likelihood = {0:.6f}".format(-start_lik))
+        print ("\nStarting likelihood = {0:.6f}".format(-start_lik))
+        start_lik_all = self.dcprogslik_all(np.log(self.mec.theta()))
+        for i in range(len(start_lik_all)):
+            print ("Set #{0:d}: likelihood = {1:.6f}".format(i+1, -start_lik_all[i]))
+        print ('\n\n')
         self.report.rates(self.mec, start_lik)
         self.iternum = 0
 
@@ -76,13 +80,13 @@ class FittingSession():
             lik += -self.LL[i](self.mec.Q) * log(10)
         return lik
 
-    def dcprogslik_all(x, args=None):
+    def dcprogslik_all(self, x, args=None):
         """
         Return a list of separate likelihoods for each patch.
         """
         self.mec.theta_unsqueeze(np.exp(x))
         lik = []
-        for i in range(len(conc)):
+        for i in range(len(self.recs)):
             self.mec.set_eff('c', self.recs[i].conc)
             lik.append(-self.LL[i](self.mec.Q) * log(10))
         return lik

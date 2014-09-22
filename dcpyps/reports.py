@@ -43,7 +43,6 @@ class FitReportHTML():
         self.f.write('Values of rate constants [1/sec]:<br>')
         self.f.write('<table border="0">')
         for rate in mec.Rates:
-            print 'rate name=', rate
             self.f.write('<tr>' + '<td>From ' + rate.State1.name + '</td><td>to ' +
                          rate.State2.name + '</td><td>' + rate.name + 
                          '</td><td>{0:.5g}</td></tr>'.format(rate.unit_rate()))
