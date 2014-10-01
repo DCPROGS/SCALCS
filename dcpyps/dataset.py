@@ -11,10 +11,12 @@ class SCRecord(object):
     """
 
     def __init__(self, filenames=None, conc=None, tres=0.0, tcrit=None,
-        onechan=None, badend=None, itint=None, iampl=None, iprops=None):
+        badopen=-1, onechan=None, badend=None, 
+        itint=None, iampl=None, iprops=None):
 
         self.record_type = None
         self.filenames = filenames
+        self.badopen = badopen
         if filenames:
             self.load_from_file(filenames)
         else:
@@ -62,7 +64,7 @@ class SCRecord(object):
         as an open period even though their length is undefined.
         """
         pint, pamp, popt = [], [], []
-        if self.ramp[-1] != 0:
+        while self.ramp[-1] != 0:
             self.rint.pop()
             self.ramp.pop()
             self.ropt.pop()
@@ -73,7 +75,9 @@ class SCRecord(object):
 
         n = 1
         oint, oamp, oopt = self.rint[0], self.ramp[0], self.ropt[0]
+#        print len(self.rint)
         while n < len(self.rint):
+#            print n, 'int=', self.rint[n], 'amp=', self.ramp[n]
             if self.ramp[n] != 0:
                 oint += self.rint[n]
                 oamp += self.ramp[n] * self.rint[n]
@@ -83,15 +87,25 @@ class SCRecord(object):
                     pamp.append(oamp/oint)
                     pint.append(oint)
                     popt.append(oopt)
+#                    print '\t period= ', pint[-1], 'amplitude=', pamp[-1]
             else:
-                pamp.append(oamp/oint)
-                pint.append(oint)
-                popt.append(oopt)
-                oint, oamp, oopt = 0.0, 0.0, 0
-
-                pamp.append(0.0)
-                pint.append(self.rint[n])
-                popt.append(self.ropt[n])
+                if oamp == 0 and self.ramp[n] == 0:
+                    pint[-1] += self.rint[n]
+                elif self.badopen > 0 and oint > self.badopen:
+                    popt[-1] = 8
+                    oint, oamp, oopt = 0.0, 0.0, 0
+                    if n != (len(self.rint) - 2):
+                        n += 1
+                else:
+                    pamp.append(oamp/oint)
+                    pint.append(oint)
+                    popt.append(oopt)
+#                    print '\t period= ', pint[-1], 'amplitude=', pamp[-1]
+                    oint, oamp, oopt = 0.0, 0.0, 0
+                    pamp.append(0.0)
+                    pint.append(self.rint[n])
+                    popt.append(self.ropt[n])
+#                    print '\t period= ', pint[-1], 'amplitude=', pamp[-1]
             n += 1
 
         self.pint, self.pamp, self.popt = pint, pamp, popt
