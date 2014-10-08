@@ -89,14 +89,17 @@ class SCRecord(object):
                     popt.append(oopt)
 #                    print '\t period= ', pint[-1], 'amplitude=', pamp[-1]
             else:
-                if oamp == 0 and self.ramp[n] == 0:
+                # found two consequent gaps
+                if oamp == 0 and self.ramp[n] == 0 and oopt < 8:
                     pint[-1] += self.rint[n]
-                elif self.badopen > 0 and oint > self.badopen:
+                # skip bad opening
+                elif (self.badopen > 0 and oint > self.badopen) or (oopt >= 8):
+                #elif (oopt >= 8):
                     popt[-1] = 8
                     oint, oamp, oopt = 0.0, 0.0, 0
-                    if n != (len(self.rint) - 2):
-                        n += 1
-                else:
+#                    if n != (len(self.rint) - 2):
+#                        n += 1
+                else: # shutting terminates good opening
                     pamp.append(oamp/oint)
                     pint.append(oint)
                     popt.append(oopt)

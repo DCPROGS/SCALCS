@@ -36,6 +36,17 @@ def get_periods(fper):
     f.close()
     return ptint, pampl, popts
 
+def get_periods1(fper):
+    ptint, pampl, popts = [], [], []
+    f = open(fper, 'r')
+    for line in f.readlines():
+        spline = line.split()
+        ptint.append(float(spline[1])/1000.0)
+        pampl.append(float(spline[2]))
+        popts.append(int(spline[3]))
+    f.close()
+    return ptint, pampl, popts
+
 def get_all_and_resolved_intervals(fres):
     """
     """
@@ -72,8 +83,8 @@ def get_all_and_resolved_intervals(fres):
     return tint, ampl, opts, rtint, rampl, ropts
 
 # LOAD DATA. AChR H2003
-scnfiles = [["./dcpyps/samples/scn/001004S2.SCN"]]
-perfile = "./dcpyps/samples/scn/hatton1.txt"
+scnfiles = [["./dcpyps/samples/scn/991119S1.DAT"]]
+perfile = "./dcpyps/samples/scn/hatton2.txt"
 #resfile = "./dcpyps/samples/scn/resolved.txt"
 tres = [0.000025]
 tcrit = [0.002]
@@ -93,7 +104,7 @@ for i in range(len(scnfiles)):
     rec.printout()
 
 #    tint, ampl, opts, rtint, rampl, ropts = get_all_and_resolved_intervals(resfile)
-    ptint, pampl, popts = get_periods(perfile)
+    ptint, pampl, popts = get_periods1(perfile)
 #    compare_lists(rtint, rampl, ropts, rec.rint, rec.ramp, rec.ropt) # compare resolved intervals
     compare_lists(ptint, pampl, popts, rec.pint, rec.pamp, rec.popt) # compare periods
 
