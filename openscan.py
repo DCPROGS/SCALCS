@@ -83,13 +83,13 @@ def get_all_and_resolved_intervals(fres):
     return tint, ampl, opts, rtint, rampl, ropts
 
 # LOAD DATA. AChR H2003
-scnfiles = [["./dcpyps/samples/scn/001004S2.SCN"]]
-perfile = "./dcpyps/samples/scn/hatton1.txt"
+scnfiles = [["./dcpyps/samples/scn/000225S4.DAT"]]
+perfile = "./dcpyps/samples/scn/hatton3.txt"
 #resfile = "./dcpyps/samples/scn/resolved.txt"
 tres = [0.000025]
-tcrit = [0.002]
-conc = [50e-9]
-badopen = [0.02]
+tcrit = [-0.035]
+conc = [10e-6]
+badopen = [-1]
 
 # LOAD DATA. GlyR B3004 sim
 #scnfiles = [["./dcpyps/samples/scn/simC.scn"]]
@@ -103,15 +103,15 @@ for i in range(len(scnfiles)):
     rec = dataset.SCRecord(scnfiles[i], conc[i], tres[i], tcrit[i], badopen[i])
     rec.printout()
 
-#    tint, ampl, opts, rtint, rampl, ropts = get_all_and_resolved_intervals(resfile)
-    ptint, pampl, popts = get_periods1(perfile)
-#    compare_lists(rtint, rampl, ropts, rec.rint, rec.ramp, rec.ropt) # compare resolved intervals
-    compare_lists(ptint, pampl, popts, rec.pint, rec.pamp, rec.popt) # compare periods
+##    tint, ampl, opts, rtint, rampl, ropts = get_all_and_resolved_intervals(resfile)
+#    ptint, pampl, popts = get_periods1(perfile)
+##    compare_lists(rtint, rampl, ropts, rec.rint, rec.ramp, rec.ropt) # compare resolved intervals
+#    compare_lists(ptint, pampl, popts, rec.pint, rec.pamp, rec.popt) # compare periods
 
-#    # PRINT BURSTS
-#    print("\nPrinting bursts\n")
-#    count = 0
-#    for burst in rec.bursts.all():
-#        print count
-#        print burst
-#        count += 1
+    # PRINT BURSTS
+    print("\nPrinting bursts\n")
+    count = 0
+    for burst in rec.bursts.all():
+        print count+1
+        print burst
+        count += 1
