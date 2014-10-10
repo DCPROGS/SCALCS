@@ -83,8 +83,8 @@ def get_all_and_resolved_intervals(fres):
     return tint, ampl, opts, rtint, rampl, ropts
 
 # LOAD DATA. AChR H2003
-scnfiles = [["./dcpyps/samples/scn/991119S1.DAT"]]
-perfile = "./dcpyps/samples/scn/hatton2.txt"
+scnfiles = [["./dcpyps/samples/scn/001004S2.SCN"]]
+perfile = "./dcpyps/samples/scn/hatton1.txt"
 #resfile = "./dcpyps/samples/scn/resolved.txt"
 tres = [0.000025]
 tcrit = [0.002]

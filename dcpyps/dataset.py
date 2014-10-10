@@ -93,8 +93,8 @@ class SCRecord(object):
                 if oamp == 0 and self.ramp[n] == 0 and oopt < 8:
                     pint[-1] += self.rint[n]
                 # skip bad opening
-                elif (self.badopen > 0 and oint > self.badopen) or (oopt >= 8):
-                #elif (oopt >= 8):
+                #elif (self.badopen > 0 and oint > self.badopen) or (oopt >= 8):
+                elif (oopt >= 8):
                     popt[-1] = 8
                     oint, oamp, oopt = 0.0, 0.0, 0
 #                    if n != (len(self.rint) - 2):
@@ -221,7 +221,10 @@ class SCRecord(object):
                             rampl.append(atemp)
                         else:
                             rampl.append(atemp / ttemp)
-                        rprops.append(otemp)
+                        if (self.badopen > 0 and rtint[-1] > self.badopen):
+                            rprops.append(8)
+                        else:
+                            rprops.append(otemp)
                         ttemp = self.itint[n]
                         otemp = self.iprops[n]
                         isopen = False
@@ -247,7 +250,10 @@ class SCRecord(object):
                         else:
                             rtint.append(ttemp)
                             rampl.append(atemp / ttemp)
-                            rprops.append(otemp)
+                            if (self.badopen > 0 and rtint[-1] > self.badopen):
+                                rprops.append(8)
+                            else:
+                                rprops.append(otemp)
                             ttemp, otemp = self.itint[n], self.iprops[n]
                             atemp = self.iampl[n] * self.itint[n]
 
