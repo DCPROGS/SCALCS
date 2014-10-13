@@ -164,15 +164,15 @@ class SCRecord(object):
         # Find first resolvable and usable interval.
         n = 0
         firstResolved = False
-        if ((self.itint[n] > self._tres) and (self.iprops[n] != 8)):
+        if ((self.itint[n] > self._tres) and (self.iprops[n] < 8)):
             firstResolved = True
         else:
             n += 1
 
         while not firstResolved:
-            if ((self.itint[n] > self._tres) and (self.iprops[n] != 8) and
+            if ((self.itint[n] > self._tres) and (self.iprops[n] < 8) and
 #                (self.iampl[n] != 0) and
-                (self.itint[n-1] > self._tres) and (self.iprops[n-1] != 8)):
+                (self.itint[n-1] > self._tres) and (self.iprops[n-1] < 8)):
                     firstResolved = True # first interval is usable and resolvable
             else:
                 n += 1
@@ -206,7 +206,7 @@ class SCRecord(object):
 
                 else:
                     ttemp += self.itint[n]
-                    if self.iprops[n] == 8: otemp = self.iprops[n]
+                    if self.iprops[n] >= 8: otemp = self.iprops[n]
                     if isopen: #self.iampl[n] != 0:
                         atemp += self.iampl[n] * self.itint[n]
 
@@ -214,7 +214,7 @@ class SCRecord(object):
                 if (self.iampl[n] == 0): # next interval is resolvable shutting
                     if not isopen: # previous interval was shut
                         ttemp += self.itint[n]
-                        if self.iprops[n] == 8: otemp = self.iprops[n]
+                        if self.iprops[n] >= 8: otemp = self.iprops[n]
                     else: # previous interval was open
                         rtint.append(ttemp)
                         if self.record_type == 'simulated':
@@ -242,11 +242,11 @@ class SCRecord(object):
                     else: # previous was open
                         if self.record_type == 'simulated':
                             ttemp += self.itint[n]
-                            if self.iprops[n] == 8: otemp = self.iprops[n]
+                            if self.iprops[n] >= 8: otemp = self.iprops[n]
                         elif (math.fabs((atemp / ttemp) - self.iampl[n]) <= 1.e-5):
                             ttemp += self.itint[n]
                             atemp += self.iampl[n] * self.itint[n]
-                            if self.iprops[n] == 8: otemp = self.iprops[n]
+                            if self.iprops[n] >= 8: otemp = self.iprops[n]
                         else:
                             rtint.append(ttemp)
                             rampl.append(atemp / ttemp)
