@@ -101,17 +101,17 @@ badopen = [-1]
 
 for i in range(len(scnfiles)):
     rec = dataset.SCRecord(scnfiles[i], conc[i], tres[i], tcrit[i], badopen[i])
-    rec.printout()
+rec.printout()
 
 ##    tint, ampl, opts, rtint, rampl, ropts = get_all_and_resolved_intervals(resfile)
 #    ptint, pampl, popts = get_periods1(perfile)
 ##    compare_lists(rtint, rampl, ropts, rec.rint, rec.ramp, rec.ropt) # compare resolved intervals
 #    compare_lists(ptint, pampl, popts, rec.pint, rec.pamp, rec.popt) # compare periods
 
-    # PRINT BURSTS
-    print("\nPrinting bursts\n")
-    count = 0
-    for burst in rec.bursts.all():
-        print count+1
-        print burst
-        count += 1
+# PRINT BURSTS
+print("\nPrinting bursts\n")
+count = 0
+for burst in rec.bursts.all():
+    print count+1
+    print burst
+    count += 1

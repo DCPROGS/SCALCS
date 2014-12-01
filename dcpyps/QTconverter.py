@@ -1,7 +1,10 @@
 #! /usr/bin/python
 
 import os
+import struct
+import time
 import numpy as np
+import pandas as pd
 
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -47,12 +50,22 @@ class ConverterQT(QDialog):
     def load_from_file(self):
         ""
         filename, filt = QFileDialog.getOpenFileName(self,
-                "Open a text file...", self.path,
-                "TXT files (*.txt *.TXT);;All files (*.*)")
+                "Open a file...", self.path,
+                "Excel files (*.xls *.xlsx;;TXT files (*.txt *.TXT);;All files (*.*)")
         if filename:
-            self.path = os.path.split(str(filename))[0]
+            self.path, fname = os.path.split(str(filename))
             self.txt_from_file.setText(filename)
-            self.data = dcio.txt_load_one_col(filename)
+            type = fname.split('.')[-1]
+            if type == 'xls' or type == 'xlsx':
+                sheets = pd.ExcelFile(filename).sheet_names
+                dialog = ExcelSheetDlg(sheets, self)
+                if dialog.exec_():
+                    sheet = dialog.returnSheet()
+                self.amplitudes, self.intervals, self.flags = load_Clampfit_Excel_sheet(filename, sheet)
+            else:    
+                self.data = txt_load_one_col(filename)
+
+            
 
     def browse_to_file(self):
         ""
@@ -62,7 +75,7 @@ class ConverterQT(QDialog):
         if self.to_filename:
             self.txt_to_file.setText(self.to_filename)
 
-    def convert(self):
+    def convert1(self):
         "One type intervals saved as shut intervals in scan file. "
 
         nint = 2 * len(self.data) + 1
@@ -73,3 +86,125 @@ class ConverterQT(QDialog):
         options = np.zeros((nint), dtype='b')
         dcio.scn_write(np.array(intervals), amplitudes, options,
             filename=self.to_filename, type='Converted 1 type of ints')
+
+    def convert(self):
+        try:
+            scn_write(np.array(self.intervals), self.amplitudes, self.flags,
+                filename=self.to_filename, type='Converted 1 type of ints')
+            msgBox = QMessageBox()
+            msgBox.setText("Conversion finished!")
+            msgBox.exec_()
+        except ValueError:
+            msgBox = QMessageBox()
+            msgBox.setText("Conversion aborted :-) \n Something went wrong. \n Please, contact Remis.")
+            msgBox.exec_()
+        
+
+class ExcelSheetDlg(QDialog):
+    """
+    Dialog to choose Excel sheet to load.
+    """
+    def __init__(self, sheetlist, parent=None):
+        super(ExcelSheetDlg, self).__init__(parent)
+
+        self.sheet = ''
+        self.List = QListWidget()
+        self.List.addItems(sheetlist)
+    
+        self.connect(self.List,
+            SIGNAL("itemSelectionChanged()"),
+            self.sheetSelected)
+
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok|
+            QDialogButtonBox.Cancel)
+        self.connect(buttonBox, SIGNAL("accepted()"),
+            self, SLOT("accept()"))
+        self.connect(buttonBox, SIGNAL("rejected()"),
+            self, SLOT("reject()"))
+
+        layout1 = QHBoxLayout()
+        layout1.addWidget(self.List)
+        layout2 = QVBoxLayout()
+        layout2.addLayout(layout1)
+        layout2.addWidget(buttonBox)
+
+        self.setLayout(layout2)
+        self.resize(200, 300)
+        self.setWindowTitle("Choose Excel sheet to load...")
+
+    def sheetSelected(self):
+        """
+        Get selected sheet name.
+        """
+        self.sheet = self.List.currentItem().text()
+
+    def returnSheet(self):
+        """
+        Return selected sheet name.
+        """
+        return self.sheet
+
+
+def load_Clampfit_Excel_sheet(fname, sheet):
+    """
+    Convert Clampfit idealisation result saved as comma delimited .csv file.
+    """
+    
+    record = pd.read_excel(fname, sheet, header=None)
+    amplitudes = np.abs(record.iloc[1: , 6].values * record.iloc[1:, 2].values * 1000.0).astype(int)
+    intervals = record.iloc[1: , 8].values
+    flags = np.zeros((len(intervals)), dtype='b')
+    return amplitudes, intervals, flags
+    
+
+def txt_load_one_col(filename):
+    """"
+    Read one column of data from a text file.
+    """
+
+    f = open(filename, 'r')
+    lines = f.readlines()
+    f.close()
+    data = []
+    for line in lines:
+        if line != '\n':
+            value = float(line.strip("\t\n"))    #divide lines into values at tabs
+#            print 'value=', value
+            data.append(value)
+
+    print "number of original intervals =", len(lines)
+    print "number of useful intervals =", len(data)
+    return data
+
+def scn_write(intervals, amplitudes, flags, calfac=1.0, ffilt=-1.0, rms=0.0,
+        treso=0.0, tresg=0.0, Emem=0.0,
+        filename='new_saved.SCN', type='simulated'):
+    """
+    Write binary SCAN (DCprogs: http://www.ucl.ac.uk/Pharmacology/dcpr95.html)
+    format file.
+
+    Parameters
+    ----------
+    """
+
+    # Preapare header.
+    iscanver, ioffset = -103, 154
+    nint, avamp = len(intervals), np.average(amplitudes)
+    title = '{0: <70}'.format(type) # char*70
+    t = time.asctime()
+    expdate = t[8:10] + '-' + t[4:7] + '-' + t[20:24] # '00-ooo-0000' char*11
+    tapeID = '{0: <24}'.format(type) # char*24
+    ipatch = 0 # integer32
+
+    # Write header.
+    fout = open(filename, 'wb')
+    fout.write(struct.pack('iii', iscanver, ioffset, nint))
+    fout.write(title + expdate + tapeID)
+    fout.write(struct.pack('ififff', ipatch, Emem, 0, avamp, rms, ffilt))
+    fout.write(struct.pack('fff', calfac, treso, tresg))
+
+    # Write data block.
+    fout.write(struct.pack('f'*nint, *intervals))
+    fout.write(struct.pack('h'*nint, *amplitudes))
+    fout.write(struct.pack('b'*nint, *flags))
+    fout.close()

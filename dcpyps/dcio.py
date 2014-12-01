@@ -7,6 +7,7 @@ import time
 import math
 from array import array
 import numpy as np
+import pandas as pd
 import yaml
 from pylab import figure, semilogx, savefig
 
@@ -2668,6 +2669,17 @@ def ini_HJCFIT_read(filename, verbose=False):
     ini['ratemax'] = ratemax
     
     return ini
+
+def load_Clampfit_Excel_sheet(fname, sheet):
+    """
+    Convert Clampfit idealisation result saved as comma delimited .csv file.
+    """
+    
+    record = pd.read_excel(fname, sheet, header=None)
+    amplitudes = np.abs(record.iloc[1: , 6].values * record.iloc[1:, 2].values * 1000.0).astype(int)
+    intervals = record.iloc[1: , 8].values
+    flags = np.zeros((len(intervals)), dtype='b')
+    return amplitudes, intervals, flags
 
 def txt_load_one_col(filename):
     """"

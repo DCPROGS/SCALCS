@@ -335,7 +335,7 @@ class SCRecord(object):
                     badend = False
 #                elif self.popt[i] >= 8:
 #                    badend = True
-                    
+
             i += 1
         if self.pamp[i] != 0:
             burst.add_interval(self.pint[i], self.pamp[i])
