@@ -57,14 +57,22 @@ class BurstPlots(Dock):
         self.plt4 = pg.PlotWidget()
         self.spB1 = pg.SpinBox(value=self.min_op, step=1, bounds=(2,100))
         self.spB1.sigValueChanged.connect(self.spinBox1Changed)
+
+        self.exportBtn1 = QPushButton('Export Popen distribution to TXT')
+        self.exportBtn1.clicked.connect(self.export1)
+        self.exportBtn3 = QPushButton('Export MOP v Popen to TXT')
+        self.exportBtn3.clicked.connect(self.export3)
+
         
         w2 = pg.LayoutWidget()
         w2.addWidget(QLabel('Use clusters with number of openings more than:'), row=0, col=0, colspan=3)
         w2.addWidget(self.spB1, row=0, col=3)
         w2.addWidget(self.plt1, row=1, col=0, colspan=4)
-        w2.addWidget(self.plt2, row=2, col=0, colspan=4)
-        w2.addWidget(self.plt3, row=3, col=0, colspan=4)
-        w2.addWidget(self.plt4, row=4, col=0, colspan=4)
+        w2.addWidget(self.exportBtn1, row=2, col=3)
+        w2.addWidget(self.plt2, row=3, col=0, colspan=4)
+        w2.addWidget(self.plt3, row=4, col=0, colspan=4)
+        w2.addWidget(self.exportBtn3, row=5, col=3)
+        w2.addWidget(self.plt4, row=6, col=0, colspan=4)
 
         self.addWidget(w2)
         
@@ -75,34 +83,34 @@ class BurstPlots(Dock):
         self.plt3.clear()
         self.plt4.clear()
 
-        all_popen = []
+        self.all_popen = []
         all_mean_ampl = []
-        opav = []
+        self.opav = []
         all_op_lists = []
         all_sh_lists = []
         for record in self.parent.recs:
             clusters = record.bursts.get_long(self.min_op)
-            all_popen.extend(clusters.get_popen_list())
+            self.all_popen.extend(clusters.get_popen_list())
             all_mean_ampl.extend(clusters.get_mean_ampl_list())
-            opav.extend(clusters.get_opening_length_mean_list())
+            self.opav.extend(clusters.get_opening_length_mean_list())
             all_op_lists.extend(clusters.get_op_lists())
             all_sh_lists.extend(clusters.get_sh_lists())
-        y,x = np.histogram(np.array(all_popen)) #, bins=np.linspace(-3, 8, 40))
-        hist = pg.PlotCurveItem(x, y, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
+        self.y1,self.x1 = np.histogram(np.array(self.all_popen)) #, bins=np.linspace(-3, 8, 40))
+        hist = pg.PlotCurveItem(self.x1, self.y1, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
         self.plt1.addItem(hist)
         self.plt1.setXRange(0, 1) #, padding=None, update=True)
         self.plt1.setLabel('bottom', "Popen")
         self.plt1.setLabel('left', "Count #")
         self.plt1.setTitle("Mean Popen= {0:.3f}; # of clusters= {1:d}".
-            format(np.average(np.array(all_popen)), len(all_popen)))
+            format(np.average(np.array(self.all_popen)), len(self.all_popen)))
         
-        y,x = np.histogram(np.array(opav)) #, bins=np.linspace(-3, 8, 40))
+        y,x = np.histogram(np.array(self.opav)) #, bins=np.linspace(-3, 8, 40))
         hist = pg.PlotCurveItem(x, y, stepMode=True, fillLevel=0, brush=(0, 0, 255, 80))
         self.plt2.addItem(hist)
         self.plt2.setLabel('bottom', "Opening mean length", units='s')
         self.plt2.setLabel('left', "Count #")
         
-        self.plt3.plot(np.array(all_popen), np.array(opav)*1000,  pen=None, symbol='o', symbolPen='b', symbolSize=5, symbolBrush='b')
+        self.plt3.plot(np.array(self.all_popen), np.array(self.opav)*1000,  pen=None, symbol='o', symbolPen='b', symbolSize=5, symbolBrush='b')
         self.plt3.setLabel('left', "Opening mean length", units='ms')
         self.plt3.setLabel('bottom', "Popen")
         self.plt3.setXRange(0, 1)
@@ -111,6 +119,28 @@ class BurstPlots(Dock):
         self.plt4.setLabel('left', "Mean amplitude", units='pA')
         self.plt4.setLabel('bottom', "Popen")
         self.plt4.setXRange(0, 1)
+
+    def export1(self):
+        fname, filt = QFileDialog.getSaveFileName(self,
+                "Save as TXT file...", self.parent.path, ".txt",
+                "TXT files (*.txt)")
+        fout = open(fname,'w')
+        for i in range(len(self.x1)):
+            fout.write('{0:.6e}\t'.format(self.x1[i]))
+            fout.write('{0:.6e}\t'.format(self.y1[i]))
+            fout.write('\n')
+        fout.close()
+
+    def export3(self):
+        fname, filt = QFileDialog.getSaveFileName(self,
+                "Save as TXT file...", self.parent.path, ".txt",
+                "TXT files (*.txt)")
+        fout = open(fname,'w')
+        for i in range(len(self.all_popen)):
+            fout.write('{0:.6e}\t'.format(self.all_popen[i]))
+            fout.write('{0:.6e}\t'.format(self.opav[i]))
+            fout.write('\n')
+        fout.close()
 
     def spinBox1Changed(self):
         val = self.spB1.value()
@@ -157,7 +187,7 @@ class PatchInspector(Dock):
         self.ckB1.setCheckState(self.tres_all)
         self.ckB1.stateChanged.connect(self.checkBox1Changed)
 
-        self.spB2 = pg.SpinBox(suffix='s', siPrefix=True, step=1e-4, bounds=(1e-3,1))
+        self.spB2 = pg.SpinBox(suffix='s', siPrefix=True, step=1e-6, bounds=(1e-5,1))
         self.spB2.sigValueChanged.connect(self.spinBox2Changed)
         self.ckB2 = QCheckBox('Impose to all loaded patches?', self)
         self.ckB2.setCheckState(self.tcrit_all)
@@ -173,12 +203,7 @@ class PatchInspector(Dock):
         self.spB3 = pg.SpinBox(value=self.ma_period1, step=1, bounds=(1,100))
         self.spB3.sigValueChanged.connect(self.spinBox3Changed)
 
-
-        self.plt6 = pg.PlotWidget()
-        self.spB5 = pg.SpinBox(value=self.ma_period2, step=1, bounds=(1,100))
-        self.spB5.sigValueChanged.connect(self.spinBox5Changed)
-        self.spB6 = pg.SpinBox(value=self.parent.curr_burst+1, step=1) # , bounds=(1,100))
-        self.spB6.sigValueChanged.connect(self.spinBox6Changed)
+        
 
         w1 = pg.LayoutWidget()
 
@@ -210,11 +235,20 @@ class PatchInspector(Dock):
         w1.addWidget(QLabel('Moving average period for all record:'), row=7, col=0, colspan=2)
         w1.addWidget(self.spB3, row=7, col=2)
 
+        # Single cluster Popen stability plot
+        self.plt6 = pg.PlotWidget()
+        self.spB5 = pg.SpinBox(value=self.ma_period2, step=1, bounds=(1,100))
+        self.spB5.sigValueChanged.connect(self.spinBox5Changed)
+        self.spB6 = pg.SpinBox(value=self.parent.curr_burst+1, step=1) # , bounds=(1,100))
+        self.spB6.sigValueChanged.connect(self.spinBox6Changed)
+        self.exportBtn1 = QPushButton('Export current burst to TXT')
+        self.exportBtn1.clicked.connect(self.export1)
         w1.addWidget(self.plt6, row=8, col=0, colspan=4)
         w1.addWidget(QLabel('Moving average period for a single burst:'), row=9, col=0)
         w1.addWidget(self.spB5, row=9, col=1)
         w1.addWidget(QLabel('Burst #:'), row=9, col=2)
         w1.addWidget(self.spB6, row=9, col=3)
+        w1.addWidget(self.exportBtn1, row=10, col=3)
 
         self.addWidget(w1)
 
@@ -281,8 +315,8 @@ class PatchInspector(Dock):
         if self.ma_period2 < clusters.bursts[self.parent.curr_burst].get_openings_number() - 1:
             copma = moving_average(all_op_list[self.parent.curr_burst][:-1], self.ma_period2)
             cshma = moving_average(all_sh_list[self.parent.curr_burst], self.ma_period2)
-            cpoma = copma / (copma + cshma)
-            self.plt6.plot(cpoma, stepMode=True,pen='g')
+            self.cpoma = copma / (copma + cshma)
+            self.plt6.plot(self.cpoma, stepMode=True,pen='g')
         else:
             pass
         self.plt6.setLabel('left', "Popen")
@@ -298,6 +332,15 @@ class PatchInspector(Dock):
         self.spB6.setMinimum(1)
 
         self.parent.update()
+
+    def export1(self):
+        fname, filt = QFileDialog.getSaveFileName(self,
+                "Save as TXT file...", self.parent.path, ".txt",
+                "TXT files (*.txt)")
+        fout = open(fname,'w')
+        for i in range(len(self.cpoma)):
+            fout.write('{0:.6e}\n'.format(self.cpoma[i]))
+        fout.close()
 
     def update_tres(self, tres):
         if self.tres_all:
@@ -368,11 +411,15 @@ class PatchInspector(Dock):
     def load(self):
         filelist, filt = QFileDialog.getOpenFileNames(self.parent,
             "Open CSV file(s) (Clampfit idealised data saved in EXCEL csv file)...",
-            self.parent.path, "CSV file  (*.csv)")
+            self.parent.path, "CSV file  (*.csv);;SCN files (*.scn *.SCN)")
         for filename in filelist:
             self.parent.path, fname = os.path.split(filename)
-            fscname = convert_clampfit_to_scn(filename)
-            self.textBox.append('Converted to SCAN file: '+fscname) #+'\n')
+            if fname.split(".")[1] == "csv":
+                fscname = convert_clampfit_to_scn(filename)
+                self.textBox.append('Converted to SCAN file: '+fscname) #+'\n')
+            elif fname.split(".")[1] == "scn" or fname.split(".")[1] == "SCN":
+                fscname = filename
+                self.textBox.append('Loaded SCAN file: '+fscname) #+'\n')
             self.parent.recs.append(dataset.SCRecord([fscname]))
         
         self.parent.curr_rec = 0
