@@ -18,7 +18,7 @@ syntax: glob
 *.ind
 *.out
 *.log
-#*.exe
+*.exe
 *.swp
 *.orig
 *.xls
