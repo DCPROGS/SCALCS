@@ -52,7 +52,7 @@ Operating System :: Unix
 Operating System :: MacOS
 """
 
-NAME                = 'DC_PyPs'
+NAME                = 'SCALCS'
 AUTHOR              = "Remigijus Lape, Christoph Schmidt-Hieber et al."
 AUTHOR_EMAIL        = "r.lape@ucl.ac.uk"
 # MAINTAINER          = "DC_PyPs Developers"

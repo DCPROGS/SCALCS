@@ -5,21 +5,23 @@ An example of Qt based GUI to display single channel related plots.
 
 import sys
 try:
-    from PySide.QtGui import *
-    from PySide.QtCore import *
+    from PyQt4.QtGui import *
+    from PyQt4.QtCore import *
 except:
     raise ImportError("pyqt module is missing")
 
-from dcpyps import samples
+from dcpyps.samples import samples
 from dcpyps.myqtlibs.plotwindow import MatPlotWin
 from dcpyps.myqtlibs.plotwindow import MatPlotTools
 from dcpyps.myqtlibs.mechmenu import MechMenu
-from dcpyps.myqtlibs.burstmenu import BurstMenu
-from dcpyps.myqtlibs.jumpmenu import JumpMenu
-from dcpyps.myqtlibs.scalcsmenu import ScalcsMenu
 from dcpyps.myqtlibs.savemenu import SaveMenu
 from dcpyps.myqtlibs.helpmenu import HelpMenu
 import dcpyps.myqtlibs.myqtcommon as myqtcommon
+
+from scalcs.scqtgui.burstmenu import BurstMenu
+from scalcs.scqtgui.jumpmenu import JumpMenu
+from scalcs.scqtgui.scalcsmenu import ScalcsMenu
+
 
 class QMatGUI(QMainWindow):
     def __init__(self, parent=None):

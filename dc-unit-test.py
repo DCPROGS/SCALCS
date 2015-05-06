@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
-import dcpyps.test as tt
 import unittest
+from scalcs.test import test as tt
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(tt.TestDC_PyPs)

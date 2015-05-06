@@ -18,13 +18,15 @@ try:
 except:
     HASTK = False
 
-from dcpyps import scalcslib as scl
-from dcpyps import scplotlib as scpl
 from dcpyps import dcio
-from dcpyps import samples
-from dcpyps import popen
-from dcpyps import scburst
+from dcpyps.samples import samples
 from dcpyps import version
+
+from scalcs import scalcslib as scl
+from scalcs import scplotlib as scpl
+from scalcs import popen
+from scalcs import scburst
+
 
 def create_parser():
     parser = argparse.ArgumentParser(
@@ -44,6 +46,7 @@ def create_parser():
 def process_args(args):
     # demo = True to run DC82 numerical example
     # demo = False to load a mechanism defined in mec file
+    mecfn = None
     if args.demo:
     # Case 1: User chooses demo mode. In that case, everything
     #         else is discarded.
@@ -55,15 +58,19 @@ def process_args(args):
         if args.file is not None:
         # Case 2a: User supplies a file on the command line 
             mecfn = args.file[0]
+            
+            
         else:
         # Case 2b: No file provided. Attempt to get file name from dialog.
             if HASTK:
                 mecfn = file_dialog()
             else:
                 sys.stderr.write("No file provided, couldn't load file dialog, " \
-                                 "aborting now\n")
-                sys.exit(1)
+                                 "reverting to demo mode\n")
+                #sys.exit(1)
+                demomec = samples.CH82()
 
+    if mecfn:
         # Check whether the file is available:
         if not os.path.exists(mecfn):
             sys.stderr.write("Couldn't find file %s. Exiting now.\n" % mecfn)
