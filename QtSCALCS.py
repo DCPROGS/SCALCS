@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 """
-An example of Qt based GUI to display single channel related plots.
+A Qt based GUI to display single channel related plots.
 """
 
 import sys
