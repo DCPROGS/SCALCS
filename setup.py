@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Notes
 -----
-DC_PyPs project are pure Python implementations of Q-Matrix formalisms
+SCALCS project is pure Python implementation of Q-Matrix formalism
 for ion channel research. To learn more about kinetic analysis of ion
 channels see the references below.
 
@@ -60,7 +60,7 @@ AUTHOR_EMAIL        = "r.lape@ucl.ac.uk"
 DESCRIPTION         = DOCLINES[0]
 LONG_DESCRIPTION    = "\n".join(DOCLINES[2:])
 PACKAGES            = ["scalcs"]
-SCRIPTS             = ['demo-dc.py', 'QtSCALCS.py', 'demo-rcj.py']
+SCRIPTS             = ['demo-dc.py', 'demo-rcj.py']
 URL                 = "https://github.com/DCPROGS/SCALCS"
 #DOWNLOAD_URL        = "http://code.google.com/p/dc-pyps/downloads/list"
 LICENSE             = 'GPL2'
@@ -76,9 +76,9 @@ VERSION             = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 # update it when the contents of directories change.
 if os.path.exists('MANIFEST'): os.remove('MANIFEST')
 
-def write_version_py(filename='dcpyps/version.py'):
+def write_version_py(filename='scalcs/version.py'):
     cnt = """
-# THIS FILE IS GENERATED FROM DC_PYPS SETUP.PY
+# THIS FILE IS GENERATED FROM SCALCS SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
 full_version = '%(full_version)s'
