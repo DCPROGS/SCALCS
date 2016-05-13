@@ -2,15 +2,13 @@
 curve calculations.
 """
 
-import sys
 import math
-
 import numpy as np
 
 from scalcs import qmatlib as qml
 from scalcs import scalcslib as scl
 
-def Popen(mec, tres, conc, eff='c'):
+def Popen(mec, tres, conc=0, eff='c'):
     """
     Calculate equilibrium open probability (Popen) and correct for
     unresolved blockages in case of presence of fast pore blocker.
@@ -29,22 +27,13 @@ def Popen(mec, tres, conc, eff='c'):
     Popen : float
         Open probability value at a given concentration.
     """
-
     mec.set_eff(eff, conc)
     if tres == 0:
         p = qml.pinf(mec.QGG)
-        norm = np.sum(p)
-        popen = np.sum(p[:mec.kA]) / norm
-
+        popen = np.sum(p[:mec.kA]) / np.sum(p)
     else:
-        GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
-        hmopen = scl.exact_mean_time(tres,
-            mec.QAA, mec.QFF, mec.QAF, mec.kA, mec.kF, GAF, GFA)
-#        hmshut = scl.ideal_subset_mean_life_time(mec.Q, 7, 13)
-        hmshut = scl.exact_mean_time(tres,
-            mec.QFF, mec.QAA, mec.QFA, mec.kF, mec.kA, GFA, GAF)
+        hmopen, hmshut = scl.exact_mean_open_shut_time(mec, tres)
         popen = (hmopen / (hmopen + hmshut))
-
     if mec.fastblock:
         popen = popen / (1 + conc / mec.fastKB)
     return popen
@@ -64,15 +53,8 @@ def Popen0(mec, tres, eff='c'):
     P0 : float
         Open probability in absence of effector.
     """
-
-    conc = 0
-    P0 = 0
-    popen = Popen(mec, 0, conc)
-    if popen < 1e-10:
-        P0 = popen
-    else:
-        P0 = Popen(mec, tres, conc)
-    return P0
+    popen = Popen(mec, 0, conc=0) 
+    return popen if popen < 1e-10 else Popen(mec, tres, conc=0)
 
 def maxPopen(mec, tres, eff='c'):
     """
@@ -94,21 +76,19 @@ def maxPopen(mec, tres, eff='c'):
         Concentration at which Popen curve reaches maximal value.
     """
 
-    decl = decline(mec, tres)
     flat = False
     monot = True
 
     conc = 1e-9    # start at 1 nM
     poplast = Popen(mec, tres, conc)
     fac = math.sqrt(10)
-    c1 = 0
-    c2 = 0
+    c1, c2 = 0, 0
 
     niter = 0
     while (not flat and conc < 100 and monot):
         conc = conc * fac
         popen = Popen(mec, tres, conc)
-        if decl and (math.fabs(popen) < 1e-12):
+        if decline(mec, tres) and (math.fabs(popen) < 1e-12):
             flat = math.fabs(poplast) < 1e-12
         else:
             rel = (popen - poplast) / popen
@@ -163,11 +143,7 @@ def decline(mec, tres, eff='c'):
     decline : bool
         True if Popen curve dectreases with concentration.
     """
-
-    popen = Popen(mec, tres, 1)    # Popen at 1 M
-    P0 = Popen0(mec, tres)    # Popen at 0 M
-    decline = (popen < P0)
-    return decline
+    return (Popen(mec, tres, conc=1) < Popen0(mec, tres))
 
 def EC50(mec, tres, eff='c'):
     """
@@ -188,30 +164,22 @@ def EC50(mec, tres, eff='c'):
     """
 
     P0 = Popen0(mec, tres)
-    max_popen, cmax = maxPopen(mec, tres)
-
+    maxP, c2 = maxPopen(mec, tres)
     c1 = 0
-    c2 = cmax
-    conc = 0
     epsy = 0.001    # accuracy in Popen
     perr = 2 * epsy
     epsc = 0.1e-9    # accuracy in concentration 0.1 nM
     nstepmax = int(math.log10(math.fabs(c1 - c2) / epsc) / math.log10(2) + 0.5)
     nstep = 0
-
     while math.fabs(perr) > epsy and nstep <= nstepmax:
-        nstep += 1
         conc = (c1 + c2) / 2
-        popen = Popen(mec, tres, conc)
-        popen = math.fabs((popen - P0) / (max_popen - P0))
-        perr = popen - 0.5
+        perr = math.fabs((Popen(mec, tres, conc) - P0) / (maxP - P0)) - 0.5
         if perr < 0:
             c1 = conc
         elif perr > 0:
             c2 = conc
-    EC50 = conc
-
-    return EC50
+        nstep += 1
+    return conc
 
 def nH(mec, tres, eff='c'):
     """
@@ -232,12 +200,9 @@ def nH(mec, tres, eff='c'):
 
     P0 = Popen0(mec, tres)
     Pmax, cmax = maxPopen(mec, tres)
-    ec50 = EC50(mec, tres)
     if decline(mec, tres):
-        temp = P0
-        P0 = Pmax
-        Pmax = temp
-
+        P0, Pmax = Pmax, P0
+    ec50 = EC50(mec, tres)
     # Calculate Popen curve
     n = 64
     dc = (math.log10(ec50 * 1.1) - math.log10(ec50 * 0.9)) / (n - 1)
@@ -249,8 +214,7 @@ def nH(mec, tres, eff='c'):
 
     # Find two points around EC50.
     i50 = 0
-    s1 = 0
-    s2 = 0
+    s1, s2 = 0, 0
     i = 0
     while i50 ==0 and i < n-1:
         if (c[i] <= ec50) and (c[i+1] >= ec50):
@@ -269,31 +233,19 @@ def nH(mec, tres, eff='c'):
     return nH
 
 
-def printout(mec, tres, output=sys.stdout, eff='c'):
+def printout(mec, tres):
     """
     """
-
-    str = ('\n*******************************************\n' +
-        'Popen CURVE\n')
-    # Calculate EC50, nH and maxPopen for Popen curve
-    # corrected for missed events.
+    out = ('\n*******************************************\nPopen CURVE\n' )
     if mec.fastblock:
-        str += ('\nThis Popen curve was corrected for fast block with KB = {0:.5g} mM.'
-            .format(mec.fastKB * 1000))
+        out += ('\nThis Popen curve was corrected for fast block ' + 
+            'with KB = {0:.5g} mM.'.format(mec.fastKB * 1000))
+    out += ('\nHJC Popen curve:\n' + print_pars(mec, tres))
+    out += ('\nIdeal Popen curve:\n' + print_pars(mec, 0))
+    return out
 
-    emaxPopen, econc = maxPopen(mec, tres)
-    eEC50 = EC50(mec, tres)
-    enH = nH(mec, tres)
-    str += ('\nHJC Popen curve:\nmaxPopen = {0:.5g}; '
-        .format(emaxPopen) + ' EC50 = {0:.5g} mikroM; '
-        .format(eEC50 * 1000000) + ' nH = {0:.5g}\n'.format(enH))
-
-    # Calculate EC50, nH and maxPopen for ideal Popen curve.
-    imaxPopen, iconc = maxPopen(mec, 0)
-    iEC50 = EC50(mec, 0)
-    inH = nH(mec, 0)
-    str += ('\nIdeal Popen curve:\nmaxPopen = {0:.5g}; '
-        .format(imaxPopen) + ' EC50 = {0:.5g} mikroM; '
-        .format(iEC50 * 1000000) + ' nH = {0:.5g}\n'.format(inH))
-
-    return str
+def print_pars(mec, tres):
+    emaxPopen, conc = maxPopen(mec, tres)
+    return ('maxPopen = {0:.5g}; '.format(emaxPopen) + 
+           ' EC50 = {0:.5g} microM; '.format(EC50(mec, tres) * 1000000) + 
+           ' nH = {0:.5g}'.format(nH(mec, tres)))

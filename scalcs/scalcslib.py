@@ -502,6 +502,52 @@ def exact_pdf(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
         f = pdfs.expPDF(t - tres, -1 / roots, areas)
     return f
 
+def exact_mean_open_shut_time(mec, tres):
+    """
+    Calculate exact mean open or shut time from HJC probability density
+    function.
+
+    Parameters
+    ----------
+    tres : float
+        Time resolution (dead time).
+    QAA : array_like, shape (kA, kA)
+    QFF : array_like, shape (kF, kF)
+    QAF : array_like, shape (kA, kF)
+        QAA, QFF, QAF - submatrices of Q.
+    kA : int
+        A number of open states in kinetic scheme.
+    kF : int
+        A number of shut states in kinetic scheme.
+    GAF : array_like, shape (kA, kB)
+    GFA : array_like, shape (kB, kA)
+        GAF, GFA- transition probabilities
+
+    Returns
+    -------
+    mean : float
+        Apparent mean open/shut time.
+    """
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+    expQFF = qml.expQt(mec.QFF, tres)
+    expQAA = qml.expQt(mec.QAA, tres)
+    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
+    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
+
+    phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
+    phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
+    QexpQF = np.dot(mec.QAF, expQFF)
+    QexpQA = np.dot(mec.QFA, expQAA)
+    DARS = qml.dARSdS(tres, mec.QAA, mec.QFF, GAF, GFA, expQFF, mec.kA, mec.kF)
+    DFRS = qml.dARSdS(tres, mec.QFF, mec.QAA, GFA, GAF, expQAA, mec.kF, mec.kA)
+    uF, uA = np.ones((mec.kF, 1)), np.ones((mec.kA, 1))
+    # meanOpenTime = tres + phiA * DARS * QexpQF * uF
+    meanA = tres + np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))[0]
+    meanF = tres + np.dot(phiF, np.dot(np.dot(DFRS, QexpQA), uA))[0]
+
+    return meanA, meanF
+
+
 def exact_mean_time(tres, QAA, QFF, QAF, kA, kF, GAF, GFA):
     """
     Calculate exact mean open or shut time from HJC probability density
@@ -528,7 +574,7 @@ def exact_mean_time(tres, QAA, QFF, QAF, kA, kF, GAF, GFA):
     mean : float
         Apparent mean open/shut time.
     """
-
+    
     expQFF = qml.expQt(QFF, tres)
     expQAA = qml.expQt(QAA, tres)
     eGAF = qml.eGs(GAF, GFA, kA, kF, expQFF)
