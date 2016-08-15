@@ -76,17 +76,13 @@ def maxPopen(mec, tres, eff='c'):
         Concentration at which Popen curve reaches maximal value.
     """
 
-    flat = False
-    monot = True
-
+    flat, monot = False, True
     conc = 1e-9    # start at 1 nM
     poplast = Popen(mec, tres, conc)
-    fac = math.sqrt(10)
-    c1, c2 = 0, 0
 
     niter = 0
     while (not flat and conc < 100 and monot):
-        conc = conc * fac
+        conc *= math.sqrt(10)
         popen = Popen(mec, tres, conc)
         if decline(mec, tres) and (math.fabs(popen) < 1e-12):
             flat = math.fabs(poplast) < 1e-12
@@ -95,8 +91,6 @@ def maxPopen(mec, tres, eff='c'):
             if niter > 1 and popen > 1e-5:
                 if (rel * rellast) < -1e-10: # goes through min/max
                     monot = False
-                    c1 = conc / fac     # conc before max
-                    c2 = conc    # conc after max
                 flat = ((math.fabs(rel) < 1e-5) and
                     (math.fabs(rellast) < 1e-5))
             if conc < 0.01:    # do not leave before 10 mM ?
@@ -106,8 +100,8 @@ def maxPopen(mec, tres, eff='c'):
         niter += 1
 
     if not monot:    # find maxPopen and cmax more accurately
-        epsc =  c1 / 1000    # accuracy in concentration
-        epsy = 0.0001    # accuracy in open probability
+        c1, c2 = conc / math.sqrt(10), conc # conc before and after max
+        epsc, epsy =  c1 / 1000, 1e-4 # accuracy in concentration and Popen
         perr = 2 * epsy
         fac = 1.01
         maxnstep  = int(math.log10(math.fabs(c1 - c2) / epsc) / math.log10(2) + 0.5)
@@ -124,8 +118,7 @@ def maxPopen(mec, tres, eff='c'):
             else:
                 c2 = conc1
 
-    maxPopen = Popen(mec, tres, conc)
-    return maxPopen, conc
+    return Popen(mec, tres, conc), conc
 
 def decline(mec, tres, eff='c'):
     """
