@@ -1,11 +1,11 @@
-DC_PyPs
+SCALCS
 =======
 
 A collection of functions for Q matrix manipulations.
 
 Notes
 -----
-DC_PyPs project are pure Python implementations of Q-Matrix formalisms
+SCALCS project is pure Python implementations of Q-Matrix formalisms
 for ion channel research. To learn more about kinetic analysis of ion
 channels see the references below.
 
