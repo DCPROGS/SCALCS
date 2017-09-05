@@ -22,6 +22,7 @@ syntax: glob
 *.swp
 *.orig
 *.xls
+*.bat
 
 __pycache__/
 
