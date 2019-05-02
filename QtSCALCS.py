@@ -6,11 +6,10 @@ A Qt based GUI to display properties of ion channels as described in Colquhoun &
 import sys
 try:
     from PyQt5.QtWidgets import *
-
 except:
     raise ImportError("pyqt module is missing")
 
-from dcpyps.samples import samples
+from scalcs.samples import samples
 from scalcs.gui.plotwindow import MatPlotWin
 from scalcs.gui.plotwindow import MatPlotTools
 from scalcs.gui.mechmenu import MechMenu

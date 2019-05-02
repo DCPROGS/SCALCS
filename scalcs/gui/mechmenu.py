@@ -7,9 +7,9 @@ try:
 except:
     raise ImportError("pyqt module is missing")
 
-from dcpyps import dcio
-from dcpyps.samples import samples
-from dcpyps import mechanism
+from scalcs import scalcsio
+from scalcs.samples import samples
+from scalcs import mechanism
 
 from scalcs.gui import myqtcommon
 
@@ -97,7 +97,7 @@ class MechMenu(QMenu):
         self.parent.log.write("\nFile to read: " + 
             os.path.split(str(self.parent.mecfn))[1])
 
-        version, meclist, max_mecnum = dcio.mec_get_list(self.parent.mecfn)
+        version, meclist, max_mecnum = scalcsio.mec_get_list(self.parent.mecfn)
         self.parent.log.write("Mec file version: %d; contains %d mechanisms."
             %(version, max_mecnum))
 
@@ -105,7 +105,7 @@ class MechMenu(QMenu):
         if dialog.exec_():
             nrate = dialog.returnRates()
 
-        self.parent.mec = dcio.mec_load(self.parent.mecfn, meclist[nrate][0])
+        self.parent.mec = scalcsio.mec_load(self.parent.mecfn, meclist[nrate][0])
 
         self.modifyMec(self.parent.mec, self.parent.log)
 
@@ -123,7 +123,7 @@ class MechMenu(QMenu):
         self.parent.path = os.path.split(str(filename))[0]
         self.parent.log.write("\nFile to read: " + os.path.split(str(filename))[1])
 
-        self.parent.mec = dcio.mec_load_from_prt(filename)
+        self.parent.mec = scalcsio.mec_load_from_prt(filename)
         self.modifyMec(self.parent.mec, self.parent.log)
         self.parent.log.write("Loaded mec and rates from PRT file: " + filename)
         self.parent.mec.printout(self.parent.log)
@@ -140,7 +140,7 @@ class MechMenu(QMenu):
         self.parent.log.write("\nFile to read: " + 
             os.path.split(str(filename))[1])
 
-        self.parent.mec, title = dcio.mod_load(filename)
+        self.parent.mec, title = scalcsio.mod_load(filename)
         self.modifyMec(self.parent.mec, self.parent.log)
         self.parent.log.write("\n" + title + "\n")
         self.parent.mec.printout(self.parent.log)
@@ -165,7 +165,7 @@ class MechMenu(QMenu):
             "Save mechanism as YAML file...", ".yaml",
             "YAML files (*.yaml)")
         self.parent.path = os.path.split(str(fname))[0]
-        dcio.mec_save_to_yaml(self.parent.mec, fname)
+        scalcsio.mec_save_to_yaml(self.parent.mec, fname)
         self.parent.log.write('\n\nMechanism saved in YAML file:')
         self.parent.log.write(fname)
 

@@ -1,5 +1,5 @@
 
-from dcpyps.samples import samples
+from scalcs.samples import samples
 from scalcs import popen
 from scalcs import pdfs
 from scalcs import scburst
@@ -7,8 +7,8 @@ from scalcs import cjumps
 from scalcs import scalcslib as scl
 from scalcs import scplotlib as scpl
 from scalcs import qmatlib as qml
-from dcpyps import dcio
-from dcpyps import dataset
+#from dcpyps import dcio
+#from dcpyps import dataset
 
 import sys
 import time

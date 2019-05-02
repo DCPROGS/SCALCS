@@ -11,17 +11,10 @@ except:
 import argparse
 import sys
 import os
-try:
-    import Tkinter as Tk
-    import tkFileDialog
-    HASTK = True
-except:
-    HASTK = False
 
-from dcpyps import dcio
-from dcpyps.samples import samples
-from dcpyps import version
-
+from scalcs import scalcsio
+from scalcs.samples import samples
+from scalcs import version
 from scalcs import scalcslib as scl
 from scalcs import scplotlib as scpl
 from scalcs import popen
@@ -30,7 +23,7 @@ from scalcs import scburst
 
 def create_parser():
     parser = argparse.ArgumentParser(
-        description='DC_PyPs %s demo program.' % (version.full_version))
+        description='SCALCS %s demo program.' % (version.full_version))
     parser.add_argument('-f', '--file', action='store', nargs=1, dest='file',
                         help='mechanism file (optional); ' \
                              'will use demo sample if not provided')
@@ -38,7 +31,7 @@ def create_parser():
                         default=False,
                         help='mechanism file')
     parser.add_argument('-v', '--version', action='version', 
-                        version='DC_PyPs %s' %(version.full_version), 
+                        version='SCALCS %s' %(version.full_version), 
                         help='print version information')
     
     return parser
@@ -57,18 +50,12 @@ def process_args(args):
     # Case 2: Not in demo mode.
         if args.file is not None:
         # Case 2a: User supplies a file on the command line 
-            mecfn = args.file[0]
-            
-            
+            mecfn = args.file[0]        
         else:
-        # Case 2b: No file provided. Attempt to get file name from dialog.
-            if HASTK:
-                mecfn = file_dialog()
-            else:
-                sys.stderr.write("No file provided, couldn't load file dialog, " \
-                                 "reverting to demo mode\n")
-                #sys.exit(1)
-                demomec = samples.CH82()
+            sys.stderr.write("No file provided, couldn't load file dialog, " \
+                                "reverting to demo mode\n")
+            #sys.exit(1)
+            demomec = samples.CH82()
 
     if mecfn:
         # Check whether the file is available:
@@ -76,32 +63,14 @@ def process_args(args):
             sys.stderr.write("Couldn't find file %s. Exiting now.\n" % mecfn)
             sys.exit(1)
 
-        version, meclist, max_mecnum = dcio.mec_get_list(mecfn)
+        version, meclist, max_mecnum = scalcsio.mec_get_list(mecfn)
         sys.stdout.write('mecfile: %s\n' % mecfn)
         sys.stdout.write('version: %s\n' % version)
-        mecnum, ratenum = dcio.mec_choose_from_list(meclist, max_mecnum)
+        mecnum, ratenum = scalcsio.mec_choose_from_list(meclist, max_mecnum)
         sys.stdout.write('\nRead rate set #%d of mec #%d\n' % (ratenum+1, mecnum))
-        demomec = dcio.mec_load(mecfn, meclist[ratenum][0])
+        demomec = scalcsio.mec_load(mecfn, meclist[ratenum][0])
 
     return demomec
-
-def file_dialog():
-    """
-    Choose mec file to read.
-
-    Returns
-    -------
-    mecfile : filename
-    """
-
-    root = Tk.Tk()
-    mecfile = tkFileDialog.askopenfilename(
-        initialdir='',
-        filetypes=[("DC mec", "*.mec"),("DC mec", "*.MEC"),
-                   ("all files", "*")])
-    root.destroy()
-    
-    return mecfile
 
 def console_demo(demomec):
 

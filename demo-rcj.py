@@ -4,7 +4,7 @@ Example of realistic concentration jump calculation.
 """
 
 import matplotlib.pyplot as plt
-from dcpyps.samples import samples
+from scalcs.samples import samples
 from scalcs import cjumps
 
 if __name__ == "__main__":

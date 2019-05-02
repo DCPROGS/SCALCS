@@ -1,0 +1,56 @@
+Metadata-Version: 1.2
+Name: SCALCS
+Version: 0.3.0
+Summary: Notes
+Home-page: https://github.com/DCPROGS/SCALCS
+Author: Remigijus Lape, Christoph Schmidt-Hieber et al.
+Author-email: r.lape@ucl.ac.uk
+Maintainer: Remigijus Lape
+Maintainer-email: r.lape@ucl.ac.uk
+License: GPL2
+Download-URL: https://github.com/DCPROGS/SCALCS/tarball/master
+Description: SCALCS project is pure Python implementation of Q-Matrix formalism
+        for ion channel research. To learn more about kinetic analysis of ion
+        channels see the references below.
+        
+        References
+        ----------
+        CH82: Colquhoun D, Hawkes AG (1982)
+        On the stochastic properties of bursts of single ion channel openings
+        and of clusters of bursts. Phil Trans R Soc Lond B 300, 1-59.
+        
+        HJC92: Hawkes AG, Jalali A, Colquhoun D (1992)
+        Asymptotic distributions of apparent open times and shut times in a
+        single channel record allowing for the omission of brief events.
+        Phil Trans R Soc Lond B 337, 383-404.
+        
+        CH95a: Colquhoun D, Hawkes AG (1995a)
+        The principles of the stochastic interpretation of ion channel mechanisms.
+        In: Single-channel recording. 2nd ed. (Eds: Sakmann B, Neher E)
+        Plenum Press, New York, pp. 397-482.
+        
+        CH95b: Colquhoun D, Hawkes AG (1995b)
+        A Q-Matrix Cookbook.
+        In: Single-channel recording. 2nd ed. (Eds: Sakmann B, Neher E)
+        Plenum Press, New York, pp. 589-633.
+        
+        CHS96: Colquhoun D, Hawkes AG, Srodzinski K (1996)
+        Joint distributions of apparent open and shut times of single-ion channels
+        and maximum likelihood fitting of mechanisms.
+        Phil Trans R Soc Lond A 354, 2555-2590.
+        
+Platform: Windows
+Platform: Linux
+Platform: Solaris
+Platform: Mac OS-X
+Platform: Unix
+Classifier: Development Status :: 2 - Pre-Alpha
+Classifier: Intended Audience :: Science/Research
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: GNU General Public License (GPL)
+Classifier: Programming Language :: Python
+Classifier: Topic :: Scientific/Engineering
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: Unix
+Classifier: Operating System :: MacOS

@@ -11,7 +11,6 @@ from pylab import figure, semilogx, savefig
 
 from scalcs import qmatlib as qml
 from scalcs import scalcslib as scl
-#import dcstatslib as stl
 from scalcs import scburst
 from scalcs import popen
 from scalcs import pdfs
