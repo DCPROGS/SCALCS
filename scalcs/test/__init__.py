@@ -1,8 +1,8 @@
 """
-DC_PyPs Testing
+SCALCS Testing
 ===============
 
-DC_PyPs unit tests
+SCALCS unit tests
 """
 
 from test import *

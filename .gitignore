@@ -26,6 +26,7 @@ syntax: glob
 
 __pycache__/
 
+SCALCS.egg-info/
 .DS_Store
 .AppleDouble
 .AppleDouble/*

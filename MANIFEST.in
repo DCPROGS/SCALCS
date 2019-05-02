@@ -1,7 +1,0 @@
-include dcpyps/samples/*.mec
-exclude dcpyps/dataset.py
-exclude dcpyps/filter.py
-exclude dcpyps/graph.py
-exclude dcpyps/optimize.py
-exclude dcpyps/optimize1.py
-exclude dcpyps/tracegui.py
