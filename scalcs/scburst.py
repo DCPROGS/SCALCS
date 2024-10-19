@@ -1,9 +1,3 @@
-"""A collection of functions for single channel burst calculations.
-"""
-
-__author__="Remis Lape; remis.lp@gmail.com"
-__date__ ="$07-Dec-2010 20:29:14$"
-
 import sys
 
 import numpy as np
