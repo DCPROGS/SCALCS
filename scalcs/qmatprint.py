@@ -3,7 +3,7 @@ from tabulate import tabulate
 
 from scalcs.qmatlib import QMatrix
 from scalcs.scburst import SCBurst
-from scalcs.scalcslib import SCCorrelations, ExactPDFCalculator, AsymptoticPDF
+from scalcs.scalcslib import SCCorrelations, ExactPDFCalculator, AsymptoticPDF, AdjacentPDF
 from scalcs.pdfs import TCrits, ExpPDF, GeometricPDF
 
 class QMatrixPrints(QMatrix):
@@ -317,18 +317,21 @@ class AsymptoticPDFPrints(AsymptoticPDF):
         pdf_str += f'\nApparent mean shut time (ms): {self.apparent_mean_shut_time * 1000:.5g}\n'
         return pdf_str
 
-    
-    #TODO: move this function into 'adjacent dwells' class
-#    def print_adjacent_dwells(self, t1, t2):
-#        
-#        adjacent_str = ('\nPDF of open times that precede shut times between {0:.3f} and {1:.3f} ms'.
-#                         format(t1 * 1000, t2 * 1000))
-#        e, a = self.adjacent_open_to_shut_range_pdf_components(t1, t2)
-#        adjacent_str += ExpPDF(1 / e, a / e).printout('\nOPEN TIMES ADJACENT TO SPECIFIED SHUT TIME RANGE')
-#        #adjacent_str += expPDF_printout(e, a, 'OPEN TIMES ADJACENT TO SPECIFIED SHUT TIME RANGE')
-#        mean = self.adjacent_open_to_shut_range_mean(t1, t2) #     mec.QAA, mec.QAF, mec.QFF, mec.QFA, phiA)
-#        adjacent_str += ('Mean from direct calculation (ms) = {0:.6f}\n'.format(mean * 1000))
-#        return adjacent_str
+class AdjacentPDFPrints(AdjacentPDF):
+    """ Prints adjacent PDF. """
+    def __init__(self, Q, kA=1, kB=1, kC=0, kD=0, tres=0.0):
+        super().__init__(Q, kA=kA, kB=kB, kC=kC, kD=kD, tres=tres)
+
+    def ideal_adjacent_dwells(self, t1, t2):
+        
+        adjacent_str = ('\nPDF of open times that precede shut times between {0:.3f} and {1:.3f} ms'.
+                         format(t1 * 1000, t2 * 1000))
+        e, a = self.adjacent_open_to_shut_range_pdf_components(t1, t2)
+        adjacent_str += ExpPDF(1 / e, a / e).printout('\nOPEN TIMES ADJACENT TO SPECIFIED SHUT TIME RANGE')
+        #adjacent_str += expPDF_printout(e, a, 'OPEN TIMES ADJACENT TO SPECIFIED SHUT TIME RANGE')
+        mean = self.adjacent_open_to_shut_range_mean(t1, t2) #     mec.QAA, mec.QAF, mec.QFF, mec.QFA, phiA)
+        adjacent_str += ('Mean from direct calculation (ms) = {0:.6f}\n'.format(mean * 1000))
+        return adjacent_str
 
 class ExactPDFPrints(ExactPDFCalculator):
     """ 
