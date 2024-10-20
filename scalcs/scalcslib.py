@@ -108,7 +108,9 @@ class AsymptoticPDFCalculator(HJCMatrix):
         intervals = self._bisect_intervals(sas, sbs, open=open)
         root_count = self.kA if open else self.kF
         brentq_args = self._get_brentq_args(open)
-        roots = np.array([so.brentq(qml.detW, intervals[i, 0], intervals[i, 1], args=brentq_args)
+        #roots = np.array([so.brentq(qml.detW, intervals[i, 0], intervals[i, 1], args=brentq_args)
+        #                  for i in range(root_count)])
+        roots = np.array([so.brentq(self.detW, intervals[i, 0], intervals[i, 1], args=(open)) #args=brentq_args)
                           for i in range(root_count)])
         return roots
 

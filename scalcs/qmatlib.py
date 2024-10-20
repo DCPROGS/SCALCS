@@ -441,6 +441,17 @@ class HJCMatrix(QMatrix):
         w1 = np.dot(S, invX) - self.tres * expX
         return I_other + np.dot(np.dot(Q_self2, w1), np.dot(invX, Q_other2))
 
+    def detW(self, s, open=True):
+        """
+        Calculate determinant of WAA(s).
+
+        Parameters
+        ----------
+        s : float
+            Laplace transform argument.
+        """
+        return nplin.det(self.W(s, open))
+
 
 ### Functions to review
 
@@ -478,36 +489,6 @@ def phiSub(Q, k1, k2):
     nom = np.dot(p1c, Q12)
     phi = nom / (nom @ u)
     return phi, Q22c
-
-
-def detW(s, tres, QAA, QFF, QAF, QFA, kA, kF):
-    """
-    Calculate determinant of WAA(s).
-    To evaluate WFF(s) exhange A by F and F by A in function call.
-
-    Parameters
-    ----------
-    s : float
-        Laplace transform argument.
-    tres : float
-        Time resolution (dead time).
-    QAA : array_like, shape (kA, kA)
-    QFF : array_like, shape (kF, kF)
-    QAF : array_like, shape (kA, kF)
-    QFA : array_like, shape (kF, kA)
-        QAA, QFF, QAF, QFA - submatrices of Q.
-    kA : int
-        A number of open states in kinetic scheme.
-    kF : int
-        A number of shut states in kinetic scheme.
-
-    Returns
-    -------
-    detWAA : float
-    """
-
-    return nplin.det(W(s, tres, QAA, QFF, QAF, QFA, kA, kF))
-
 
 def HAF(roots, tres, tcrit, QAF, expQFF, R):
     """
@@ -665,8 +646,36 @@ def f1(u, eigvals, Z10, Z11):
         f = np.sum((Z10 + Z11 * u) * np.exp(-eigvals * u))
     return f
 
+### Deprecated functions ##############################################
 
-### Deprecated functions 
+@deprecated("Use 'HJCMatrix'")
+def detW(s, tres, QAA, QFF, QAF, QFA, kA, kF):
+    """
+    Calculate determinant of WAA(s).
+    To evaluate WFF(s) exhange A by F and F by A in function call.
+
+    Parameters
+    ----------
+    s : float
+        Laplace transform argument.
+    tres : float
+        Time resolution (dead time).
+    QAA : array_like, shape (kA, kA)
+    QFF : array_like, shape (kF, kF)
+    QAF : array_like, shape (kA, kF)
+    QFA : array_like, shape (kF, kA)
+        QAA, QFF, QAF, QFA - submatrices of Q.
+    kA : int
+        A number of open states in kinetic scheme.
+    kF : int
+        A number of shut states in kinetic scheme.
+
+    Returns
+    -------
+    detWAA : float
+    """
+
+    return nplin.det(W(s, tres, QAA, QFF, QAF, QFA, kA, kF))
 
 @deprecated("Use 'ExactPDFCalculator'")
 def Zxx(Q, eigen, A, kopen, QFF, QAF, QFA, expQFF, open):
