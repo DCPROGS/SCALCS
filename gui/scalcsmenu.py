@@ -13,7 +13,8 @@ from scalcs import scalcslib as scl
 from scalcs import popen
 from gui import myqtcommon
 
-from scalcs.scprint import QMatrixPrints, TCritPrints, CorrelationPrints, ExactPDFPrints, AsymptoticPDFPrints
+from scalcs.scprint import QMatrixPrints, TCritPrints, ExactPDFPrints, AsymptoticPDFPrints
+from scalcs.sccorrelation import CorrelationDisplay
 
 class ScalcsMenu(QMenu):
     """
@@ -96,17 +97,16 @@ class ScalcsMenu(QMenu):
         self.parent.txtPltBox.append(str)
 
         self.parent.mec.set_eff('c', self.parent.conc)
-        #self.parent.log.write(scl.printout_correlations(self.parent.mec))
-        q_corrs = CorrelationPrints(self.parent.mec.Q, 
-                                    self.parent.mec.kA, self.parent.mec.kB, self.parent.mec.kC, self.parent.mec.kD)
-        self.parent.log.write(q_corrs.print_all)
+        corrs = CorrelationDisplay(self.parent.mec) 
+        self.parent.log.write(corrs.print_all)
         # TODO: need dialog to enter lag value. 
         lag = 5
-        n, roA, roF, roAF = scpl.corr_open_shut(self.parent.mec, lag)
-        self.parent.present_plot = np.vstack((n, roA, roF, roAF))
+        r = np.arange(1, lag + 1)
+        roA, roF, roAF = corrs.calculate_correlation_coefficients(lag)
+        self.parent.present_plot = np.vstack((r, roA, roF, roAF))
 
         self.parent.canvas.axes.clear()
-        self.parent.canvas.axes.plot(n, roA,'go', n, roF, 'ro', n, roAF, 'bo')
+        self.parent.canvas.axes.plot(r, roA,'go', r, roF, 'ro', r, roAF, 'bo')
         self.parent.canvas.axes.axhline(y=0, xmin=0, xmax=1, color='k')
         self.parent.canvas.axes.set_xlim(0, 6)
         self.parent.canvas.axes.xaxis.set_ticks_position('bottom')

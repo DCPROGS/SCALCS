@@ -1,5 +1,7 @@
+import sys
 import numpy as np
 import numpy.linalg as nplin
+import scipy.optimize as so
 from deprecated import deprecated
 from functools import cached_property
 
@@ -646,8 +648,8 @@ class AsymptoticPDFCalculator(HJCMatrix):
 
         for i in range(k):
             W_matrix = self.W(roots[i], open=open)
-            row[i] = qml.pinf(W_matrix)
-            col[i] = qml.pinf(np.transpose(W_matrix))
+            row[i] = pinf(W_matrix)
+            col[i] = pinf(np.transpose(W_matrix))
         col = col.transpose()
         
         for i in range(k):

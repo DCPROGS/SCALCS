@@ -9,7 +9,7 @@ from numpy import linalg as nplin
 
 from scalcs import qmatlib as qml
 from scalcs import pdfs
-from scalcs.qmatlib import QMatrix, HJCMatrix, AsymptoticPDFCalculator
+from scalcs.qmatlib import HJCMatrix, AsymptoticPDFCalculator
 
 
 class AsymptoticPDF(AsymptoticPDFCalculator):
@@ -279,134 +279,6 @@ class AdjacentPDF(HJCMatrix):
                 dependency[i, j] = (fos - (fo * fs)) / (fo * fs)
         return dependency
     
-
-
-############################   CORRELATIONS   #######################################
-
-class SCCorrelations(QMatrix):
-    """
-    SCCorrelations handles the computation of correlation coefficients, variances, and covariances
-    using Q-matrices for open and shut time PDFs.
-    """
-
-    def __init__(self, Q, kA=1, kB=1, kC=0, kD=0, tres=0.0):
-        super().__init__(Q, kA=kA, kB=kB, kC=kC, kD=kD)
-
-        self.rank_GAF, self.rank_GFA = nplin.matrix_rank(self.GAF), nplin.matrix_rank(self.GFA)
-
-        # Compute XFF and XAA matrices and their eigen decomposition
-        # XAA describes transition between the start of one opening and the start of the next opening
-        # XFF describes transition between the start of one shuting and the start of the next shuting
-        self.XFF = self.GFA @ self.GAF
-        self.rank_XFF = nplin.matrix_rank(self.XFF)
-        self.eigs_XFF, self.A_XFF = qml.eigenvalues_and_spectral_matrices(self.XFF)
-
-        self.XAA = self.GAF @ self.GFA
-        self.rank_XAA = nplin.matrix_rank(self.XAA)
-        self.eigs_XAA, self.A_XAA = qml.eigenvalues_and_spectral_matrices(self.XAA)
-
-        # Initialize column vectors and reshaped phi matrices
-        self.uA = np.ones((self.kA, 1))
-        self.uF = np.ones((self.kF, 1))
-        self.phiAr = self.phiA.reshape(1, self.kA)
-        self.phiFr = self.phiF.reshape(1, self.kF)
-
-        # Precompute variances for open and shut times
-        self.varianceA = self._variance(open=True)
-        self.varianceF = self._variance(open=False)
-
-    def _variance(self, open=True):
-        """
-        Calculate the variance of open (or shut) time using Eq. 2.6 (CH87).
-        """
-        u = self.uA if open else self.uF
-        I = self.IA if open else self.IF
-        invQxx = -nplin.inv(self.QAA) if open else -nplin.inv(self.QFF)
-        phi = self.phiAr if open else self.phiFr
-
-        M = 2 * I - u @ phi
-        row = phi @ invQxx
-        col = invQxx @ u
-        return (row @ M @ col)[0, 0]
-
-    def variance_n(self, n, open=True):
-        """
-        Calculate the variance of the nth event for open (or shut) times.
-        """
-        total_covariance = 0
-        variance = self.varianceA if open else self.varianceF
-        
-        for i in range(1, n):
-            covariance = self._covariance(i + 1, open=open)
-            ro = self._coefficient(covariance, variance, variance)
-            total_covariance += (n - i) * ro * variance
-        
-        return n * variance + 2 * total_covariance
-
-    def _coefficient(self, cov, var1, var2):
-        """
-        Calculate the correlation coefficient given covariance and variances.
-        """
-        return cov / np.sqrt(var1 * var2)
-
-    def _covariance(self, lag, open=True):
-        """
-        Calculate covariance for open (or shut) times using CH87.
-        """
-        u = self.uA if open else self.uF
-        phi = self.phiAr if open else self.phiFr
-        invQxx = -nplin.inv(self.QAA) if open else -nplin.inv(self.QFF)
-        Xn = qml.powQ(self.XAA, lag) if open else qml.powQ(self.XFF, lag)
-
-        M2 = Xn - u @ phi
-        row = phi @ invQxx
-        col = invQxx @ u
-        return (row @ M2 @ col)[0, 0]
-
-    def correlation_limit(self, open=True):
-        """
-        Calculate the correlation limit for open (or shut) times.
-        """
-        k = self.kA if open else self.kF
-        u = self.uA if open else self.uF
-        phi = self.phiAr if open else self.phiFr
-        invQxx = -nplin.inv(self.QAA) if open else -nplin.inv(self.QFF)
-        eigs, A = (self.eigs_XAA, self.A_XAA) if open else (self.eigs_XFF, self.A_XFF)
-
-        row = phi @ invQxx
-        col = invQxx @ u
-        M = np.einsum('i,ijk->jk', eigs[:-1] / (1 - eigs[:-1]), A[:-1, :, :])
-        return (row @ M @ col)[0, 0]
-
-    def covariance_AF(self, lag):
-        """
-        Calculate covariance between open and nth shut times.
-        """
-        uA, uF = self.uA, self.uF
-        phiA = self.phiAr
-        MAF = qml.powQ(self.XAA, lag - 1) - uA @ phiA
-
-        row = phiA @ -nplin.inv(self.QAA)
-        col = (self.GAF @ -nplin.inv(self.QFF)) @ uF
-        return (row @ MAF @ col)[0, 0]
-
-    def decay_amplitude_A(self):
-        """
-        Calculate the decay amplitude for correlation coefficient decay (Eq. 2.11, CH83).
-        """
-        eigs, A = self.eigs_XAA, self.A_XAA
-        invQAA = -nplin.inv(self.QAA)
-        row = self.phiAr @ invQAA
-        col = invQAA @ self.uA
-
-        # Calculate weights
-        valid_indices = (np.abs(eigs) > 1e-12) & (np.abs(eigs - 1) > 1e-12)
-        w = np.array([
-            (row @ A[i, :, :] @ col)[0, 0] / self.varianceA
-            for i in range(self.kA) if valid_indices[i]
-        ])
-        
-        return w, eigs
 
 ############################   FUNCTIONS TO REVIEW   ########################################
 

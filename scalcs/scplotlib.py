@@ -147,46 +147,6 @@ def burst_openings_pdf(mec, n, conditional=False):
 
     return r, Pr
 
-def corr_open_shut(mec, lag):
-    """
-    Calculate data for the plot of open, shut and open-shut time correlations.
-    
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    lag : int
-        Number of lags.
-
-    Returns
-    -------
-    c : ndarray of floats, shape (num of points,)
-        Concentration in mikroM
-    br : ndarray of floats, shape (num of points,)
-        Mean burst length in millisec.
-    brblk : ndarray of floats, shape (num of points,)
-        Mean burst length in millisec corrected for fast block.
-    """
-    
-    kA, kF = mec.kA, mec.kI
-    GAF, GFA = qml.iGs(mec.Q, kA, kF)
-    XAA, XFF = np.dot(GAF, GFA), np.dot(GFA, GAF)
-    phiA, phiF = qml.phiA(mec).reshape((1,kA)), qml.phiF(mec).reshape((1,kF))
-    varA = scl.corr_variance_A(phiA, mec.QAA, kA)
-    varF = scl.corr_variance_A(phiF, mec.QII, kF)
-    
-    r = np.arange(1, lag + 1)
-    roA, roF, roAF = np.zeros(lag), np.zeros(lag), np.zeros(lag)
-    for i in range(lag):
-        covA = scl.corr_covariance_A(i+1, phiA, mec.QAA, XAA, kA)
-        roA[i] = scl.correlation_coefficient(covA, varA, varA)
-        covF = scl.corr_covariance_A(i+1, phiF, mec.QII, XFF, kF)
-        roF[i] = scl.correlation_coefficient(covF, varF, varF)
-        covAF = scl.corr_covariance_AF(i+1, phiA, mec.QAA, mec.QII,
-            XAA, GAF, kA, kF)
-        roAF[i] = scl.correlation_coefficient(covAF, varA, varF)
-            
-    return r, roA, roF, roAF
-
 def mean_open_next_shut(mec, tres, points=512):
     """
     Calculate plot of mean open time preceding/next-to shut time.
