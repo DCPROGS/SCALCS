@@ -453,6 +453,302 @@ class HJCMatrix(QMatrix):
         return nplin.det(self.W(s, open))
 
 
+class AsymptoticPDFCalculator(HJCMatrix):
+    """Asymptotic PDF calculations"""
+
+    def __init__(self, Q, kA=1, kB=1, kC=0, kD=0, tres=0.0):
+        super().__init__(Q, kA=kA, kB=kB, kC=kC, kD=kD, tres=tres)
+        self.derivative_calculator = DerivativeCalculator(Q, kA, kB, kC, kD, tres)
+
+    def asymptotic_roots(self, open=True):
+        """Find the roots for the asymptotic pdf (Eqs. 52-58, HJC92)."""
+        return -self._calculate_roots(open=open)
+
+    def _calculate_roots(self, open):
+        sas, sbs = -1e6, -1e-7
+        intervals = self._bisect_intervals(sas, sbs, open=open)
+        root_count = self.kA if open else self.kF
+        roots = np.array([so.brentq(self.detW, intervals[i, 0], intervals[i, 1], args=(open))
+                          for i in range(root_count)])
+        return roots
+    
+    def _bisect_intervals(self, sa, sb, open=True):
+        """
+        Use Frank Ball's method to find initial guesses for each HJC root.
+
+        Parameters
+        ----------
+        sa, sb : float
+            Laplace transform arguments to define the initial search interval.
+        open : bool, optional
+            Flag indicating whether to compute for open (True) or shut states (False).
+
+        Returns
+        -------
+        array_like : shape (kA or kF, 2)
+            Starting interval limits for bisection, containing exactly one root each.
+        """
+        root_count = self.kA if open else self.kF
+        sa, sb = self.__adjust_intervals(sa, sb, root_count, open)
+        
+        intervals = []
+        todo = [[sa, sb, self.__bisect_gFB(sa, open), self.__bisect_gFB(sb, open)]]
+        
+        while todo:
+            sa1, sc, sb2, nga1, ngc, ngb2 = self.__bisect_split(todo.pop(), open)
+            
+            # Left interval: [sa1, sc]
+            if (ngc - nga1) == 1:
+                intervals.append([sa1, sc])
+            else:
+                todo.append([sa1, sc, nga1, ngc])
+            
+            # Right interval: [sc, sb2]
+            if (ngb2 - ngc) == 1:
+                intervals.append([sc, sb2])
+            else:
+                todo.append([sc, sb2, ngc, ngb2])
+        
+        # Check if all roots were located
+        if len(intervals) < root_count:
+            sys.stderr.write(f"bisectHJC: Warning: Only {len(intervals)} roots out of {root_count} were located.\n")
+        
+        return np.array(intervals)
+
+    def __bisect_gFB(self, s, open=True):
+        """
+        Determine the number of eigenvalues of H(s) that are less than or equal to s.
+
+        Parameters
+        ----------
+        s : float
+            Laplace transform argument to evaluate.
+        open : bool, optional
+            Flag indicating whether to compute for open (True) or shut states (False).
+
+        Returns
+        -------
+        int
+            Number of eigenvalues less than or equal to the given s.
+        """
+        eigvals = nplin.eigvals(self.H(s, open=open))
+        return (eigvals <= s).sum()
+
+    def __adjust_intervals(self, sa, sb, root_count, open):
+        """
+        Adjust the initial search intervals for bisection based on the eigenvalue count.
+
+        Parameters
+        ----------
+        sa, sb : float
+            Initial interval limits to search for roots.
+        root_count : int
+            Number of roots expected to be found in the interval.
+        open : bool, optional
+            Flag indicating whether to compute for open (True) or shut states (False).
+
+        Returns
+        -------
+        tuple : Adjusted interval limits (sa, sb).
+        """
+        nga = self.__bisect_gFB(sa, open=open)
+        if nga > 0:
+            sa *= 4
+        
+        ngb = self.__bisect_gFB(sb, open=open)
+        if ngb < root_count:
+            sb /= 4
+        
+        return sa, sb
+
+    def __bisect_split(self, interval_data, open):
+        """
+        Split the interval [sa, sb] into two subintervals based on eigenvalue counts.
+
+        Parameters
+        ----------
+        interval_data : list
+            Contains the current interval limits and eigenvalue counts [sa, sb, nga, ngb].
+        open : bool
+            Flag indicating whether to compute for open (True) or shut states (False).
+
+        Returns
+        -------
+        tuple : Split interval limits and corresponding eigenvalue counts 
+                (sa1, sc, sb2, nga1, ngc, ngb2).
+        """
+        sa, sb, nga, ngb = interval_data
+        max_attempts = 1000
+        attempts = 0
+
+        while attempts < max_attempts:
+            sc = (sa + sb) / 2.0
+            ngc = self.__bisect_gFB(sc, open=open)
+            
+            if ngc == nga:
+                sa = sc
+            elif ngc == ngb:
+                sb = sc
+            else:
+                return sa, sc, sb, nga, ngc, ngb
+            
+            attempts += 1
+        
+        sys.stderr.write("bisectHJC: Warning: Unable to split intervals for bisection after 1000 attempts.\n")
+        return sa, sc, sb, nga, ngc, ngb
+
+    def asymptotic_areas(self, roots, open=True):
+        """
+        Calculate the areas of the asymptotic probability density function (Eq. 58, HJC92).
+
+        Parameters
+        ----------
+        roots : array_like, shape (kA or kF)
+            Roots of the asymptotic pdf.
+        open : bool, optional
+            Flag indicating the model type (open or closed), by default True.
+
+        Returns
+        -------
+        areas : ndarray, shape (kA or kF)
+            Areas corresponding to the asymptotic pdf roots.
+        """
+
+        R = self.R(-roots, open=open)
+        k = self.kA if open else self.kF
+        Q_other = self.QAF if open else self.QFA
+        expQ_other = self.expQFF if open else self.expQAA
+        phi = self.HJCphiA if open else self.HJCphiF
+        u = self.uF if open else self.uA
+
+        return np.array([(1 / roots[i]) * np.dot(phi, np.dot(R[i], np.dot(Q_other, expQ_other)).dot(u))[0] for i in range(k)])
+
+    def R(self, roots, open=True): 
+        """
+        Compute the R matrix for the asymptotic areas.
+
+        Parameters
+        ----------
+        roots : array_like, shape (kA or kF)
+            Roots of the asymptotic pdf.
+        open : bool, optional
+            Flag indicating the model type (open or closed), by default True.
+
+        Returns
+        -------
+        R : ndarray, shape (kA or kF, kA or kF, kA or kF)
+            R matrix for asymptotic areas calculation.
+        """
+        k = self.kA if open else self.kF
+        R = np.zeros((k, k, k))
+        row = np.zeros((k, k))
+        col = np.zeros((k, k))
+
+        for i in range(k):
+            W_matrix = self.W(roots[i], open=open)
+            row[i] = qml.pinf(W_matrix)
+            col[i] = qml.pinf(np.transpose(W_matrix))
+        col = col.transpose()
+        
+        for i in range(k):
+            nom = col[:,i].reshape((k, 1)) @ row[i,:].reshape((1, k))
+            W1_matrix = self.dW(roots[i], open=open)
+            denom = row[i,:].reshape((1, k)) @ W1_matrix @ col[:,i].reshape((k, 1))
+            R[i] = nom / denom
+        
+        return R
+
+    @property
+    def dARSdS(self):
+        """Public interface to compute dARSdS."""
+        return self.derivative_calculator.dARSdS
+
+    @property
+    def dFRSdS(self):
+        """Public interface to compute dFRSdS."""
+        return self.derivative_calculator.dFRSdS
+
+
+class DerivativeCalculator(HJCMatrix):
+    """Handles derivative evaluations of the Laplace transform."""
+
+    @property
+    def dARSdS(self):
+        r"""
+        Evaluate the derivative with respect to s of the Laplace transform of the
+        survival function (Eq. 3.6, CHS96) for open states:
+
+        .. math::
+
+        \left[ -\frac{\text{d}}{\text{d}s} {^\cl{A}\!\bs{R}^*(s)} \right]_{s=0}
+
+        For same evaluation for shut states exhange A by F and F by A in function call.
+
+        SFF = I - exp(QFF * tres)
+        First evaluate [dVA(s) / ds] * s = 0.
+        dVAds = -inv(QAA) * GAF * SFF * GFA - GAF * SFF * inv(QFF) * GFA +
+        + tres * GAF * expQFF * GFA
+
+        Then: DARS = inv(VA) * QAA^(-2) - inv(VA) * dVAds * inv(VA) * inv(QAA) =
+        = inv(VA) * [inv(QAA) - dVAds * inv(VA)] * inv(QAA)
+        where VA = I - GAF * SFF * GFA
+
+        Returns
+        -------
+        DARS : array_like, shape (kA, kA)
+        """
+
+        invQAA = nplin.inv(self.QAA)
+        invQFF = nplin.inv(self.QFF)
+
+        SFF = self.IF - self.expQFF
+        Q1 = self.tres * self.GAF @ self.expQFF @ self.GFA
+        Q2 = self.GAF @ SFF @ invQFF @ self.GFA
+        Q3 = -invQAA @ self.GAF @ SFF @ self.GFA
+
+        VA = self.IA - self.GAF @ SFF @ self.GFA
+        Q4 = invQAA - (Q1 - Q2 + Q3) @ nplin.inv(VA)
+        return nplin.inv(VA) @ Q4 @ invQAA
+
+    @property
+    def dFRSdS(self):
+        r"""
+        Evaluate the derivative with respect to s of the Laplace transform of the
+        survival function (Eq. 3.6, CHS96) for open states:
+
+        .. math::
+
+        \left[ -\frac{\text{d}}{\text{d}s} {^\cl{A}\!\bs{R}^*(s)} \right]_{s=0}
+
+        For same evaluation for shut states exhange A by F and F by A in function call.
+
+        SFF = I - exp(QFF * tres)
+        First evaluate [dVA(s) / ds] * s = 0.
+        dVAds = -inv(QAA) * GAF * SFF * GFA - GAF * SFF * inv(QFF) * GFA +
+        + tres * GAF * expQFF * GFA
+
+        Then: DARS = inv(VA) * QAA^(-2) - inv(VA) * dVAds * inv(VA) * inv(QAA) =
+        = inv(VA) * [inv(QAA) - dVAds * inv(VA)] * inv(QAA)
+        where VA = I - GAF * SFF * GFA
+
+        Returns
+        -------
+        DARS : array_like, shape (kA, kA)
+        """
+
+        invQAA = nplin.inv(self.QAA)
+        invQFF = nplin.inv(self.QFF)
+
+        SAA = self.IA - self.expQAA
+        Q1 = self.tres * self.GFA @ self.expQAA @ self.GAF
+        Q2 = self.GFA @ SAA @ invQAA @ self.GAF
+        Q3 = -invQFF @ self.GFA @ SAA @ self.GAF
+
+        VF = self.IF - self.GFA @ SAA @ self.GAF
+        Q4 = invQFF - (Q1 - Q2 + Q3) @ nplin.inv(VF)
+        return nplin.inv(VF) @ Q4 @ invQFF
+    
+
 ### Functions to review
 
 def iGt(t, QAA, QAB):

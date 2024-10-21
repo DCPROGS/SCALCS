@@ -17,7 +17,7 @@ from samples import samples
 from scalcs import version
 from scalcs import scplotlib as scpl
 from scalcs import popen
-from scalcs.qmatprint import QMatrixPrints, SCBurstPrints, TCritPrints, ExactPDFPrints, AsymptoticPDFPrints
+from scalcs.scprint import QMatrixPrints, SCBurstPrints, TCritPrints, ExactPDFPrints, AsymptoticPDFPrints
 
 def create_parser():
     parser = argparse.ArgumentParser(

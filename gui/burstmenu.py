@@ -5,7 +5,7 @@ try:
 except:
     raise ImportError("pyqt module is missing")
 
-from scalcs.qmatprint import SCBurstPrints
+from scalcs.scprint import SCBurstPrints
 from scalcs import scplotlib as scpl
 from gui import myqtcommon
 

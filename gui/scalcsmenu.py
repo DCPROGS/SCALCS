@@ -13,7 +13,7 @@ from scalcs import scalcslib as scl
 from scalcs import popen
 from gui import myqtcommon
 
-from scalcs.qmatprint import QMatrixPrints, TCritPrints, CorrelationPrints, ExactPDFPrints, AsymptoticPDFPrints
+from scalcs.scprint import QMatrixPrints, TCritPrints, CorrelationPrints, ExactPDFPrints, AsymptoticPDFPrints
 
 class ScalcsMenu(QMenu):
     """
