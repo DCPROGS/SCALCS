@@ -4,54 +4,9 @@ from pylab import figure, semilogx, savefig
 
 from scalcs import qmatlib as qml
 from scalcs import scalcslib as scl
-from scalcs import popen
 from scalcs import pdfs
 from scalcs import cjumps
 
-def Popen(mec, tres):
-    """
-    Calculate Popen curve parameters and data for Popen curve plot.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    tres : float
-        Time resolution (dead time).
-
-    Returns
-    -------
-    c : ndarray of floats, shape (num of points,)
-        Concentration in mikroM.
-    pe : ndarray of floats, shape (num of points,)
-        Open probability corrected for missed events.
-    pi : ndarray of floats, shape (num of points,)
-        Ideal open probability.
-    """
-
-    iEC50 = popen.EC50(mec, 0)
-    eEC50 = popen.EC50(mec, tres)
-    pmax, cx = popen.maxPopen(mec, 0)
-    nH = popen.nH(mec, 0)
-
-    # Plot ideal and corrected Popen curves.
-    cmin = iEC50 / 20
-    cmax = iEC50 * 500
-    log_start = int(np.log10(cmin)) - 1
-    log_end = int(np.log10(cmax)) - 1
-    points = 512
-
-    c = np.logspace(log_start, log_end, points)
-    pe = np.zeros(points)
-    pi = np.zeros(points)
-    H = np.zeros(points)
-    for i in range(points):
-        pe[i] = popen.Popen(mec, tres, c[i])
-        pi[i] = popen.Popen(mec, 0, c[i])
-        H[i] = pmax / (math.pow((iEC50 / c[i]), nH) + 1) # Hill equation
-
-    c = c * 1000000 # x axis in microM
-
-    return c, pe, pi#,  H
 
 def mean_open_next_shut(mec, tres, points=512):
     """

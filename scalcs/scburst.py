@@ -448,7 +448,7 @@ class BurstDisplay(SCBurst):
         Returns
         -------
         t : ndarray
-            Time in milliseconds.
+            Time in seconds.
         fbst : ndarray
             Burst length probability distribution function (PDF).
         Optional:
@@ -526,11 +526,11 @@ class BurstDisplay(SCBurst):
         Returns
         -------
         c : ndarray of floats, shape (num of points,)
-            Concentration in mikroM
+            Concentration in Moles
         br : ndarray of floats, shape (num of points,)
-            Mean burst length in millisec.
+            Mean burst length in seconds.
         brblk : ndarray of floats, shape (num of points,)
-            Mean burst length in millisec corrected for fast block.
+            Mean burst length in seconds corrected for fast block.
         """
 
         points = 100

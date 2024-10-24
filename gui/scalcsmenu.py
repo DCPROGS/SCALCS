@@ -69,11 +69,11 @@ class ScalcsMenu(QMenu):
         self.parent.txtPltBox.append(str)
 
         self.parent.log.write(popen.printout(self.parent.mec, self.parent.tres))
-        c, pe, pi = scpl.Popen(self.parent.mec, self.parent.tres)
-        self.parent.present_plot = np.vstack((c, pe, pi))
+        c, pe, pi = popen.calculate_Popen_plot(self.parent.mec, self.parent.tres)
+        self.parent.present_plot = np.vstack((c*1e6, pe, pi))
 
         self.parent.canvas.axes.clear()
-        self.parent.canvas.axes.semilogx(c, pe, 'b-', c , pi, 'r--')
+        self.parent.canvas.axes.semilogx(c*1e6, pe, 'b-', c*1e6 , pi, 'r--')
         self.parent.canvas.axes.set_ylim(0, 1)
         self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
         self.parent.canvas.axes.yaxis.set_ticks_position('left')

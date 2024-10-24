@@ -82,12 +82,12 @@ def console_demo(demomec):
     #     POPEN CURVE CALCULATIONS
     sys.stdout.write('\n\nCalculating Popen curve parameters:')
     sys.stdout.write(popen.printout(demomec, tres))
-    c, pe, pi = scpl.Popen(demomec, tres)
+    c, pe, pi = popen.calculate_Popen_plot(demomec, tres)
 
     plt.subplot(221)
-    plt.semilogx(c, pe, 'b-', c, pi, 'r--')
+    plt.semilogx(c*1e6, pe, 'b-', c*1e6, pi, 'r--')
     plt.ylabel('Popen')
-    plt.xlabel('Concentration, M')
+    plt.xlabel('Concentration, uM')
     plt.title('Apparent and ideal Popen curves')
 
     demomec.set_eff('c', conc)
@@ -101,7 +101,7 @@ def console_demo(demomec):
 
     t, fbst = q_burst.calculate_burst_length_pdf()
     plt.subplot(222)
-    plt.semilogx(t, fbst, 'b-')
+    plt.semilogx(t*1000, fbst, 'b-')
     plt.ylabel('fbst(t)')
     plt.xlabel('burst length, ms')
     plt.title('The burst length pdf')

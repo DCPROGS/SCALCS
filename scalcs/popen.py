@@ -127,6 +127,50 @@ def Popen(mec, tres=0.0, conc=0.0, eff='c'):
         popen = popen / (1 + conc / mec.fastKB)
     return popen
 
+def calculate_Popen_plot(mec, tres):
+    """
+    Calculate Popen curve parameters and data for Popen curve plot.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution (dead time).
+
+    Returns
+    -------
+    c : ndarray of floats, shape (num of points,)
+        Concentration in Moles.
+    pe : ndarray of floats, shape (num of points,)
+        Open probability corrected for missed events.
+    pi : ndarray of floats, shape (num of points,)
+        Ideal open probability.
+    """
+
+    iEC50 = EC50(mec, 0)
+    eEC50 = EC50(mec, tres)
+    pmax, cx = maxPopen(mec, 0)
+    nH = Hill_slope(mec, 0)
+
+    # Plot ideal and corrected Popen curves.
+    cmin = iEC50 / 20
+    cmax = iEC50 * 500
+    log_start = int(np.log10(cmin)) - 1
+    log_end = int(np.log10(cmax)) - 1
+    points = 512
+
+    c = np.logspace(log_start, log_end, points)
+    pe = np.zeros(points)
+    pi = np.zeros(points)
+    H = np.zeros(points)
+    for i in range(points):
+        pe[i] = Popen(mec, tres, c[i])
+        pi[i] = Popen(mec, 0, c[i])
+        H[i] = pmax / (math.pow((iEC50 / c[i]), nH) + 1) # Hill equation
+
+    return c, pe, pi#,  H
+
+
 def Popen0(mec, tres, eff='c'):
     """
     Find Popen at concentration = 0.
@@ -263,7 +307,7 @@ def EC50(mec, tres, eff='c'):
         nstep += 1
     return conc
 
-def nH(mec, tres, eff='c'):
+def Hill_slope(mec, tres, eff='c'):
     """
     Calculate Hill slope, nH, at EC50 of a calculated Popen curve.
     This is Python implementation of DCPROGS HJC_HILL.FOR subroutine.
@@ -330,4 +374,4 @@ def print_pars(mec, tres):
     emaxPopen, conc = maxPopen(mec, tres)
     return ('maxPopen = {0:.5g}; '.format(emaxPopen) + 
            ' EC50 = {0:.5g} microM; '.format(EC50(mec, tres) * 1000000) + 
-           ' nH = {0:.5g}'.format(nH(mec, tres)))
+           ' nH = {0:.5g}'.format(Hill_slope(mec, tres)))
