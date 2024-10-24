@@ -1,18 +1,9 @@
-"""
-Plotting utilities for single channel currents.
-"""
-
-__author__="Remis Lape; remis.lp@gmail.com"
-__date__ ="$07-Dec-2010 23:01:09$"
-
 import math
 import numpy as np
 from pylab import figure, semilogx, savefig
 
 from scalcs import qmatlib as qml
 from scalcs import scalcslib as scl
-from scalcs import scburst
-from scalcs.scburst import SCBurst
 from scalcs import popen
 from scalcs import pdfs
 from scalcs import cjumps
@@ -61,91 +52,6 @@ def Popen(mec, tres):
     c = c * 1000000 # x axis in microM
 
     return c, pe, pi#,  H
-
-def burst_length_pdf(mec, multicomp=False, conditional=False,
-    tmin=0.00001, tmax=1000, points=512):
-    """
-    Calculate the mean burst length and data for burst length distribution.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    conditional : bool
-        True if conditional distribution is plotted.
-    tmin, tmax : floats
-        Time range for burst length ditribution.
-    points : int
-        Number of points per plot.
-
-    Returns
-    -------
-    t : ndarray of floats, shape (num of points)
-        Time in millisec.
-    fbst : ndarray of floats, shape (num of points)
-        Burst length pdf.
-    cfbrst : ndarray of floats, shape (num of open states, num of points)
-        Conditional burst length pdf.
-    """
-
-    eigs, w = scburst.length_pdf_components(mec)
-    tmax = 20 / min(eigs)
-    t = np.logspace(math.log10(tmin), math.log10(tmax), points)
-    fbst = t * pdfs.expPDF(t, 1 / eigs, w / eigs)
-
-    if multicomp:
-        mfbst = np.zeros((mec.kE, points))
-        for i in range(mec.kE):
-             mfbst[i] = t * pdfs.expPDF(t, 1 / eigs[i], w[i] / eigs[i])
-        return t * 1000, fbst, mfbst
-
-    if conditional:
-        cfbst = np.zeros((points, mec.kA))
-        for i in range(points):
-            cfbst[i] = t[i] * scburst.length_cond_pdf(mec, t[i])
-        cfbrst = cfbst.transpose()
-        return t * 1000, fbst, cfbrst
-
-    t = t * 1000 # x axis in millisec
-
-    return t, fbst
-
-def burst_openings_pdf(mec, n, conditional=False):
-    """
-    Calculate the mean number of openings per burst and data for the
-    distribution of openings per burst.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    n  : int
-        Number of openings.
-    conditional : bool
-        True if conditional distribution is plotted.
-
-    Returns
-    -------
-    r : ndarray of ints, shape (num of points,)
-        Number of openings per burst.
-    Pr : ndarray of floats, shape (num of points,)
-        Fraction of bursts.
-    cPr : ndarray of floats, shape (num of open states, num of points)
-        Fraction of bursts for conditional distribution.
-    """
-
-    r = np.arange(1, n+1)
-    Pr = np.zeros(n)
-    for i in range(n):
-        Pr[i] = scburst.openings_distr(mec, r[i])
-
-    if conditional:
-        cPr = np.zeros((n, mec.kA))
-        for i in range(n):
-            cPr[i] = scburst.openings_cond_distr_depend_on_start_state(mec, r[i])
-        cPr = cPr.transpose()
-
-        return r, Pr, cPr
-
-    return r, Pr
 
 def mean_open_next_shut(mec, tres, points=512):
     """
@@ -212,43 +118,6 @@ def dependency_plot(mec, tres, points=512):
     
     return np.log10(top*1000), np.log10(tsh*1000), dependency
 
-def burst_length_versus_conc_plot(mec, cmin, cmax):
-    """
-    Calculate data for the plot of burst length versus concentration.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    cmin, cmax : float
-        Range of concentrations in M.
-
-    Returns
-    -------
-    c : ndarray of floats, shape (num of points,)
-        Concentration in mikroM
-    br : ndarray of floats, shape (num of points,)
-        Mean burst length in millisec.
-    brblk : ndarray of floats, shape (num of points,)
-        Mean burst length in millisec corrected for fast block.
-    """
-
-    points = 100
-    c = np.linspace(cmin, cmax, points)
-    br = np.zeros(points)
-    brblk = np.zeros(points)
-
-    for i in range(points):
-        mec.set_eff('c', c[i])
-        br[i] = scburst.length_mean(mec)
-        if mec.fastblock:
-            brblk[i] = br[i] * (1 + c[i] / mec.KBlk)
-        else:
-            brblk[i] = br[i]
-    c = c * 1000000 # x axis scale in mikroMoles
-    br = br * 1000
-    brblk= brblk * 1000
-
-    return c, br, brblk
 
 def conc_jump_on_off_taus_versus_conc_plot(mec, cmin, cmax, width):
     """

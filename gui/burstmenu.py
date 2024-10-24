@@ -5,9 +5,8 @@ try:
 except:
     raise ImportError("pyqt module is missing")
 
-from scalcs.scprint import SCBurstPrints
-from scalcs import scplotlib as scpl
 from gui import myqtcommon
+from scalcs import scburst
 
 class BurstMenu(QMenu):
     """
@@ -51,18 +50,16 @@ class BurstMenu(QMenu):
             self.parent.conc = dialog.return_par()
         self.parent.mec.set_eff('c', self.parent.conc)
 
-        q_burst = SCBurstPrints(self.parent.mec.Q, 
-                                self.parent.mec.kA, self.parent.mec.kB, self.parent.mec.kC, self.parent.mec.kD)
+        q_burst = scburst.BurstDisplay(self.parent.mec)
         self.parent.log.write(q_burst.print_all)
-        #self.parent.log.write(scburst.printout_pdfs(self.parent.mec))
 
-        t, fbrst, mfbrst = scpl.burst_length_pdf(self.parent.mec, multicomp=True)
-        self.parent.present_plot = np.vstack((t, fbrst, mfbrst))
+        t, fbrst, mfbrst = q_burst.calculate_burst_length_pdf(multicomp=True)
+        self.parent.present_plot = np.vstack((t*1000, fbrst, mfbrst))
         
         self.parent.canvas.axes.clear()
-        self.parent.canvas.axes.semilogx(t, fbrst, 'b-')
+        self.parent.canvas.axes.semilogx(t*1000, fbrst, 'b-')
         for i in range(self.parent.mec.kE):
-            self.parent.canvas.axes.semilogx(t, mfbrst[i], 'b--')
+            self.parent.canvas.axes.semilogx(t*1000, mfbrst[i], 'b--')
         self.parent.canvas.axes.set_yscale('sqrtscale')
         self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
         self.parent.canvas.axes.yaxis.set_ticks_position('left')
@@ -85,15 +82,16 @@ class BurstMenu(QMenu):
             self.parent.conc = dialog.return_par()
         self.parent.mec.set_eff('c', self.parent.conc)
 
-        t, fbst, cfbst = scpl.burst_length_pdf(self.parent.mec, conditional=True)
-        self.parent.present_plot = np.vstack((t, fbst, cfbst))
+        q_burst = scburst.BurstDisplay(self.parent.mec)
+        t, fbst, cfbst = q_burst.calculate_burst_length_pdf(conditional=True)
+        self.parent.present_plot = np.vstack((t*1000, fbst, cfbst))
         self.parent.canvas.axes.clear()
 
         # TODO: only 6 colours are available now.        
         for i in range(self.parent.mec.kA):
-            self.parent.canvas.axes.semilogx(t, cfbst[i], self.my_colour[i]+'-',
+            self.parent.canvas.axes.semilogx(t*1000, cfbst[i], self.my_colour[i]+'-',
                 label="State {0:d}".format(i+1))
-        self.parent.canvas.axes.semilogx(t, fbst, 'k-', label="Not conditional")
+        self.parent.canvas.axes.semilogx(t*1000, fbst, 'k-', label="Not conditional")
         handles, labels = self.parent.canvas.axes.get_legend_handles_labels()
         self.parent.canvas.axes.legend(handles, labels, frameon=False)
 
@@ -115,9 +113,10 @@ class BurstMenu(QMenu):
         if dialog.exec_():
             self.parent.conc = dialog.return_par()
         self.parent.mec.set_eff('c', self.parent.conc)
+        q_burst = scburst.BurstDisplay(self.parent.mec)
         # TODO: need dialog to enter n
         n = 10
-        r, Pr = scpl.burst_openings_pdf(self.parent.mec, n)
+        r, Pr = q_burst.calculate_burst_openings_pdf(n)
         self.parent.present_plot = np.vstack((r, Pr))
 
         self.parent.canvas.axes.clear()
@@ -139,8 +138,9 @@ class BurstMenu(QMenu):
         if dialog.exec_():
             self.parent.conc = dialog.return_par()
         self.parent.mec.set_eff('c', self.parent.conc)
+        q_burst = scburst.BurstDisplay(self.parent.mec)
         n = 10
-        r, Pr, cPr = scpl.burst_openings_pdf(self.parent.mec, n, conditional=True)
+        r, Pr, cPr = q_burst.calculate_burst_openings_pdf(n, conditional=True)
         self.parent.present_plot = np.vstack((r, Pr, cPr))
 
         self.parent.canvas.axes.clear()
@@ -174,11 +174,12 @@ class BurstMenu(QMenu):
 
 #        cmin = 10e-9
 #        cmax = 0.005
-        c, br, brblk = scpl.burst_length_versus_conc_plot(self.parent.mec, cmin, cmax)
+        q_burst = scburst.BurstDisplay(self.parent.mec)
+        c, br, brblk = q_burst.burst_length_versus_conc_plot(self.parent.mec, cmin, cmax)
         self.parent.present_plot = np.vstack((c, br, brblk))
 
         self.parent.canvas.axes.clear()
-        self.parent.canvas.axes.plot(c, br,'r-', c, brblk, 'r--')
+        self.parent.canvas.axes.plot(c*1e6, br*1e3,'r-', c*1e6, brblk*1e3, 'r--')
         self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
         self.parent.canvas.axes.yaxis.set_ticks_position('left')
         self.parent.canvas.draw()

@@ -1,10 +1,8 @@
-
 from tabulate import tabulate
 
 from scalcs.qmatlib import QMatrix
-from scalcs.scburst import SCBurst
 from scalcs.scalcslib import ExactPDFCalculator, AsymptoticPDF, AdjacentPDF
-from scalcs.pdfs import TCrits, ExpPDF, GeometricPDF
+from scalcs.pdfs import TCrits, ExpPDF
 
 class QMatrixPrints(QMatrix):
     """
@@ -147,107 +145,7 @@ class QMatrixPrints(QMatrix):
         return ExpPDF(1/e, w/e).printout('\nIdeal shut time PDF components, unconditional')
 
 
-class SCBurstPrints(SCBurst):
-    """
-    Print Q-Matrix calculations for single-channel burst analysis.
-    """
 
-    def __init__(self, Q, kA=1, kB=1, kC=0, kD=0):
-        super().__init__(Q, kA=kA, kB=kB, kC=kC, kD=kD)
-
-    @property
-    def print_all(self):
-        """
-        Output burst calculations.
-        """
-        sections = [
-            '\n*******************************************',
-            'CALCULATED SINGLE CHANNEL BURST MEANS, PDFS, ETC....',
-            self.print_start_end_vectors,
-            self.print_popen,
-            self.print_length_pdf,
-            self.print_openings_pdf,
-            self.print_shuttings_pdf
-        ]
-        return '\n'.join(sections)
-
-    @property
-    def print_start_end_vectors(self):
-        """
-        Print the burst start and end vectors.
-        """
-        start_vector = '\nBurst start vector = ' + '\t'.join(f'{x:.5g}' for x in self.start_burst)
-        end_vector = '\nBurst end vector =' + '\t'.join(f'{self.end_burst[i, 0]:.5g}' for i in range(self.kA))
-        return start_vector + end_vector
-
-    @property
-    def print_means(self):
-        """
-        Print mean values related to burst behavior.
-        """
-        sections = [
-            f'\n\nMean number of openings per burst = {self.mean_number_of_openings:.6g}',
-            f'Mean burst length (ms) = {1000 * self.mean_length:.6g}',
-            f'Mean open time per burst (ms) = {1000 * self.mean_open_time:.6g}',
-            f'Mean shut time per burst (ms; all bursts) = {1000 * self.mean_shut_time:.6g}',
-            f'Mean shut time per burst (ms; excluding single opening bursts) = {1000 * self.mean_shut_time / self.probability_more_than_one_opening:.6g}',
-            f'Mean shut time between bursts (ms) = {1000 * self.mean_shut_times_between_bursts:.6g}'
-        ]
-        return '\n'.join(sections)
-
-    @property
-    def print_popen(self):
-        """
-        Print Popen (probability of being open) values.
-        """
-        sections = [
-            f'\n\nPopen WITHIN BURST = (open time/burst)/(burst length) = {self.burst_popen:.5g}',
-            f'Total Popen = (open time/burst)/(burst length + mean gap between bursts) = {self.total_popen:.5g}'
-        ]
-        return '\n'.join(sections)
-
-    @property
-    def print_length_pdf(self):
-        """
-        Print the PDF of burst lengths.
-        """
-        e1, w1 = self.length_pdf_components()
-        e2, w2 = self.length_pdf_no_single_openings_components()
-        sections = [
-            ExpPDF(1 / e1, w1 / e1).printout('\nPDF of total burst length, unconditional'),
-            ExpPDF(1 / e2, w2 / e2).printout('\nPDF of burst length for bursts with 2 or more openings')
-        ]
-        return ''.join(sections)
-
-    @property
-    def print_openings_pdf(self):
-        """
-        Print the PDF of openings within bursts.
-        """
-        e1, w1 = self.total_open_time_pdf_components()
-        e2, w2 = self.first_opening_length_pdf_components()
-        rho, w = self.openings_distr_components()
-        sections = [
-            ExpPDF(1 / e1, w1 / e1).printout('\nPDF of total open time per burst'),
-            ExpPDF(1 / e2, w2 / e2).printout('\nPDF of first opening in a burst with 2 or more openings'),
-            GeometricPDF(rho, w).printout('\nGeometric PDF of number (r) of openings per burst (unconditional)')
-        ]
-        return ''.join(sections)
-
-    @property
-    def print_shuttings_pdf(self):
-        """
-        Print the PDF of shuttings within bursts and between bursts.
-        """
-        e1, w1 = self.shut_times_inside_burst_pdf_components()
-        e2, w2 = self.shut_times_between_burst_pdf_components()
-        e3, w3 = self.shut_time_total_pdf_components_2more_openings()
-        sections = [
-            ExpPDF(1 / e1, w1 / e1).printout('\nPDF of gaps inside burst'),
-            ExpPDF(1 / e2, w2 / e2).printout('\nPDF of gaps between bursts'),
-            ExpPDF(1 / e3, w3 / e3).printout('\nPDF of total shut time per burst for bursts with at least 2 openings')
-        ]
-        return ''.join(sections)
 
 
 class TCritPrints(QMatrix):

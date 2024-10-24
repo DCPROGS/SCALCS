@@ -16,8 +16,8 @@ from scalcs import scalcsio
 from samples import samples
 from scalcs import version
 from scalcs import scplotlib as scpl
-from scalcs import popen
-from scalcs.scprint import QMatrixPrints, SCBurstPrints, TCritPrints, ExactPDFPrints, AsymptoticPDFPrints
+from scalcs import popen, scburst
+from scalcs.scprint import QMatrixPrints, TCritPrints, ExactPDFPrints, AsymptoticPDFPrints
 
 def create_parser():
     parser = argparse.ArgumentParser(
@@ -96,10 +96,10 @@ def console_demo(demomec):
     sys.stdout.write('\n\nCalculating burst properties:')
     sys.stdout.write('\nAgonist concentration = %e M' %conc)    
     # Calculating burst parameters
-    q_burst = SCBurstPrints(demomec.Q, demomec.kA, demomec.kB, demomec.kC, demomec.kD)
+    q_burst = scburst.BurstDisplay(demomec)
     print(q_burst.print_all)
 
-    t, fbst = scpl.burst_length_pdf(demomec)
+    t, fbst = q_burst.calculate_burst_length_pdf()
     plt.subplot(222)
     plt.semilogx(t, fbst, 'b-')
     plt.ylabel('fbst(t)')

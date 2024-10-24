@@ -12,7 +12,7 @@ class TestSCBurst(unittest.TestCase):
         c = 0.0000001 # 0.1 uM
         mec = samples.CH82()
         mec.set_eff('c', c)
-        self.q_burst = SCBurst(mec.Q, mec.kA, mec.kB, mec.kC, mec.kD)
+        self.q_burst = SCBurst(mec)
 
         # Mocking values from the output example
         self.expected_start_burst = np.array([0.27536232, 0.72463768])
