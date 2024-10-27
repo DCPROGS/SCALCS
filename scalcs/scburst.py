@@ -1,27 +1,21 @@
 import numpy as np
-from numpy import linalg as nplin
-from deprecated import deprecated
+from numpy.linalg import inv, matrix_power
+import matplotlib.pyplot as plt
+#from matplotlib.transforms import FuncTransform
 
 from samples import samples
 from scalcs import qmatlib as qml
-from scalcs.pdfs import ExpPDF, GeometricPDF
-
 from scalcs import pdfs
 
 class SCBurst(qml.QMatrix):
-    """
-    SCBurst calculates various burst-related quantities from a Q-matrix based on methods in Colquhoun & Hawkes (1982).
-    """
+    """Calculates burst-related quantities from a Q-matrix as in Colquhoun & Hawkes (1982)."""
 
     def __init__(self, mec):
         super().__init__(mec.Q, mec.kA, mec.kB, mec.kC, mec.kD)
         self.GABAG = self.GAB @ self.GBA
         self.probability_of_ending = self.IA - self.GABAG
-        self.invQAA = nplin.inv(self.QAA)
-        self.invQBB = nplin.inv(self.QBB)
-        self.invQFF = nplin.inv(self.QFF)
-        self.pinfC = self.pinf[self.kE:self.kG]
-        self.pinfA = self.pinf[:self.kA]
+        self.invQAA, self.invQBB, self.invQFF = map(inv, [self.QAA, self.QBB, self.QFF])
+        self.pinfC, self.pinfA = self.pinf[self.kE:self.kG], self.pinf[:self.kA]
         self.WBB = self.QBB + self.QBA @ self.GAB
 
     @property
@@ -60,7 +54,7 @@ class SCBurst(qml.QMatrix):
         Calculate the mean number of openings per burst (Eq. 3.7, CH82).
         mu = phiB * (I - GAB * GBA)^(-1) * uA
         """
-        return (self.start_burst @ nplin.inv(self.probability_of_ending) @ self.uA)[0]
+        return (self.start_burst @ inv(self.probability_of_ending) @ self.uA)[0]
 
 
     def openings_distr_components(self):
@@ -79,7 +73,7 @@ class SCBurst(qml.QMatrix):
         """
 
         rho, A = qml.eigenvalues_and_spectral_matrices(self.GABAG)
-        w = np.dot(np.dot(self.start_burst, A), self.end_burst).transpose()[0]
+        w = (self.start_burst @ A @ self.end_burst).flatten()
         return rho, w
 
     def openings_distr(self, r):
@@ -96,7 +90,7 @@ class SCBurst(qml.QMatrix):
         if r == 1:
             interm = self.IA
         else:
-            interm = np.linalg.matrix_power(self.GABAG, r - 1)
+            interm = matrix_power(self.GABAG, r - 1)
         return self.start_burst @ interm @ self.end_burst
 
     def openings_cond_distr_depend_on_start_state(self, r):
@@ -111,7 +105,7 @@ class SCBurst(qml.QMatrix):
         if r == 1:
             interm = self.IA
         else:
-            interm = np.linalg.matrix_power(self.GABAG, r - 1)
+            interm = matrix_power(self.GABAG, r - 1)
         return (interm @ self.end_burst).transpose()
 
     @property
@@ -122,7 +116,7 @@ class SCBurst(qml.QMatrix):
             (I - QAB * (QBB^(-1)) * GBA) * uA
         """
 
-        inv_ending = nplin.inv(self.probability_of_ending)
+        inv_ending = inv(self.probability_of_ending)
         interm2 = self.IA - self.QAB @ self.invQBB @self.GBA
         return (self.start_burst @ inv_ending @ -self.invQAA @ interm2 @ self.uA)[0]
 
@@ -141,8 +135,9 @@ class SCBurst(qml.QMatrix):
 
         w = np.zeros(self.kE)
         eigs, A = qml.eigenvalues_and_spectral_matrices(-self.QEE)
-        for i in range(self.kE):
-            w[i] = (self.start_burst @ A[i][:self.kA, :self.kA] @ (-self.QAA) @ self.end_burst)[0]
+        w = np.array([(self.start_burst @ A[i][:self.kA, :self.kA] @ (-self.QAA) @ self.end_burst)[0] for i in range(self.kE)])
+        #for i in range(self.kE):
+        #    w[i] = (self.start_burst @ A[i][:self.kA, :self.kA] @ (-self.QAA) @ self.end_burst)[0]
         return eigs, w
 
     def length_pdf_no_single_openings_components(self):
@@ -178,7 +173,7 @@ class SCBurst(qml.QMatrix):
             Burst length.
         """
 
-        expQEEA = qml.expQt(self.QEE, t)[ : self.kA, : self.kA]
+        expQEEA = qml.expQ(self.QEE, t)[ : self.kA, : self.kA]
         return self.start_burst @ expQEEA @ -self.QAA @ self.end_burst
 
     def length_cond_pdf(self, t):
@@ -191,7 +186,7 @@ class SCBurst(qml.QMatrix):
             Burst length.
         """
 
-        expQEEA = qml.expQt(self.QEE, t)[ : self.kA, : self.kA]
+        expQEEA = qml.expQ(self.QEE, t)[ : self.kA, : self.kA]
         return (expQEEA @ -self.QAA @ self.end_burst).transpose()
 
     @property
@@ -201,7 +196,7 @@ class SCBurst(qml.QMatrix):
         """
 
         VAA = self.QAA + self.QAB @ self.GBA
-        return (self.start_burst @ -nplin.inv(VAA) @ self.uA)[0]
+        return (self.start_burst @ -inv(VAA) @ self.uA)[0]
     
     def total_open_time_pdf_components(self):
         """
@@ -254,7 +249,7 @@ class SCBurst(qml.QMatrix):
     @property
     def mean_shut_time(self):
         """ Calculate the mean total shut time per burst (Eq. 3.41, CH82) for all bursts (including one opening bursts). """
-        return (self.start_burst @ self.GAB @ -nplin.inv(self.WBB) @ self.GBA @ self.uA)[0]
+        return (self.start_burst @ self.GAB @ -inv(self.WBB) @ self.GBA @ self.uA)[0]
     
     @property
     def mean_shut_times_between_bursts(self):
@@ -279,7 +274,7 @@ class SCBurst(qml.QMatrix):
         """
 
         e, A = qml.eigenvalues_and_spectral_matrices(-self.QBB)
-        w = -np.array([ (self.start_burst @ nplin.inv(self.probability_of_ending) @ self.GAB @ A[i] @ self.QBB @ self.GBA @ self.uA)[0] 
+        w = -np.array([ (self.start_burst @ inv(self.probability_of_ending) @ self.GAB @ A[i] @ self.QBB @ self.GBA @ self.uA)[0] 
             / (self.mean_number_of_openings - 1) for i in range(self.kB) ])
         return e, w
 
@@ -395,8 +390,8 @@ class BurstDisplay(SCBurst):
         e1, w1 = self.length_pdf_components()
         e2, w2 = self.length_pdf_no_single_openings_components()
         sections = [
-            ExpPDF(1 / e1, w1 / e1).printout('\nPDF of total burst length, unconditional'),
-            ExpPDF(1 / e2, w2 / e2).printout('\nPDF of burst length for bursts with 2 or more openings')
+            pdfs.ExpPDF(1 / e1, w1 / e1).printout('\nPDF of total burst length, unconditional'),
+            pdfs.ExpPDF(1 / e2, w2 / e2).printout('\nPDF of burst length for bursts with 2 or more openings')
         ]
         return ''.join(sections)
 
@@ -409,9 +404,9 @@ class BurstDisplay(SCBurst):
         e2, w2 = self.first_opening_length_pdf_components()
         rho, w = self.openings_distr_components()
         sections = [
-            ExpPDF(1 / e1, w1 / e1).printout('\nPDF of total open time per burst'),
-            ExpPDF(1 / e2, w2 / e2).printout('\nPDF of first opening in a burst with 2 or more openings'),
-            GeometricPDF(rho, w).printout('\nGeometric PDF of number (r) of openings per burst (unconditional)')
+            pdfs.ExpPDF(1 / e1, w1 / e1).printout('\nPDF of total open time per burst'),
+            pdfs.ExpPDF(1 / e2, w2 / e2).printout('\nPDF of first opening in a burst with 2 or more openings'),
+            pdfs.GeometricPDF(rho, w).printout('\nGeometric PDF of number (r) of openings per burst (unconditional)')
         ]
         return ''.join(sections)
 
@@ -424,9 +419,9 @@ class BurstDisplay(SCBurst):
         e2, w2 = self.shut_times_between_burst_pdf_components()
         e3, w3 = self.shut_time_total_pdf_components_2more_openings()
         sections = [
-            ExpPDF(1 / e1, w1 / e1).printout('\nPDF of gaps inside burst'),
-            ExpPDF(1 / e2, w2 / e2).printout('\nPDF of gaps between bursts'),
-            ExpPDF(1 / e3, w3 / e3).printout('\nPDF of total shut time per burst for bursts with at least 2 openings')
+            pdfs.ExpPDF(1 / e1, w1 / e1).printout('\nPDF of gaps inside burst'),
+            pdfs.ExpPDF(1 / e2, w2 / e2).printout('\nPDF of gaps between bursts'),
+            pdfs.ExpPDF(1 / e3, w3 / e3).printout('\nPDF of total shut time per burst for bursts with at least 2 openings')
         ]
         return ''.join(sections)
     
@@ -458,15 +453,12 @@ class BurstDisplay(SCBurst):
             Conditional burst length PDF.
         """
         eigs, w = self.length_pdf_components()
-        tmax = 20 / min(eigs)
-        t = np.logspace(np.log10(tmin), np.log10(tmax), points)
-        fbst = t * pdfs.expPDF(t, 1 / eigs, w / eigs)
+        t = np.logspace(np.log10(tmin), np.log10(20 / min(eigs)), points)
+        fbst = t * pdfs.ExpPDF(1 / eigs, w / eigs).calculate(t)
 
         if multicomp:
-            mfbst = np.zeros((self.kE, points))
             for i in range(self.kE):
-                mfbst[i] = t * pdfs.expPDF(t, 1 / eigs[i], w[i] / eigs[i])
-            return t, fbst, mfbst
+                fbst = np.vstack((fbst, t * pdfs.ExpPDF(1 / eigs[i], w[i] / eigs[i]).calculate(t)))
 
         if conditional:
             cfbst = np.zeros((points, self.kA))
@@ -497,23 +489,19 @@ class BurstDisplay(SCBurst):
         cPr : ndarray of floats, shape (num of open states, num of points)
             Fraction of bursts for conditional distribution.
         """
-
-        r = np.arange(1, n+1)
-        Pr = np.zeros(n)
-        for i in range(n):
-            Pr[i] = self.openings_distr(r[i])
+        
+        r = np.arange(1, n + 1)  # Opening counts from 1 to n
+        Pr = np.array([self.openings_distr(openings) for openings in r])  # Unconditional probabilities
 
         if conditional:
             cPr = np.zeros((n, self.kA))
-            for i in range(n):
-                cPr[i] = self.openings_cond_distr_depend_on_start_state(r[i])
-            cPr = cPr.transpose()
-
-            return r, Pr, cPr
+            for openings in r:
+                cPr[openings-1] = self.openings_cond_distr_depend_on_start_state(openings)
+            return r, Pr, cPr.transpose()
 
         return r, Pr
 
-    def burst_length_versus_conc_plot(self, mec, cmin, cmax):
+    def calculate_burst_length_versus_conc_plot(self, mec, cmin, cmax):
         """
         Calculate data for the plot of burst length versus concentration.
 
@@ -551,3 +539,148 @@ class BurstDisplay(SCBurst):
         brblk= brblk
 
         return c, br, brblk
+
+    def plot_burst_length_vs_concentration(self, mec, cmin=10e-9, cmax=1e-3):
+        """
+        Plot mean burst length versus concentration.
+
+        Parameters
+        ----------
+        mec : instance of Mechanism
+            Mechanism instance with required methods to adjust concentration.
+        cmin : float, optional
+            Minimum concentration in M (default is 10e-9 M).
+        cmax : float, optional
+            Maximum concentration in M (default is 1e-3 M).
+        """
+        # Calculate burst length data over the concentration range
+        c, br, brblk = self.calculate_burst_length_versus_conc_plot(mec, cmin, cmax)
+
+        # Plot the results
+        plt.figure(figsize=(8, 6))
+        plt.plot(c * 1e6, br * 1000, 'r-', label="Mean Burst Length")
+        plt.xlabel("Concentration (µM)")
+        plt.ylabel("Mean Burst Length (ms)")
+        plt.title("Mean Burst Length vs. Concentration")
+        plt.legend()
+        plt.show()
+
+
+    def plot_burst_length_pdf(self, multicomp=True):
+        """Generate and display the burst length PDF plot with multicomp=True."""
+        
+        # Retrieve data with multicomp enabled
+        t, fbst = self.calculate_burst_length_pdf(multicomp=multicomp)
+        
+        # Create the plot
+        fig, ax = plt.subplots()
+        
+        # Plot the main burst length PDF
+        ax.semilogx(t * 1000, fbst[0], 'b-', label='Burst Length PDF')
+        
+        # Plot additional components if available
+        if fbst.shape[0] > 1: #is not None:
+            for i, mf in enumerate(fbst[1:]):
+                ax.semilogx(t * 1000, mf, 'b--', label=f'Component {i+1}')
+
+        # Apply square-root transformation to the y-axis
+        #sqrt_transform = FuncTransform(lambda y: np.sqrt(y), lambda y: y**2)
+        #ax.set_yscale('function', functions=(sqrt_transform.transform, sqrt_transform.inverted))
+
+        # Labeling
+        ax.set_xlabel('Time (ms)')
+        ax.set_ylabel('PDF') # (sqrt scale)')
+        ax.set_title('Burst Length PDF')
+        ax.legend()
+
+        plt.show()
+        #return fig
+
+    def plot_conditional_burst_length_pdf(self):
+        """Generate and display the conditional burst length PDF plot."""
+        
+        # Retrieve data with conditional=True
+        t, fbst, cfbst = self.calculate_burst_length_pdf(conditional=True)
+        
+        # Define color scheme for each starting state
+        colors = ['g', 'r', 'c', 'm', 'y', 'k']
+        plots = []
+        
+        # Plot each conditional burst length distribution by starting state
+        for i in range(self.kA):
+            color = colors[i % len(colors)]
+            handle, = plt.semilogx(t * 1000, cfbst[i], color + '-', label=f"State {i+1}")
+            plots.append(handle)
+        
+        # Plot the non-conditional burst length distribution
+        handle, = plt.semilogx(t * 1000, fbst, 'b-', label="Not conditional")
+        plots.append(handle)
+
+        # Add legend and labels
+        plt.xlabel('Time (ms)')
+        plt.ylabel('PDF')
+        plt.title('Conditional Burst Length PDF by Starting State')
+        plt.legend(handles=plots)
+
+        plt.show()
+
+    def plot_openings_per_burst(self, n=10, conditional=False, colors=None):
+        """
+        Plot the distribution of the number of openings per burst.
+        
+        Parameters
+        ----------
+        n : int, optional
+            Maximum number of openings to consider for the plot. Default is 10.
+        conditional : bool, optional
+            If True, plot conditional distributions based on starting state.
+        colors : list of str, optional
+            List of color codes for each starting state if conditional is True.
+            Default color is assigned if not provided.
+        """
+        # Calculate the number of openings distribution
+        if conditional:
+            r, Pr, cPr = self.calculate_burst_openings_pdf(n, conditional=True)
+        else:
+            r, Pr = self.calculate_burst_openings_pdf(n)
+        
+        # Set default colors if not provided
+        if colors is None:
+            colors = ["r", "g", "b", "m", "c", "y"] * ((self.kA + 5) // 6)
+
+        # Plot the conditional or unconditional distributions
+        plots = []
+        
+        if conditional:
+            
+            for i in range(len(cPr)):
+                color = colors[i % len(colors)]
+                handle, = plt.plot(r, cPr[i], color +'o', label=f"State {i+1}")
+                plots.append(handle)
+        
+        # Plot the overall distribution
+        handle, = plt.plot(r, Pr, 'ko', label="Not conditional")
+        plots.append(handle)
+        
+        # Configure plot settings
+        plt.xlim([0, n + 1])
+        plt.xlabel('Number of Openings per Burst')
+        plt.ylabel('Probability')
+        plt.title('Distribution of Openings per Burst' + (' (Conditional on Start State)' if conditional else ''))
+        plt.legend(handles=plots)
+        
+        plt.show()
+
+
+if __name__ == '__main__':
+    c = 0.0000001 # 0.1 uM
+    mec = samples.CH82()
+    mec.set_eff('c', c)
+    disp = BurstDisplay(mec)
+    print(disp.print_all)
+
+    disp.plot_burst_length_pdf()
+    disp.plot_conditional_burst_length_pdf()
+    disp.plot_openings_per_burst(n=10, conditional=True)
+    disp.plot_burst_length_vs_concentration(mec, cmin=10e-9, cmax=1e-3)
+

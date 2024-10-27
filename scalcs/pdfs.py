@@ -6,6 +6,74 @@ import numpy as np
 from tabulate import tabulate
 
 
+class ExpPDF:
+    def __init__(self, taus, areas):
+        self.taus = taus
+        self.areas = areas
+        self.num_components = self.taus.shape[0] if isinstance(self.taus, np.ndarray) else 1
+        self.mean = np.sum(self.areas * self.taus)
+        self.variance = np.sum(self.areas * self.taus * self.taus)
+        self.SD = np.sqrt(2 * self.variance - self.mean * self.mean)
+
+    def calculate(self, t): #, tau, area):
+        """ Calculate exponential probability density function. """
+        if self.num_components > 1: 
+            f = np.zeros(t.shape)
+            for i in range(self.taus.shape[0]):
+                f += (self.areas[i] / self.taus[i]) * np.exp(-t / self.taus[i])
+        else:
+            f = (self.areas / self.taus) * np.exp(-t / self.taus)
+        return f
+
+    def printout(self, title, print_mean=True): #eigs, amps, title):
+        """ Print exponential PDF data.  """
+        header = ['Term', 'Amplitude', 'Rate (1/sec)', 'tau (ms)', 'Area (%)']
+        table = [ [i+1, self.areas[i] / self.taus[i], 1 / self.taus[i], 1000 * self.taus[i], 100 * self.areas[i]]
+            for i in range(self.num_components) ]
+        table_str = f'\n{title}\n' + tabulate( table, headers=header, tablefmt='orgtbl' )
+        if not print_mean: return table_str
+        mean_str = f'\nMean (ms) = {self.mean * 1000:.5g}\t\tSD = {self.SD * 1000:.5g}\t\tSD/mean = {self.SD / self.mean:.5g}\n'
+        return table_str + mean_str
+
+    def printout_asymptotic(self, tres, title):
+        """ Print asymptotic PDF data. """
+
+        info_str = '\n'+title+ '\n'
+        areast0 = self.areas * np.exp(tres / self.taus)
+        areast0 /= np.sum(areast0)
+        table = []
+        for i in range(self.num_components):
+            table.append([i+1, 1 / self.taus[i], 1000 * self.taus[i], 100 * self.areas[i], 100 * areast0[i]])
+        info_str += tabulate(table, 
+                                headers=['Term', 'Rate (1/sec)', 'tau (ms)', 'Area (%)', 'Area renormalised for t=0 to inf'], 
+                                tablefmt='orgtbl')       
+        return info_str
+
+
+class GeometricPDF:
+    def __init__(self, rho, w):
+        self.rho = rho
+        self.w = w
+        self.k = self.rho.shape[0]
+        self.ONE = np.ones(self.k)
+        self.norm = 1 / (self.ONE - self.rho)
+        self.mean = np.sum(self.w / np.power(self.ONE - self.rho, 2))
+        self.variance = np.sum(self.w * (self.ONE + self.rho) / np.power(self.ONE - self.rho, 3))
+        self.SD = np.sqrt(self.variance - self.mean * self.mean)
+
+    def printout(self, title, print_mean=True): #rho, w, title):
+        """ Print geometric PDF data. """
+        
+        header = ['Term', 'w', 'rho', 'area(%)', 'Norm mean']
+        table = [
+            [i+1, self.w[i], self.rho[i], 100 * self.w[i] * self.norm[i], self.norm[i]]
+            for i in range(self.k) ]
+        table_str = f'\n{title}\n' + tabulate(table, headers=header, tablefmt='orgtbl')
+        if not print_mean: return table_str
+        mean_str = f'\nMean number of openings per burst = {self.mean:.5g}\n\tSD = {self.SD:.5g}\tSD/mean = {self.SD / self.mean:.5g}\n'
+        return table_str + mean_str
+
+
 class TCrits:
     """
     Calculates critical times between exponential components.
@@ -249,265 +317,3 @@ class TCrits:
                 '\t{0:.5g}\n'.format(self.tcrits[2, i] * 1000))
                 
         return tcrit_str
-
-
-class ExpPDF:
-    def __init__(self, taus, areas):
-        self.taus = taus
-        self.areas = areas
-        self.num_components = self.taus.shape[0]
-        self.mean = np.sum(self.areas * self.taus)
-        self.variance = np.sum(self.areas * self.taus * self.taus)
-        self.SD = np.sqrt(2 * self.variance - self.mean * self.mean)
-
-    def expPDF(self, t): #, tau, area):
-        """ Calculate exponential probability density function. """
-        if isinstance(self.taus, np.ndarray):
-            f = np.zeros(t.shape)
-            for i in range(self.taus.shape[0]):
-                f += (self.areas[i] / self.taus[i]) * np.exp(-t / self.taus[i])
-        else:
-            f = (self.areas / self.taus) * np.exp(-t / self.taus)
-        return f
-
-    def printout(self, title, print_mean=True): #eigs, amps, title):
-        """ Print exponential PDF data.  """
-        header = ['Term', 'Amplitude', 'Rate (1/sec)', 'tau (ms)', 'Area (%)']
-        table = [ [i+1, self.areas[i] / self.taus[i], 1 / self.taus[i], 1000 * self.taus[i], 100 * self.areas[i]]
-            for i in range(self.num_components) ]
-        table_str = f'\n{title}\n' + tabulate( table, headers=header, tablefmt='orgtbl' )
-        if not print_mean: return table_str
-        mean_str = f'\nMean (ms) = {self.mean * 1000:.5g}\t\tSD = {self.SD * 1000:.5g}\t\tSD/mean = {self.SD / self.mean:.5g}\n'
-        return table_str + mean_str
-
-    def printout_asymptotic(self, tres, title):
-        """
-        """
-
-        info_str = '\n'+title+ '\n'
-        areast0 = self.areas * np.exp(tres / self.taus)
-        areast0 /= np.sum(areast0)
-        table = []
-        for i in range(self.num_components):
-            table.append([i+1, 1 / self.taus[i], 1000 * self.taus[i], 100 * self.areas[i], 100 * areast0[i]])
-        info_str += tabulate(table, 
-                                headers=['Term', 'Rate (1/sec)', 'tau (ms)', 'Area (%)', 'Area renormalised for t=0 to inf'], 
-                                tablefmt='orgtbl')       
-        return info_str
-
-
-class GeometricPDF:
-    def __init__(self, rho, w):
-        self.rho = rho
-        self.w = w
-        self.k = self.rho.shape[0]
-        self.ONE = np.ones(self.k)
-        self.norm = 1 / (self.ONE - self.rho)
-        self.mean = np.sum(self.w / np.power(self.ONE - self.rho, 2))
-        self.variance = np.sum(self.w * (self.ONE + self.rho) / np.power(self.ONE - self.rho, 3))
-        self.SD = np.sqrt(self.variance - self.mean * self.mean)
-
-    def printout(self, title, print_mean=True): #rho, w, title):
-        """ Print geometric PDF data. """
-        
-        header = ['Term', 'w', 'rho', 'area(%)', 'Norm mean']
-        table = [
-            [i+1, self.w[i], self.rho[i], 100 * self.w[i] * self.norm[i], self.norm[i]]
-            for i in range(self.k) ]
-        table_str = f'\n{title}\n' + tabulate(table, headers=header, tablefmt='orgtbl')
-        if not print_mean: return table_str
-        mean_str = f'\nMean number of openings per burst = {self.mean:.5g}\n\tSD = {self.SD:.5g}\tSD/mean = {self.SD / self.mean:.5g}\n'
-        return table_str + mean_str
-
-
-###############   DEPRECATED FUNCTIONS   ###########################
-
-@deprecated("Use '...'")
-def geometricPDF_mean_sd(rho, w):
-    """
-    Calculate mean and standard deviation for geometric PDF.
-
-    Parameters
-    ----------
-    rho : ndarray, shape(k, 1)
-        Probabilities.
-    w : ndarray, shape(k, 1)
-        Component amplitudes.
-
-    Returns
-    -------
-    m : float
-        Mean.
-    sd : float
-        Standard deviation.
-    """
-
-    k = rho.shape[0]
-    m = np.sum(w / np.power(np.ones((k)) - rho, 2))
-    var = np.sum(w * (np.ones((k)) + rho) / np.power(np.ones((k)) - rho, 3))
-    sd = math.sqrt(var - m * m)
-
-    return m, sd
-
-@deprecated("Use '...'")
-def geometricPDF_printout(rho, w):
-    """
-    """
-
-    norm = 1 / (np.ones((rho.shape[0])) - rho)
-    str = ('term\tw\trho\tarea(%)\tNorm mean')
-    for i in range(rho.shape[0]):
-        str += ('{0:d}'.format(i+1) +
-            '\t{0:.5g}'.format(w[i]) +
-            '\t{0:.5g}'.format(rho[i]) +
-            '\t{0:.5g}'.format(w[i] * norm[i] * 100) +
-            '\t{0:.5g}\n'.format(norm[i]))
-
-    mean, sd = geometricPDF_mean_sd(rho, w)
-    str += ('Mean number of openings per burst =\t {0:.5g}'.format(mean) +
-        '\n\tSD =\t {0:.5g}'.format(sd) +
-        '\tSD/mean =\t {0:.5g}\n'.format(sd / mean))
-    return str
-
-@deprecated("Use '...'")
-def expPDF(t, tau, area):
-    """
-    Calculate exponential probabolity density function.
-
-    Parameters
-    ----------
-    t : float or ndarray.
-        Time.
-    tau : ndarray, shape(k, 1)
-        Time constants.
-    area : ndarray, shape(k, 1)
-        Component relative area.
-
-    Returns
-    -------
-    f : float or ndarray.
-    """
-
-    #if type(tau) == type(np.array(())):
-    if isinstance(tau, np.ndarray):
-        f = np.zeros(t.shape)
-        for i in range(tau.shape[0]):
-            f += (area[i] / tau[i]) * np.exp(-t / tau[i])
-        #f = np.sum((area / tau) * np.exp(-t[:, np.newaxis] / tau), axis=0)
-    else:
-        f = (area / tau) * np.exp(-t / tau)
-    return f
-
-@deprecated("Use '...'")
-def expPDF_mean_sd(tau, area):
-    """
-    Calculate mean and standard deviation for exponential PDF.
-
-    Parameters
-    ----------
-    tau : ndarray, shape(k, 1)
-        Time constants.
-    area : ndarray, shape(k, 1)
-        Component relative area.
-
-    Returns
-    -------
-    m : float
-        Mean.
-    sd : float
-        Standard deviation.
-    """
-
-    m = np.sum(area * tau)
-    var = np.sum(area * tau * tau)
-    sd = math.sqrt(2 * var - m * m)
-
-    return m, sd
-
-@deprecated("Use '...'")
-def expPDF_printout(eigs, ampl):
-    """
-    """
-
-    str = ('term\tw\trate (1/sec)\ttau (ms)\tarea (%)\n')
-    for i in range(eigs.shape[0]):
-        str += ('{0:d}'.format(i+1) +
-            '\t{0:.5g}'.format(ampl[i]) +
-            '\t{0:.5g}'.format(eigs[i]) +
-            '\t{0:.5g}'.format(1000 / eigs[i]) +
-            '\t{0:.5g}\n'.format(100 * ampl[i] / eigs[i]))
-
-    mean, sd = expPDF_mean_sd(1 / eigs, ampl / eigs)
-    str += ('Mean (ms) =\t {0:.5g}'.format(mean * 1000) +
-        '\tSD =\t {0:.5g}'.format(sd * 1000) +
-        '\tSD/mean =\t {0:.5g}\n'.format(sd / mean))
-        
-    return str
-
-@deprecated("Use '...'")
-def expPDF_misclassified(tcrit, tau, area, comp):
-    """
-    Calculate number and fraction of misclassified events after division into
-    bursts by critical time, tcrit.
-    """
-
-    tfast = tau[:comp]
-    tslow = tau[comp:]
-    afast = area[:comp]
-    aslow = area[comp:]
-
-    # Number of misclassified.
-    enf = np.sum(afast * np.exp(-tcrit / tfast))
-    ens = np.sum(aslow * (1 - np.exp(-tcrit / tslow)))
-
-    # Fraction misclassified.
-    pf = enf / np.sum(afast)
-    ps = ens / np.sum(aslow)
-
-    return enf, ens, pf, ps
-
-@deprecated("Use '...'")
-def expPDF_misclassified_printout(tcrit, enf, ens, pf, ps):
-    """
-    """
-
-    return ('tcrit = {0:.5g} ms\n'.format(tcrit * 1000) +
-        '% misclassified: short = {0:.5g};'.format(pf * 100) +
-        ' long = {0:.5g}\n'.format(ps * 100) +
-        '# misclassified (out of 100): short = {0:.5g};'.format(enf * 100) +
-        ' long = {0:.5g}\n'.format(ens * 100) +
-        'Total # misclassified (out of 100) = {0:.5g}\n\n'
-        .format((enf + ens) * 100))
-
-@deprecated("Use '...'")
-def expPDF_tcrit_DC(tcrit, tau, area, comp):
-    """
-    """
-
-    enf, ens, pf, ps = expPDF_misclassified(tcrit, tau, area, comp)
-    return ps - pf
-
-@deprecated("Use '...'")
-def expPDF_tcrit_CN(tcrit, tau, area, comp):
-    """
-    """
-
-    enf, ens, pf, ps = expPDF_misclassified(tcrit, tau, area, comp)
-    return ens - enf
-
-@deprecated("Use '...'")
-def expPDF_tcrit_Jackson(tcrit, tau, area, comp):
-    """
-    """
-
-    tfast = tau[:comp]
-    tslow = tau[comp:]
-    afast = area[:comp]
-    aslow = area[comp:]
-
-    # Number of misclassified.
-    enf = np.sum((afast / tfast) * np.exp(-tcrit / tfast))
-    ens = np.sum((aslow / tslow) * np.exp(-tcrit / tslow))
-
-    return enf - ens
-

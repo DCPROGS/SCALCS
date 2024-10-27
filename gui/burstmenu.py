@@ -53,13 +53,13 @@ class BurstMenu(QMenu):
         q_burst = scburst.BurstDisplay(self.parent.mec)
         self.parent.log.write(q_burst.print_all)
 
-        t, fbrst, mfbrst = q_burst.calculate_burst_length_pdf(multicomp=True)
-        self.parent.present_plot = np.vstack((t*1000, fbrst, mfbrst))
+        t, fbrst = q_burst.calculate_burst_length_pdf(multicomp=True)
+        self.parent.present_plot = np.vstack((t*1000, fbrst))
         
         self.parent.canvas.axes.clear()
-        self.parent.canvas.axes.semilogx(t*1000, fbrst, 'b-')
-        for i in range(self.parent.mec.kE):
-            self.parent.canvas.axes.semilogx(t*1000, mfbrst[i], 'b--')
+        self.parent.canvas.axes.semilogx(t*1000, fbrst[0], 'b-')
+        for i in range(1, len(fbrst)):
+            self.parent.canvas.axes.semilogx(t*1000, fbrst[i], 'b--')
         self.parent.canvas.axes.set_yscale('sqrtscale')
         self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
         self.parent.canvas.axes.yaxis.set_ticks_position('left')
