@@ -121,7 +121,7 @@ def console_demo(demomec):
     q_matrix = QMatrixPrints(demomec.Q, demomec.kA, demomec.kB, demomec.kC, demomec.kD)
     sys.stdout.write(q_matrix.print_DC_table)
 
-    q_asymp = AsymptoticPDFPrints(demomec.Q, demomec.kA, demomec.kB, demomec.kC, demomec.kD, tres)
+    q_asymp = AsymptoticPDFPrints(demomec, tres) #.Q, demomec.kA, demomec.kB, demomec.kC, demomec.kD, tres)
     q_exact = ExactPDFPrints(demomec.Q, demomec.kA, demomec.kB, demomec.kC, demomec.kD, tres)
     sys.stdout.write(q_matrix.print_open_time_pdf)
     sys.stdout.write(q_asymp.print_asymptotic_open_time_pdf)

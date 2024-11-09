@@ -164,7 +164,7 @@ class AsymptoticPDFPrints(AsymptoticPDF):
     Inherits from AsymptoticPDF.
     """
 
-    def __init__(self, Q, kA=1, kB=1, kC=0, kD=0, tres=0.0):
+    def __init__(self, mec, tres=0.0): #Q, kA=1, kB=1, kC=0, kD=0, tres=0.0):
         """
         Initialize the AsymptoticPDFPrints class.
 
@@ -177,7 +177,7 @@ class AsymptoticPDFPrints(AsymptoticPDF):
         tres : float, optional
             Resolution time. Default is 0.0.
         """
-        super().__init__(Q, kA=kA, kB=kB, kC=kC, kD=kD, tres=tres)
+        super().__init__(mec, tres=tres) #Q, kA=kA, kB=kB, kC=kC, kD=kD, tres=tres)
 
     @property
     def print_all(self):

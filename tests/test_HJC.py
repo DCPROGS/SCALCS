@@ -12,7 +12,7 @@ class TestExactPDFCalculator(unittest.TestCase):
         self.mec.set_eff('c', 0.0000001) 
         tres = 0.0001 # 10 us
         self.calculator_exact = ExactPDFCalculator(self.mec.Q, self.mec.kA, self.mec.kB, self.mec.kC, self.mec.kD, tres=tres)
-        self.calculator_asymp = AsymptoticPDF(self.mec.Q, self.mec.kA, self.mec.kB, self.mec.kC, self.mec.kD, tres=tres)
+        self.calculator_asymp = AsymptoticPDF(self.mec, tres=tres) #self.mec.Q, self.mec.kA, self.mec.kB, self.mec.kC, self.mec.kD, tres=tres)
 
     def test_exact_open_time_pdf(self):
         # Expected open time results based on provided data

@@ -145,7 +145,8 @@ def open_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
     # Ideal pdf.
     eigs, w = scl.ideal_dwell_time_pdf_components(mec.QAA, qml.phiA(mec))
     fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
-    ipdf = t * pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
+    ipdf = t * pdfs.ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
+    
 
     # Asymptotic pdf
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kI)
@@ -273,7 +274,7 @@ def shut_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
     # Ideal pdf.
     eigs, w = scl.ideal_dwell_time_pdf_components(mec.QII, qml.phiF(mec))
     fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
-    ipdf = t * pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
+    ipdf = t * pdfs.ExpPDF(1 / eigs, w / eigs).calculate(t) *fac #pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
 
     # Asymptotic pdf
     GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kI)

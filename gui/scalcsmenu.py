@@ -238,7 +238,7 @@ class ScalcsMenu(QMenu):
 
         try:
             q_matrix = QMatrixPrints(self.parent.mec.Q, self.parent.mec.kA, self.parent.mec.kB, self.parent.mec.kC, self.parent.mec.kD)
-            q_asymp = AsymptoticPDFPrints(self.parent.mec.Q, self.parent.mec.kA, self.parent.mec.kB, self.parent.mec.kC, self.parent.mec.kD, self.parent.tres)
+            q_asymp = AsymptoticPDFPrints(self.parent.mec, self.parent.tres)
             q_exact = ExactPDFPrints(self.parent.mec.Q, self.parent.mec.kA, self.parent.mec.kB, self.parent.mec.kC, self.parent.mec.kD, self.parent.tres)
             #text = scl.printout_occupancies(self.parent.mec, self.parent.tres)
             self.parent.log.write(q_matrix.print_DC_table)
@@ -314,7 +314,7 @@ class ScalcsMenu(QMenu):
         self.parent.mec.set_eff('c', self.parent.conc)
         try:
             q_matrix = QMatrixPrints(self.parent.mec.Q, self.parent.mec.kA, self.parent.mec.kB, self.parent.mec.kC, self.parent.mec.kD)
-            q_asymp = AsymptoticPDFPrints(self.parent.mec.Q, self.parent.mec.kA, self.parent.mec.kB, self.parent.mec.kC, self.parent.mec.kD, self.parent.tres)
+            q_asymp = AsymptoticPDFPrints(self.parent.mec, self.parent.tres)
             q_exact = ExactPDFPrints(self.parent.mec.Q, self.parent.mec.kA, self.parent.mec.kB, self.parent.mec.kC, self.parent.mec.kD, self.parent.tres)
             self.parent.log.write(q_matrix.print_shut_time_pdf)
             self.parent.log.write(q_asymp.print_asymptotic_shut_time_pdf)

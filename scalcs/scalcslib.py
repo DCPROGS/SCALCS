@@ -18,8 +18,8 @@ class AsymptoticPDF(AsymptoticPDFCalculator):
     HJC models from the Q matrix.
     '''
 
-    def __init__(self, Q, kA=1, kB=1, kC=0, kD=0, tres=0.0):
-        super().__init__(Q, kA=kA, kB=kB, kC=kC, kD=kD, tres=tres)
+    def __init__(self, mec, tres=0.0): #Q, kA=1, kB=1, kC=0, kD=0, tres=0.0):
+        super().__init__(mec.Q, kA=mec.kA, kB=mec.kB, kC=mec.kC, kD=mec.kD, tres=tres)
         
     @property
     def apparentPopen(self):
@@ -307,7 +307,7 @@ def asymptotic_pdf(t, tres, tau, area):
     """
     t1 = np.extract(t[:] < tres, t)
     t2 = np.extract(t[:] >= tres, t)
-    apdf2 = t2 * pdfs.expPDF(t2 - tres, tau, area)
+    apdf2 = t2 * pdfs.ExpPDF(tau, area).calculate(t2 - tres)   #pdfs.expPDF(t2 - tres, tau, area)
     apdf = np.append(t1 * 0.0, apdf2)
 
     return apdf
@@ -354,7 +354,7 @@ def exact_pdf(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
         f = (qml.f0((t - tres), eigvals, gamma00) -
             qml.f1((t - 2 * tres), eigvals, gamma10, gamma11))
     else:
-        f = pdfs.expPDF(t - tres, -1 / roots, areas)
+        f = pdfs.ExpPDF(-1 / roots, areas).calculate(t-tres) #pdfs.expPDF(t - tres, -1 / roots, areas)
     return f
 
 def likelihood(theta, opts):
