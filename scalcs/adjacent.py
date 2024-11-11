@@ -1,18 +1,21 @@
+import math
 import numpy as np
 from numpy import linalg as nplin
+import matplotlib.pyplot as plt
 from tabulate import tabulate
 
+from scalcs import scalcslib as scl
 from samples import samples
 from scalcs.pdfs import ExpPDF
 from scalcs import qmatlib as qml
-from scalcs.qmatlib import HJCMatrix
+from scalcs.scalcslib import AsymptoticPDF
 
 
-class AdjacentPDF(HJCMatrix):
+class AdjacentPDF(AsymptoticPDF):
     """ Calculates adjecent pdf components. """
 
     def __init__(self, mec, tres=0.0):
-        super().__init__(mec.Q, kA=mec.kA, kB=mec.kB, kC=mec.kC, kD=mec.kD, tres=tres)
+        super().__init__(mec, tres=tres)
         self.uA = np.ones((self.kA))[:,np.newaxis]
         self.uF = np.ones((self.kF))[:,np.newaxis]
         self.phiAr = self.phiA.reshape(1, self.kA)
@@ -84,7 +87,7 @@ class AdjacentPDF(HJCMatrix):
         DARS = self.dARSdS()
         eigs, A = qml.eigenvalues_and_spectral_matrices(-self.Q)
         FZ00, FZ10, FZ11 = self.Zxx(open=False)
-        Froots = asymptotic_roots(self.tres, open=False)
+        Froots, Fareas = self.HJC_asymptotic_shut_time_pdf_components() #.asymptotic_roots(self.tres, open=False)
         FR = self.R(Froots, open=False)
         Q1 = DARS @ self.QAF @ self.expQFF
         col1 = Q1 @ self.uF
@@ -132,7 +135,7 @@ class AdjacentPDF(HJCMatrix):
                 dependency[i, j] = (fos - (fo * fs)) / (fo * fs)
         return dependency
     
-class AdjacentPDFPrints(AdjacentPDF):
+class AdjacentPDFDisplay(AdjacentPDF):
     """ Prints adjacent PDF. """
     def __init__(self, mec, tres=0.0):
         super().__init__(mec, tres=tres)
@@ -147,6 +150,214 @@ class AdjacentPDFPrints(AdjacentPDF):
         mean = self.adjacent_open_to_shut_range_mean(t1, t2) #     mec.QAA, mec.QAF, mec.QFF, mec.QFA, phiA)
         adjacent_str += ('Mean from direct calculation (ms) = {0:.6f}\n'.format(mean * 1000))
         return adjacent_str
+    
+    def plot_adjacent_open_time_pdf(self, tres, u1, u2, tmin=0.00001, tmax=1000, points=512):
+        """Generate and display ideal pdf of all open times and ideal pdf of open times adjacent to specified shut
+        time range.
+
+        Parameters
+        ----------
+        mec : instance of type Mechanism
+        tres : float
+            Time resolution.
+        tmin, tmax : floats
+            Time range for burst length ditribution.
+        points : int
+            Number of points per plot.
+        unit : str
+            'ms'- milliseconds.
+
+        Returns
+        -------
+        t : ndarray of floats, shape (num of points)
+            Time in millisec.
+        ipdf, ajpdf : ndarrays of floats, shape (num of points)
+            Ideal all and adjacent open time distributions.
+        """
+        
+        
+        # Ideal pdf.
+        eigs, w = self.ideal_open_time_pdf_components()
+        tmax = (1 / eigs.max()) * 100
+        t = np.logspace(math.log10(tmin), math.log10(tmax), points)
+        fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
+        ipdf = t * ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
+
+        # Ajacent open time pdf
+        eigs, w = self.adjacent_open_to_shut_range_pdf_components(u1, u2) 
+    #    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
+        apdf = t * ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
+        
+        # Create the plot
+        fig, ax = plt.subplots()
+        
+        # Plot the ideal open time PDF
+        ax.semilogx(t * 1000, ipdf, 'r--', label='Ideal open time PDF')
+        
+        # Plot adjacent open time PDF
+        ax.semilogx(t * 1000, apdf, 'b-', label='Adjacent open time PDF')
+
+        # Apply square-root transformation to the y-axis
+        #sqrt_transform = FuncTransform(lambda y: np.sqrt(y), lambda y: y**2)
+        #ax.set_yscale('function', functions=(sqrt_transform.transform, sqrt_transform.inverted))
+
+        # Labeling
+        ax.set_xlabel('Time (ms)')
+        ax.set_ylabel('PDF') # (sqrt scale)')
+        ax.set_title('Adjacent opent time PDF')
+        ax.legend()
+
+        plt.show()
+
+    def mean_open_next_shut(self, mec, tres, points=512):
+        """
+        Calculate plot of mean open time preceding/next-to shut time.
+
+        Parameters
+        ----------
+        mec : instance of type Mechanism
+        tres : float
+            Time resolution (dead time).
+
+        Returns
+        -------
+        sht : ndarray of floats, shape (num of points,)
+            Shut times.
+        mp : ndarray of floats, shape (num of points,)
+            Mean open time preceding shut time.
+        mn : ndarray of floats, shape (num of points,)
+            Mean open time next to shut time.
+        """
+        
+        Froots = scl.asymptotic_roots(tres,
+            mec.QII, mec.QAA, mec.QIA, mec.QAI, mec.kI, mec.kA)
+        tmax = (-1 / Froots.max()) * 5
+        sht = np.logspace(math.log10(tres), math.log10(tmax), points)
+        mp, mn = scl.HJC_adjacent_mean_open_to_shut_time_pdf(sht, tres, mec.Q, 
+            mec.QAA, mec.QAI, mec.QII, mec.QIA)
+            
+        # return in ms
+        return sht * 1000, mp * 1000, mn * 1000
+
+
+
+def mean_open_next_shut(mec, tres, points=512):
+    """
+    Calculate plot of mean open time preceding/next-to shut time.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution (dead time).
+
+    Returns
+    -------
+    sht : ndarray of floats, shape (num of points,)
+        Shut times.
+    mp : ndarray of floats, shape (num of points,)
+        Mean open time preceding shut time.
+    mn : ndarray of floats, shape (num of points,)
+        Mean open time next to shut time.
+    """
+    
+    Froots = scl.asymptotic_roots(tres,
+        mec.QII, mec.QAA, mec.QIA, mec.QAI, mec.kI, mec.kA)
+    tmax = (-1 / Froots.max()) * 5
+    sht = np.logspace(math.log10(tres), math.log10(tmax), points)
+    mp, mn = scl.HJC_adjacent_mean_open_to_shut_time_pdf(sht, tres, mec.Q, 
+        mec.QAA, mec.QAI, mec.QII, mec.QIA)
+        
+    # return in ms
+    return sht * 1000, mp * 1000, mn * 1000
+
+
+
+def adjacent_open_time_pdf(mec, tres, u1, u2, 
+    tmin=0.00001, tmax=1000, points=512, unit='ms'):
+    """
+    Calculate pdf's of ideal all open time and open time adjacent to specified shut
+    time range.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution.
+    tmin, tmax : floats
+        Time range for burst length ditribution.
+    points : int
+        Number of points per plot.
+    unit : str
+        'ms'- milliseconds.
+
+    Returns
+    -------
+    t : ndarray of floats, shape (num of points)
+        Time in millisec.
+    ipdf, ajpdf : ndarrays of floats, shape (num of points)
+        Ideal all and adjacent open time distributions.
+    """
+
+    # Ideal pdf.
+    eigs, w = scl.ideal_dwell_time_pdf_components(mec.QAA, qml.phiA(mec))
+    tmax = (1 / eigs.max()) * 100
+    t = np.logspace(math.log10(tmin), math.log10(tmax), points)
+    
+    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
+    ipdf = t * ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
+
+    # Ajacent open time pdf
+    eigs, w = scl.adjacent_open_to_shut_range_pdf_components(u1, u2, 
+        mec.QAA, mec.QAI, mec.QII, mec.QIA, qml.phiA(mec).reshape((1,mec.kA)))
+#    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
+    ajpdf = t * ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
+           
+    if unit == 'ms':
+        t = t * 1000 # x scale in millisec
+
+    return t, ipdf, ajpdf
+
+
+
+
+
+def dependency_plot(mec, tres, points=512):
+    """
+    Calculate 3D dependency plot.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution (dead time).
+
+    Returns
+    -------
+    top : ndarray of floats, shape (num of points,)
+        Open times.
+    tsh : ndarray of floats, shape (num of points,)
+        Shut times.
+    dependency : ndarray 
+        Mean open time next to shut time.
+    """
+    
+    Froots = scl.asymptotic_roots(tres,
+        mec.QII, mec.QAA, mec.QIA, mec.QAI, mec.kI, mec.kA)
+    tsmax = (-1 / Froots.max()) * 20
+    tsh = np.logspace(math.log10(tres), math.log10(tsmax), points)
+    
+    Aroots = scl.asymptotic_roots(tres,
+        mec.QAA, mec.QII, mec.QAI, mec.QIA, mec.kA, mec.kI)
+    tomax = (-1 / Aroots.max()) * 20
+    top = np.logspace(math.log10(tres), math.log10(tomax), points)
+    
+    dependency = scl.HJC_dependency(top, tsh, tres, mec.Q, 
+        mec.QAA, mec.QAI, mec.QII, mec.QIA)
+    
+    return np.log10(top*1000), np.log10(tsh*1000), dependency
+
+
 
 
 if __name__ == '__main__':
@@ -154,5 +365,8 @@ if __name__ == '__main__':
     mec.set_eff('c', 0.0000001) 
     tres = 0.0001 # 10 us
 
-    q_adjacent = AdjacentPDFPrints(mec, tres=tres)
-    print(q_adjacent.ideal_adjacent_dwells(0.0001, 0.001))
+    u1, u2 = 0.1e-3, 1e-3 # 1 ms, 10 ms
+
+    pdf_adjacent = AdjacentPDFDisplay(mec, tres=tres)
+    print(pdf_adjacent.ideal_adjacent_dwells(u1, u2))
+    pdf_adjacent.plot_adjacent_open_time_pdf(tres, u1, u2)

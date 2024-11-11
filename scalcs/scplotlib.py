@@ -8,71 +8,6 @@ from scalcs import pdfs
 from scalcs import cjumps
 
 
-def mean_open_next_shut(mec, tres, points=512):
-    """
-    Calculate plot of mean open time preceding/next-to shut time.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    tres : float
-        Time resolution (dead time).
-
-    Returns
-    -------
-    sht : ndarray of floats, shape (num of points,)
-        Shut times.
-    mp : ndarray of floats, shape (num of points,)
-        Mean open time preceding shut time.
-    mn : ndarray of floats, shape (num of points,)
-        Mean open time next to shut time.
-    """
-    
-    Froots = scl.asymptotic_roots(tres,
-        mec.QII, mec.QAA, mec.QIA, mec.QAI, mec.kI, mec.kA)
-    tmax = (-1 / Froots.max()) * 5
-    sht = np.logspace(math.log10(tres), math.log10(tmax), points)
-    mp, mn = scl.HJC_adjacent_mean_open_to_shut_time_pdf(sht, tres, mec.Q, 
-        mec.QAA, mec.QAI, mec.QII, mec.QIA)
-        
-    # return in ms
-    return sht * 1000, mp * 1000, mn * 1000
-
-def dependency_plot(mec, tres, points=512):
-    """
-    Calculate 3D dependency plot.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    tres : float
-        Time resolution (dead time).
-
-    Returns
-    -------
-    top : ndarray of floats, shape (num of points,)
-        Open times.
-    tsh : ndarray of floats, shape (num of points,)
-        Shut times.
-    dependency : ndarray 
-        Mean open time next to shut time.
-    """
-    
-    Froots = scl.asymptotic_roots(tres,
-        mec.QII, mec.QAA, mec.QIA, mec.QAI, mec.kI, mec.kA)
-    tsmax = (-1 / Froots.max()) * 20
-    tsh = np.logspace(math.log10(tres), math.log10(tsmax), points)
-    
-    Aroots = scl.asymptotic_roots(tres,
-        mec.QAA, mec.QII, mec.QAI, mec.QIA, mec.kA, mec.kI)
-    tomax = (-1 / Aroots.max()) * 20
-    top = np.logspace(math.log10(tres), math.log10(tomax), points)
-    
-    dependency = scl.HJC_dependency(top, tsh, tres, mec.Q, 
-        mec.QAA, mec.QAI, mec.QII, mec.QIA)
-    
-    return np.log10(top*1000), np.log10(tsh*1000), dependency
-
 
 def conc_jump_on_off_taus_versus_conc_plot(mec, cmin, cmax, width):
     """
@@ -168,50 +103,6 @@ def open_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
 
     return t, ipdf, epdf, apdf
 
-def adjacent_open_time_pdf(mec, tres, u1, u2, 
-    tmin=0.00001, tmax=1000, points=512, unit='ms'):
-    """
-    Calculate pdf's of ideal all open time and open time adjacent to specified shut
-    time range.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    tres : float
-        Time resolution.
-    tmin, tmax : floats
-        Time range for burst length ditribution.
-    points : int
-        Number of points per plot.
-    unit : str
-        'ms'- milliseconds.
-
-    Returns
-    -------
-    t : ndarray of floats, shape (num of points)
-        Time in millisec.
-    ipdf, ajpdf : ndarrays of floats, shape (num of points)
-        Ideal all and adjacent open time distributions.
-    """
-
-    # Ideal pdf.
-    eigs, w = scl.ideal_dwell_time_pdf_components(mec.QAA, qml.phiA(mec))
-    tmax = (1 / eigs.max()) * 100
-    t = np.logspace(math.log10(tmin), math.log10(tmax), points)
-    
-    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
-    ipdf = t * pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
-
-    # Ajacent open time pdf
-    eigs, w = scl.adjacent_open_to_shut_range_pdf_components(u1, u2, 
-        mec.QAA, mec.QAI, mec.QII, mec.QIA, qml.phiA(mec).reshape((1,mec.kA)))
-#    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
-    ajpdf = t * pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
-           
-    if unit == 'ms':
-        t = t * 1000 # x scale in millisec
-
-    return t, ipdf, ajpdf
 
 def scaled_pdf(t, pdf, dt, n):
     """

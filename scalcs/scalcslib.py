@@ -21,7 +21,7 @@ class AsymptoticPDF(AsymptoticPDFCalculator):
     HJC models from the Q matrix.
     '''
 
-    def __init__(self, mec, tres=0.0): #Q, kA=1, kB=1, kC=0, kD=0, tres=0.0):
+    def __init__(self, mec, tres=0.0): 
         super().__init__(mec.Q, kA=mec.kA, kB=mec.kB, kC=mec.kC, kD=mec.kD, tres=tres)
         
     @property
@@ -57,7 +57,7 @@ class AsymptoticPDF(AsymptoticPDFCalculator):
 
 
 class ExactPDFCalculator(HJCMatrix):
-    def __init__(self, Q, kA=1, kB=1, kC=0, kD=0, tres=0.0):
+    def __init__(self, mec, tres=0.0): #Q, kA=1, kB=1, kC=0, kD=0, tres=0.0):
         """
         Initialize the ExactPDFCalculator.
 
@@ -68,7 +68,7 @@ class ExactPDFCalculator(HJCMatrix):
         kA, kB, kC, kD : int, optional
             Dimensions of different state subspaces. Defaults are 1 for kA and kB, 0 for kC and kD.
         """
-        super().__init__(Q, kA=kA, kB=kB, kC=kC, kD=kD, tres=tres)
+        super().__init__(mec.Q, kA=mec.kA, kB=mec.kB, kC=mec.kC, kD=mec.kD, tres=tres)
    
     def exact_GAMAxx(self, open=True):
         """
@@ -164,9 +164,9 @@ class QMatrixPrints(QMatrix):
     and PDF components for open and shut times.
     """
 
-    def __init__(self, Q, kA=1, kB=1, kC=0, kD=0):
+    def __init__(self, mec):
         # Initialize the QMatrix superclass.
-        super().__init__(Q, kA=kA, kB=kB, kC=kC, kD=kD)
+        super().__init__(mec.Q, kA=mec.kA, kB=mec.kB, kC=mec.kC, kD=mec.kD)
 
     @property
     def print_Q(self):
@@ -376,7 +376,7 @@ class ExactPDFPrints(ExactPDFCalculator):
         kA, kB, kC, kD : int, optional
             Dimensions of different state subspaces. Defaults are 1 for kA and kB, 0 for kC and kD.
         """
-        super().__init__(mec.Q, kA=mec.kA, kB=mec.kB, kC=mec.kC, kD=mec.kD, tres=tres)
+        super().__init__(mec, tres=tres) #.Q, kA=mec.kA, kB=mec.kB, kC=mec.kC, kD=mec.kD, tres=tres)
 
     @property
     def open_time_pdf(self):
@@ -1410,8 +1410,7 @@ if __name__ == '__main__':
     mec.set_eff('c', 0.0000001) 
     tres = 0.0001 # 10 us
 
-    # Create an instances of the QMatrix, QOccupancies and QTransitions classes
-    q_matrix = QMatrixPrints(mec.Q, mec.kA, mec.kB, mec.kC, mec.kD)
+    q_matrix = QMatrixPrints(mec)
     print(q_matrix.print_Q)
     print(q_matrix.print_pinf) # print equilibrium state occupancies
     print(q_matrix.print_Popen)
@@ -1424,17 +1423,10 @@ if __name__ == '__main__':
     print(q_matrix.print_open_time_pdf)
     print(q_matrix.print_shut_time_pdf)
 
-    q_asymp = AsymptoticPDFPrints(mec, tres=0.0001)
+    q_asymp = AsymptoticPDFPrints(mec, tres=tres)
     print(q_asymp.print_all)
 
-    #q_dwells = HJCDwellsPrints(mec.Q, mec.kA, mec.kB, mec.kC, mec.kD)
-    #q_dwells.tres = 0.0001 # 10 us
-    #print(q_dwells.print_all)
-    #print(q_dwells.print_adjacent_dwells(q_dwells.tres, q_dwells.tres * 2))
-    #print(q_dwells.print_adjacent_dwells(q_dwells.tres, q_dwells.tres * 2))
-
-    q_exact = ExactPDFPrints(mec, tres=0.0001)
-    #q_exact.tres = 0.0001 # 10 us
+    q_exact = ExactPDFPrints(mec, tres=tres)
     print(q_exact.open_time_pdf)
     print(q_exact.shut_time_pdf)
 

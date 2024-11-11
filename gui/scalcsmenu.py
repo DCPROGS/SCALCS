@@ -13,7 +13,7 @@ from scalcs import scalcslib as scl
 from scalcs import popen
 from gui import myqtcommon
 
-from scalcs.scprint import QMatrixPrints, TCritPrints, ExactPDFPrints, AsymptoticPDFPrints
+from scalcs.adjacent import AdjacentPDFPrints
 from scalcs.sccorrelation import CorrelationDisplay
 
 class ScalcsMenu(QMenu):
@@ -133,7 +133,8 @@ class ScalcsMenu(QMenu):
         dialog = myqtcommon.ShutRangeDlg(self)
         if dialog.exec_():
             u1, u2 = dialog.return_par()
-        self.parent.log.write(scl.printout_adjacent(self.parent.mec, u1, u2))
+        pdf_adjacent = AdjacentPDFPrints(self.parent.mec, self.parent.tres)
+        self.parent.log.write(pdf_adjacent.ideal_adjacent_dwells(u1, u2))
         
         t, ipdf, ajpdf = scpl.adjacent_open_time_pdf(self.parent.mec, 
             self.parent.tres, u1, u2)
@@ -237,9 +238,9 @@ class ScalcsMenu(QMenu):
         self.parent.mec.set_eff('c', self.parent.conc)
 
         try:
-            q_matrix = QMatrixPrints(self.parent.mec.Q, self.parent.mec.kA, self.parent.mec.kB, self.parent.mec.kC, self.parent.mec.kD)
-            q_asymp = AsymptoticPDFPrints(self.parent.mec, self.parent.tres)
-            q_exact = ExactPDFPrints(self.parent.mec.Q, self.parent.mec.kA, self.parent.mec.kB, self.parent.mec.kC, self.parent.mec.kD, self.parent.tres)
+            q_matrix = scl.QMatrixPrints(self.parent.mec) 
+            q_asymp = scl.AsymptoticPDFPrints(self.parent.mec, self.parent.tres)
+            q_exact = scl.ExactPDFPrints(self.parent.mec, self.parent.tres)
             #text = scl.printout_occupancies(self.parent.mec, self.parent.tres)
             self.parent.log.write(q_matrix.print_DC_table)
             #text = scl.printout_distributions(self.parent.mec, self.parent.tres)
@@ -313,13 +314,13 @@ class ScalcsMenu(QMenu):
 
         self.parent.mec.set_eff('c', self.parent.conc)
         try:
-            q_matrix = QMatrixPrints(self.parent.mec.Q, self.parent.mec.kA, self.parent.mec.kB, self.parent.mec.kC, self.parent.mec.kD)
-            q_asymp = AsymptoticPDFPrints(self.parent.mec, self.parent.tres)
-            q_exact = ExactPDFPrints(self.parent.mec.Q, self.parent.mec.kA, self.parent.mec.kB, self.parent.mec.kC, self.parent.mec.kD, self.parent.tres)
+            q_matrix = scl.QMatrixPrints(self.parent.mec)
+            q_asymp = scl.AsymptoticPDFPrints(self.parent.mec, self.parent.tres)
+            q_exact = scl.ExactPDFPrints(self.parent.mec, self.parent.tres)
             self.parent.log.write(q_matrix.print_shut_time_pdf)
             self.parent.log.write(q_asymp.print_asymptotic_shut_time_pdf)
             self.parent.log.write(q_exact.shut_time_pdf)
-            tcrits = TCritPrints(self.parent.mec)
+            tcrits = scl.TCritPrints(self.parent.mec)
             self.parent.log.write(tcrits.print_all)
         except:
             sys.stderr.write("main: Warning: unable to prepare printout.")

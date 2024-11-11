@@ -17,7 +17,7 @@ from samples import samples
 from scalcs import version
 from scalcs import scplotlib as scpl
 from scalcs import popen, scburst
-from scalcs.scprint import QMatrixPrints, TCritPrints, ExactPDFPrints, AsymptoticPDFPrints
+from scalcs.scalcslib import QMatrixPrints, TCritPrints, ExactPDFPrints, AsymptoticPDFPrints
 
 def create_parser():
     parser = argparse.ArgumentParser(
@@ -118,11 +118,11 @@ def console_demo(demomec):
 
     #     OPEN TIME DISTRIBUTION
     sys.stdout.write('\n\nCalculating open and shut time distributions:')
-    q_matrix = QMatrixPrints(demomec.Q, demomec.kA, demomec.kB, demomec.kC, demomec.kD)
+    q_matrix = QMatrixPrints(demomec) 
     sys.stdout.write(q_matrix.print_DC_table)
 
-    q_asymp = AsymptoticPDFPrints(demomec, tres) #.Q, demomec.kA, demomec.kB, demomec.kC, demomec.kD, tres)
-    q_exact = ExactPDFPrints(demomec.Q, demomec.kA, demomec.kB, demomec.kC, demomec.kD, tres)
+    q_asymp = AsymptoticPDFPrints(demomec, tres)
+    q_exact = ExactPDFPrints(demomec, tres)
     sys.stdout.write(q_matrix.print_open_time_pdf)
     sys.stdout.write(q_asymp.print_asymptotic_open_time_pdf)
     sys.stdout.write(q_exact.open_time_pdf)
