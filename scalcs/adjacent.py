@@ -22,8 +22,10 @@ class AdjacentPDF(AsymptoticPDF):
         self.phiAr = self.phiA.reshape(1, self.kA)
         self.invQAA, self.invQFF = -nplin.inv(self.QAA), nplin.inv(self.QFF)
         self.Froots = -self.asymptotic_roots(open=False)
+        self.Aroots = -self.asymptotic_roots(open=True)
         self.exact = ExactPDFCalculator(mec, tres)
         self.Feigs, self.FZ00, self.FZ10, self.FZ11 = self.exact.Zxx(open=False)
+        self.Aeigs, self.AZ00, self.AZ10, self.AZ11 = self.exact.Zxx(open=True)
 
 
     def adjacent_open_to_shut_range_mean(self, u1, u2):
@@ -70,7 +72,6 @@ class AdjacentPDF(AsymptoticPDF):
             w[i] = (self.phiA @ A[i] @ col)[0] / den
         return eigs, w
 
-    #TODO: recview next two functions
     def HJC_adjacent_mean_open_to_shut_time_pdf(self, sht): #, tres): 
         """
         Calculate theoretical HJC (with missed events correction) mean open time
@@ -117,30 +118,31 @@ class AdjacentPDF(AsymptoticPDF):
         ----------
         top, tsh : array_like of floats
             Open and shut tims.
+        tres : float
+            Time resolution.
 
         Returns
         -------
         dependency : ndarray
         """
         
-        eigs, A = qml.eigenvalues_and_spectral_matrices(-self.Q)
-        FZ00, FZ10, FZ11 = self.Zxx(open=False)
-        Froots = self.asymptotic_roots(open=False)
-        FR = self.R(Froots, open=False) 
-        AZ00, AZ10, AZ11 = self.Zxx(open=True)
-        Aroots = self.asymptotic_roots(open=True)
-        AR = self.R(Aroots, open=True)
-
+        FR = self.R(self.Froots, open=False)
+        AR = self.R(self.Aroots, open=True)
         dependency = np.zeros((top.shape[0], tsh.shape[0]))
+        
         for i in range(top.shape[0]):
-            eGAFt = qml.eGAF(top[i], self.tres, eigs, AZ00, AZ10, AZ11, Aroots, AR, self.QAF, self.expQFF)
+            eGAFt = qml.eGAF(top[i], self.tres, self.Aeigs, self.AZ00, self.AZ10, self.AZ11, self.Aroots,
+                    AR, self.QAF, self.expQFF)
             fo = (self.HJCphiA @ eGAFt @ self.uF)[0]
+            
             for j in range(tsh.shape[0]):
-                eGFAt = qml.eGAF(tsh[j], self.tres, eigs, FZ00, FZ10, FZ11, Froots, FR, self.QFA, self.expQAA)
+                eGFAt = qml.eGAF(tsh[j], self.tres, self.Feigs, self.FZ00, self.FZ10, self.FZ11, self.Froots,
+                    FR, self.QFA, self.expQAA)
                 fs = (self.HJCphiF @ eGFAt @ self.uA)[0]
                 fos = (self.HJCphiA @ eGAFt @ eGFAt @ self.uA)[0]
                 dependency[i, j] = (fos - (fo * fs)) / (fo * fs)
         return dependency
+
     
 class AdjacentPDFDisplay(AdjacentPDF):
     """ Prints adjacent PDF. """
@@ -234,9 +236,36 @@ class AdjacentPDFDisplay(AdjacentPDF):
         ax.legend()
         plt.show()
 
+    def calculate_dependency(self, points=512):
+        """
+        Calculate 3D dependency plot.
+
+        Parameters
+        ----------
+        mec : instance of type Mechanism
+        tres : float
+            Time resolution (dead time).
+
+        Returns
+        -------
+        top : ndarray of floats, shape (num of points,)
+            Open times.
+        tsh : ndarray of floats, shape (num of points,)
+            Shut times.
+        dependency : ndarray 
+            Mean open time next to shut time.
+        """
+        
+        tsmax = (-1 / self.Froots.max()) * 20
+        tsh = np.logspace(math.log10(self.tres), math.log10(tsmax), points)
+        tomax = (-1 / self.Aroots.max()) * 20
+        top = np.logspace(math.log10(self.tres), math.log10(tomax), points)
+        dependency = self.HJC_dependency(top, tsh)
+        return np.log10(top*1000), np.log10(tsh*1000), dependency
+
     def plot_dependency(self):
 
-        to, ts, d = dependency_plot(self.mec, self.tres, points=128)
+        to, ts, d = self.calculate_dependency(points=128)
         fig = plt.figure()
         fig.suptitle('Dependency plot', fontsize=12)
         ax = fig.add_subplot(projection = '3d')
@@ -245,101 +274,6 @@ class AdjacentPDFDisplay(AdjacentPDF):
             linewidth=0, antialiased=False)
         ax.set_zlim(-1.0, 1.0)
         plt.show()
-
-
-
-@deprecated("Use '...'")
-def HJC_dependency(top, tsh, tres, Q, QAA, QAF, QFF, QFA):
-    """
-    Calculate normalised joint distribution (CHS96, Eq. 3.22) of an open time
-    and the following shut time as proposed by Magleby & Song 1992. 
-    
-    Parameters
-    ----------
-    top, tsh : array_like of floats
-        Open and shut tims.
-    tres : float
-        Time resolution.
-    Q : array, shape (k,k)
-        Q matrix. 
-    QAA, QAF, QFF, QFA : array_like
-        Submatrices of Q.
-
-    Returns
-    -------
-    dependency : ndarray
-    """
-    
-    kA, kF = QAA.shape[0], QFF.shape[0]
-    uA = np.ones((kA))[:,np.newaxis]
-    uF = np.ones((kF))[:,np.newaxis]
-    expQFF = qml.expQ(QFF, tres)
-    expQAA = qml.expQ(QAA, tres)
-    GAF, GFA = qml.iGs(Q, kA, kF)
-    eGAF = qml.eGs(GAF, GFA, kA, kF, expQFF)
-    eGFA = qml.eGs(GFA, GAF, kF, kA, expQAA)
-    phiA = qml.phiHJC(eGAF, eGFA, kA)
-    phiF = qml.phiHJC(eGFA, eGAF, kF)
-    eigs, A = qml.eigenvalues_and_spectral_matrices(-Q)
-    FZ00, FZ10, FZ11 = qml.Zxx(Q, eigs, A, kA, QAA, QFA, QAF, expQAA, False)
-    Froots = scl.asymptotic_roots(tres, QFF, QAA, QFA, QAF, kF, kA)
-    FR = qml.AR(Froots, tres, QFF, QAA, QFA, QAF, kF, kA)
-    AZ00, AZ10, AZ11 = qml.Zxx(Q, eigs, A, kA, QFF, QAF, QFA, expQFF, True)
-    Aroots = scl.asymptotic_roots(tres, QAA, QFF, QAF, QFA, kA, kF)
-    AR = qml.AR(Aroots, tres, QAA, QFF, QAF, QFA, kA, kF)
-
-    dependency = np.zeros((top.shape[0], tsh.shape[0]))
-    
-    for i in range(top.shape[0]):
-        eGAFt = qml.eGAF(top[i], tres, eigs, AZ00, AZ10, AZ11, Aroots,
-                AR, QAF, expQFF)
-        fo = np.dot(np.dot(phiA, eGAFt), uF)[0]
-        
-        for j in range(tsh.shape[0]):
-            eGFAt = qml.eGAF(tsh[j], tres, eigs, FZ00, FZ10, FZ11, Froots,
-                FR, QFA, expQAA)
-            fs = np.dot(np.dot(phiF, eGFAt), uA)[0]
-            fos = np.dot(np.dot(np.dot(phiA, eGAFt), eGFAt), uA)[0]
-            dependency[i, j] = (fos - (fo * fs)) / (fo * fs)
-    return dependency
-
-
-def dependency_plot(mec, tres, points=512):
-    """
-    Calculate 3D dependency plot.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    tres : float
-        Time resolution (dead time).
-
-    Returns
-    -------
-    top : ndarray of floats, shape (num of points,)
-        Open times.
-    tsh : ndarray of floats, shape (num of points,)
-        Shut times.
-    dependency : ndarray 
-        Mean open time next to shut time.
-    """
-    
-    Froots = scl.asymptotic_roots(tres,
-        mec.QII, mec.QAA, mec.QIA, mec.QAI, mec.kI, mec.kA)
-    tsmax = (-1 / Froots.max()) * 20
-    tsh = np.logspace(math.log10(tres), math.log10(tsmax), points)
-    
-    Aroots = scl.asymptotic_roots(tres,
-        mec.QAA, mec.QII, mec.QAI, mec.QIA, mec.kA, mec.kI)
-    tomax = (-1 / Aroots.max()) * 20
-    top = np.logspace(math.log10(tres), math.log10(tomax), points)
-    
-    dependency = scl.HJC_dependency(top, tsh, tres, mec.Q, 
-        mec.QAA, mec.QAI, mec.QII, mec.QIA)
-    
-    return np.log10(top*1000), np.log10(tsh*1000), dependency
-
-
 
 
 if __name__ == '__main__':
