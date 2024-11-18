@@ -2,14 +2,14 @@ import math
 import numpy as np
 from numpy import linalg as nplin
 import matplotlib.pyplot as plt
-from tabulate import tabulate
+from matplotlib import cm
 from deprecated import deprecated
 
 from scalcs import scalcslib as scl
 from samples import samples
 from scalcs.pdfs import ExpPDF
 from scalcs import qmatlib as qml
-from scalcs.scalcslib import AsymptoticPDF
+from scalcs.scalcslib import AsymptoticPDF, ExactPDFCalculator
 
 
 class AdjacentPDF(AsymptoticPDF):
@@ -22,6 +22,8 @@ class AdjacentPDF(AsymptoticPDF):
         self.phiAr = self.phiA.reshape(1, self.kA)
         self.invQAA, self.invQFF = -nplin.inv(self.QAA), nplin.inv(self.QFF)
         self.Froots = -self.asymptotic_roots(open=False)
+        self.exact = ExactPDFCalculator(mec, tres)
+        self.Feigs, self.FZ00, self.FZ10, self.FZ11 = self.exact.Zxx(open=False)
 
 
     def adjacent_open_to_shut_range_mean(self, u1, u2):
@@ -69,7 +71,7 @@ class AdjacentPDF(AsymptoticPDF):
         return eigs, w
 
     #TODO: recview next two functions
-    def HJC_adjacent_mean_open_to_shut_time_pdf(self, sht, tres): #, Q, QAA, QAF, QFF, QFA):
+    def HJC_adjacent_mean_open_to_shut_time_pdf(self, sht): #, tres): 
         """
         Calculate theoretical HJC (with missed events correction) mean open time
         given previous/next gap length (continuous function; CHS96 Eq.3.5). 
@@ -80,10 +82,6 @@ class AdjacentPDF(AsymptoticPDF):
             Shut time interval.
         tres : float
             Time resolution.
-        Q : array, shape (k,k)
-            Q matrix.
-        QAA, QAF, QFF, QFA : array_like
-            Submatrices of Q.
 
         Returns
         -------
@@ -93,23 +91,18 @@ class AdjacentPDF(AsymptoticPDF):
             Mean open time given next gap length.
         """
         
-        DARS = qml.dARSdS(tres, self.QAA, self.QFF, self.GAF, self.GFA, self.expQFF, self.kA, self.kF)
-        eigs, A = qml.eigenvalues_and_spectral_matrices(-self.Q)
-        FZ00, FZ10, FZ11 = qml.Zxx(self.Q, eigs, A, self.kA, self.QAA, self.QFA, self.QAF, self.expQAA, False)
+        FR = self.R(self.Froots, open=False)
+        Q1 = self.dARSdS @ self.QAF @ self.expQFF
+        col1 = Q1 @ self.uF
+        row1 = self.HJCphiA @ Q1
         
-        FR = qml.AR(self.Froots, tres, self.QFF, self.QAA, self.QFA, self.QAF, self.kF, self.kA)
-        Q1 = np.dot(np.dot(DARS, self.QAF), self.expQFF)
-        col1 = np.dot(Q1, self.uF)
-        row1 = np.dot(self.HJCphiA, Q1)
-        
-        mp = []
-        mn = []
+        mp, mn = [], []
         for t in sht:
-            eGFAt = qml.eGAF(t, tres, eigs, FZ00, FZ10, FZ11, self.Froots,
+            eGFAt = qml.eGAF(t, self.tres, self.Feigs, self.FZ00, self.FZ10, self.FZ11, self.Froots,
                         FR, self.QFA, self.expQAA)
-            denom = np.dot(np.dot(self.HJCphiF, eGFAt), self.uA)[0]
-            nom1 = np.dot(np.dot(self.HJCphiF, eGFAt), col1)[0]
-            nom2 = np.dot(np.dot(row1, eGFAt), self.uA)[0]
+            denom = (self.HJCphiF @ eGFAt @ self.uA)[0]
+            nom1 = (self.HJCphiF @ eGFAt @ col1)[0]
+            nom2 = (row1 @ eGFAt @ self.uA)[0]
             mp.append(nom1 / denom)
             mn.append(nom2 / denom)
         
@@ -194,13 +187,8 @@ class AdjacentPDFDisplay(AdjacentPDF):
     #    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
         apdf = t * ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
         
-        # Create the plot
         fig, ax = plt.subplots()
-        
-        # Plot the ideal open time PDF
         ax.semilogx(t * 1000, ipdf, 'r--', label='Ideal open time PDF')
-        
-        # Plot adjacent open time PDF
         ax.semilogx(t * 1000, apdf, 'b-', label='Adjacent open time PDF')
 
         # Apply square-root transformation to the y-axis
@@ -212,18 +200,11 @@ class AdjacentPDFDisplay(AdjacentPDF):
         ax.set_ylabel('PDF') # (sqrt scale)')
         ax.set_title('Adjacent opent time PDF')
         ax.legend()
-
         plt.show()
 
-    def calculate_mean_open_next_to_shut(self): #, mec, tres, points=512):
+    def calculate_mean_open_next_to_shut(self):
         """
         Calculate plot of mean open time preceding/next-to shut time.
-
-        Parameters
-        ----------
-        mec : instance of type Mechanism
-        tres : float
-            Time resolution (dead time).
 
         Returns
         -------
@@ -236,20 +217,34 @@ class AdjacentPDFDisplay(AdjacentPDF):
         """
         
         points=512
-
         tmax = (-1 / self.Froots.max()) * 5
-        sht = np.logspace(math.log10(tres), math.log10(tmax), points)
-        mp, mn = self.HJC_adjacent_mean_open_to_shut_time_pdf(sht, self.tres)
-            
-        # return in ms
-        return sht * 1000, mp * 1000, mn * 1000
+        sht = np.logspace(math.log10(self.tres), math.log10(tmax), points)
+        mp, mn = self.HJC_adjacent_mean_open_to_shut_time_pdf(sht)
+        return sht, mp, mn
 
     def plot_mean_open_next_to_shut(self):
         sht, mp, mn = self.calculate_mean_open_next_to_shut()
-        plt.semilogx(sht, mp, 'r--', sht, mn, 'b--')
+        
+        fig, ax = plt.subplots()
+        ax.semilogx(sht * 1000, mp * 1000, 'r--', label='Mean open time preceding specified shut time')
+        ax.semilogx(sht * 1000, mn * 1000, 'b--', label='Mean open time next to specified shut time')
+        ax.set_xlabel('Shut time (ms)')
+        ax.set_ylabel('Mean open time (ms)') # (sqrt scale)')
+        ax.set_title('Mean open time adjacent to shut time')
+        ax.legend()
         plt.show()
-        print('Mean open time preceding specified shut time- red dashed line.\n' +
-        'Mean open time next to specified shut time- blue dashed line.')
+
+    def plot_dependency(self):
+
+        to, ts, d = dependency_plot(self.mec, self.tres, points=128)
+        fig = plt.figure()
+        fig.suptitle('Dependency plot', fontsize=12)
+        ax = fig.add_subplot(projection = '3d')
+        to, ts = np.meshgrid(to, ts)
+        ax.plot_surface(to, ts, d, rstride=1, cstride=1, cmap=cm.coolwarm,
+            linewidth=0, antialiased=False)
+        ax.set_zlim(-1.0, 1.0)
+        plt.show()
 
 
 
@@ -308,64 +303,6 @@ def HJC_dependency(top, tsh, tres, Q, QAA, QAF, QFF, QFA):
             dependency[i, j] = (fos - (fo * fs)) / (fo * fs)
     return dependency
 
-@deprecated("Use '...'")
-def HJC_adjacent_mean_open_to_shut_time_pdf(sht, tres, Q, QAA, QAF, QFF, QFA):
-    """
-    Calculate theoretical HJC (with missed events correction) mean open time
-    given previous/next gap length (continuous function; CHS96 Eq.3.5). 
-
-    Parameters
-    ----------
-    sht : array of floats
-        Shut time interval.
-    tres : float
-        Time resolution.
-    Q : array, shape (k,k)
-        Q matrix.
-    QAA, QAF, QFF, QFA : array_like
-        Submatrices of Q.
-
-    Returns
-    -------
-    mp : ndarray of floats
-        Mean open time given previous gap length.
-    mn : ndarray of floats
-        Mean open time given next gap length.
-    """
-    
-    kA, kF = QAA.shape[0], QFF.shape[0]
-    uA = np.ones((kA))[:,np.newaxis]
-    uF = np.ones((kF))[:,np.newaxis]
-    expQFF = qml.expQ(QFF, tres)
-    expQAA = qml.expQ(QAA, tres)
-    GAF, GFA = qml.iGs(Q, kA, kF)
-    eGAF = qml.eGs(GAF, GFA, kA, kF, expQFF)
-    eGFA = qml.eGs(GFA, GAF, kF, kA, expQAA)
-    phiA = qml.phiHJC(eGAF, eGFA, kA)
-    phiF = qml.phiHJC(eGFA, eGAF, kF)
-    DARS = qml.dARSdS(tres, QAA, QFF, GAF, GFA, expQFF, kA, kF)
-    eigs, A = qml.eigenvalues_and_spectral_matrices(-Q)
-    FZ00, FZ10, FZ11 = qml.Zxx(Q, eigs, A, kA, QAA, QFA, QAF, expQAA, False)
-    Froots = scl.asymptotic_roots(tres, QFF, QAA, QFA, QAF, kF, kA)
-    FR = qml.AR(Froots, tres, QFF, QAA, QFA, QAF, kF, kA)
-    Q1 = np.dot(np.dot(DARS, QAF), expQFF)
-    col1 = np.dot(Q1, uF)
-    row1 = np.dot(phiA, Q1)
-    
-    mp = []
-    mn = []
-    for t in sht:
-        eGFAt = qml.eGAF(t, tres, eigs, FZ00, FZ10, FZ11, Froots,
-                    FR, QFA, expQAA)
-        denom = np.dot(np.dot(phiF, eGFAt), uA)[0]
-        nom1 = np.dot(np.dot(phiF, eGFAt), col1)[0]
-        nom2 = np.dot(np.dot(row1, eGFAt), uA)[0]
-        mp.append(nom1 / denom)
-        mn.append(nom2 / denom)
-    
-    return np.array(mp), np.array(mn)
-
-
 
 def dependency_plot(mec, tres, points=512):
     """
@@ -411,15 +348,11 @@ if __name__ == '__main__':
     tres = 0.0001 # 10 us
 
     u1, u2 = 0.1e-3, 1e-3 # 1 ms, 10 ms
-
     pdf_adjacent = AdjacentPDFDisplay(mec, tres=tres)
     print(pdf_adjacent.ideal_adjacent_dwells(u1, u2))
-    pdf_adjacent.plot_adjacent_open_time_pdf(tres, u1, u2)
+    #pdf_adjacent.plot_adjacent_open_time_pdf(tres, u1, u2)
+    #pdf_adjacent.plot_mean_open_next_to_shut()
+    pdf_adjacent.plot_dependency()
 
-    pdf_adjacent.plot_mean_open_next_to_shut()
-
-#    sht, mp, mn = mean_open_next_shut(mec, tres)
-#    plt.semilogx(sht, mp, 'r--', sht, mn, 'b--')
-#    plt.show()
-#    print('Mean open time preceding specified shut time- red dashed line.\n' +
-#    'Mean open time next to specified shut time- blue dashed line.')
+    
+    

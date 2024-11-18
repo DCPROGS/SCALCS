@@ -57,7 +57,7 @@ class AsymptoticPDF(AsymptoticPDFCalculator):
 
 
 class ExactPDFCalculator(HJCMatrix):
-    def __init__(self, mec, tres=0.0): #Q, kA=1, kB=1, kC=0, kD=0, tres=0.0):
+    def __init__(self, mec, tres=0.0):
         """
         Initialize the ExactPDFCalculator.
 
