@@ -3,9 +3,7 @@ import numpy as np
 from numpy import linalg as nplin
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from deprecated import deprecated
 
-from scalcs import scalcslib as scl
 from samples import samples
 from scalcs.pdfs import ExpPDF
 from scalcs import qmatlib as qml
@@ -13,12 +11,11 @@ from scalcs.scalcslib import AsymptoticPDF, ExactPDFCalculator
 
 
 class AdjacentPDF(AsymptoticPDF):
-    """ Calculates adjecent pdf components. """
+    """Calculates adjacent PDF components."""
+
 
     def __init__(self, mec, tres=0.0):
         super().__init__(mec, tres=tres)
-        self.uA = np.ones((self.kA))[:,np.newaxis]
-        self.uF = np.ones((self.kF))[:,np.newaxis]
         self.phiAr = self.phiA.reshape(1, self.kA)
         self.invQAA, self.invQFF = -nplin.inv(self.QAA), nplin.inv(self.QFF)
         self.Froots = -self.asymptotic_roots(open=False)
@@ -160,7 +157,22 @@ class AdjacentPDFDisplay(AdjacentPDF):
         adjacent_str += ('Mean from direct calculation (ms) = {0:.6f}\n'.format(mean * 1000))
         return adjacent_str
     
-    def plot_adjacent_open_time_pdf(self, tres, u1, u2, tmin=0.00001, tmax=1000, points=512):
+    def calculate_adjacent_open_time_pdf(self, u1, u2, tmin=0.00001, tmax=1000, points=512):
+        # Ideal pdf.
+        eigs, w = self.ideal_open_time_pdf_components()
+        tmax = (1 / eigs.max()) * 100
+        t = np.logspace(math.log10(tmin), math.log10(tmax), points)
+        fac = 1 / np.sum((w / eigs) * np.exp(-self.tres * eigs)) # Scale factor
+        ipdf = t * ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
+
+        # Ajacent open time pdf
+        eigs, w = self.adjacent_open_to_shut_range_pdf_components(u1, u2) 
+    #    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
+        apdf = t * ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
+        return t, ipdf, apdf
+
+
+    def plot_adjacent_open_time_pdf(self, u1, u2, tmin=0.00001, tmax=1000, points=512):
         """Generate and display ideal pdf of all open times and ideal pdf of open times adjacent to specified shut
         time range.
 
@@ -175,19 +187,8 @@ class AdjacentPDFDisplay(AdjacentPDF):
         points : int
             Number of points per plot.
         """
-        
-        
-        # Ideal pdf.
-        eigs, w = self.ideal_open_time_pdf_components()
-        tmax = (1 / eigs.max()) * 100
-        t = np.logspace(math.log10(tmin), math.log10(tmax), points)
-        fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
-        ipdf = t * ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
-
-        # Ajacent open time pdf
-        eigs, w = self.adjacent_open_to_shut_range_pdf_components(u1, u2) 
-    #    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
-        apdf = t * ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
+                
+        t, ipdf, apdf = self.calculate_adjacent_open_time_pdf(u1, u2, tmin=0.00001, tmax=1000, points=512)
         
         fig, ax = plt.subplots()
         ax.semilogx(t * 1000, ipdf, 'r--', label='Ideal open time PDF')
@@ -197,7 +198,6 @@ class AdjacentPDFDisplay(AdjacentPDF):
         #sqrt_transform = FuncTransform(lambda y: np.sqrt(y), lambda y: y**2)
         #ax.set_yscale('function', functions=(sqrt_transform.transform, sqrt_transform.inverted))
 
-        # Labeling
         ax.set_xlabel('Time (ms)')
         ax.set_ylabel('PDF') # (sqrt scale)')
         ax.set_title('Adjacent opent time PDF')
@@ -240,11 +240,6 @@ class AdjacentPDFDisplay(AdjacentPDF):
         """
         Calculate 3D dependency plot.
 
-        Parameters
-        ----------
-        mec : instance of type Mechanism
-        tres : float
-            Time resolution (dead time).
 
         Returns
         -------
@@ -284,8 +279,8 @@ if __name__ == '__main__':
     u1, u2 = 0.1e-3, 1e-3 # 1 ms, 10 ms
     pdf_adjacent = AdjacentPDFDisplay(mec, tres=tres)
     print(pdf_adjacent.ideal_adjacent_dwells(u1, u2))
-    #pdf_adjacent.plot_adjacent_open_time_pdf(tres, u1, u2)
-    #pdf_adjacent.plot_mean_open_next_to_shut()
+    pdf_adjacent.plot_adjacent_open_time_pdf(u1, u2)
+    pdf_adjacent.plot_mean_open_next_to_shut()
     pdf_adjacent.plot_dependency()
 
     

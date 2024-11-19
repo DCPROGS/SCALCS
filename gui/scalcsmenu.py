@@ -2,6 +2,7 @@ import sys
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import cm
 try:
     from PyQt5.QtWidgets import *
     from PyQt5.QtCore import *
@@ -13,7 +14,7 @@ from scalcs import scalcslib as scl
 from scalcs import popen
 from gui import myqtcommon
 
-from scalcs.adjacent import AdjacentPDFPrints
+from scalcs.adjacent import AdjacentPDFDisplay
 from scalcs.sccorrelation import CorrelationDisplay
 
 class ScalcsMenu(QMenu):
@@ -48,7 +49,7 @@ class ScalcsMenu(QMenu):
         self.addActions([plotOpenTimePDFAction, plotShutTimePDFAction,
             plotAdjacentOpenShutAction, plotMeanOpenNextShutAction, 
             plotCorrOpenShutAction, 
-#            plotDependencyAction,
+            plotDependencyAction,
 #            plotSubsetTimePDFAction.setDisabled(True),
             plotPopenAction])
 #        self.insertSeparator(plotPopenAction)
@@ -133,15 +134,14 @@ class ScalcsMenu(QMenu):
         dialog = myqtcommon.ShutRangeDlg(self)
         if dialog.exec_():
             u1, u2 = dialog.return_par()
-        pdf_adjacent = AdjacentPDFPrints(self.parent.mec, self.parent.tres)
+        pdf_adjacent = AdjacentPDFDisplay(self.parent.mec, self.parent.tres)
         self.parent.log.write(pdf_adjacent.ideal_adjacent_dwells(u1, u2))
         
-        t, ipdf, ajpdf = scpl.adjacent_open_time_pdf(self.parent.mec, 
-            self.parent.tres, u1, u2)
+        t, ipdf, ajpdf = pdf_adjacent.calculate_adjacent_open_time_pdf(u1, u2)
         self.parent.present_plot = np.vstack((t, ipdf, ajpdf))
 
         self.parent.canvas.axes.clear()
-        self.parent.canvas.axes.semilogx(t, ipdf, 'r--', t, ajpdf, 'b-')
+        self.parent.canvas.axes.semilogx(t*1000, ipdf, 'r--', t*1000, ajpdf, 'b-')
         self.parent.canvas.axes.set_yscale('sqrtscale')
         self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
         self.parent.canvas.axes.yaxis.set_ticks_position('left')
@@ -163,11 +163,12 @@ class ScalcsMenu(QMenu):
         self.parent.txtPltBox.append(str)
 
         self.parent.mec.set_eff('c', self.parent.conc)
-        sht, mp, mn = scpl.mean_open_next_shut(self.parent.mec, self.parent.tres)
+        pdf_adjacent = AdjacentPDFDisplay(self.parent.mec, self.parent.tres)
+        sht, mp, mn = pdf_adjacent.calculate_mean_open_next_to_shut()
         self.parent.present_plot = np.vstack((sht, mp, mn))
 
         self.parent.canvas.axes.clear()
-        self.parent.canvas.axes.semilogx(sht, mp, 'r--', sht, mn, 'b--')
+        self.parent.canvas.axes.semilogx(sht*1000, mp*1000, 'r--', sht*1000, mn*1000, 'b--')
 #        self.axes.set_ylim(bottom=0)
         self.parent.canvas.axes.xaxis.set_ticks_position('bottom')
         self.parent.canvas.axes.yaxis.set_ticks_position('left')
@@ -190,14 +191,15 @@ class ScalcsMenu(QMenu):
         self.parent.txtPltBox.append(str)
 
         self.parent.mec.set_eff('c', self.parent.conc)
-        to, ts, d = scpl.dependency_plot(self.parent.mec, self.parent.tres, points=128)
+        pdf_adjacent = AdjacentPDFDisplay(self.parent.mec, self.parent.tres)
+        to, ts, d = pdf_adjacent.calculate_dependency()
         
         fig = plt.figure()
         fig.suptitle('Dependency plot', fontsize=12)
-        ax = fig.gca(projection='3d')
+        ax = fig.add_subplot(projection = '3d')
         to, ts = np.meshgrid(to, ts)
         surf = ax.plot_surface(to, ts, d, rstride=1, cstride=1, cmap=cm.coolwarm,
-        linewidth=0, antialiased=False)
+            linewidth=0, antialiased=False)
         ax.set_zlim(-1.0, 1.0)
         
 #        def log_10_product(x, pos):
@@ -211,8 +213,8 @@ class ScalcsMenu(QMenu):
 #        ax.xaxis.set_major_formatter(formatter)
 #        ax.yaxis.set_major_formatter(formatter)
 
-        ax.zaxis.set_major_locator(LinearLocator(10))
-        ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+#        ax.zaxis.set_major_locator(LinearLocator(10))
+#        ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
 
         fig.colorbar(surf, shrink=0.5, aspect=5)
         plt.show()
