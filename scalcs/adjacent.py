@@ -123,40 +123,81 @@ class AdjacentPDF(AsymptoticPDF):
                 fs = (self.HJCphiF @ eGFAt @ self.uA)[0]
                 fos = (self.HJCphiA @ eGAFt @ eGFAt @ self.uA)[0]
                 dependency[i, j] = (fos - (fo * fs)) / (fo * fs)
-                
+
         return dependency
 
     
 class AdjacentPDFDisplay(AdjacentPDF):
-    """ Prints adjacent PDF. """
+    """Displays and visualizes adjacent PDF components."""
     def __init__(self, mec, tres=0.0):
         super().__init__(mec, tres=tres)
-        self.mec = mec
 
     def ideal_adjacent_dwells(self, t1, t2):
-        
-        adjacent_str = ('\nPDF of open times that precede shut times between {0:.3f} and {1:.3f} ms'.
-                         format(t1 * 1000, t2 * 1000))
-        e, a = self.adjacent_open_to_shut_range_pdf_components(t1, t2)
-        adjacent_str += ExpPDF(1 / e, a / e).printout('\nOPEN TIMES ADJACENT TO SPECIFIED SHUT TIME RANGE')
+        """
+        Print PDF of open times that precede shut times within a range.
+        Parameters:
+            t1, t2 : float
+                Shut time range (in seconds).
+        Returns:
+            str: Formatted output.
+        """
+        eigs, areas = self.adjacent_open_to_shut_range_pdf_components(t1, t2)
         mean = self.adjacent_open_to_shut_range_mean(t1, t2)
-        adjacent_str += ('Mean from direct calculation (ms) = {0:.6f}\n'.format(mean * 1000))
-        return adjacent_str
+        result = [
+            f"\nPDF of open times preceding shut times between {t1*1000:.3f} and {t2*1000:.3f} ms",
+            ExpPDF(1 / eigs, areas / eigs).printout(
+                "\nOPEN TIMES ADJACENT TO SPECIFIED SHUT TIME RANGE"
+            ),
+            f"Mean from direct calculation (ms): {mean * 1000:.6f}\n",
+        ]
+        return "\n".join(result)
     
     def calculate_adjacent_open_time_pdf(self, u1, u2, tmin=0.00001, tmax=1000, points=512):
-        # Ideal pdf.
-        eigs, w = self.ideal_open_time_pdf_components()
-        tmax = (1 / eigs.max()) * 100
+        """
+        Calculate ideal and adjacent open time PDFs.
+        Parameters:
+            u1, u2 : float
+                Shut time range (in seconds).
+            tmin, tmax : float
+                Time range for the PDF.
+            points : int
+                Number of time points for calculation.
+        Returns:
+            t : ndarray
+                Time points.
+            ipdf, apdf : ndarray
+                Ideal and adjacent open time PDFs.
+        """
+        eigs, weights = self.ideal_open_time_pdf_components()
+        tmax = min(tmax, (1 / eigs.max()) * 100)
         t = np.logspace(math.log10(tmin), math.log10(tmax), points)
-        fac = 1 / np.sum((w / eigs) * np.exp(-self.tres * eigs)) # Scale factor
-        ipdf = t * ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
+        fac = 1 / np.sum((weights / eigs) * np.exp(-self.tres * eigs))
+        ipdf = t * ExpPDF(1 / eigs, weights / eigs).calculate(t) * fac
 
-        # Ajacent open time pdf
-        eigs, w = self.adjacent_open_to_shut_range_pdf_components(u1, u2) 
-    #    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
-        apdf = t * ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
+        eigs, weights = self.adjacent_open_to_shut_range_pdf_components(u1, u2)
+        apdf = t * ExpPDF(1 / eigs, weights / eigs).calculate(t) * fac
         return t, ipdf, apdf
 
+    #TODO: Move this function to pdfs.py module ExpPDF class
+    def plot_pdf(self, t, ipdf, apdf, xlabel="Time (ms)", ylabel="PDF", title="Generic PDF"):
+        """
+        Plot PDF of ideal and adjacent open times.
+        Parameters:
+            t : ndarray
+                Time points (in seconds).
+            ipdf, apdf : ndarray
+                Ideal and adjacent open time PDFs.
+            xlabel, ylabel, title : str
+                Labels and title for the plot.
+        """
+        fig, ax = plt.subplots()
+        ax.semilogx(t * 1000, ipdf, "r--", label="Ideal open time PDF")
+        ax.semilogx(t * 1000, apdf, "b-", label="Adjacent open time PDF")
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+        ax.legend()
+        plt.show()
 
     def plot_adjacent_open_time_pdf(self, u1, u2, tmin=0.00001, tmax=1000, points=512):
         """Generate and display ideal pdf of all open times and ideal pdf of open times adjacent to specified shut
@@ -174,45 +215,36 @@ class AdjacentPDFDisplay(AdjacentPDF):
             Number of points per plot.
         """
                 
-        t, ipdf, apdf = self.calculate_adjacent_open_time_pdf(u1, u2, tmin=0.00001, tmax=1000, points=512)
-        
-        fig, ax = plt.subplots()
-        ax.semilogx(t * 1000, ipdf, 'r--', label='Ideal open time PDF')
-        ax.semilogx(t * 1000, apdf, 'b-', label='Adjacent open time PDF')
+        t, ipdf, apdf = pdf_adjacent.calculate_adjacent_open_time_pdf(u1, u2)
+        self.plot_pdf(t, ipdf, apdf, title="Adjacent Open Time PDF")
 
-        # Apply square-root transformation to the y-axis
-        #sqrt_transform = FuncTransform(lambda y: np.sqrt(y), lambda y: y**2)
-        #ax.set_yscale('function', functions=(sqrt_transform.transform, sqrt_transform.inverted))
-
-        ax.set_xlabel('Time (ms)')
-        ax.set_ylabel('PDF') # (sqrt scale)')
-        ax.set_title('Adjacent opent time PDF')
-        ax.legend()
-        plt.show()
-
-    def calculate_mean_open_next_to_shut(self):
+    def calculate_mean_open_next_to_shut(self, points=512):
         """
-        Calculate plot of mean open time preceding/next-to shut time.
-
-        Returns
-        -------
-        sht : ndarray of floats, shape (num of points,)
-            Shut times.
-        mp : ndarray of floats, shape (num of points,)
-            Mean open time preceding shut time.
-        mn : ndarray of floats, shape (num of points,)
-            Mean open time next to shut time.
+        Calculate mean open times preceding and next to a shut time.
+        Parameters:
+            points : int
+                Number of points for calculation.
+        Returns:
+            sht : ndarray
+                Shut times.
+            mp, mn : ndarray
+                Mean open times preceding and next to shut times.
         """
         
-        points=512
         tmax = (-1 / self.Froots.max()) * 5
         sht = np.logspace(math.log10(self.tres), math.log10(tmax), points)
         mp, mn = self.HJC_adjacent_mean_open_to_shut_time_pdf(sht)
         return sht, mp, mn
 
-    def plot_mean_open_next_to_shut(self):
+    def plot_mean_open_next_to_shut(self, points=512):
+        """
+        Plot mean open times preceding and next to a shut time.
+        Parameters:
+            points : int
+                Number of time points for calculation.
+        """
+
         sht, mp, mn = self.calculate_mean_open_next_to_shut()
-        
         fig, ax = plt.subplots()
         ax.semilogx(sht * 1000, mp * 1000, 'r--', label='Mean open time preceding specified shut time')
         ax.semilogx(sht * 1000, mn * 1000, 'b--', label='Mean open time next to specified shut time')
@@ -224,36 +256,42 @@ class AdjacentPDFDisplay(AdjacentPDF):
 
     def calculate_dependency(self, points=512):
         """
-        Calculate 3D dependency plot.
-
-
-        Returns
-        -------
-        top : ndarray of floats, shape (num of points,)
-            Open times.
-        tsh : ndarray of floats, shape (num of points,)
-            Shut times.
-        dependency : ndarray 
-            Mean open time next to shut time.
+        Calculate dependency between open and shut times.
+        Parameters:
+            points : int
+                Number of points for calculation.
+        Returns:
+            to, ts : ndarray
+                Log-scaled open and shut times.
+            dependency : ndarray
+                Dependency matrix.
         """
         
         tsmax = (-1 / self.Froots.max()) * 20
-        tsh = np.logspace(math.log10(self.tres), math.log10(tsmax), points)
         tomax = (-1 / self.Aroots.max()) * 20
+        tsh = np.logspace(math.log10(self.tres), math.log10(tsmax), points)
         top = np.logspace(math.log10(self.tres), math.log10(tomax), points)
         dependency = self.HJC_dependency(top, tsh)
-        return np.log10(top*1000), np.log10(tsh*1000), dependency
+        return np.log10(top * 1000), np.log10(tsh * 1000), dependency
 
-    def plot_dependency(self):
+    def plot_dependency(self, points=128):
+        """
+        Plot 3D dependency of open and shut times.
+        Parameters:
+            points : int
+                Number of points for each dimension.
+        """
 
-        to, ts, d = self.calculate_dependency(points=128)
+        to, ts, d = self.calculate_dependency(points)
         fig = plt.figure()
-        fig.suptitle('Dependency plot', fontsize=12)
-        ax = fig.add_subplot(projection = '3d')
+        fig.suptitle("Dependency Plot", fontsize=12)
+        ax = fig.add_subplot(projection="3d")
         to, ts = np.meshgrid(to, ts)
-        ax.plot_surface(to, ts, d, rstride=1, cstride=1, cmap=cm.coolwarm,
-            linewidth=0, antialiased=False)
+        ax.plot_surface(to, ts, d, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=0, antialiased=False)
         ax.set_zlim(-1.0, 1.0)
+        ax.set_xlabel("Log10(Open Time (ms))")
+        ax.set_ylabel("Log10(Shut Time (ms))")
+        ax.set_zlabel("Dependency")
         plt.show()
 
 
