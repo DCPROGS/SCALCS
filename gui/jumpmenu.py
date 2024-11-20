@@ -7,7 +7,6 @@ except:
     raise ImportError("pyqt module is missing")
 
 from scalcs import cjumps
-from scalcs import scplotlib as scpl
 
 from gui import myqtcommon
 
@@ -197,7 +196,7 @@ class JumpMenu(QMenu):
             "---\n")
         self.parent.txtPltBox.append(str)
 
-        c, wton, ton, wtoff, toff  = scpl.conc_jump_on_off_taus_versus_conc_plot(self.parent.mec,
+        c, wton, ton, wtoff, toff  = cjumps.conc_jump_on_off_taus_versus_conc_plot(self.parent.mec,
             cmin, cmax, self.width)
 
         self.parent.canvas.axes.clear()

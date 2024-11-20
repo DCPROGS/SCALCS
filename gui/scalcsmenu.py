@@ -9,7 +9,6 @@ try:
 except:
     raise ImportError("pyqt module is missing")
 
-from scalcs import scplotlib as scpl
 from scalcs import scalcslib as scl
 from scalcs import popen
 from gui import myqtcommon
@@ -252,7 +251,7 @@ class ScalcsMenu(QMenu):
         except:
             sys.stderr.write("main: Warning: unable to prepare printout.")
         
-        t, ipdf, epdf, apdf = scpl.open_time_pdf(self.parent.mec, self.parent.tres)
+        t, ipdf, epdf, apdf = scl.open_time_pdf(self.parent.mec, self.parent.tres)
         self.parent.present_plot = np.vstack((t, ipdf, epdf, apdf))
 
         self.parent.canvas.axes.clear()
@@ -284,7 +283,7 @@ class ScalcsMenu(QMenu):
         state1 = 8
         state2 = 10
 
-        t, ipdf, spdf = scpl.subset_time_pdf(self.parent.mec, self.parent.tres,
+        t, ipdf, spdf = scl.subset_time_pdf(self.parent.mec, self.parent.tres,
             state1, state2)
         self.parent.present_plot = np.vstack((t, ipdf, s))
 
@@ -327,7 +326,7 @@ class ScalcsMenu(QMenu):
         except:
             sys.stderr.write("main: Warning: unable to prepare printout.")
 
-        t, ipdf, epdf, apdf = scpl.shut_time_pdf(self.parent.mec, self.parent.tres)
+        t, ipdf, epdf, apdf = scl.shut_time_pdf(self.parent.mec, self.parent.tres)
         self.parent.present_plot = np.vstack((t, ipdf, epdf, apdf))
 
         self.parent.canvas.axes.clear()

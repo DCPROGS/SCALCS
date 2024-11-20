@@ -1,11 +1,13 @@
 import sys
-from math import*
-from decimal import*
+import math
+#from decimal import*
 from deprecated import deprecated
 from tabulate import tabulate
 import scipy.optimize as so
 import numpy as np
 from numpy import linalg as nplin
+
+from pylab import figure, semilogx, savefig
 
 from samples import samples
 from scalcs import qmatlib as qml
@@ -440,6 +442,216 @@ class TCritPrints(QMatrix):
 
 ############################   FUNCTIONS TO REVIEW   ########################################
 
+def open_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
+    """
+    Calculate ideal asymptotic and exact open time distributions.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution.
+    tmin, tmax : floats
+        Time range for burst length ditribution.
+    points : int
+        Number of points per plot.
+    unit : str
+        'ms'- milliseconds.
+
+    Returns
+    -------
+    t : ndarray of floats, shape (num of points)
+        Time in millisec.
+    ipdf, epdf, apdf : ndarrays of floats, shape (num of points)
+        Ideal, exact and asymptotic open time distributions.
+    """
+
+    open = True
+
+    # Asymptotic pdf
+    roots = asymptotic_roots(tres,
+        mec.QAA, mec.QII, mec.QAI, mec.QIA, mec.kA, mec.kI)
+
+    tmax = (-1 / roots.max()) * 20
+    t = np.logspace(math.log10(tmin), math.log10(tmax), points)
+
+    # Ideal pdf.
+    eigs, w = ideal_dwell_time_pdf_components(mec.QAA, qml.phiA(mec))
+    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
+    ipdf = t * pdfs.ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
+    
+
+    # Asymptotic pdf
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kI)
+    areas = asymptotic_areas(tres, roots,
+        mec.QAA, mec.QII, mec.QAI, mec.QIA,
+        mec.kA, mec.kI, GAF, GFA)
+    apdf = asymptotic_pdf(t, tres, -1 / roots, areas)
+
+    # Exact pdf
+    eigvals, gamma00, gamma10, gamma11 = exact_GAMAxx(mec,
+        tres, open)
+    epdf = np.zeros(points)
+    for i in range(points):
+        epdf[i] = (t[i] * exact_pdf(t[i], tres,
+            roots, areas, eigvals, gamma00, gamma10, gamma11))
+            
+    if unit == 'ms':
+        t = t * 1000 # x scale in millisec
+
+    return t, ipdf, epdf, apdf
+
+
+def scaled_pdf(t, pdf, dt, n):
+    """
+    Scale pdf to the data histogram.
+
+    Parameters
+    ----------
+    t : ndarray of floats, shape (num of points)
+        Time in millisec.
+    pdf : ndarray of floats, shape (num of points)
+        pdf to scale.
+    dt : float
+        Histogram bin width in log10 units.
+    n : int
+        Total number of events.
+
+    Returns
+    -------
+    spdf : ndarray of floats, shape (num of points)
+        Scaled pdf.
+    """
+
+    spdf = n * dt * 2.30259 * pdf
+    #spdf = n * dt * pdf
+    return spdf
+
+def shut_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
+    """
+    Calculate ideal asymptotic and exact shut time distributions.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution.
+    tmin, tmax : floats
+        Time range for burst length ditribution.
+    points : int
+        Number of points per plot.
+    unit : str
+        'ms'- milliseconds.
+
+    Returns
+    -------
+    t : ndarray of floats, shape (num of points)
+        Time in millisec.
+    ipdf, epdf, apdf : ndarrays of floats, shape (num of points)
+        Ideal, exact and asymptotic shut time distributions.
+    """
+
+    open = False
+
+    # Asymptotic pdf
+    roots = asymptotic_roots(tres, mec.QII, mec.QAA, mec.QIA, mec.QAI,
+        mec.kI, mec.kA)
+
+    tmax = (-1 / roots.max()) * 20
+    t = np.logspace(math.log10(tmin), math.log10(tmax), points)
+
+    # Ideal pdf.
+    eigs, w = ideal_dwell_time_pdf_components(mec.QII, qml.phiF(mec))
+    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
+    ipdf = t * pdfs.ExpPDF(1 / eigs, w / eigs).calculate(t) *fac #pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
+
+    # Asymptotic pdf
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kI)
+    areas = asymptotic_areas(tres, roots,
+        mec.QII, mec.QAA, mec.QIA, mec.QAI,
+        mec.kI, mec.kA, GFA, GAF)
+    apdf = asymptotic_pdf(t, tres, -1 / roots, areas)
+
+    # Exact pdf
+    eigvals, gamma00, gamma10, gamma11 = exact_GAMAxx(mec, tres, open)
+    epdf = np.zeros(points)
+    for i in range(points):
+        epdf[i] = (t[i] * exact_pdf(t[i], tres,
+            roots, areas, eigvals, gamma00, gamma10, gamma11))
+
+    if unit == 'ms':
+        t = t * 1000 # x scale in millisec
+
+    return t, ipdf, epdf, apdf
+
+def subset_time_pdf(mec, tres, state1, state2,
+    tmin=0.00001, tmax=1000, points=512, unit='ms'):
+    """
+    Calculate ideal pdf of any subset dwell times.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    tres : float
+        Time resolution.
+    state1, state2 : ints
+    tmin, tmax : floats
+        Time range for burst length ditribution.
+    points : int
+        Number of points per plot.
+    unit : str
+        'ms'- milliseconds.
+
+    Returns
+    -------
+    t : ndarray of floats, shape (num of points)
+        Time in millisec.
+    spdf : ndarray of floats, shape (num of points)
+        Subset dwell time pdf.
+    """
+
+    open = False
+    if open:
+        eigs, w = ideal_dwell_time_pdf_components(mec.QAA, qml.phiA(mec))
+    else:
+        eigs, w = ideal_dwell_time_pdf_components(mec.QII, qml.phiF(mec))
+
+    tau = 1 / eigs
+
+    tmax = tau.max() * 20
+    t = np.logspace(math.log10(tmin), math.log10(tmax), points)
+
+    # Ideal pdf.
+    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
+    #ipdf = t * pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
+    ipdf = t * pdfs.ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
+
+    spdf = np.zeros(points)
+    for i in range(points):
+        spdf[i] = t[i] * ideal_subset_time_pdf(mec.Q,
+            state1, state2, t[i]) * fac
+
+    if unit == 'ms':
+        t = t * 1000 # x scale in millisec
+
+    return t, ipdf, spdf
+
+def png_save_pdf_fig(outfile, ints, mec, conc, tres, type):
+    x, y, dx = prepare_hist(ints, tres)
+    mec.set_eff('c', conc)
+    if type == 'open':
+        t, ipdf, epdf, apdf = open_time_pdf(mec, tres)
+    elif type == 'shut':
+        t, ipdf, epdf, apdf = shut_time_pdf(mec, tres)
+    else:
+        print ('Wrong type.')
+
+    sipdf = scaled_pdf(t, ipdf, math.log10(dx), len(ints))
+    sepdf = scaled_pdf(t, epdf, math.log10(dx), len(ints))
+    figure(figsize=(6, 4))
+    semilogx(x*1000, y, 'k-', t, sipdf, 'r--', t, sepdf, 'b-')
+    savefig(outfile, bbox_inches=0)
+
 def asymptotic_pdf(t, tres, tau, area):
     """
     Calculate asymptotic probabolity density function.
@@ -695,187 +907,6 @@ def ideal_subset_time_pdf(Q, k1, k2, t):
     expQSub = qml.expQ(QSub, t)
     f = np.dot(np.dot(np.dot(phi, expQSub), -QSub), u)
     return f
-
-@deprecated("Use '...'")
-def adjacent_open_to_shut_range_mean(u1, u2, QAA, QAF, QFF, QFA, phiA):
-    """
-    Calculate mean (ideal- no missed events) open times adjacent to a 
-    specified shut time range.
-
-    Parameters
-    ----------
-    u1, u2 : floats
-        Shut time range.
-    QAA, QAF, QFF, QFA : array_like
-        Submatrices of Q.
-    phiA : array_like, shape (1, kA)
-        Initial vector for openings
-
-    Returns
-    -------
-    m : float
-        Mean open time.
-    """
-    
-    kA = QAA.shape[0]
-    uA = np.ones((kA))[:,np.newaxis]
-    invQAA, invQFF = -nplin.inv(QAA), nplin.inv(QFF)
-    expQFFr = qml.expQ(QFF, u2) - qml.expQ(QFF, u1)
-    col = np.dot(np.dot(np.dot(np.dot(QAF, invQFF), expQFFr), QFA), uA)
-    row1 = np.dot(phiA, qml.Qpow(invQAA, 2))
-    row2 = np.dot(phiA, invQAA)
-    m = np.dot(row1, col)[0, 0] / np.dot(row2, col)[0, 0]
-    return m
-
-@deprecated("Use '...'")
-def HJC_dependency(top, tsh, tres, Q, QAA, QAF, QFF, QFA):
-    """
-    Calculate normalised joint distribution (CHS96, Eq. 3.22) of an open time
-    and the following shut time as proposed by Magleby & Song 1992. 
-    
-    Parameters
-    ----------
-    top, tsh : array_like of floats
-        Open and shut tims.
-    tres : float
-        Time resolution.
-    Q : array, shape (k,k)
-        Q matrix. 
-    QAA, QAF, QFF, QFA : array_like
-        Submatrices of Q.
-
-    Returns
-    -------
-    dependency : ndarray
-    """
-    
-    kA, kF = QAA.shape[0], QFF.shape[0]
-    uA = np.ones((kA))[:,np.newaxis]
-    uF = np.ones((kF))[:,np.newaxis]
-    expQFF = qml.expQ(QFF, tres)
-    expQAA = qml.expQ(QAA, tres)
-    GAF, GFA = qml.iGs(Q, kA, kF)
-    eGAF = qml.eGs(GAF, GFA, kA, kF, expQFF)
-    eGFA = qml.eGs(GFA, GAF, kF, kA, expQAA)
-    phiA = qml.phiHJC(eGAF, eGFA, kA)
-    phiF = qml.phiHJC(eGFA, eGAF, kF)
-    eigs, A = qml.eigenvalues_and_spectral_matrices(-Q)
-    FZ00, FZ10, FZ11 = qml.Zxx(Q, eigs, A, kA, QAA, QFA, QAF, expQAA, False)
-    Froots = asymptotic_roots(tres, QFF, QAA, QFA, QAF, kF, kA)
-    FR = qml.AR(Froots, tres, QFF, QAA, QFA, QAF, kF, kA)
-    AZ00, AZ10, AZ11 = qml.Zxx(Q, eigs, A, kA, QFF, QAF, QFA, expQFF, True)
-    Aroots = asymptotic_roots(tres, QAA, QFF, QAF, QFA, kA, kF)
-    AR = qml.AR(Aroots, tres, QAA, QFF, QAF, QFA, kA, kF)
-
-    dependency = np.zeros((top.shape[0], tsh.shape[0]))
-    
-    for i in range(top.shape[0]):
-        eGAFt = qml.eGAF(top[i], tres, eigs, AZ00, AZ10, AZ11, Aroots,
-                AR, QAF, expQFF)
-        fo = np.dot(np.dot(phiA, eGAFt), uF)[0]
-        
-        for j in range(tsh.shape[0]):
-            eGFAt = qml.eGAF(tsh[j], tres, eigs, FZ00, FZ10, FZ11, Froots,
-                FR, QFA, expQAA)
-            fs = np.dot(np.dot(phiF, eGFAt), uA)[0]
-            fos = np.dot(np.dot(np.dot(phiA, eGAFt), eGFAt), uA)[0]
-            dependency[i, j] = (fos - (fo * fs)) / (fo * fs)
-    return dependency
-
-@deprecated("Use '...'")
-def HJC_adjacent_mean_open_to_shut_time_pdf(sht, tres, Q, QAA, QAF, QFF, QFA):
-    """
-    Calculate theoretical HJC (with missed events correction) mean open time
-    given previous/next gap length (continuous function; CHS96 Eq.3.5). 
-
-    Parameters
-    ----------
-    sht : array of floats
-        Shut time interval.
-    tres : float
-        Time resolution.
-    Q : array, shape (k,k)
-        Q matrix.
-    QAA, QAF, QFF, QFA : array_like
-        Submatrices of Q.
-
-    Returns
-    -------
-    mp : ndarray of floats
-        Mean open time given previous gap length.
-    mn : ndarray of floats
-        Mean open time given next gap length.
-    """
-    
-    kA, kF = QAA.shape[0], QFF.shape[0]
-    uA = np.ones((kA))[:,np.newaxis]
-    uF = np.ones((kF))[:,np.newaxis]
-    expQFF = qml.expQ(QFF, tres)
-    expQAA = qml.expQ(QAA, tres)
-    GAF, GFA = qml.iGs(Q, kA, kF)
-    eGAF = qml.eGs(GAF, GFA, kA, kF, expQFF)
-    eGFA = qml.eGs(GFA, GAF, kF, kA, expQAA)
-    phiA = qml.phiHJC(eGAF, eGFA, kA)
-    phiF = qml.phiHJC(eGFA, eGAF, kF)
-    DARS = qml.dARSdS(tres, QAA, QFF, GAF, GFA, expQFF, kA, kF)
-    eigs, A = qml.eigenvalues_and_spectral_matrices(-Q)
-    FZ00, FZ10, FZ11 = qml.Zxx(Q, eigs, A, kA, QAA, QFA, QAF, expQAA, False)
-    Froots = asymptotic_roots(tres, QFF, QAA, QFA, QAF, kF, kA)
-    FR = qml.AR(Froots, tres, QFF, QAA, QFA, QAF, kF, kA)
-    Q1 = np.dot(np.dot(DARS, QAF), expQFF)
-    col1 = np.dot(Q1, uF)
-    row1 = np.dot(phiA, Q1)
-    
-    mp = []
-    mn = []
-    for t in sht:
-        eGFAt = qml.eGAF(t, tres, eigs, FZ00, FZ10, FZ11, Froots,
-                    FR, QFA, expQAA)
-        denom = np.dot(np.dot(phiF, eGFAt), uA)[0]
-        nom1 = np.dot(np.dot(phiF, eGFAt), col1)[0]
-        nom2 = np.dot(np.dot(row1, eGFAt), uA)[0]
-        mp.append(nom1 / denom)
-        mn.append(nom2 / denom)
-    
-    return np.array(mp), np.array(mn)
-
-@deprecated("Use '...'")
-def adjacent_open_to_shut_range_pdf_components(u1, u2, QAA, QAF, QFF, QFA, phiA):
-    """
-    Calculate time constants and areas for an ideal (no missed events)
-    exponential probability density function of open times adjacent to a 
-    specified shut time range.
-
-    Parameters
-    ----------
-    t : float
-        Time (sec).
-    QAA : array_like, shape (kA, kA)
-        Submatrix of Q.
-    phiA : array_like, shape (1, kA)
-        Initial vector for openings
-
-    Returns
-    -------
-    taus : ndarray, shape(k, 1)
-        Time constants.
-    areas : ndarray, shape(k, 1)
-        Component relative areas.
-    """
-
-    kA = QAA.shape[0]
-    uA = np.ones((kA))[:,np.newaxis]
-    invQAA, invQFF = -nplin.inv(QAA), nplin.inv(QFF)
-    expQFFr = qml.expQ(QFF, u2) - qml.expQ(QFF, u1)
-    col = np.dot(np.dot(np.dot(np.dot(QAF, invQFF), expQFFr), QFA), uA)
-    w = np.zeros(kA)
-    eigs, A = qml.eigenvalues_and_spectral_matrices(-QAA)
-    row = np.dot(phiA, invQAA)
-    den = np.dot(row, col)[0, 0]
-    #TODO: remove 'for'
-    for i in range(kA):
-        w[i] = np.dot(np.dot(phiA, A[i]), col) / den
-    return eigs, w
 
 
 @deprecated("Use '...'")

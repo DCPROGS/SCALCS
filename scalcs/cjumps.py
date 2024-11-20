@@ -482,3 +482,38 @@ def printout(mec, cmax, width, eff='c'):
     str_out += ('Total area (pC) = {0:.5g}\n'.format(np.sum(area_off)))
  
     return str_out
+
+def conc_jump_on_off_taus_versus_conc_plot(mec, cmin, cmax, width):
+    """
+    Calculate data for the plot of square concentration pulse evoked current 
+    (occupancy) weighted on and off time constants versus concentration.
+
+    Parameters
+    ----------
+    mec : instance of type Mechanism
+    cmin, cmax : float
+        Range of concentrations in M.
+
+    Returns
+    -------
+    c : ndarray of floats, shape (num of points,)
+        Concentration in mikroM
+    ton, toff : floats
+        On and off weighted time constants.
+    """
+
+    points = 100
+    c = np.logspace(int(np.log10(cmin)), int(np.log10(cmax)), points)
+    
+    wton = np.zeros(points)
+    wtoff = np.zeros(points)
+    ton = np.zeros((points, mec.k-1))
+    toff = np.zeros((points, mec.k-1))
+    for i in range(points):
+        mec.set_eff('c', c[i])
+        wton[i], ton[i], wtoff[i], toff[i] = weighted_taus(mec, c[i], width)
+
+    ton = ton.transpose()
+    toff = toff.transpose()
+
+    return c * 1000, wton * 1000, ton * 1000, wtoff * 1000, toff * 1000

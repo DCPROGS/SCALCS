@@ -215,7 +215,7 @@ class AdjacentPDFDisplay(AdjacentPDF):
             Number of points per plot.
         """
                 
-        t, ipdf, apdf = pdf_adjacent.calculate_adjacent_open_time_pdf(u1, u2)
+        t, ipdf, apdf = self.calculate_adjacent_open_time_pdf(u1, u2)
         self.plot_pdf(t, ipdf, apdf, title="Adjacent Open Time PDF")
 
     def calculate_mean_open_next_to_shut(self, points=512):
