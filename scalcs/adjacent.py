@@ -27,66 +27,53 @@ class AdjacentPDF(AsymptoticPDF):
 
     def adjacent_open_to_shut_range_mean(self, u1, u2):
         """
-        Calculate mean (ideal- no missed events) open times adjacent to a specified shut time range.
-
-        Parameters
-        ----------
-        u1, u2 : floats
-            Shut time range.
+        Calculate mean open times adjacent to a specified shut time range.
+        Parameters:
+            u1, u2 : float
+                Shut time range.
+        Returns:
+            float: Mean open time.
         """
         
         expQFFr = qml.expQ(self.QFF, u2) - qml.expQ(self.QFF, u1)
         col = self.QAF @ self.invQFF @ expQFFr @ self.QFA @ self.uA
-        return (self.phiAr @ qml.powQ(self.invQAA, 2) @ col)[0, 0] / (self.phiAr @ self.invQAA @ col)[0, 0]
+        num = (self.phiAr @ qml.powQ(self.invQAA, 2) @ col)[0, 0]
+        denom = (self.phiAr @ self.invQAA @ col)[0, 0]
+        return num / denom
 
     def adjacent_open_to_shut_range_pdf_components(self, u1, u2):
         """
-        Calculate time constants and areas for an ideal (no missed events)
-        exponential probability density function of open times adjacent to a 
+        Calculate eigenvalues and areas for an ideal exponential PDF open times adjacent to a 
         specified shut time range.
-
-        Parameters
-        ----------
-        u1, u2 : floats
-            Shut time range.
-
-        Returns
-        -------
-        eigs : ndarray, shape(k, 1)
-            Eigenvalues.
-        areas : ndarray, shape(k, 1)
-            Component relative areas.
+        Parameters:
+            u1, u2 : float
+                Shut time range.
+        Returns:
+            eigs : ndarray
+                Eigenvalues.
+            areas : ndarray
+                Component relative areas.
         """
 
         expQFFr = qml.expQ(self.QFF, u2) - qml.expQ(self.QFF, u1)
         col = self.QAF @ self.invQFF @ expQFFr @ self.QFA @ self.uA
-        w = np.zeros(self.kA)
         eigs, A = qml.eigenvalues_and_spectral_matrices(-self.QAA)
-        den = (self.phiAr @ self.invQAA @ col)[0, 0]
-        #TODO: remove 'for'
-        #w = np.array([(self.phiA @ A[i] @ col / den) for i in range(self.kA)])
-        for i in range(self.kA):
-            w[i] = (self.phiA @ A[i] @ col)[0] / den
+        denom = (self.phiAr @ self.invQAA @ col)[0, 0]
+        w = np.array([(self.phiA @ A[i] @ col)[0] / denom for i in range(self.kA)])
         return eigs, w
 
     def HJC_adjacent_mean_open_to_shut_time_pdf(self, sht): #, tres): 
         """
         Calculate theoretical HJC (with missed events correction) mean open time
         given previous/next gap length (continuous function; CHS96 Eq.3.5). 
-
-        Parameters
-        ----------
-        sht : array of floats
-            Shut time interval.
-        tres : float
-            Time resolution.
-
-        Returns
-        -------
-        mp : ndarray of floats
-            Mean open time given previous gap length.
-        mn : ndarray of floats
-            Mean open time given next gap length.
+        Parameters:
+            sht : ndarray
+                Shut time intervals.
+        Returns:
+            mp : ndarray
+                Mean open time given the previous gap length.
+            mn : ndarray
+                Mean open time given the next gap length.
         """
         
         FR = self.R(self.Froots, open=False)
@@ -96,48 +83,47 @@ class AdjacentPDF(AsymptoticPDF):
         
         mp, mn = [], []
         for t in sht:
-            eGFAt = qml.eGAF(t, self.tres, self.Feigs, self.FZ00, self.FZ10, self.FZ11, self.Froots,
-                        FR, self.QFA, self.expQAA)
+            eGFAt = qml.eGAF(
+                t, self.tres, self.Feigs, self.FZ00, self.FZ10, self.FZ11,
+                self.Froots, FR, self.QFA, self.expQAA
+            )
             denom = (self.HJCphiF @ eGFAt @ self.uA)[0]
-            nom1 = (self.HJCphiF @ eGFAt @ col1)[0]
-            nom2 = (row1 @ eGFAt @ self.uA)[0]
-            mp.append(nom1 / denom)
-            mn.append(nom2 / denom)
-        
+            mp.append((self.HJCphiF @ eGFAt @ col1)[0] / denom)
+            mn.append((row1 @ eGFAt @ self.uA)[0] / denom)
+
         return np.array(mp), np.array(mn)
 
     def HJC_dependency(self, top, tsh):
         """
         Calculate normalised joint distribution (CHS96, Eq. 3.22) of an open time
         and the following shut time as proposed by Magleby & Song 1992. 
-        
-        Parameters
-        ----------
-        top, tsh : array_like of floats
-            Open and shut tims.
-        tres : float
-            Time resolution.
-
-        Returns
-        -------
-        dependency : ndarray
+        Parameters:
+            top, tsh : ndarray
+                Open and shut times.
+        Returns:
+            ndarray: Dependency values.
         """
         
         FR = self.R(self.Froots, open=False)
         AR = self.R(self.Aroots, open=True)
-        dependency = np.zeros((top.shape[0], tsh.shape[0]))
+        dependency = np.zeros((len(top), len(tsh)))
         
-        for i in range(top.shape[0]):
-            eGAFt = qml.eGAF(top[i], self.tres, self.Aeigs, self.AZ00, self.AZ10, self.AZ11, self.Aroots,
-                    AR, self.QAF, self.expQFF)
+        for i, t_open in enumerate(top):
+            eGAFt = qml.eGAF(
+                t_open, self.tres, self.Aeigs, self.AZ00, self.AZ10, self.AZ11,
+                self.Aroots, AR, self.QAF, self.expQFF
+            )
             fo = (self.HJCphiA @ eGAFt @ self.uF)[0]
-            
-            for j in range(tsh.shape[0]):
-                eGFAt = qml.eGAF(tsh[j], self.tres, self.Feigs, self.FZ00, self.FZ10, self.FZ11, self.Froots,
-                    FR, self.QFA, self.expQAA)
+
+            for j, t_shut in enumerate(tsh):
+                eGFAt = qml.eGAF(
+                    t_shut, self.tres, self.Feigs, self.FZ00, self.FZ10, self.FZ11,
+                    self.Froots, FR, self.QFA, self.expQAA
+                )
                 fs = (self.HJCphiF @ eGFAt @ self.uA)[0]
                 fos = (self.HJCphiA @ eGAFt @ eGFAt @ self.uA)[0]
                 dependency[i, j] = (fos - (fo * fs)) / (fo * fs)
+                
         return dependency
 
     
