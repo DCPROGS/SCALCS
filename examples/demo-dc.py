@@ -81,8 +81,9 @@ def console_demo(demomec):
 
     #     POPEN CURVE CALCULATIONS
     sys.stdout.write('\n\nCalculating Popen curve parameters:')
-    sys.stdout.write(popen.printout(demomec, tres))
-    c, pe, pi = popen.calculate_Popen_plot(demomec, tres)
+    popen_analysis = popen.PopenCurve(demomec)
+    sys.stdout.write(popen_analysis.printout(tres))
+    c, pe, pi = popen_analysis.calculate_popen_curve(tres)
 
     plt.subplot(221)
     plt.semilogx(c*1e6, pe, 'b-', c*1e6, pi, 'r--')

@@ -13,12 +13,11 @@ from pylab import figure, semilogx, savefig
 from samples import samples
 from scalcs import qmatlib as qml
 from scalcs import pdfs
-from scalcs.qmatlib import HJCMatrix, AsymptoticPDFCalculator
-from scalcs.qmatlib import QMatrix
+from scalcs import hjclib as hjc
 from scalcs.pdfs import TCrits, ExpPDF
 
 
-class AsymptoticPDF(AsymptoticPDFCalculator):
+class AsymptoticPDF(hjc.AsymptoticPDFCalculator):
     '''
     Class to calculate dwell-time distributions (open and shut times) using
     HJC models from the Q matrix.
@@ -59,109 +58,9 @@ class AsymptoticPDF(AsymptoticPDFCalculator):
         return roots, areas
 
 
-class ExactPDFCalculator(HJCMatrix):
-    def __init__(self, mec, tres=0.0):
-        """
-        Initialize the ExactPDFCalculator.
-
-        Parameters
-        ----------
-        Q : ndarray
-            The Q matrix representing the transition rates.
-        kA, kB, kC, kD : int, optional
-            Dimensions of different state subspaces. Defaults are 1 for kA and kB, 0 for kC and kD.
-        """
-        super().__init__(mec.Q, kA=mec.kA, kB=mec.kB, kC=mec.kC, kD=mec.kD, tres=tres)
-   
-    def exact_GAMAxx(self, open=True):
-        """
-        Calculate gama coeficients for the exact dwell time pdf (Eq. 3.22, HJC90).
-
-        Parameters
-        ----------
-        open : bool, optional
-            True for open time pdf and False for shut time pdf.
-
-        Returns
-        -------
-        eigen : ndarray, shape (k,)
-            Eigenvalues of -Q matrix.
-        gama00, gama10, gama11 : ndarrays
-            Constants for the exact dwell time pdf.
-        """
-
-        u = self.uF if open else self.uA
-        phi = self.HJCphiA if open else self.HJCphiF
-        eigs, Z00, Z10, Z11 = self.Zxx(open=open)
-        gama00 = (phi @ Z00 @ u).T[0]
-        gama10 = (phi @ Z10 @ u).T[0]
-        gama11 = (phi @ Z11 @ u).T[0]
-        return eigs, gama00, gama10, gama11
-
-    def Zxx(self, open=True):
-        """
-        Calculate Z constants for the exact open time PDF (Eq. 3.22, HJC90).
-        This function handles both open and shut times by toggling `open`.
-
-        Parameters
-        ----------
-        open : bool, optional
-            True for open time PDF, False for shut time PDF (default is True).
-
-        Returns
-        -------
-        eigs : ndarray, shape (k,)
-            Eigenvalues of the -Q matrix.
-        Z00, Z10, Z11 : ndarrays, shape (k, kA, kF)
-            Z constants for the exact open/shut time PDF.
-        """
-
-        eigs, A = qml.eigenvalues_and_spectral_matrices(-self.Q)
-        kx = self.kA if open else self.kF
-        expQyy = self.expQFF if open else self.expQAA
-        Qyx = self.QFA if open else self.QAF
-        Qxy = self.QAF if open else self.QFA
-
-        # Compute  Dj (Eq. 3.16, HJC90) and Cimr (Eq. 3.18, HJC90).
-        D = np.empty((self.k))
-        if open:
-            C00 = A[ : ,    : self.kA,    : self.kA]
-            A1  = A[ : ,    : self.kA, self.kA :   ]
-        else:
-            C00 = A[ : , self.kA :   , self.kA :   ]
-            A1  = A[ : , self.kA :   ,    : self.kA]
-        D = A1 @ expQyy @ Qyx
-
-        #C11 = np.empty((self.k, kx, kx))
-        #for i in range(self.k):
-        #    C11[i] = D[i] @ C00[i]
-        # Vectorized computation of C11 (Eq. 3.18, HJC90)
-        C11 = np.einsum('ijk,ikl->ijl', D, C00)
-
-        C10 = np.empty((self.k, kx, kx))
-        for i in range(self.k):
-            S = sum(
-                ((D[i] @ C00[j]) + (D[j] @ C00[i])) / (eigs[j] - eigs[i])
-                for j in range(self.k) if j != i
-            )
-            C10[i] = S
-
-        # Matrix M and Zxx calculation
-        M = np.dot(Qxy, expQyy)
-        Z00 = np.einsum('ijk,kl->ijl', C00, M)
-        Z10 = np.einsum('ijk,kl->ijl', C10, M)
-        Z11 = np.einsum('ijk,kl->ijl', C11, M)
-# Old code; keep for refernce
-#        Z00 = np.array([np.dot(C, M) for C in C00])
-#        Z10 = np.array([np.dot(C, M) for C in C10])
-#        Z11 = np.array([np.dot(C, M) for C in C11])
-
-        return eigs, Z00, Z10, Z11
-
-
 ############################   PRINT GENERATORS PDF   #######################################
 
-class QMatrixPrints(QMatrix):
+class QMatrixPrints(qml.QMatrix):
     """
     Provides printable representations of Q-matrix properties and related calculations, including equilibrium occupancies, transition matrices,
     and PDF components for open and shut times.
@@ -360,7 +259,7 @@ class AsymptoticPDFPrints(AsymptoticPDF):
         return pdf_str
 
 
-class ExactPDFPrints(ExactPDFCalculator):
+class ExactPDFPrints(hjc.ExactPDFCalculator):
     """ 
     Print exact PDF coefficients for open and shut times.
     
@@ -430,9 +329,9 @@ class ExactPDFPrints(ExactPDFCalculator):
         return f"\n{title}\n" + tabulate(table, headers=header, tablefmt='orgtbl')
 
 
-class TCritPrints(QMatrix):
+class TCritPrints(qml.QMatrix):
     def __init__(self, mec):
-        QMatrix.__init__(self, mec.Q, kA=mec.kA, kB=mec.kB, kC=mec.kC, kD=mec.kD)
+        qml.QMatrix.__init__(self, mec.Q, kA=mec.kA, kB=mec.kB, kC=mec.kC, kD=mec.kD)
         e, w = self.ideal_shut_time_pdf_components()
         self.tcrits = TCrits(1 / e, w / e)
 
@@ -597,10 +496,10 @@ class DwellsPDFDisplay:
         if t < self.tres:
             f = 0
         elif ((self.tres < t) and (t < (2 * self.tres))):
-            f = qml.f0((t - self.tres), eigvals, gamma00)
+            f = hjc.f0((t - self.tres), eigvals, gamma00)
         elif ((self.tres * 2) < t) and (t < (3 * self.tres)):
-            f = (qml.f0((t - self.tres), eigvals, gamma00) -
-                qml.f1((t - 2 * self.tres), eigvals, gamma10, gamma11))
+            f = (hjc.f0((t - self.tres), eigvals, gamma00) -
+                hjc.f1((t - 2 * self.tres), eigvals, gamma10, gamma11))
         else:
             f = pdfs.ExpPDF(1 / roots, areas).calculate(t - self.tres)
         return f
@@ -631,8 +530,8 @@ class DwellsPDFDisplay:
         ax.legend()
         plt.show()
 
-############################   FUNCTIONS TO REVIEW   ########################################
 
+############################   FUNCTIONS TO REVIEW   ########################################
 
 def scaled_pdf(t, pdf, dt, n):
     """
@@ -655,10 +554,8 @@ def scaled_pdf(t, pdf, dt, n):
         Scaled pdf.
     """
 
-    spdf = n * dt * 2.30259 * pdf
     #spdf = n * dt * pdf
-    return spdf
-
+    return n * dt * 2.30259 * pdf
 
 def subset_time_pdf(mec, tres, state1, state2,
     tmin=0.00001, tmax=1000, points=512, unit='ms'):
@@ -688,9 +585,9 @@ def subset_time_pdf(mec, tres, state1, state2,
 
     open = False
     if open:
-        eigs, w = ideal_dwell_time_pdf_components(mec.QAA, qml.phiA(mec))
+        eigs, w = qml.ideal_dwell_time_pdf_components(mec.QAA, qml.phiA(mec))
     else:
-        eigs, w = ideal_dwell_time_pdf_components(mec.QII, qml.phiF(mec))
+        eigs, w = qml.ideal_dwell_time_pdf_components(mec.QII, qml.phiF(mec))
 
     tau = 1 / eigs
 
@@ -699,522 +596,17 @@ def subset_time_pdf(mec, tres, state1, state2,
 
     # Ideal pdf.
     fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
-    #ipdf = t * pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
     ipdf = t * pdfs.ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
 
     spdf = np.zeros(points)
     for i in range(points):
-        spdf[i] = t[i] * ideal_subset_time_pdf(mec.Q,
+        spdf[i] = t[i] * qml.ideal_subset_time_pdf(mec.Q,
             state1, state2, t[i]) * fac
 
     if unit == 'ms':
         t = t * 1000 # x scale in millisec
 
     return t, ipdf, spdf
-
-def png_save_pdf_fig(outfile, ints, mec, conc, tres, type):
-    x, y, dx = prepare_hist(ints, tres)
-    mec.set_eff('c', conc)
-    if type == 'open':
-        t, ipdf, epdf, apdf = open_time_pdf(mec, tres)
-    elif type == 'shut':
-        t, ipdf, epdf, apdf = shut_time_pdf(mec, tres)
-    else:
-        print ('Wrong type.')
-
-    sipdf = scaled_pdf(t, ipdf, math.log10(dx), len(ints))
-    sepdf = scaled_pdf(t, epdf, math.log10(dx), len(ints))
-    figure(figsize=(6, 4))
-    semilogx(x*1000, y, 'k-', t, sipdf, 'r--', t, sepdf, 'b-')
-    savefig(outfile, bbox_inches=0)
-
-
-def likelihood(theta, opts):
-    """
-    Calculate likelihood for a series of open and shut times using ideal
-    probability density functions.
-    """
-
-    mec = opts['mec']
-    conc = opts['conc']
-    bursts = opts['data']
-
-    #mec.set_rateconstants(np.exp(theta))
-    mec.theta_unsqueeze(np.exp(theta))
-    mec.set_eff('c', conc)
-
-    startB = qml.phiA(mec)
-    endB = np.ones((mec.kF, 1))
-
-    loglik = 0
-    for ind in bursts:
-        burst = bursts[ind]
-        grouplik = startB
-        for i in range(len(burst)):
-            t = burst[i]
-            if i % 2 == 0: # open time
-                GAFt = qml.iGt(t, mec.QAA, mec.QAF)
-            else: # shut
-                GAFt = qml.iGt(t, mec.QFF, mec.QFA)
-            grouplik = np.dot(grouplik, GAFt)
-            if grouplik.max() > 1e50:
-                grouplik = grouplik * 1e-100
-                print ('grouplik was scaled down')
-        grouplik = np.dot(grouplik, endB)
-        loglik += log(grouplik[0])
-
-    newrates = np.log(mec.theta())
-    return -loglik, newrates
-
-def HJClik(theta, opts):
-    """
-    Calculate likelihood for a series of open and shut times using HJC missed
-    events probability density functions (first two dead time intervals- exact
-    solution, then- asymptotic).
-
-    Lik = phi * eGAF(t1) * eGFA(t2) * eGAF(t3) * ... * eGAF(tn) * uF
-    where t1, t3,..., tn are open times; t2, t4,..., t(n-1) are shut times.
-
-    Gaps > tcrit are treated as unusable (e.g. contain double or bad bit of
-    record, or desens gaps that are not in the model, or gaps so long that
-    next opening may not be from the same channel). However this calculation
-    DOES assume that all the shut times predicted by the model are present
-    within each group. The series of multiplied likelihoods is terminated at
-    the end of the opening before an unusable gap. A new series is then
-    started, using appropriate initial vector to give Lik(2), ... At end
-    these are multiplied to give final likelihood.
-
-    Parameters
-    ----------
-    theta : array_like
-        Guesses.
-    bursts : dictionary
-        A dictionary containing lists of open and shut intervals.
-    opts : dictionary
-        opts['mec'] : instance of type Mechanism
-        opts['tres'] : float
-            Time resolution (dead time).
-        opts['tcrit'] : float
-            Ctritical time interval.
-        opts['isCHS'] : bool
-            True if CHS vectors should be used (Eq. 5.7, CHS96).
-
-    Returns
-    -------
-    loglik : float
-        Log-likelihood.
-    newrates : array_like
-        Updated rates/guesses.
-    """
-    # TODO: Errors.
-
-    mec = opts['mec']
-    conc = opts['conc']
-    tres = opts['tres']
-    tcrit = opts['tcrit']
-    is_chsvec = opts['isCHS']
-    bursts = opts['data']
-
-    mec.theta_unsqueeze(np.exp(theta))
-    mec.set_eff('c', conc)
-
-    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
-    expQFF = qml.expQ(mec.QFF, tres)
-    expQAA = qml.expQ(mec.QAA, tres)
-    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
-    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
-    phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
-    startB = qml.phiHJC(eGAF, eGFA, mec.kA)
-    endB = np.ones((mec.kF, 1))
-
-    eigen, A = qml.eigenvalues_and_spectral_matrices(-mec.Q)
-    AZ00, AZ10, AZ11 = qml.Zxx(mec.Q, eigen, A, mec.kA, mec.QFF,
-        mec.QAF, mec.QFA, expQFF, True)
-    Aroots = asymptotic_roots(tres,
-        mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
-    AR = qml.AR(Aroots, tres, mec.QAA, mec.QFF, mec.QAF, mec.QFA, mec.kA, mec.kF)
-    FZ00, FZ10, FZ11 = qml.Zxx(mec.Q, eigen, A, mec.kA, mec.QAA,
-        mec.QFA, mec.QAF, expQAA, False)
-    Froots = asymptotic_roots(tres,
-        mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
-    FR = qml.AR(Froots, tres, mec.QFF, mec.QAA, mec.QFA, mec.QAF, mec.kF, mec.kA)
-
-    if is_chsvec:
-        startB, endB = qml.CHSvec(Froots, tres, tcrit,
-            mec.QFA, mec.kA, expQAA, phiF, FR)
-
-    loglik = 0
-    for ind in range(len(bursts)):
-        burst = bursts[ind]
-        grouplik = startB
-        for i in range(len(burst)):
-            t = burst[i]
-            if i % 2 == 0: # open time
-                eGAFt = qml.eGAF(t, tres, eigen, AZ00, AZ10, AZ11, Aroots,
-                AR, mec.QAF, expQFF)
-            else: # shut
-                eGAFt = qml.eGAF(t, tres, eigen, FZ00, FZ10, FZ11, Froots,
-                FR, mec.QFA, expQAA)
-            grouplik = np.dot(grouplik, eGAFt)
-            if grouplik.max() > 1e50:
-                grouplik = grouplik * 1e-100
-                #print 'grouplik was scaled down'
-        grouplik = np.dot(grouplik, endB)
-        try:
-            loglik += log(grouplik[0])
-        except:
-            print ('HJClik: Warning: likelihood has been set to 0')
-            print ('likelihood=', grouplik[0])
-            print ('rates=', mec.unit_rates())
-            loglik = 0
-            break
-
-    newrates = np.log(mec.theta())
-    return -loglik, newrates
-
-#####################   DEPRECATED FUNCTIONS   #################################
-
-
-
-@deprecated("Use '...'")
-def ideal_subset_time_pdf(Q, k1, k2, t):
-    """
-    
-    """
-    
-    u = np.ones((k2 - k1 + 1, 1))
-    phi, QSub = qml.phiSub(Q, k1, k2)
-    expQSub = qml.expQ(QSub, t)
-    f = np.dot(np.dot(np.dot(phi, expQSub), -QSub), u)
-    return f
-
-
-@deprecated("Use '...'")
-def exact_mean_open_shut_time(mec, tres):
-    """
-    Calculate exact mean open or shut time from HJC probability density
-    function.
-
-    Parameters
-    ----------
-    tres : float
-        Time resolution (dead time).
-    QAA : array_like, shape (kA, kA)
-    QFF : array_like, shape (kF, kF)
-    QAF : array_like, shape (kA, kF)
-        QAA, QFF, QAF - submatrices of Q.
-    kA : int
-        A number of open states in kinetic scheme.
-    kF : int
-        A number of shut states in kinetic scheme.
-    GAF : array_like, shape (kA, kB)
-    GFA : array_like, shape (kB, kA)
-        GAF, GFA- transition probabilities
-
-    Returns
-    -------
-    mean : float
-        Apparent mean open/shut time.
-    """
-    GAF = qml.GXY(mec.QAA, mec.QAF) 
-    GFA = qml.GXY(mec.QFF, mec.QFA)
-    #GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
-    expQFF = qml.expQ(mec.QFF, tres)
-    expQAA = qml.expQ(mec.QAA, tres)
-    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
-    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
-
-    phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
-    phiF = qml.phiHJC(eGFA, eGAF, mec.kF)
-    QexpQF = np.dot(mec.QAF, expQFF)
-    QexpQA = np.dot(mec.QFA, expQAA)
-    DARS = qml.dARSdS(tres, mec.QAA, mec.QFF, GAF, GFA, expQFF, mec.kA, mec.kF)
-    DFRS = qml.dARSdS(tres, mec.QFF, mec.QAA, GFA, GAF, expQAA, mec.kF, mec.kA)
-    uF, uA = np.ones((mec.kF, 1)), np.ones((mec.kA, 1))
-    # meanOpenTime = tres + phiA * DARS * QexpQF * uF
-    meanA = tres + np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))[0]
-    meanF = tres + np.dot(phiF, np.dot(np.dot(DFRS, QexpQA), uA))[0]
-
-    return meanA, meanF
-
-@deprecated("Use '...'")
-def asymptotic_areas(tres, roots, QAA, QFF, QAF, QFA, kA, kF, GAF, GFA):
-    """
-    Find the areas of the asymptotic pdf (Eq. 58, HJC92).
-
-    Parameters
-    ----------
-    tres : float
-        Time resolution (dead time).
-    roots : array_like, shape (1,kA)
-        Roots of the asymptotic pdf.
-    QAA : array_like, shape (kA, kA)
-    QFF : array_like, shape (kF, kF)
-    QAF : array_like, shape (kA, kF)
-    QFA : array_like, shape (kF, kA)
-        QAA, QFF, QAF, QFA - submatrices of Q.
-    kA : int
-        A number of open states in kinetic scheme.
-    kF : int
-        A number of shut states in kinetic scheme.
-    GAF : array_like, shape (kA, kB)
-    GFA : array_like, shape (kB, kA)
-        GAF, GFA- transition probabilities
-
-    Returns
-    -------
-    areas : ndarray, shape (1, kA)
-    """
-
-    expQFF = qml.expQ(QFF, tres)
-    expQAA = qml.expQ(QAA, tres)
-    eGAF = qml.eGs(GAF, GFA, kA, kF, expQFF)
-    eGFA = qml.eGs(GFA, GAF, kF, kA, expQAA)
-    phiA = qml.phiHJC(eGAF, eGFA, kA)
-    R = qml.AR(roots, tres, QAA, QFF, QAF, QFA, kA, kF)
-    uF = np.ones((kF,1))
-    areas = np.zeros(kA)
-    for i in range(kA):
-        areas[i] = ((-1 / roots[i]) *
-            np.dot(phiA, np.dot(np.dot(R[i], np.dot(QAF, expQFF)), uF)))[0]  # [0] at the end needed due to NumPy 1.25 deprecation
-
-#    rowA = np.zeros((kA,kA))
-#    colA = np.zeros((kA,kA))
-#    for i in range(kA):
-#        WA = qml.W(roots[i], tres,
-#            QAA, QFF, QAF, QFA, kA, kF)
-#        rowA[i] = qml.pinf(WA)
-#        AW = np.transpose(WA)
-#        colA[i] = qml.pinf(AW)
-#
-#    for i in range(kA):
-#        uF = np.ones((kF,1))
-#        nom = np.dot(np.dot(np.dot(np.dot(np.dot(phiA, colA[i]), rowA[i]),
-#            QAF), expQFF), uF)
-#        W1A = qml.dW(roots[i], tres, QAF, QFF, QFA, kA, kF)
-#        denom = -roots[i] * np.dot(np.dot(rowA[i], W1A), colA[i])
-#        areas[i] = nom / denom
-
-    return areas
-
-@deprecated("Use '...'")
-def asymptotic_roots(tres, QAA, QFF, QAF, QFA, kA, kF):
-    """
-    Find roots for the asymptotic probability density function (Eqs. 52-58,
-    HJC92).
-
-    Parameters
-    ----------
-    tres : float
-        Time resolution (dead time).
-    QAA : array_like, shape (kA, kA)
-    QFF : array_like, shape (kF, kF)
-    QAF : array_like, shape (kA, kF)
-    QFA : array_like, shape (kF, kA)
-        QAA, QFF, QAF, QFA - submatrices of Q.
-    kA : int
-        A number of open states in kinetic scheme.
-    kF : int
-        A number of shut states in kinetic scheme.
-
-    Returns
-    -------
-    roots : array_like, shape (1, kA)
-    """
-
-    sas = -1000000
-    sbs = -0.0000001
-    sro = bisect_intervals(sas, sbs, tres,
-        QAA, QFF, QAF, QFA, kA, kF)
-
-    roots = np.zeros(kA)
-    for i in range(kA):
-        roots[i] = so.brentq(qml.detW, sro[i, 0], sro[i, 1],
-            args=(tres, QAA, QFF, QAF, QFA, kA, kF))
-
-#        roots[i] = so.bisect(qml.detW, sro[i,0], sro[i,1],
-#            args=(tres, QAA, QFF, QAF, QFA, kA, kF))
-
-    return roots
-
-@deprecated("Use '...'")
-def bisect_gFB(s, tres, Q11, Q22, Q12, Q21, k1, k2):
-    """
-    Find number of eigenvalues of H(s) that are equal to or less than s.
-
-    Parameters
-    ----------
-    s : float
-        Laplace transform argument.
-    tres : float
-        Time resolution (dead time).
-    Q11 : array_like, shape (k1, k1)
-    Q22 : array_like, shape (k2, k2)
-    Q21 : array_like, shape (k2, k1)
-    Q12 : array_like, shape (k1, k2)
-        Q11, Q12, Q22, Q21 - submatrices of Q.
-    k1 : int
-        A number of open/shut states in kinetic scheme.
-    k2 : int
-        A number of shut/open states in kinetic scheme.
-
-    Returns
-    -------
-    ng : int
-    """
-
-    h = qml.H(s, tres, Q11, Q22, Q12, Q21, k2)
-    eigval = nplin.eigvals(h)
-    ng = (eigval <= s).sum()
-    return ng
-
-@deprecated("Use '...'")
-def bisect_intervals(sa, sb, tres, Q11, Q22, Q12, Q21, k1, k2):
-    """
-    Find, according to Frank Ball's method, suitable starting guesses for
-    each HJC root- the upper and lower limits for bisection. Exactly one root
-    should be between those limits.
-
-    Parameters
-    ----------
-    sa, sb : float
-        Laplace transform arguments.
-    tres : float
-        Time resolution (dead time).
-    Q11 : array_like, shape (k1, k1)
-    Q22 : array_like, shape (k2, k2)
-    Q21 : array_like, shape (k2, k1)
-    Q12 : array_like, shape (k1, k2)
-        Q11, Q12, Q22, Q21 - submatrices of Q.
-    k1, k2 : int
-        Numbers of open/shut states in kinetic scheme.
-
-    Returns
-    -------
-    sr : array_like, shape (k2, 2)
-        Limits of s value intervals containing exactly one root.
-    """
-
-    nga = bisect_gFB(sa, tres, Q11, Q22, Q12, Q21, k1, k2)
-    if nga > 0: sa = sa * 4
-    ngb = bisect_gFB(sb, tres, Q11, Q22, Q12, Q21, k1, k2)
-    if ngb < k2: sb = sb / 4
-
-    done = []
-    todo = [[sa, sb, nga, ngb]]
-#    nsplit = 0
-
-#    while (len(done) < k1) and (nsplit < 1000):
-    while todo:
-        svv = todo.pop()
-        sa1, sc, sb2, nga1, ngc, ngb2 = bisect_split(svv[0], svv[1], svv[2], svv[3],
-            tres, Q11, Q22, Q12, Q21, k1, k2)
-#        nsplit += 1
-
-        # Check if either or both of the two subintervals output from
-        # SPLIT contain only one root?
-        if (ngc - nga1) == 1:
-            done.append([sa1, sc])
-#            if len(done) == k1:
-#                break
-        else:
-            todo.append([sa1, sc, nga1, ngc])
-        if (ngb2 - ngc) == 1:
-            done.append([sc, sb2])
-        else:
-            todo.append([sc, sb2, ngc, ngb2])
-
-    if len(done) < k1:
-        sys.stderr.write(
-            "bisectHJC: Warning: Only {0:d} roots out of {1:d} were located.".
-            format(len(done), k1))
-    return np.array(done)
-
-@deprecated("Use '...'")
-def bisect_split(sa, sb, nga, ngb, tres, Q11, Q22, Q12, Q21, k1, k2):
-    """
-    Split interval [sa, sb] into two subintervals, each of which contains
-    at least one root.
-
-    Parameters
-    ----------
-    sa, sb : float
-        Limits of Laplace transform argument interval.
-    nga, ngb : int
-        Number of eigenvalues (roots) below sa or sb, respectively.
-    tres : float
-        Time resolution (dead time).
-    Q11 : array_like, shape (k1, k1)
-    Q22 : array_like, shape (k2, k2)
-    Q21 : array_like, shape (k2, k1)
-    Q12 : array_like, shape (k1, k2)
-        Q11, Q12, Q22, Q21 - submatrices of Q.
-    k1, k2 : int
-        Numbers of open/shut states in kinetic scheme.
-
-    Returns
-    -------
-    sa, sc, sb : floats
-        Limits of s value intervals.
-    nga, ngc, ngb : ints
-        Number of eigenvalues below corresponding s values.
-    """
-
-    ntrymax = 1000
-    ntry = 0
-    #nerrs = False
-    end = False
-
-    while (not end) and (ntry < ntrymax):
-        sc = (sa + sb) / 2.0
-        ngc = bisect_gFB(sc, tres, Q11, Q22, Q12, Q21, k1, k2)
-        if ngc == nga: sa = sc
-        elif ngc == ngb: sb = sc
-        else:
-            end = True
-        ntry += 1
-    if not end:
-        sys.stderr.write(
-        "bisectHJC: Warning: unable to split intervals for bisection.")
-
-    return sa, sc, sb, nga, ngc, ngb
-
-
-
-@deprecated("Use '...'")
-def ideal_dwell_time_pdf_components(QAA, phiA):
-    """
-    Calculate time constants and areas for an ideal (no missed events)
-    exponential open time probability density function.
-    For shut time pdf A by F in function call.
-
-    Parameters
-    ----------
-    t : float
-        Time (sec).
-    QAA : array_like, shape (kA, kA)
-        Submatrix of Q.
-    phiA : array_like, shape (1, kA)
-        Initial vector for openings
-
-    Returns
-    -------
-    taus : ndarray, shape(k, 1)
-        Time constants.
-    areas : ndarray, shape(k, 1)
-        Component relative areas.
-    """
-
-    kA = QAA.shape[0]
-    w = np.zeros(kA)
-    #TODO: change 'eigs_sorted' into 'eigenvalues_and_spectral_matrices'
-    eigs, A = qml.eigenvalues_and_spectral_matrices(-QAA)
-    uA = np.ones((kA, 1))
-    #TODO: remove 'for'
-    for i in range(kA):
-        w[i] = np.dot(np.dot(np.dot(phiA, A[i]), (-QAA)), uA)[0]  # [0] at the end needed due to NumPy 1.25 deprecation
-
-    return eigs, w
 
 
 if __name__ == '__main__':

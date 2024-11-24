@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 from samples import samples
 from scalcs import qmatlib as qml
+from scalcs import hjclib as hjc
 from scalcs import scalcslib as scl
 
 class PopenCalculator(scl.AsymptoticPDF):
@@ -66,6 +67,19 @@ class PopenCurve:
             return self.calculator.popen_ideal(c)
         else:
             return self.calculator.popen_HJC(c, tres)
+        
+    def calculate_popen_curve(self, tres=None):
+        
+        result = self.analyse_curve()
+        cmin = result['EC50'] / 20
+        cmax = result['EC50'] * 500
+        crange = np.logspace(math.log10(cmin), math.log10(cmax), 1000)
+
+        curve_ideal = np.array([self.calculate_popen(c) for c in crange])
+        curve_HJC = np.array([self.calculate_popen(c, tres) for c in crange])
+
+        return crange, curve_ideal, curve_HJC
+
 
     def plot_popen_curve(self, cmin=1e-12, cmax=0.1, tres=None):
         """
@@ -74,7 +88,14 @@ class PopenCurve:
         This function plots the equilibrium open probability (Popen) curves,
         including both the apparent (corrected for missed events) and ideal curves.
         """
+
+        result = self.analyse_curve()
         
+        cmin = result['EC50'] / 20
+        cmax = result['EC50'] * 500
+        #log_start = int(np.log10(cmin)) - 1
+        #log_end = int(np.log10(cmax)) - 1
+
         # Calculate Popen curve data
         crange = np.logspace(math.log10(cmin), math.log10(cmax), 1000)
         # Convert concentration to µM
@@ -321,7 +342,7 @@ def Popen(mec, tres=0.0, conc=0.0, eff='c'):
         #popen = q_dwells.Popen()
     else:
         #popen = q_dwells.apparent_mean_open_time / (q_dwells.apparent_mean_open_time + q_dwells.apparent_mean_shut_time)
-        hmopen, hmshut = scl.exact_mean_open_shut_time(mec, tres)
+        hmopen, hmshut = hjc.exact_mean_open_shut_time(mec, tres)
         popen = (hmopen / (hmopen + hmshut))
     if mec.fastblock:
         popen = popen / (1 + conc / mec.fastKB)
