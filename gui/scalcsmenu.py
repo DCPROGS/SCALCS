@@ -239,19 +239,15 @@ class ScalcsMenu(QMenu):
         self.parent.mec.set_eff('c', self.parent.conc)
 
         try:
-            q_matrix = scl.QMatrixPrints(self.parent.mec) 
-            q_asymp = scl.AsymptoticPDFPrints(self.parent.mec, self.parent.tres)
-            q_exact = scl.ExactPDFPrints(self.parent.mec, self.parent.tres)
-            #text = scl.printout_occupancies(self.parent.mec, self.parent.tres)
-            self.parent.log.write(q_matrix.print_DC_table)
-            #text = scl.printout_distributions(self.parent.mec, self.parent.tres)
-            self.parent.log.write(q_matrix.print_open_time_pdf)
-            self.parent.log.write(q_asymp.print_asymptotic_open_time_pdf)
-            self.parent.log.write(q_exact.open_time_pdf)
+            dwells = scl.DwellsPDFDisplay(self.parent.mec, self.parent.tres)
+            self.parent.log.write(dwells.ideal.print_DC_table)
+            self.parent.log.write(dwells.ideal.print_ideal_open_time_pdf)
+            self.parent.log.write(dwells.asymptotic.print_asymptotic_open_time_pdf)
+            self.parent.log.write(dwells.exact.print_exact_open_time_pdf)
         except:
             sys.stderr.write("main: Warning: unable to prepare printout.")
         
-        t, ipdf, epdf, apdf = scl.open_time_pdf(self.parent.mec, self.parent.tres)
+        t, ipdf, epdf, apdf = dwells.calculate_open_time_pdf()
         self.parent.present_plot = np.vstack((t, ipdf, epdf, apdf))
 
         self.parent.canvas.axes.clear()
@@ -315,18 +311,15 @@ class ScalcsMenu(QMenu):
 
         self.parent.mec.set_eff('c', self.parent.conc)
         try:
-            q_matrix = scl.QMatrixPrints(self.parent.mec)
-            q_asymp = scl.AsymptoticPDFPrints(self.parent.mec, self.parent.tres)
-            q_exact = scl.ExactPDFPrints(self.parent.mec, self.parent.tres)
-            self.parent.log.write(q_matrix.print_shut_time_pdf)
-            self.parent.log.write(q_asymp.print_asymptotic_shut_time_pdf)
-            self.parent.log.write(q_exact.shut_time_pdf)
-            tcrits = scl.TCritPrints(self.parent.mec)
-            self.parent.log.write(tcrits.print_all)
+            dwells = scl.DwellsPDFDisplay(self.parent.mec, self.parent.tres)
+            self.parent.log.write(dwells.ideal.print_ideal_shut_time_pdf)
+            self.parent.log.write(dwells.asymptotic.print_asymptotic_shut_time_pdf)
+            self.parent.log.write(dwells.exact.print_exact_shut_time_pdf)
+            self.parent.log.write(dwells.tcrits.print_all)
         except:
             sys.stderr.write("main: Warning: unable to prepare printout.")
 
-        t, ipdf, epdf, apdf = scl.shut_time_pdf(self.parent.mec, self.parent.tres)
+        t, ipdf, epdf, apdf = dwells.calculate_shut_time_pdf()
         self.parent.present_plot = np.vstack((t, ipdf, epdf, apdf))
 
         self.parent.canvas.axes.clear()

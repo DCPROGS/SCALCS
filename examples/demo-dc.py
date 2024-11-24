@@ -118,22 +118,17 @@ def console_demo(demomec):
 
     #     OPEN TIME DISTRIBUTION
     sys.stdout.write('\n\nCalculating open and shut time distributions:')
-    q_matrix = scl.QMatrixPrints(demomec) 
-    sys.stdout.write(q_matrix.print_DC_table)
+    dwells = scl.DwellsPDFDisplay(demomec, tres)
+    sys.stdout.write(dwells.ideal.print_DC_table)
+    sys.stdout.write(dwells.ideal.print_ideal_open_time_pdf)
+    sys.stdout.write(dwells.asymptotic.print_asymptotic_open_time_pdf)
+    sys.stdout.write(dwells.exact.print_exact_open_time_pdf)
+    sys.stdout.write(dwells.ideal.print_ideal_shut_time_pdf)
+    sys.stdout.write(dwells.asymptotic.print_asymptotic_shut_time_pdf)
+    sys.stdout.write(dwells.exact.print_exact_shut_time_pdf)
+    sys.stdout.write(dwells.tcrits.print_all)
 
-    q_asymp = scl.AsymptoticPDFPrints(demomec, tres)
-    q_exact = scl.ExactPDFPrints(demomec, tres)
-    sys.stdout.write(q_matrix.print_open_time_pdf)
-    sys.stdout.write(q_asymp.print_asymptotic_open_time_pdf)
-    sys.stdout.write(q_exact.open_time_pdf)
-    sys.stdout.write(q_matrix.print_shut_time_pdf)
-    sys.stdout.write(q_asymp.print_asymptotic_shut_time_pdf)
-    sys.stdout.write(q_exact.shut_time_pdf)
-
-    tcrits = scl.TCritPrints(demomec)
-    sys.stdout.write(tcrits.print_all)
-    t, ipdf, epdf, apdf = scl.open_time_pdf(demomec, tres)
-
+    t, ipdf, epdf, apdf = dwells.calculate_open_time_pdf()
     plt.subplot(223)
     plt.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
     plt.ylabel('fopen(t)')
@@ -141,7 +136,7 @@ def console_demo(demomec):
     plt.title('The open time pdf')
 
     #     SHUT TIME DISTRIBUTION
-    t, ipdf, epdf, apdf = scl.shut_time_pdf(demomec, tres)
+    t, ipdf, epdf, apdf = dwells.calculate_shut_time_pdf()
     plt.subplot(224)
     plt.semilogx(t, ipdf, 'r--', t, epdf, 'b-', t, apdf, 'g-')
     plt.ylabel('fshut(t)')

@@ -6,6 +6,7 @@ from tabulate import tabulate
 import scipy.optimize as so
 import numpy as np
 from numpy import linalg as nplin
+import matplotlib.pyplot as plt
 
 from pylab import figure, semilogx, savefig
 
@@ -291,12 +292,12 @@ class QMatrixPrints(QMatrix):
         return open_str + shut_str + '\n'
     
     @property
-    def print_open_time_pdf(self):
+    def print_ideal_open_time_pdf(self):
         e, w = self.ideal_open_time_pdf_components()
         return ExpPDF(1/e, w/e).printout('\nIdeal open time PDF components, unconditional')
    
     @property
-    def print_shut_time_pdf(self):
+    def print_ideal_shut_time_pdf(self):
         e, w = self.ideal_shut_time_pdf_components()
         return ExpPDF(1/e, w/e).printout('\nIdeal shut time PDF components, unconditional')
 
@@ -378,10 +379,10 @@ class ExactPDFPrints(ExactPDFCalculator):
         kA, kB, kC, kD : int, optional
             Dimensions of different state subspaces. Defaults are 1 for kA and kB, 0 for kC and kD.
         """
-        super().__init__(mec, tres=tres) #.Q, kA=mec.kA, kB=mec.kB, kC=mec.kC, kD=mec.kD, tres=tres)
+        super().__init__(mec, tres=tres)
 
     @property
-    def open_time_pdf(self):
+    def print_exact_open_time_pdf(self):
         """
         Property to calculate and print the exact open time PDF coefficients.
 
@@ -394,7 +395,7 @@ class ExactPDFPrints(ExactPDFCalculator):
         return self._expPDF_exact_printout(eigvals, gamma00, gamma10, gamma11, 'EXACT OPEN TIME DISTRIBUTION')
 
     @property
-    def shut_time_pdf(self):
+    def print_exact_shut_time_pdf(self):
         """
         Property to calculate and print the exact shut time PDF coefficients.
 
@@ -440,66 +441,197 @@ class TCritPrints(QMatrix):
         return self.tcrits.print_critical_times_summary()
 
 
+class DwellsPDFDisplay:
+    """ 
+    Class to (print and) plot dwell time PDF's.
+    """
+
+    def __init__(self, mec, tres=0.0):
+        """        """
+        self.exact = ExactPDFPrints(mec, tres)
+        self.asymptotic = AsymptoticPDFPrints(mec, tres)
+        self.ideal = QMatrixPrints(mec)
+        self.tcrits = TCritPrints(mec)
+        self.mec = mec
+        self.tres = tres
+
+    def calculate_open_time_pdf(self, tmin=0.00001, tmax=1000, points=512):
+        """
+        Calculate ideal asymptotic and exact open time distributions.
+
+        Parameters
+        ----------
+        tmin, tmax : floats
+            Time range for burst length ditribution.
+        points : int
+            Number of points per plot.
+
+        Returns
+        -------
+        t : ndarray of floats, shape (num of points)
+            Time in seconds.
+        ipdf, epdf, apdf : ndarrays of floats, shape (num of points)
+            Ideal, exact and asymptotic open time distributions.
+        """
+
+        # Ideal pdf.
+        eigs, w = self.ideal.ideal_open_time_pdf_components()
+
+        tmax = (1 / eigs.min()) * 20
+        t = np.logspace(math.log10(tmin), math.log10(tmax), points)
+        
+        fac = 1 / np.sum((w / eigs) * np.exp(-self.tres * eigs)) # Scale factor
+        ipdf = t * pdfs.ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
+        
+        # Asymptotic pdf
+        Aroots, Aareas = self.asymptotic.HJC_asymptotic_open_time_pdf_components()
+        apdf = self.asymptotic_pdf(t, 1 / Aroots, Aareas)
+
+        # Exact pdf
+        Aeigs, Agamma00, Agamma10, Agamma11 = self.exact.exact_GAMAxx(open=True)
+        epdf = np.zeros(points)
+        for i in range(points):
+            epdf[i] = (t[i] * self.exact_pdf(t[i], Aroots, Aareas, Aeigs, Agamma00, Agamma10, Agamma11))
+                
+        return t, ipdf, epdf, apdf
+
+
+    def calculate_shut_time_pdf(self, tmin=0.00001, tmax=1000, points=512):
+        """
+        Calculate ideal asymptotic and exact shut time distributions.
+
+        Parameters
+        ----------
+        tmin, tmax : floats
+            Time range for burst length ditribution.
+        points : int
+            Number of points per plot.
+
+        Returns
+        -------
+        t : ndarray of floats, shape (num of points)
+            Time in seconds.
+        ipdf, epdf, apdf : ndarrays of floats, shape (num of points)
+            Ideal, exact and asymptotic shut time distributions.
+        """
+
+        # Ideal pdf
+        eigs, w = self.ideal.ideal_shut_time_pdf_components()
+
+        tmax = (1 / eigs.min()) * 20
+        t = np.logspace(math.log10(tmin), math.log10(tmax), points)
+
+        fac = 1 / np.sum((w / eigs) * np.exp(-self.tres * eigs)) # Scale factor
+        ipdf = t * pdfs.ExpPDF(1 / eigs, w / eigs).calculate(t) *fac
+
+        # Asymptotic pdf
+        Froots, Fareas = self.asymptotic.HJC_asymptotic_shut_time_pdf_components()
+        apdf = self.asymptotic_pdf(t, 1 / Froots, Fareas)
+
+        # Exact pdf
+        Feigs, Fgamma00, Fgamma10, Fgamma11 = self.exact.exact_GAMAxx(open=False)
+        epdf = np.zeros(points)
+        for i in range(points):
+            epdf[i] = (t[i] * self.exact_pdf(t[i], Froots, Fareas, Feigs, Fgamma00, Fgamma10, Fgamma11))
+
+        return t, ipdf, epdf, apdf
+
+    def asymptotic_pdf(self, t, tau, area):
+        """
+        Calculate asymptotic probabolity density function.
+
+        Parameters
+        ----------
+        t : ndarray.
+            Time.
+        tres : float
+            Time resolution.
+        tau : ndarray, shape(k, 1)
+            Time constants.
+        area : ndarray, shape(k, 1)
+            Component relative area.
+
+        Returns
+        -------
+        apdf : ndarray.
+        """
+        t1 = np.extract(t[:] < self.tres, t)
+        t2 = np.extract(t[:] >= self.tres, t)
+        apdf2 = t2 * pdfs.ExpPDF(tau, area).calculate(t2 - self.tres)
+        return np.append(t1 * 0.0, apdf2)
+
+    def exact_pdf(self, t, roots, areas, eigvals, gamma00, gamma10, gamma11):
+        r"""
+        Calculate exponential probabolity density function with exact solution for
+        missed events correction (Eq. 21, HJC92).
+
+        .. math::
+        :nowrap:
+
+        \begin{align*}
+        f(t) =
+        \begin{cases}
+        f_0(t)                          & \text{for}\; 0 \leq t \leq t_\text{res} \\
+        f_0(t) - f_1(t - t_\text{res})  & \text{for}\; t_\text{res} \leq t \leq 2 t_\text{res}
+        \end{cases}
+        \end{align*}
+
+        Parameters
+        ----------
+        t : float
+            Time.
+        tres : float
+            Time resolution (dead time).
+        roots : array_like, shape (k,)
+        areas : array_like, shape (k,)
+        eigvals : array_like, shape (k,)
+            Eigenvalues of -Q matrix.
+        gama00, gama10, gama11 : lists of floats
+            Coeficients for the exact open/shut time pdf.
+
+        Returns
+        -------
+        f : float
+        """
+
+        if t < self.tres:
+            f = 0
+        elif ((self.tres < t) and (t < (2 * self.tres))):
+            f = qml.f0((t - self.tres), eigvals, gamma00)
+        elif ((self.tres * 2) < t) and (t < (3 * self.tres)):
+            f = (qml.f0((t - self.tres), eigvals, gamma00) -
+                qml.f1((t - 2 * self.tres), eigvals, gamma10, gamma11))
+        else:
+            f = pdfs.ExpPDF(1 / roots, areas).calculate(t - self.tres)
+        return f
+
+
+    def plot_open_time_pdf(self, xlabel="Time (ms)", ylabel="PDF", title="Open time PDF"):
+
+        t, ipdf, epdf, apdf = self.calculate_open_time_pdf()
+        fig, ax = plt.subplots()
+        ax.semilogx(t * 1000, ipdf, 'r--', label="Ideal open time PDF")
+        ax.semilogx(t * 1000, apdf, 'g-', label="Asymptotic open time PDF")
+        ax.semilogx(t * 1000, epdf, 'b-', label="Exact open time PDF")
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+        ax.legend()
+        plt.show()
+
+    def plot_shut_time_pdf(self, xlabel="Time (ms)", ylabel="PDF", title="Shut time PDF"):
+        t, ipdf, epdf, apdf = self.calculate_shut_time_pdf()
+        fig, ax = plt.subplots()
+        ax.semilogx(t * 1000, ipdf, 'r--', label="Ideal shut time PDF")
+        ax.semilogx(t * 1000, apdf, 'g-', label="Asymptotic shut time PDF")
+        ax.semilogx(t * 1000, epdf, 'b-', label="Exact shut time PDF")
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+        ax.legend()
+        plt.show()
+
 ############################   FUNCTIONS TO REVIEW   ########################################
-
-def open_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
-    """
-    Calculate ideal asymptotic and exact open time distributions.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    tres : float
-        Time resolution.
-    tmin, tmax : floats
-        Time range for burst length ditribution.
-    points : int
-        Number of points per plot.
-    unit : str
-        'ms'- milliseconds.
-
-    Returns
-    -------
-    t : ndarray of floats, shape (num of points)
-        Time in millisec.
-    ipdf, epdf, apdf : ndarrays of floats, shape (num of points)
-        Ideal, exact and asymptotic open time distributions.
-    """
-
-    open = True
-
-    # Asymptotic pdf
-    roots = asymptotic_roots(tres,
-        mec.QAA, mec.QII, mec.QAI, mec.QIA, mec.kA, mec.kI)
-
-    tmax = (-1 / roots.max()) * 20
-    t = np.logspace(math.log10(tmin), math.log10(tmax), points)
-
-    # Ideal pdf.
-    eigs, w = ideal_dwell_time_pdf_components(mec.QAA, qml.phiA(mec))
-    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
-    ipdf = t * pdfs.ExpPDF(1 / eigs, w / eigs).calculate(t) * fac
-    
-
-    # Asymptotic pdf
-    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kI)
-    areas = asymptotic_areas(tres, roots,
-        mec.QAA, mec.QII, mec.QAI, mec.QIA,
-        mec.kA, mec.kI, GAF, GFA)
-    apdf = asymptotic_pdf(t, tres, -1 / roots, areas)
-
-    # Exact pdf
-    eigvals, gamma00, gamma10, gamma11 = exact_GAMAxx(mec,
-        tres, open)
-    epdf = np.zeros(points)
-    for i in range(points):
-        epdf[i] = (t[i] * exact_pdf(t[i], tres,
-            roots, areas, eigvals, gamma00, gamma10, gamma11))
-            
-    if unit == 'ms':
-        t = t * 1000 # x scale in millisec
-
-    return t, ipdf, epdf, apdf
 
 
 def scaled_pdf(t, pdf, dt, n):
@@ -527,62 +659,6 @@ def scaled_pdf(t, pdf, dt, n):
     #spdf = n * dt * pdf
     return spdf
 
-def shut_time_pdf(mec, tres, tmin=0.00001, tmax=1000, points=512, unit='ms'):
-    """
-    Calculate ideal asymptotic and exact shut time distributions.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    tres : float
-        Time resolution.
-    tmin, tmax : floats
-        Time range for burst length ditribution.
-    points : int
-        Number of points per plot.
-    unit : str
-        'ms'- milliseconds.
-
-    Returns
-    -------
-    t : ndarray of floats, shape (num of points)
-        Time in millisec.
-    ipdf, epdf, apdf : ndarrays of floats, shape (num of points)
-        Ideal, exact and asymptotic shut time distributions.
-    """
-
-    open = False
-
-    # Asymptotic pdf
-    roots = asymptotic_roots(tres, mec.QII, mec.QAA, mec.QIA, mec.QAI,
-        mec.kI, mec.kA)
-
-    tmax = (-1 / roots.max()) * 20
-    t = np.logspace(math.log10(tmin), math.log10(tmax), points)
-
-    # Ideal pdf.
-    eigs, w = ideal_dwell_time_pdf_components(mec.QII, qml.phiF(mec))
-    fac = 1 / np.sum((w / eigs) * np.exp(-tres * eigs)) # Scale factor
-    ipdf = t * pdfs.ExpPDF(1 / eigs, w / eigs).calculate(t) *fac #pdfs.expPDF(t, 1 / eigs, w / eigs) * fac
-
-    # Asymptotic pdf
-    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kI)
-    areas = asymptotic_areas(tres, roots,
-        mec.QII, mec.QAA, mec.QIA, mec.QAI,
-        mec.kI, mec.kA, GFA, GAF)
-    apdf = asymptotic_pdf(t, tres, -1 / roots, areas)
-
-    # Exact pdf
-    eigvals, gamma00, gamma10, gamma11 = exact_GAMAxx(mec, tres, open)
-    epdf = np.zeros(points)
-    for i in range(points):
-        epdf[i] = (t[i] * exact_pdf(t[i], tres,
-            roots, areas, eigvals, gamma00, gamma10, gamma11))
-
-    if unit == 'ms':
-        t = t * 1000 # x scale in millisec
-
-    return t, ipdf, epdf, apdf
 
 def subset_time_pdf(mec, tres, state1, state2,
     tmin=0.00001, tmax=1000, points=512, unit='ms'):
@@ -652,76 +728,6 @@ def png_save_pdf_fig(outfile, ints, mec, conc, tres, type):
     semilogx(x*1000, y, 'k-', t, sipdf, 'r--', t, sepdf, 'b-')
     savefig(outfile, bbox_inches=0)
 
-def asymptotic_pdf(t, tres, tau, area):
-    """
-    Calculate asymptotic probabolity density function.
-
-    Parameters
-    ----------
-    t : ndarray.
-        Time.
-    tres : float
-        Time resolution.
-    tau : ndarray, shape(k, 1)
-        Time constants.
-    area : ndarray, shape(k, 1)
-        Component relative area.
-
-    Returns
-    -------
-    apdf : ndarray.
-    """
-    t1 = np.extract(t[:] < tres, t)
-    t2 = np.extract(t[:] >= tres, t)
-    apdf2 = t2 * pdfs.ExpPDF(tau, area).calculate(t2 - tres)   #pdfs.expPDF(t2 - tres, tau, area)
-    apdf = np.append(t1 * 0.0, apdf2)
-
-    return apdf
-
-def exact_pdf(t, tres, roots, areas, eigvals, gamma00, gamma10, gamma11):
-    r"""
-    Calculate exponential probabolity density function with exact solution for
-    missed events correction (Eq. 21, HJC92).
-
-    .. math::
-       :nowrap:
-
-       \begin{align*}
-       f(t) =
-       \begin{cases}
-       f_0(t)                          & \text{for}\; 0 \leq t \leq t_\text{res} \\
-       f_0(t) - f_1(t - t_\text{res})  & \text{for}\; t_\text{res} \leq t \leq 2 t_\text{res}
-       \end{cases}
-       \end{align*}
-
-    Parameters
-    ----------
-    t : float
-        Time.
-    tres : float
-        Time resolution (dead time).
-    roots : array_like, shape (k,)
-    areas : array_like, shape (k,)
-    eigvals : array_like, shape (k,)
-        Eigenvalues of -Q matrix.
-    gama00, gama10, gama11 : lists of floats
-        Coeficients for the exact open/shut time pdf.
-
-    Returns
-    -------
-    f : float
-    """
-
-    if t < tres:
-        f = 0
-    elif ((tres < t) and (t < (2 * tres))):
-        f = qml.f0((t - tres), eigvals, gamma00)
-    elif ((tres * 2) < t) and (t < (3 * tres)):
-        f = (qml.f0((t - tres), eigvals, gamma00) -
-            qml.f1((t - 2 * tres), eigvals, gamma10, gamma11))
-    else:
-        f = pdfs.ExpPDF(-1 / roots, areas).calculate(t-tres) #pdfs.expPDF(t - tres, -1 / roots, areas)
-    return f
 
 def likelihood(theta, opts):
     """
@@ -869,32 +875,6 @@ def HJClik(theta, opts):
 #####################   DEPRECATED FUNCTIONS   #################################
 
 
-@deprecated("Use '...'")
-def ideal_dwell_time_pdf(t, QAA, phiA):
-    """
-    Probability density function of the open time.
-    f(t) = phiOp * exp(-QAA * t) * (-QAA) * uA
-    For shut time pdf A by F in function call.
-
-    Parameters
-    ----------
-    t : float
-        Time (sec).
-    QAA : array_like, shape (kA, kA)
-        Submatrix of Q.
-    phiA : array_like, shape (1, kA)
-        Initial vector for openings
-
-    Returns
-    -------
-    f : float
-    """
-
-    kA = QAA.shape[0]
-    uA = np.ones((kA, 1))
-    expQAA = qml.expQ(QAA, t)
-    f = np.dot(np.dot(np.dot(phiA, expQAA), -QAA), uA)
-    return f
 
 @deprecated("Use '...'")
 def ideal_subset_time_pdf(Q, k1, k2, t):
@@ -908,142 +888,6 @@ def ideal_subset_time_pdf(Q, k1, k2, t):
     f = np.dot(np.dot(np.dot(phi, expQSub), -QSub), u)
     return f
 
-
-@deprecated("Use '...'")
-def ideal_popen(mec):
-    """
-    Calculate ideal equilibrium open probability, Popen.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-
-    Returns
-    -------
-    popen : float
-        Open probability. 
-    """
-    p = qml.pinf(mec.QGG)
-    return np.sum(p[ : mec.kA]) / np.sum(p)
-
-@deprecated("Use '...'")
-def ideal_subset_mean_life_time(Q, state1, state2):
-    """
-    Calculate mean life time in a specified subset. Add all rates out of subset
-    to get total rate out. Skip rates within subset.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    state1,state2 : int
-        State numbers (counting origin 1)
-
-    Returns
-    -------
-    mean : float
-        Mean life time.
-    """
-
-    k = Q.shape[0]
-    p = qml.pinf(Q)
-    # Total occupancy for subset.
-    pstot = np.sum(p[state1-1 : state2])
-
-    # Total rate out
-    if pstot == 0:
-        mean = 0.0
-    else:
-        s = 0.0
-        for i in range(state1-1, state2):
-            for j in range(k):
-                if (j < state1-1) or (j > state2 - 1):
-                    s += Q[i, j] * p[i] / pstot
-
-        mean = 1 / s
-    return mean
-
-@deprecated("Use '...'")
-def ideal_mean_latency_given_start_state(mec, state):
-    """
-    Calculate mean latency to next opening (shutting), given starting in
-    specified shut (open) state.
-
-    mean latency given starting state = pF(0) * inv(-QFF) * uF
-
-    F- all shut states (change to A for mean latency to next shutting
-    calculation), p(0) = [0 0 0 ..1.. 0] - a row vector with 1 for state in
-    question and 0 for all other states.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    state : int
-        State number (counting origin 1)
-
-    Returns
-    -------
-    mean : float
-        Mean latency.
-    """
-
-    if state <= mec.kA:
-        # for calculating mean latency to next shutting
-        p = np.zeros((mec.kA))
-        p[state-1] = 1
-        u = np.ones((mec.kA, 1))
-        invQ = nplin.inv(-mec.QAA)
-    else:
-        # for calculating mean latency to next opening
-        p = np.zeros((mec.kI))
-        p[state-mec.kA-1] = 1
-        u = np.ones((mec.kI, 1))
-        invQ = nplin.inv(-mec.QII)
-
-    mean = np.dot(np.dot(p, invQ), u)[0]
-    return mean
-
-@deprecated("Use '...'")
-def exact_mean_time(tres, QAA, QFF, QAF, kA, kF, GAF, GFA):
-    """
-    Calculate exact mean open or shut time from HJC probability density
-    function.
-
-    Parameters
-    ----------
-    tres : float
-        Time resolution (dead time).
-    QAA : array_like, shape (kA, kA)
-    QFF : array_like, shape (kF, kF)
-    QAF : array_like, shape (kA, kF)
-        QAA, QFF, QAF - submatrices of Q.
-    kA : int
-        A number of open states in kinetic scheme.
-    kF : int
-        A number of shut states in kinetic scheme.
-    GAF : array_like, shape (kA, kB)
-    GFA : array_like, shape (kB, kA)
-        GAF, GFA- transition probabilities
-
-    Returns
-    -------
-    mean : float
-        Apparent mean open/shut time.
-    """
-    
-    expQFF = qml.expQ(QFF, tres)
-    expQAA = qml.expQ(QAA, tres)
-    eGAF = qml.eGs(GAF, GFA, kA, kF, expQFF)
-    eGFA = qml.eGs(GFA, GAF, kF, kA, expQAA)
-
-    phiA = qml.phiHJC(eGAF, eGFA, kA)
-    QexpQF = np.dot(QAF, expQFF)
-    DARS = qml.dARSdS(tres, QAA, QFF,
-        GAF, GFA, expQFF, kA, kF)
-    uF = np.ones((kF, 1))
-    # meanOpenTime = tres + phiA * DARS * QexpQF * uF
-    mean = tres + np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))[0]
-
-    return mean
 
 @deprecated("Use '...'")
 def exact_mean_open_shut_time(mec, tres):
@@ -1335,70 +1179,7 @@ def bisect_split(sa, sb, nga, ngb, tres, Q11, Q22, Q12, Q21, k1, k2):
 
     return sa, sc, sb, nga, ngc, ngb
 
-@deprecated("Use '...'")
-def exact_GAMAxx(mec, tres, open):
-    """
-    Calculate gama coeficients for the exact open time pdf (Eq. 3.22, HJC90).
 
-    Parameters
-    ----------
-    tres : float
-    mec : dcpyps.Mechanism
-        The mechanism to be analysed.
-    open : bool
-        True for open time pdf and False for shut time pdf.
-
-    Returns
-    -------
-    eigen : ndarray, shape (k,)
-        Eigenvalues of -Q matrix.
-    gama00, gama10, gama11 : ndarrays
-        Constants for the exact open/shut time pdf.
-    """
-
-    expQFF = qml.expQ(mec.QII, tres)
-    expQAA = qml.expQ(mec.QAA, tres)
-    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kI)
-    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kI, expQFF)
-    eGFA = qml.eGs(GFA, GAF, mec.kI, mec.kA, expQAA)
-    #TODO: replace 'eigs_sorted' by 'eigenvalues_and_spectral_matrices'
-    eigs, A = qml.eigenvalues_and_spectral_matrices(-mec.Q)
-
-    if open:
-        phi = qml.phiHJC(eGAF, eGFA, mec.kA)
-        Z00, Z10, Z11 = qml.Zxx(mec.Q, eigs, A, mec.kA,
-            mec.QII, mec.QAI, mec.QIA, expQFF, open)
-        u = np.ones((mec.kI,1))
-    else:
-        phi = qml.phiHJC(eGFA, eGAF, mec.kI)
-        Z00, Z10, Z11 = qml.Zxx(mec.Q, eigs, A, mec.kA,
-            mec.QAA, mec.QIA, mec.QAI, expQAA, open)
-        u = np.ones((mec.kA, 1))
-
-    gama00 = (np.dot(np.dot(phi, Z00), u)).T[0]
-    gama10 = (np.dot(np.dot(phi, Z10), u)).T[0]
-    gama11 = (np.dot(np.dot(phi, Z11), u)).T[0]
-
-    return eigs, gama00, gama10, gama11
-
-@deprecated("Use 'scalcs.popen'")
-def exact_popen(mec, tres):
-    """
-    Calculate equilibrium open probability, Popen, corrected for missed events.
-
-    Parameters
-    ----------
-    mec : instance of type Mechanism
-    tres : float
-        Time resolution.
-
-    Returns
-    -------
-    popen : float
-        Open probability. 
-    """
-    hmopen, hmshut = exact_mean_open_shut_time(mec, tres)
-    return (hmopen / (hmopen + hmshut))
 
 @deprecated("Use '...'")
 def ideal_dwell_time_pdf_components(QAA, phiA):
@@ -1439,27 +1220,31 @@ def ideal_dwell_time_pdf_components(QAA, phiA):
 if __name__ == '__main__':
     mec = samples.CH82()
     mec.set_eff('c', 0.0000001) 
-    tres = 0.0001 # 10 us
+    tres = 0.0001 # 100 us
+    
+    dwells = DwellsPDFDisplay(mec, tres)
 
-    q_matrix = QMatrixPrints(mec)
-    print(q_matrix.print_Q)
-    print(q_matrix.print_pinf) # print equilibrium state occupancies
-    print(q_matrix.print_Popen)
-    print(q_matrix.print_state_lifetimes)
-    print(q_matrix.print_transition_matrices)
-    print(q_matrix.print_subset_probabilities)
-    print(q_matrix.print_initial_vectors)
-    print(q_matrix.print_DC_table)
-    print(q_matrix.print_initial_vectors_for_openings_shuttings)
-    print(q_matrix.print_open_time_pdf)
-    print(q_matrix.print_shut_time_pdf)
+    print(dwells.ideal.print_Q)
+    print(dwells.ideal.print_pinf) # print equilibrium state occupancies
+    print(dwells.ideal.print_Popen)
+    print(dwells.ideal.print_state_lifetimes)
+    print(dwells.ideal.print_transition_matrices)
+    print(dwells.ideal.print_subset_probabilities)
+    print(dwells.ideal.print_initial_vectors)
+    print(dwells.ideal.print_DC_table)
+    print(dwells.ideal.print_initial_vectors_for_openings_shuttings)
 
-    q_asymp = AsymptoticPDFPrints(mec, tres=tres)
-    print(q_asymp.print_all)
+    print(dwells.ideal.print_ideal_open_time_pdf)
+    print(dwells.ideal.print_ideal_shut_time_pdf)
+    print(dwells.asymptotic.print_asymptotic_open_time_pdf)
+    print(dwells.asymptotic.print_asymptotic_shut_time_pdf)
+    print(dwells.exact.print_exact_open_time_pdf)
+    print(dwells.exact.print_exact_shut_time_pdf)
+    
+    print(dwells.tcrits.print_all)
+    
+    dwells.plot_open_time_pdf()
+    dwells.plot_shut_time_pdf()
 
-    q_exact = ExactPDFPrints(mec, tres=tres)
-    print(q_exact.open_time_pdf)
-    print(q_exact.shut_time_pdf)
 
-    tcrits = TCritPrints(mec)
-    print(tcrits.print_all)
+
