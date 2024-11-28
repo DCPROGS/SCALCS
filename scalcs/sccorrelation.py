@@ -13,7 +13,7 @@ class CorrelationCalculator(qml.QMatrix):
     """
 
     def __init__(self, mec):
-        super().__init__(mec.Q, mec.kA, mec.kB, mec.kC, mec.kD)
+        super().__init__(mec)
 
         self.uA: np.ndarray = np.ones((self.kA, 1))
         self.uF: np.ndarray = np.ones((self.kF, 1))

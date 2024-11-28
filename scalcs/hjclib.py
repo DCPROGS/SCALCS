@@ -9,8 +9,9 @@ from scalcs import qmatlib as qml
 
 class HJCMatrix(qml.QMatrix):
     """ Class to store HJC basic calculations. """
-    def __init__(self, Q, kA=1, kB=1, kC=0, kD=0, tres=0.0):
-        super().__init__(Q, kA=kA, kB=kB, kC=kC, kD=kD)
+    def __init__(self, mec, tres=0.0):
+        super().__init__(mec) #Q, kA=kA, kB=kB, kC=kC, kD=kD)
+
         self.tres = tres
 
     @property
@@ -126,9 +127,9 @@ class HJCMatrix(qml.QMatrix):
 class AsymptoticPDFCalculator(HJCMatrix):
     """Asymptotic PDF calculations"""
 
-    def __init__(self, Q, kA=1, kB=1, kC=0, kD=0, tres=0.0):
-        super().__init__(Q, kA=kA, kB=kB, kC=kC, kD=kD, tres=tres)
-        self.derivative_calculator = DerivativeCalculator(Q, kA, kB, kC, kD, tres)
+    def __init__(self, mec, tres=0.0):
+        super().__init__(mec, tres=tres)
+        self.derivative_calculator = DerivativeCalculator(self.mec, self.tres)
 
     def asymptotic_roots(self, open=True):
         """Find the roots for the asymptotic pdf (Eqs. 52-58, HJC92)."""
@@ -431,7 +432,7 @@ class ExactPDFCalculator(HJCMatrix):
         kA, kB, kC, kD : int, optional
             Dimensions of different state subspaces. Defaults are 1 for kA and kB, 0 for kC and kD.
         """
-        super().__init__(mec.Q, kA=mec.kA, kB=mec.kB, kC=mec.kC, kD=mec.kD, tres=tres)
+        super().__init__(mec, tres=tres)
    
     def exact_GAMAxx(self, open=True):
         """

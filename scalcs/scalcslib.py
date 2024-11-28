@@ -17,7 +17,7 @@ class AsymptoticPDF(hjc.AsymptoticPDFCalculator):
     '''
 
     def __init__(self, mec, tres=0.0): 
-        super().__init__(mec.Q, kA=mec.kA, kB=mec.kB, kC=mec.kC, kD=mec.kD, tres=tres)
+        super().__init__(mec, tres=tres)
         
     @property
     def apparentPopen(self):
@@ -61,7 +61,7 @@ class QMatrixPrints(qml.QMatrix):
 
     def __init__(self, mec):
         # Initialize the QMatrix superclass.
-        super().__init__(mec.Q, kA=mec.kA, kB=mec.kB, kC=mec.kC, kD=mec.kD)
+        super().__init__(mec)
 
     @property
     def print_Q(self):
@@ -324,7 +324,7 @@ class ExactPDFPrints(hjc.ExactPDFCalculator):
 
 class TCritPrints(qml.QMatrix):
     def __init__(self, mec):
-        qml.QMatrix.__init__(self, mec.Q, kA=mec.kA, kB=mec.kB, kC=mec.kC, kD=mec.kD)
+        qml.QMatrix.__init__(self, mec)
         e, w = self.ideal_shut_time_pdf_components()
         self.tcrits = pdfs.TCrits(1 / e, w / e)
 

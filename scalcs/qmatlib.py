@@ -122,7 +122,7 @@ class QMatrix:
     Transition rate matrix Q.
     '''
 
-    def __init__(self, Q, kA=1, kB=1, kC=0, kD=0):
+    def __init__(self, mec): #Q, kA=1, kB=1, kC=0, kD=0):
         """
         Initialize the QMatrix instance.
 
@@ -130,11 +130,12 @@ class QMatrix:
         Q (np.ndarray): Transition rate matrix.
         kA, kB, kC, kD (int): State counts for different categories.
         """
-        self.Q = Q
-        self.kA, self.kB, self.kC, self.kD = kA, kB, kC, kD
+        self.mec = mec
+        self.Q = mec.Q
+        self.kA, self.kB, self.kC, self.kD = mec.kA, mec.kB, mec.kC, mec.kD
         #TODO: sanity check- is self.k == self.num_states 
         self.k = self.kA + self.kB + self.kC + self.kD  # all states
-        self.num_states = Q.shape[0]
+        self.num_states = self.Q.shape[0]
 
         self._set_state_counts()
         self._set_submatrices()
@@ -147,6 +148,7 @@ class QMatrix:
         self.GFA = self._GXY(self.QFF, self.QFA)
         self.GAB = self._GXY(self.QAA, self.QAB)
         self.GBA = self._GXY(self.QBB, self.QBA)
+        self.GBC = self._GXY(self.QBB, self.QBC)
 
     def _calculate_pinf(self):
         """ Placeholder for calculating steady-state probabilities (pinf). """

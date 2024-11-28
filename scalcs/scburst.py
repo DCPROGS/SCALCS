@@ -11,7 +11,7 @@ class SCBurst(qml.QMatrix):
     """Calculates burst-related quantities from a Q-matrix as in Colquhoun & Hawkes (1982)."""
 
     def __init__(self, mec):
-        super().__init__(mec.Q, mec.kA, mec.kB, mec.kC, mec.kD)
+        super().__init__(mec)
         self.GABAG = self.GAB @ self.GBA
         self.probability_of_ending = self.IA - self.GABAG
         self.invQAA, self.invQBB, self.invQFF = map(inv, [self.QAA, self.QBB, self.QFF])

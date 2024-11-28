@@ -12,7 +12,7 @@ class TestTCrits(unittest.TestCase):
         # Setting up test data
         mec = samples.CH82()
         mec.set_eff('c', 0.1e-6) # 0.1 uM
-        q_dwells = QMatrix(mec.Q, mec.kA, mec.kB, mec.kC, mec.kD)
+        q_dwells = QMatrix(mec)
         e, w = q_dwells.ideal_shut_time_pdf_components()
         self.tcrits_obj = TCrits(1 / e, w / e)
         

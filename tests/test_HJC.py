@@ -2,7 +2,8 @@ import unittest
 import numpy as np
 
 from samples import samples
-from scalcs.scalcslib import ExactPDFCalculator, AsymptoticPDF
+from scalcs.scalcslib import AsymptoticPDF
+from scalcs.hjclib import ExactPDFCalculator
 
 class TestExactPDFCalculator(unittest.TestCase):
     

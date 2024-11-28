@@ -15,7 +15,7 @@ class TestQMatrixRegression(unittest.TestCase):
         # Set up your QMatrix instance here
         self.mec = samples.CH82()
         self.mec.set_eff('c', 0.0000001) 
-        self.qmatrix = QMatrix(self.mec.Q, self.mec.kA, self.mec.kB, self.mec.kC, self.mec.kD)
+        self.qmatrix = QMatrix(self.mec)
         self.pinf_expected_result = np.array([2.48271431e-05, 0.00186203552, 0.00496542821, 6.20678511e-05, 0.993085641])
  
     def test_pinf_method1(self):
