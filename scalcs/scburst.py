@@ -567,34 +567,43 @@ class BurstDisplay(SCBurst):
 
 
     def plot_burst_length_pdf(self, multicomp=True):
-        """Generate and display the burst length PDF plot with multicomp=True."""
+        """
+        Generate and display the burst length PDF plot.
         
+        Parameters:
+        -----------
+        multicomp : bool, optional
+            Flag to enable multiple components (default: True)
+        """
         # Retrieve data with multicomp enabled
         t, fbst = self.calculate_burst_length_pdf(multicomp=multicomp)
         
-        # Create the plot
-        fig, ax = plt.subplots()
+        # Create figure and axes
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        # Convert time to milliseconds
+        t_ms = t * 1000
         
         # Plot the main burst length PDF
-        ax.semilogx(t * 1000, fbst[0], 'b-', label='Burst Length PDF')
+        ax.semilogx(t_ms, fbst[0], 'b-', label='Burst Length PDF', linewidth=2)
         
         # Plot additional components if available
-        if fbst.shape[0] > 1: #is not None:
+        if fbst.shape[0] > 1:
             for i, mf in enumerate(fbst[1:]):
-                ax.semilogx(t * 1000, mf, 'b--', label=f'Component {i+1}')
-
-        # Apply square-root transformation to the y-axis
-        #sqrt_transform = FuncTransform(lambda y: np.sqrt(y), lambda y: y**2)
-        #ax.set_yscale('function', functions=(sqrt_transform.transform, sqrt_transform.inverted))
-
-        # Labeling
-        ax.set_xlabel('Time (ms)')
-        ax.set_ylabel('PDF') # (sqrt scale)')
-        ax.set_title('Burst Length PDF')
-        ax.legend()
-
+                ax.semilogx(t_ms, mf, 'b--', label=f'Component {i+1}', linewidth=1.5)
+        
+        # Labeling and styling
+        ax.set_xlabel('Time (ms)', fontsize=12)
+        ax.set_ylabel('PDF', fontsize=12)
+        ax.set_title('Burst Length PDF', fontsize=14)
+        
+        # Add legend and grid
+        ax.legend(fontsize=10)
+        ax.grid(True, which="both", ls="-", alpha=0.2)
+        
+        # Adjust layout and display
+        plt.tight_layout()
         plt.show()
-        #return fig
 
     def plot_conditional_burst_length_pdf(self):
         """Generate and display the conditional burst length PDF plot."""
