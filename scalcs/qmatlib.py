@@ -2,6 +2,7 @@ import numpy as np
 import numpy.linalg as nplin
 from deprecated import deprecated
 from functools import cached_property
+import warnings
 
 def eigenvalues_and_spectral_matrices(Q, do_sorting=True):
     """
@@ -180,13 +181,32 @@ class QMatrix:
 
     def state_lifetimes(self):
         """ Calculate state lifetimes based on diagonal elements of Q. """
-        return -1 / np.diag(self.Q)
+
+        diagonal = self.Q.diagonal() # also np.diag(self.Q)
+        if np.any(diagonal > 0):
+            raise ValueError("Q matrix diagonal elements must be non-positive")
+        
+        #tmean = np.zeros_like(diagonal)
+        #for i, d in enumerate(diagonal):
+        #    if d < 0:
+        #        tmean[i] = -1.0 / d
+        #    else:
+        #        tmean[i] = float('inf')  # Infinite lifetime for absorbing states
+
+        return -1 / diagonal 
 
     def transition_probability(self):
         """ Calculate the transition probabilities. """
         transition_probability = self.Q.copy()
         np.fill_diagonal(transition_probability, 0)
         row_sums = -np.diag(self.Q)
+
+        # Verify each row sums to approximately 1 (floating point tolerance)
+        #row_sums = np.sum(transition_probability, axis=1)
+        #for i, sum_i in enumerate(row_sums):
+        #    if sum_i > 0 and not np.isclose(sum_i, 1.0, rtol=1e-5):
+        #        warnings.warn(f"Row {i} in transition probability matrix sums to {sum_i}, not 1")
+
         return transition_probability / row_sums[:, np.newaxis]
 
     def transition_frequency(self):
