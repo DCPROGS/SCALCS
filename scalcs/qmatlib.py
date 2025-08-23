@@ -145,7 +145,9 @@ class QMatrix:
         #self.pinf = pinf(self.Q)
         self.pinf = self._calculate_pinf()
 
-        self.GAF = self._GXY(self.QAA, self.QAF) 
+        self.GAF = self._GXY(self.QAA, self.QAF)
+        print('self.QFA=', self.QFA)
+        print('self.QFF=', self.QFF)
         self.GFA = self._GXY(self.QFF, self.QFA)
         self.GAB = self._GXY(self.QAA, self.QAB)
         self.GBA = self._GXY(self.QBB, self.QBA)
@@ -340,13 +342,23 @@ class QMatrix:
             w[i] = (phi @ A[i] @ -Q @ u)[0]
         #w = np.einsum('ij,ijk,kl->i', phi, A, (-Q) @ u)
         return eigs, w
+
+    def ideal_first_latency_pdf_components(self):
+        """Calculate first latency PDF components."""
+        phi = np.zeros_like(self.phiF)
+        phi[-1] = 1
+        return self._ideal_time_pdf_components(self.QFF, phi, self.uF, self.kF)
     
-    def ideal_dwell_time_pdf_direct(self, t, open=True):
+    def ideal_dwell_time_pdf_direct(self, t, open=True, fl=False):
         """
         Probability density function of the open time.
         f(t) = phiOp * exp(-QAA * t) * (-QAA) * uA
+        if fl=True, then calculate first latency pdf instead of dwell time pdf
         """
         phiX = self.phiA if open else self.phiF
+        if fl:
+            phiX = np.zeros_like(phiX)
+            phiX[-1] = 1
         QXX = self.QAA if open else self.QFF
         u = self.uA if open else self.uF
         return phiX @ expQ(QXX, t) @ -QXX @ u

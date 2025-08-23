@@ -268,7 +268,7 @@ class AsymptoticPDFCalculator(HJCMatrix):
         sys.stderr.write("bisectHJC: Warning: Unable to split intervals for bisection after 1000 attempts.\n")
         return sa, sc, sb, nga, ngc, ngb
 
-    def asymptotic_areas(self, roots, open=True):
+    def asymptotic_areas(self, roots, open=True, fl=False):
         """
         Calculate the areas of the asymptotic probability density function (Eq. 58, HJC92).
 
@@ -290,6 +290,9 @@ class AsymptoticPDFCalculator(HJCMatrix):
         Q_other = self.QAF if open else self.QFA
         expQ_other = self.expQFF if open else self.expQAA
         phi = self.HJCphiA if open else self.HJCphiF
+        if (fl == True) & (open==False): 
+            phi = np.zeros(self.kF, dtype=int)
+            phi[-1] = 1
         u = self.uF if open else self.uA
 
         return np.array([(1 / roots[i]) * np.dot(phi, np.dot(R[i], np.dot(Q_other, expQ_other)).dot(u))[0] for i in range(k)])

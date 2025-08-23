@@ -43,11 +43,15 @@ class AsymptoticPDF(hjc.AsymptoticPDFCalculator):
     def HJC_asymptotic_shut_time_pdf_components(self):
         """Get the roots and areas for shut times."""
         return self._asymptotic_pdf_components(open=False)
+    
+    def HJC_asymptotic_first_latency_to_opening_pdf_components(self):
+        """Get the roots and areas for shut times."""
+        return self._asymptotic_pdf_components(open=False, fl=True)
 
-    def _asymptotic_pdf_components(self, open):
+    def _asymptotic_pdf_components(self, open, fl=False):
         """Helper to calculate roots and areas for open or shut times."""
         roots = self.asymptotic_roots(open=open)
-        areas = self.asymptotic_areas(roots, open=open)
+        areas = self.asymptotic_areas(roots, open=open, fl=fl)
         return roots, areas
 
 
@@ -192,6 +196,11 @@ class QMatrixPrints(qml.QMatrix):
     def print_ideal_shut_time_pdf(self):
         e, w = self.ideal_shut_time_pdf_components()
         return pdfs.ExpPDF(1/e, w/e).printout('\nIdeal shut time PDF components, unconditional')
+    
+    @property
+    def print_ideal_first_latency_pdf(self):
+        e, w = self.ideal_first_latency_pdf_components()
+        return pdfs.ExpPDF(1/e, w/e).printout('\nIdeal first latency PDF components, unconditional')
 
 
 class AsymptoticPDFPrints(AsymptoticPDF):
@@ -248,6 +257,14 @@ class AsymptoticPDFPrints(AsymptoticPDF):
         """ Print the asymptotic shut time PDF components. """
         e, a = self.HJC_asymptotic_shut_time_pdf_components()
         pdf_str = pdfs.ExpPDF(1 / e, a).printout_asymptotic(self.tres, '\nASYMPTOTIC SHUT TIME DISTRIBUTION')
+        pdf_str += f'\nApparent mean shut time (ms): {self.apparent_mean_shut_time * 1000:.5g}\n'
+        return pdf_str
+    
+    @property
+    def print_apparent_first_latency_pdf(self):
+        """ Print the asymptotic shut time PDF components. """
+        e, a = self.HJC_asymptotic_first_latency_to_opening_pdf_components()
+        pdf_str = pdfs.ExpPDF(1 / e, a).printout_asymptotic(self.tres, '\nAPPARENT FIRST LATENCY DISTRIBUTION')
         pdf_str += f'\nApparent mean shut time (ms): {self.apparent_mean_shut_time * 1000:.5g}\n'
         return pdf_str
 
@@ -407,6 +424,31 @@ class DwellsPDFDisplay:
                 
         return t, ipdf, epdf, apdf
 
+    def _calculate_first_latency_pdf(self, tmin: float = 0.0, 
+                        tmax: Optional[float] = 1.0, points: int = 512) -> Tuple[np.ndarray, ...]:
+        """
+        Method to calculate first latency PDF distribution.
+
+        Parameters
+        ----------
+        tmin : float, optional
+            Minimum time for distribution. Default is 0.0.
+        tmax : float, optional
+            Maximum time for distribution. Default is 1.0.
+        points : int, optional
+            Number of points in distribution. Default is 512.
+
+        Returns
+        -------
+        Tuple of numpy arrays: (time, first latency PDF)
+        """
+
+        # Determine time range
+        t = np.linspace(tmin, tmax, points)
+        e, w = self.ideal.ideal_first_latency_pdf_components()
+        flpdf = pdfs.ExpPDF(1 / e, w / e).calculate(t)
+        return t, flpdf
+
     def calculate_open_time_pdf(self, **kwargs):
         """Calculate open time PDF distribution."""
         return self._calculate_pdf(is_open=True, **kwargs)
@@ -414,6 +456,10 @@ class DwellsPDFDisplay:
     def calculate_shut_time_pdf(self, **kwargs):
         """Calculate shut time PDF distribution."""
         return self._calculate_pdf(is_open=False, **kwargs)
+    
+    def calculate_first_latency_pdf(self, **kwargs):
+        """Calculate first latency to opening PDF distribution."""
+        return self._calculate_first_latency_pdf(**kwargs)
 
     def _asymptotic_pdf(self, t: np.ndarray, tau: np.ndarray, area: np.ndarray) -> np.ndarray:
         """
@@ -511,9 +557,24 @@ class DwellsPDFDisplay:
         t, ipdf, epdf, apdf = self.calculate_shut_time_pdf(**kwargs)
         self._plot_pdf(t, ipdf, epdf, apdf, title="Shut Time PDF")
 
+    def plot_first_latency_pdf(self, **kwargs):
+        """Plot First Latency to Opening Probability Density Function."""
+        t, flpdf = self.calculate_first_latency_pdf(**kwargs)
+        plt.figure(figsize=(6, 4))
+        plt.plot(t, flpdf, 'm-', label="First Latency PDF", linewidth=2)
+        
+        plt.xlabel("Time (s)", fontsize=12)
+        plt.ylabel("PDF", fontsize=12)
+        plt.title("First Latency to Opening PDF", fontsize=14)
+        plt.legend(fontsize=10)
+        plt.grid(True, which="both", ls="-", alpha=0.2)
+        plt.tight_layout()
+        plt.show()
+
 if __name__ == '__main__':
     mec = samples.CH82()
-    mec.set_eff('c', 0.0000001) 
+    conc = 0.1e-6 # 0.1 uM
+    mec.set_eff('c', conc)
     tres = 0.0001 # 100 us
     
     dwells = DwellsPDFDisplay(mec, tres)
@@ -530,6 +591,7 @@ if __name__ == '__main__':
 
     print(dwells.ideal.print_ideal_open_time_pdf)
     print(dwells.ideal.print_ideal_shut_time_pdf)
+    print(dwells.ideal.print_ideal_first_latency_pdf)
     print(dwells.asymptotic.print_asymptotic_open_time_pdf)
     print(dwells.asymptotic.print_asymptotic_shut_time_pdf)
     print(dwells.exact.print_exact_open_time_pdf)
@@ -539,6 +601,8 @@ if __name__ == '__main__':
     
     dwells.plot_open_time_pdf()
     dwells.plot_shut_time_pdf()
+    dwells.plot_first_latency_pdf(tmin=0.0, tmax=5, points=512)
+    dwells.plot_first_latency_pdf(tmin=0.0, tmax=0.005, points=512);
 
 
 
