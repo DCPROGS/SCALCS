@@ -46,7 +46,8 @@ class ExpPDF:
             table.append([i+1, 1 / self.taus[i], 1000 * self.taus[i], 100 * self.areas[i], 100 * areast0[i]])
         info_str += tabulate(table, 
                                 headers=['Term', 'Rate (1/sec)', 'tau (ms)', 'Area (%)', 'Area renormalised for t=0 to inf'], 
-                                tablefmt='orgtbl')       
+                                tablefmt='orgtbl')     
+        info_str += f'\nMean (ms) = {self.mean * 1000:.5g}'  
         return info_str
 
 

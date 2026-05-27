@@ -262,10 +262,10 @@ class AsymptoticPDFPrints(AsymptoticPDF):
     
     @property
     def print_apparent_first_latency_pdf(self):
-        """ Print the asymptotic shut time PDF components. """
+        """ Print the asymptotic first latency PDF components. """
         e, a = self.HJC_asymptotic_first_latency_to_opening_pdf_components()
         pdf_str = pdfs.ExpPDF(1 / e, a).printout_asymptotic(self.tres, '\nAPPARENT FIRST LATENCY DISTRIBUTION')
-        pdf_str += f'\nApparent mean shut time (ms): {self.apparent_mean_shut_time * 1000:.5g}\n'
+        #pdf_str += f'\nApparent first latency (ms): {self.apparent_mean_shut_time * 1000:.5g}\n'
         return pdf_str
 
 
@@ -445,9 +445,12 @@ class DwellsPDFDisplay:
 
         # Determine time range
         t = np.linspace(tmin, tmax, points)
-        e, w = self.ideal.ideal_first_latency_pdf_components()
-        flpdf = pdfs.ExpPDF(1 / e, w / e).calculate(t)
-        return t, flpdf
+        ei, wi = self.ideal.ideal_first_latency_pdf_components()
+        iflpdf = pdfs.ExpPDF(1 / ei, wi / ei).calculate(t)
+
+        ea, aa = self.asymptotic.HJC_asymptotic_first_latency_to_opening_pdf_components()
+        aflpdf = self._asymptotic_pdf(t, 1 / ea, aa)
+        return t, iflpdf, aflpdf
 
     def calculate_open_time_pdf(self, **kwargs):
         """Calculate open time PDF distribution."""
@@ -559,9 +562,10 @@ class DwellsPDFDisplay:
 
     def plot_first_latency_pdf(self, **kwargs):
         """Plot First Latency to Opening Probability Density Function."""
-        t, flpdf = self.calculate_first_latency_pdf(**kwargs)
+        t, iflpdf, aflpdf = self.calculate_first_latency_pdf(**kwargs)
         plt.figure(figsize=(6, 4))
-        plt.plot(t, flpdf, 'm-', label="First Latency PDF", linewidth=2)
+        plt.plot(t, iflpdf, 'm-', label="Ideal First Latency PDF", linewidth=2)
+        plt.plot(t, aflpdf, 'c--', label="Asymptotic First Latency PDF", linewidth=2)
         
         plt.xlabel("Time (s)", fontsize=12)
         plt.ylabel("PDF", fontsize=12)
@@ -576,6 +580,9 @@ if __name__ == '__main__':
     conc = 0.1e-6 # 0.1 uM
     mec.set_eff('c', conc)
     tres = 0.0001 # 100 us
+    #tres = 0.001 # 1 ms
+    #tres = 0.00001 # 10 us
+    tres = 0.0 # ideal, no missed events
     
     dwells = DwellsPDFDisplay(mec, tres)
 
@@ -594,6 +601,7 @@ if __name__ == '__main__':
     print(dwells.ideal.print_ideal_first_latency_pdf)
     print(dwells.asymptotic.print_asymptotic_open_time_pdf)
     print(dwells.asymptotic.print_asymptotic_shut_time_pdf)
+    print(dwells.asymptotic.print_apparent_first_latency_pdf)
     print(dwells.exact.print_exact_open_time_pdf)
     print(dwells.exact.print_exact_shut_time_pdf)
     
