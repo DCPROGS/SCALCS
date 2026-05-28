@@ -9,17 +9,17 @@ try:
 except:
     raise ImportError("pyqt module is missing")
 
-from scalcs.samples import samples
-from scalcs.gui.plotwindow import MatPlotWin
-from scalcs.gui.plotwindow import MatPlotTools
-from scalcs.gui.mechmenu import MechMenu
-from scalcs.gui.savemenu import SaveMenu
-from scalcs.gui.helpmenu import HelpMenu
-import scalcs.gui.myqtcommon as myqtcommon
+from samples import samples
+from gui.plotwindow import MatPlotWin
+from gui.plotwindow import MatPlotTools
+from gui.mechmenu import MechMenu
+from gui.savemenu import SaveMenu
+from gui.helpmenu import HelpMenu
+import gui.myqtcommon as myqtcommon
 
-from scalcs.gui.burstmenu import BurstMenu
-from scalcs.gui.jumpmenu import JumpMenu
-from scalcs.gui.scalcsmenu import ScalcsMenu
+from gui.burstmenu import BurstMenu
+from gui.jumpmenu import JumpMenu
+from gui.scalcsmenu import ScalcsMenu
 
 
 class QMatGUI(QMainWindow):

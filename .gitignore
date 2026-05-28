@@ -25,6 +25,11 @@ syntax: glob
 *.bat
 
 __pycache__/
+**/__pycache__
+
+**/.ipynb_checkpoints
+
+.pytest_cache
 
 SCALCS.egg-info/
 .DS_Store

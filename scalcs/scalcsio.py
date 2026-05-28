@@ -6,6 +6,7 @@ import struct
 import time
 from array import array
 import numpy as np
+import pandas as pd
 
 from scalcs import mechanism
 
@@ -1007,3 +1008,62 @@ def mec_save_to_yaml(mec, fname):
     import yaml
     stream = open(fname, 'w')
     yaml.dump(mec, stream)
+
+
+def load_from_excel_sheet(filename, sheet=0, verbose=False):
+    """
+    Load mechanism from Excel file.
+    Returns
+    -------
+    mec.Mechanism(RateList, StateList, ncyc) : instance of Mechanism class.
+    """
+
+    if verbose: print("Inside 'load_from_ecel_sheet'")
+    if verbose: print("About to read file: " + filename)
+    #TODO: implement constrain reading and setting
+    df = pd.read_excel(filename, sheet_name=sheet, index_col=None, header=None)
+
+    mectitle = df.loc[df.iloc[:, 0] == "mectitle"].iloc[0][1]
+    if verbose: print(mectitle)
+    ratetitle = df.loc[df.iloc[:, 0] == "ratetitle"].iloc[0][1]
+    if verbose: print(ratetitle)
+
+    df_states = df.loc[df.iloc[:, 0] == "state"]
+    states = {}
+    for index, row in df_states.iterrows():
+        states[row[1]] = mechanism.State(row[2], row[1], row[3])
+        if verbose:
+            print('found state:', row[1], row[2], row[3])
+
+    df_cycles = df.loc[df.iloc[:, 0] == "cycle"]
+    cycles = []
+    for index, row in df_cycles.iterrows():
+        cycle = []
+        for i in range(2, int(row[1])+2):
+            cycle.append(row[i])
+        if verbose:
+            print('found cycle:', cycle)
+        cycles.append(mechanism.Cycle(cycle))
+
+    df_rates = df.loc[df.iloc[:, 0] == "rate"]
+    rates = []
+    bound, cfunc, cargs = None, None, None
+    fixed, mr, constrained = False, False, False
+    for index, row in df_rates.iterrows():
+        bound, mr, fixed = None, False, False
+        if verbose: print(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7])
+        if row[5] == 'c': bound = 'c'
+        if row[8] == 'mr': 
+            if verbose: print("Rate", row[1], "is MR constrained")
+            mr = True
+            cycles[int(row[9])-1].mrconstr = [row[2], row[3]]
+        if row[8] == 'fixed': fixed = True
+#        if row[8] is 'multiply':
+#            cfunc = mechanism.multiply
+
+        if verbose: print(row[4], row[2], row[3], row[1], bound, row[6], row[7])
+        rates.append(mechanism.Rate(row[4], states[row[2]], states[row[3]], name=row[1], 
+                                    eff=bound, fixed=fixed, mr=mr, limits=[row[6], row[7]],
+                                    is_constrained=constrained, constrain_func=cfunc, constrain_args=cargs))
+
+    return mechanism.Mechanism(rates, cycles, mtitle=mectitle, rtitle=ratetitle), mectitle

@@ -1,12 +1,3 @@
-#!/usr/bin/python
-"""
-Class Mechanism represents a kinetic reaction scheme.
-
-CH82: Colquhoun D, Hawkes AG (1982)
-On the stochastic properties of bursts of single ion channel openings
-and of clusters of bursts. Phil Trans R Soc Lond B 300, 1-59.
-
-"""
 
 # TODO: impose detailed microscopic reversibility.
 # TODO: impose constrains (e.g. independent binding sites).
@@ -83,6 +74,9 @@ class State(object):
         self.conductance = conductance
         self.no = None # will be assigned in Mechanism.__init__
                        # This is now ZERO-based!
+
+    def __repr__(self):
+        return "State {0} ({1})".format(self.name, self.statetype)
 
 
 class Cycle(object):
