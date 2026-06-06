@@ -73,7 +73,7 @@ def ideal_dwell_time_pdf(t, QAA, phiA):
     uA = np.ones((kA, 1))
     expQAA = qml.expQt(QAA, t)
     f = np.dot(np.dot(np.dot(phiA, expQAA), -QAA), uA)
-    return f
+    return np.asarray(f).item()
 
 def ideal_dwell_time_pdf_components(QAA, phiA):
     """
@@ -104,7 +104,7 @@ def ideal_dwell_time_pdf_components(QAA, phiA):
     uA = np.ones((kA, 1))
     #TODO: remove 'for'
     for i in range(kA):
-        w[i] = np.dot(np.dot(np.dot(phiA, A[i]), (-QAA)), uA)
+        w[i] = np.dot(np.dot(np.dot(phiA, A[i]), (-QAA)), uA).item()
 
     return eigs, w
 
@@ -1096,7 +1096,7 @@ def adjacent_open_to_shut_range_pdf_components(u1, u2, QAA, QAF, QFF, QFA, phiA)
     den = np.dot(row, col)[0, 0]
     #TODO: remove 'for'
     for i in range(kA):
-        w[i] = np.dot(np.dot(phiA, A[i]), col) / den
+        w[i] = (np.dot(np.dot(phiA, A[i]), col) / den).item()
     return eigs, w
 
 def simulate_intervals(mec, tres, state, opamp=5, nintmax=5000):

@@ -101,7 +101,7 @@ def length_pdf_components(mec):
     eigs, A = qml.eigs(-mec.QEE)
     for i in range(mec.kE):
         w[i] = np.dot(np.dot(np.dot(phiBurst(mec),
-            A[i][:mec.kA, :mec.kA]), (-mec.QAA)), endBurst(mec))
+            A[i][:mec.kA, :mec.kA]), (-mec.QAA)), endBurst(mec)).item()
     return eigs, w
 
 def length_mean(mec):
@@ -184,8 +184,8 @@ def length_no_single_openings_pdf_components(mec):
     norm = 1 - np.dot(start, endB)[0]
 
     for i in range(mec.kA + mec.kE):
-        w[i] = np.dot(np.dot(np.dot(start,
-            A[i]), (-mec.QAA)), endB) / norm
+        w[i] = (np.dot(np.dot(np.dot(start,
+            A[i]), (-mec.QAA)), endB) / norm).item()
      
     return eigs, w
 
@@ -218,7 +218,7 @@ def openings_distr(mec, r):
         for i in range(2, r):
             interm = np.dot(interm, GG)
     Pr = np.dot(np.dot(phiBurst(mec), interm), endBurst(mec))
-    return Pr
+    return np.asarray(Pr).item()
 
 def openings_distr_components(mec):
     """
@@ -326,7 +326,7 @@ def open_time_total_pdf_components(mec):
 
     w = np.zeros(mec.kA)
     for i in range(mec.kA):
-        w[i] = np.dot(np.dot(np.dot(phiBurst(mec), A[i]), (-VAA)), uA)
+        w[i] = np.dot(np.dot(np.dot(phiBurst(mec), A[i]), (-VAA)), uA).item()
 
     return eigs, w
 
@@ -377,8 +377,8 @@ def shut_times_inside_burst_pdf_components(mec):
 
     w = np.zeros(mec.kB)
     for i in range(mec.kB):
-        w[i] = np.dot(np.dot(np.dot(np.dot(np.dot(np.dot(phiBurst(mec), interm),
-            GAB), A[i]), (-mec.QBB)), GBA), uA) / norm
+        w[i] = (np.dot(np.dot(np.dot(np.dot(np.dot(np.dot(phiBurst(mec), interm),
+            GAB), A[i]), (-mec.QBB)), GBA), uA) / norm).item()
 
     return eigs, w
 
@@ -473,8 +473,8 @@ def shut_time_total_pdf_components_2more_openings(mec):
 
     w = np.zeros(mec.kB)
     for i in range(mec.kB):
-        w[i] = np.dot(np.dot(np.dot(np.dot(phiBurst(mec), GAB),
-            A[i]), (mec.QBA)), endBurst(mec)) / norm
+        w[i] = (np.dot(np.dot(np.dot(np.dot(phiBurst(mec), GAB),
+            A[i]), (mec.QBA)), endBurst(mec)) / norm).item()
 
     return eigs, w
 
@@ -527,8 +527,8 @@ def first_opening_length_pdf_components(mec):
 
     w = np.zeros(mec.kA)
     for i in range(mec.kA):
-        w[i] = np.dot(np.dot(np.dot(np.dot(phiBurst(mec),
-            A[i]), (-mec.QAA)), GG), uA) / norm
+        w[i] = (np.dot(np.dot(np.dot(np.dot(phiBurst(mec),
+            A[i]), (-mec.QAA)), GG), uA) / norm).item()
 
     return eigs, w
 
