@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scalcs"
+version = "1.0.0"
+description = "Pure-Python Q-matrix formalism for ion channel kinetics"
+authors = [
+    { name = "Remigijus Lape", email = "r.lape@ucl.ac.uk" },
+    { name = "Christoph Schmidt-Hieber" },
+]
+license = { text = "GPL-2.0" }
+readme = "README.rst"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+
+[project.optional-dependencies]
+gui = ["PyQt5>=5.12"]
+dev = ["pytest>=7", "pytest-cov"]
+
+[project.urls]
+Homepage = "https://github.com/remislp/SCALCS"
+Repository = "https://github.com/remislp/SCALCS"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["scalcs*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
