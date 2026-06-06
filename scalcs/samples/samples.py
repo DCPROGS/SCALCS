@@ -74,16 +74,16 @@ def load_AChR_diamond_independent_binding(rates=None):
     if rates is not None:
         mec.set_rateconstants(rates)
     mec.Rates[11].is_constrained = True
-    mec.Rates[11].constrain_func = mechanism.mechanism.constrain_rate_multiple
+    mec.Rates[11].constrain_func = mechanism.constrain_rate_multiple
     mec.Rates[11].constrain_args = [7, 1]             
     mec.Rates[13].is_constrained = True
-    mec.Rates[13].constrain_func = mechanism.mechanism.constrain_rate_multiple
+    mec.Rates[13].constrain_func = mechanism.constrain_rate_multiple
     mec.Rates[13].constrain_args = [9, 1]
     mec.Rates[10].is_constrained = True
-    mec.Rates[10].constrain_func = mechanism.mechanism.constrain_rate_multiple
+    mec.Rates[10].constrain_func = mechanism.constrain_rate_multiple
     mec.Rates[10].constrain_args = [6, 1]
     mec.Rates[12].is_constrained = True
-    mec.Rates[12].constrain_func = mechanism.mechanism.constrain_rate_multiple
+    mec.Rates[12].constrain_func = mechanism.constrain_rate_multiple
     mec.Rates[12].constrain_args = [8, 1]
     mec.update_constrains()
     return mec, mec.get_free_parameter_names()
@@ -102,22 +102,22 @@ def load_GlyR_flip_independent_binding(rates=None):
         mec.Rates[i].fixed = False
     # Constrained rates.
     mec.Rates[21].is_constrained = True
-    mec.Rates[21].constrain_func = mechanism.mechanism.constrain_rate_multiple
+    mec.Rates[21].constrain_func = mechanism.constrain_rate_multiple
     mec.Rates[21].constrain_args = [17, 3]
     mec.Rates[19].is_constrained = True
-    mec.Rates[19].constrain_func = mechanism.mechanism.constrain_rate_multiple
+    mec.Rates[19].constrain_func = mechanism.constrain_rate_multiple
     mec.Rates[19].constrain_args = [17, 2]
     mec.Rates[16].is_constrained = True
-    mec.Rates[16].constrain_func = mechanism.mechanism.constrain_rate_multiple
+    mec.Rates[16].constrain_func = mechanism.constrain_rate_multiple
     mec.Rates[16].constrain_args = [20, 3]
     mec.Rates[18].is_constrained = True
-    mec.Rates[18].constrain_func = mechanism.mechanism.constrain_rate_multiple
+    mec.Rates[18].constrain_func = mechanism.constrain_rate_multiple
     mec.Rates[18].constrain_args = [20, 2]
     mec.Rates[8].is_constrained = True
-    mec.Rates[8].constrain_func = mechanism.mechanism.constrain_rate_multiple
+    mec.Rates[8].constrain_func = mechanism.constrain_rate_multiple
     mec.Rates[8].constrain_args = [12, 1.5]
     mec.Rates[13].is_constrained = True
-    mec.Rates[13].constrain_func = mechanism.mechanism.constrain_rate_multiple
+    mec.Rates[13].constrain_func = mechanism.constrain_rate_multiple
     mec.Rates[13].constrain_args = [9, 2]
     mec.update_constrains()
     mec.set_mr(True, 7, 1)

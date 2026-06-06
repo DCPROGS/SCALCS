@@ -8,6 +8,8 @@ and of clusters of bursts. Phil Trans R Soc Lond B 300, 1-59.
 
 """
 
+from __future__ import annotations
+
 # TODO: impose detailed microscopic reversibility.
 # TODO: impose constrains (e.g. independent binding sites).
 # TODO: fix certain rate constants while fitting.
@@ -15,95 +17,198 @@ and of clusters of bursts. Phil Trans R Soc Lond B 300, 1-59.
 # TODO: Update docstrings
 
 import sys
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 
+__all__ = [
+    "identity",
+    "multiply",
+    "constrain_rate_multiple",
+    "State",
+    "Cycle",
+    "Rate",
+    "Graph",
+    "Mechanism",
+]
+
 #import qmatlib as qml
 
-def identity(rate, effdict):
+def identity(rate: np.ndarray, effdict: dict[str, float]) -> float:
     """
     Return rate[0]. Used as default rate function if
     the rate doesn't depend on an effector.
 
     Parameters
     ----------
-    rate : float
-        Current rate in Q matrix.
-    effdict : dictionary
-        Effector and effector value (typically, concentration or voltage).
-        e.g. {'c' : 200}
+    rate : np.ndarray
+        Array of rate constants; only rate[0] is used.
+    effdict : dict[str, float]
+        Effector name → value mapping (e.g. ``{'c': 200}``).
+        Ignored by this function.
 
     Returns
     -------
-    identity : float
+    float
         rate[0]
     """
     return rate[0]
 
-def multiply(rate, effdict):
+def multiply(rate: np.ndarray, effdict: dict[str, float]) -> float:
     """
-    Multiply rate and effector value. Used as default rate function if
-    the rate depends on a single effector.
+    Multiply rate[0] by the single effector value.  Used as default rate
+    function when the rate depends on exactly one effector.
 
     Parameters
     ----------
-    rate : float
-        Current rate in Q matrix.
-    effdict : dictionary
-        Effector and effector value (typically, concentration or voltage).
-        e.g. {'c' : 200}
+    rate : np.ndarray
+        Array of rate constants; only rate[0] is used.
+    effdict : dict[str, float]
+        Effector name → value mapping (e.g. ``{'c': 200}``).
 
     Returns
     -------
-    product : float
-        Product of rate[0] and value.
+    float
+        rate[0] * effector_value
     """
-    
     return rate[0] * list(effdict.values())[0]
 
-def constrain_rate_multiple(rate, factor):
+def constrain_rate_multiple(rate: np.ndarray, factor: float) -> np.ndarray:
     """
-    Constrain a rate constant to be a multiple of another rate constant.
+    Constrain a rate constant to be a fixed multiple of another rate constant.
+
+    Parameters
+    ----------
+    rate : np.ndarray
+        The reference rate constant array.
+    factor : float
+        Multiplicative factor.
+
+    Returns
+    -------
+    np.ndarray
+        rate * factor
     """
-    
     return rate * factor
 
 
-class State(object):
+class State:
     """
-    Describes a state.
+    Describes a single kinetic state of the channel.
+
+    Attributes
+    ----------
+    statetype : str
+        One of ``'A'`` (open), ``'B'`` (short-lived shut, within burst),
+        ``'C'`` (long-lived shut, between bursts), ``'D'`` (desensitised).
+    name : str
+        Human-readable label, e.g. ``'A2R*'``.
+    conductance : float
+        Single-channel conductance in Siemens (0 for shut states).
+    no : int or None
+        Zero-based index within the Q matrix; assigned by
+        :class:`Mechanism` during construction.
     """
-    
-    def __init__(self, statetype='', name='', conductance=0.0):
-        if statetype not in ['A', 'B', 'C', 'D']:
+
+    no: int | None  # set by Mechanism.sort_states()
+
+    def __init__(
+        self,
+        statetype: str = '',
+        name: str = '',
+        conductance: float = 0.0,
+    ) -> None:
+        if statetype not in ('A', 'B', 'C', 'D'):
             raise RuntimeError("State has to be one of 'A', 'B', 'C' or 'D'")
-        self.statetype = statetype
-
-        self.name = name
-        self.conductance = conductance
-        self.no = None # will be assigned in Mechanism.__init__
-                       # This is now ZERO-based!
+        self.statetype: str = statetype
+        self.name: str = name
+        self.conductance: float = conductance
+        self.no: int | None = None  # assigned in Mechanism.sort_states(); ZERO-based
 
 
-class Cycle(object):
+class Cycle:
     """
-    Describes a cycle.
-    """
+    Describes a thermodynamic cycle within a kinetic mechanism.
 
-    def __init__(self, states, mrconstr=[]):
-
-        self.states = states
-        self.mrconstr = mrconstr
-
-
-class Rate(object):
-    """
-    Describes a rate between two states.
+    Attributes
+    ----------
+    states : list[str]
+        Ordered list of state names forming the cycle,
+        e.g. ``['A2R*', 'AR*', 'AR', 'A2R']``.
+    mrconstr : list[str]
+        Pair of state names ``[from, to]`` identifying the rate that is
+        determined by microscopic reversibility.  Empty list when no
+        constraint is active.
     """
 
-    def __init__(self, rateconstants, State1, State2, name=' ', eff=None,
-                 fixed=False, mr=False, func=None, limits=[],
-                 is_constrained=False, constrain_func=None, constrain_args=None):
+    def __init__(
+        self,
+        states: list[str],
+        mrconstr: list[str] | None = None,
+    ) -> None:
+        self.states: list[str] = states
+        # Fix: avoid shared mutable default; None sentinel → empty list
+        self.mrconstr: list[str] = mrconstr if mrconstr is not None else []
+
+
+class Rate:
+    """
+    Describes a transition rate between two :class:`State` objects.
+
+    Parameters
+    ----------
+    rateconstants : float or array-like
+        Rate constant(s) passed to *func*.  A scalar is wrapped in a 1-D
+        array automatically.
+    State1 : State
+        Source state of the transition.
+    State2 : State
+        Destination state of the transition.
+    name : str
+        Human-readable label, e.g. ``'beta2'``.
+    eff : str or list[str] or None
+        Effector name(s) that modulate this rate (e.g. ``'c'`` for
+        concentration, ``'v'`` for voltage).  ``None`` for
+        effector-independent rates.
+    fixed : bool
+        If ``True``, this rate is held constant during fitting.
+    mr : bool
+        If ``True``, this rate is determined by microscopic reversibility.
+    func : Callable or None
+        Rate equation ``f(rateconstants, effdict) -> float``.  If
+        ``None``, :func:`identity` or :func:`multiply` is chosen
+        automatically.
+    limits : list
+        ``[[lower, upper], ...]`` bounds for each rate constant.
+    is_constrained : bool
+        If ``True``, this rate is computed from another via
+        *constrain_func*.
+    constrain_func : Callable or None
+        Function ``f(ref_rate, args) -> new_rate`` used when
+        *is_constrained* is ``True``.
+    constrain_args : list or None
+        Arguments forwarded to *constrain_func*.
+    """
+
+    def __init__(
+        self,
+        rateconstants: float | list | np.ndarray,
+        State1: State,
+        State2: State,
+        name: str = ' ',
+        eff: str | list[str] | None = None,
+        fixed: bool = False,
+        mr: bool = False,
+        func: Callable | None = None,
+        limits: list | None = None,
+        is_constrained: bool = False,
+        constrain_func: Callable | None = None,
+        constrain_args: list | None = None,
+    ) -> None:
+        # Fix: avoid shared mutable default for limits
+        if limits is None:
+            limits = []
 
         self._set_name(name)
         if not isinstance(State1, State) or not isinstance(State2, State):
@@ -440,13 +545,54 @@ class Graph(object):
                     node = stack.pop()
         return None
 
-class Mechanism(object):
-    '''
-    Represents a kinetic mechanism / scheme.
-    '''
+class Mechanism:
+    """
+    Represents a complete kinetic mechanism (Q-matrix scheme).
 
-    def __init__(self, Rates, Cycles=[], fastblock=False, fastKB=None,
-        mtitle='', rtitle='', verbose=False):
+    State types and their roles
+    ---------------------------
+    A  open states
+    B  short-lived shut states (within burst)
+    C  long-lived shut states (between bursts)
+    D  desensitised states (between clusters)
+
+    The Q matrix is partitioned into sub-matrices automatically after
+    construction and whenever the effector concentration is changed via
+    :meth:`set_eff`.
+
+    Parameters
+    ----------
+    Rates : list[Rate]
+        All transitions of the mechanism.
+    Cycles : list[Cycle] or None
+        Thermodynamic cycles (needed for microscopic-reversibility
+        constraints).
+    fastblock : bool
+        Legacy parameter; use *fastKB* instead.
+    fastKB : float or None
+        Fast-blocker equilibrium constant (M); activates the fast-block
+        correction in Popen calculations.
+    mtitle : str
+        Mechanism title.
+    rtitle : str
+        Rate-set title.
+    verbose : bool
+        Emit warnings to stderr.
+    """
+
+    def __init__(
+        self,
+        Rates: list[Rate],
+        Cycles: list[Cycle] | None = None,
+        fastblock: bool = False,
+        fastKB: float | None = None,
+        mtitle: str = '',
+        rtitle: str = '',
+        verbose: bool = False,
+    ) -> None:
+        # Fix: avoid shared mutable default for Cycles
+        if Cycles is None:
+            Cycles = []
 
         self.Rates = Rates
 
