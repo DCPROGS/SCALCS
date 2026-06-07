@@ -310,14 +310,18 @@ def conc_jump_on_off_taus_versus_conc_plot(mec, cmin, cmax, width):
 
     points = 100
     c = np.logspace(int(np.log10(cmin)), int(np.log10(cmax)), points)
-    
+
     wton = np.zeros(points)
     wtoff = np.zeros(points)
-    ton = np.zeros((points, mec.k-1))
-    toff = np.zeros((points, mec.k-1))
+    ton = np.zeros((points, mec.k - 1))
+    toff = np.zeros((points, mec.k - 1))
     for i in range(points):
-        mec.set_eff('c', c[i])
-        wton[i], ton[i], wtoff[i], toff[i] = cjumps.weighted_taus(mec, c[i], width)
+        pulse = cjumps.SquarePulse(cmax=c[i], width=width, cb=0.0)
+        result = cjumps.relaxation_taus(mec, pulse)
+        wton[i]  = result.tau_on_weighted
+        ton[i]   = result.tau_on
+        wtoff[i] = result.tau_off_weighted
+        toff[i]  = result.tau_off
 
     ton = ton.transpose()
     toff = toff.transpose()

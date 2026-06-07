@@ -1,6 +1,8 @@
 #! /usr/bin/env python
-"""
-Example of realistic concentration jump calculation.
+"""Example of realistic concentration jump calculation.
+
+Demonstrates the ErfPulse (realistic concentration jump) and SquarePulse
+APIs in scalcs.cjumps.
 """
 
 import matplotlib.pyplot as plt
@@ -12,30 +14,34 @@ if __name__ == "__main__":
     mec = samples.CH82()
     mec.printout()
 
-    # Here one can tweak the parameters of the jump.
-    step_size = 8e-6 # The sample step. All time parameters in seconds
-    pulse_centre = 10e-3
-    rise_time = 250e-6 # 10-90% rise time for error functions
-    pulse_width = 10e-3
-    record_length = 50e-3
-    peak_conc = 10e-6    # in molar
-    baseline_conc = 0.0
-    cjargs = (peak_conc, baseline_conc, pulse_centre, pulse_width,
-                rise_time, rise_time)
-    
-    print ('\nCalculating jump with {0:.6f} microsec rise...'.
-        format(rise_time/1e-6))
-    print (cjumps.printout(mec, peak_conc, pulse_width))
-    t, c, Popen, P  = cjumps.solve_jump(mec, record_length, step_size,
-        cjumps.pulse_erf, cjargs)
-    maxP = max(Popen)
-    maxC = max(c)
-    c1 = (c / maxC) * 0.2 * maxP + 1.02 * maxP
+    # --- Realistic concentration jump (erf profile) ---
+    pulse = cjumps.ErfPulse(
+        cmax=10e-6,       # 10 µM peak concentration
+        width=10e-3,      # 10 ms pulse width
+        cb=0.0,           # zero background
+        centre=10e-3,     # pulse centred at 10 ms
+        rise=250e-6,      # 10-90% rise time
+        decay=250e-6,     # 90-10% decay time
+    )
 
-    plt.plot(t * 1000, Popen,'b-', t * 1000, c1, 'g-')
+    result = cjumps.solve(mec, pulse, reclen=50e-3, step=8e-6)
+    t, c, Popen, P = result          # backward-compatible 4-tuple unpacking
+
+    maxP = Popen.max()
+    maxC = c.max()
+    c_scaled = (c / maxC) * 0.2 * maxP + 1.02 * maxP   # overlay on Popen axis
+
+    plt.figure()
+    plt.plot(t * 1000, Popen, 'b-', label='Popen')
+    plt.plot(t * 1000, c_scaled, 'g-', label='Concentration (scaled)')
     plt.ylabel('Open probability')
-    plt.xlabel('Time, ms')
-    plt.title('Concentration jump')
-    plt.show()
+    plt.xlabel('Time (ms)')
+    plt.title('Realistic concentration jump (erf profile)')
+    plt.legend()
 
-    print ('\ndone!')
+    # --- Analytical printout for a square pulse ---
+    square = cjumps.SquarePulse(cmax=10e-6, width=10e-3)
+    print(cjumps.printout(mec, square))
+
+    plt.show()
+    print('\ndone!')
