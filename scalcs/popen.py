@@ -101,22 +101,23 @@ def maxPopen(mec, tres, eff='c'):
 
     if not monot:    # find maxPopen and cmax more accurately
         c1, c2 = conc / math.sqrt(10), conc # conc before and after max
-        epsc, epsy =  c1 / 1000, 1e-4 # accuracy in concentration and Popen
-        perr = 2 * epsy
+        epsc = c1 / 1000  # accuracy in concentration
         fac = 1.01
         maxnstep  = int(math.log10(math.fabs(c1 - c2) / epsc) / math.log10(2) + 0.5)
         nstep = 0
-        while nstep <= maxnstep and math.fabs(perr) > 0:
+        while nstep <= maxnstep and (c2 - c1) > epsc:
             conc = 0.5 * (c1 + c2)
-            conc1 = conc / fac
-            P1 = Popen(mec, tres, conc)
-            conc1 = conc * fac
-            P2 = Popen(mec, tres, conc)
+            conc1 = conc / fac   # slightly below midpoint
+            conc2 = conc * fac   # slightly above midpoint
+            P1 = Popen(mec, tres, conc1)
+            P2 = Popen(mec, tres, conc2)
             perr = P2 - P1
-            if perr < 0:
-                c1 = conc1
-            else:
-                c2 = conc1
+            if perr > 0:   # curve still rising at midpoint → max is to the right
+                c1 = conc
+            else:           # curve falling at midpoint → max is to the left
+                c2 = conc
+            nstep += 1
+        conc = 0.5 * (c1 + c2)   # best estimate: midpoint of final bracket
 
     return Popen(mec, tres, conc), conc
 
