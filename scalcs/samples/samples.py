@@ -309,6 +309,40 @@ def CCOB():
 
     return  mechanism.Mechanism(RateList, mtitle=mectitle, rtitle=ratetitle)
 
+def CHME97():
+    """Colquhoun, Hawkes, Merlushkin & Edmonds 1997 numerical example.
+
+    5-state mechanism with one open state and desensitisation:
+        A2R* (open, kA=1)
+        A2R, A2D (within-burst shut, kB=2)
+        AR, R (long-lived shut, kC=2)
+    k=5, kA=1, kF=4.
+
+    Rates from Table 1 of CHME97 (Phil Trans R Soc Lond A 355, 1743-1786).
+    """
+    mectitle = 'CHME97'
+    ratetitle = 'CHME97 numerical example'
+
+    A2RS = mechanism.State('A', 'A2R*', 60e-12)
+    A2D  = mechanism.State('B', 'A2D',  0.0)
+    A2R  = mechanism.State('B', 'A2R',  0.0)
+    AR   = mechanism.State('C', 'AR',   0.0)
+    R    = mechanism.State('C', 'R',    0.0)
+
+    RateList = [
+        mechanism.Rate(916.0,      A2RS, A2R, name='alpha',  limits=[1e-15, 1e+7]),
+        mechanism.Rate(46.5,       A2R,  A2RS, name='beta',  limits=[1e-15, 1e+7]),
+        mechanism.Rate(1.8,        A2D,  A2R,  name='k-D',   limits=[1e-15, 1e+7]),
+        mechanism.Rate(8.4,        A2R,  A2D,  name='k+D',   limits=[1e-15, 1e+7]),
+        mechanism.Rate(5.0e06,     AR,   A2R,  name='k(+2)', eff='c', limits=[1e-15, 1e+10]),
+        mechanism.Rate(2 * 4.7,    A2R,  AR,   name='2k(-2)', limits=[1e-15, 1e+7]),
+        mechanism.Rate(2 * 5.0e06, R,    AR,   name='2k(+1)', eff='c', limits=[1e-15, 1e+10]),
+        mechanism.Rate(4.7,        AR,   R,    name='k(-1)',  limits=[1e-15, 1e+10]),
+    ]
+
+    return mechanism.Mechanism(RateList, [], mtitle=mectitle, rtitle=ratetitle)
+
+
 def CO():
     
     mectitle = 'C-O'
