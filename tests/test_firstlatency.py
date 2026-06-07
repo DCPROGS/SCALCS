@@ -364,6 +364,27 @@ class TestAsymptoticRoots:
             np.sort(chme97_roots), np.sort(expected), rtol=1e-3
         )
 
+    def test_chme97_roots_stable_at_1ms(self):
+        """asymptotic_roots must not overflow at tres = 1 ms.
+
+        With the legacy hardcoded sas = -1e6, the matrix exponential
+        exp((QFF - s·I)·tres) overflows float64 (exponent ≈ 1000 >> 709)
+        when s sweeps to -1e6 and tres = 1e-3 s.  The adaptive lower bound
+        fixes this by limiting |sas| to just below max|eig(QFF)|.
+        """
+        mec0 = CHME97()
+        mec0.set_eff('c', 0.0)
+        mec1 = CHME97()
+        mec1.set_eff('c', 0.001)
+        phi_shut = qml.pinf(mec0.Q)[mec0.kA:]
+        tres = 1e-3   # 1 ms — was unstable before fix
+
+        roots = fl.asymptotic_roots(tres, mec1)
+
+        assert len(roots) == mec1.kF
+        assert np.all(np.isfinite(roots)), f"roots contain non-finite values: {roots}"
+        assert np.all(roots < 0), f"all roots must be negative: {roots}"
+
 
 # ---------------------------------------------------------------------------
 # TestAsymptoticAreas — fl.asymptotic_areas(tres, roots, phi_shut, mec)

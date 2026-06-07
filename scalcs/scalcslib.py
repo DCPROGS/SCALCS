@@ -246,7 +246,13 @@ def asymptotic_roots(tres, QAA, QFF, QAF, QFA, kA, kF):
     roots : array_like, shape (1, kA)
     """
 
-    sas = -1000000
+    # The lower search bound must satisfy |sas| * tres < ln(float64_max) ≈ 709
+    # to prevent exp((QFF - s·I)·tres) from overflowing during the sweep.
+    # Only tighten the bound when the default −10⁶ would cause overflow; keep
+    # it at −10⁶ otherwise so that the bisection counting algorithm has enough
+    # room to correctly bracket all roots.
+    _exp_bound = -700.0 / max(tres, 1e-20)   # exp(700) safely < float64 max
+    sas = max(-1_000_000, _exp_bound)         # less-negative = tighter bound
     sbs = -0.0000001
     sro = bisect_intervals(sas, sbs, tres,
         QAA, QFF, QAF, QFA, kA, kF)
