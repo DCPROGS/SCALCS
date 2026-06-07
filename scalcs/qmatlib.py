@@ -58,28 +58,11 @@ def eigs(Q):
     eigvals, M = nplin.eig(Q)
     N = nplin.inv(M)
     k = N.shape[0]
-    A = np.zeros((k, k, k))
-    # TODO: make this a one-liner avoiding loops
-    # DO NOT DELETE commented explicit loops for future reference
-    #
-    # rev. 1
-    # for i in range(k):
-    #     X = np.empty((k, 1))
-    #     Y = np.empty((1, k))
-    #     X[:, 0] = M[:, i]
-    #     Y[0] = N[i]
-    #     A[i] = np.dot(X, Y)
-    # END DO NOT DELETE
-    #
-    # rev. 2 - cumulative time fastest on my system
-    for i in range(k):
-        A[i] = np.dot(M[:, i].reshape(k, 1), N[i].reshape(1, k))
-
-    # rev. 3 - cumulative time not faster
-    # A = np.array([
-    #         np.dot(M[:, i].reshape(k, 1), N[i].reshape(1, k)) \
-    #             for i in range(k)
-    #         ])
+    # A[i] = outer(M[:, i], N[i]) — batch outer product via broadcasting.
+    # Shape: M.T is (k, k) so M.T[:, :, np.newaxis] is (k, k, 1),
+    #         N[:, np.newaxis, :] is (k, 1, k); product is (k, k, k).
+    # Element A[m, j, l] = M[j, m] * N[m, l] — correct spectral matrix.
+    A = M.T[:, :, np.newaxis] * N[:, np.newaxis, :]
 
     return eigvals, A
 
@@ -103,9 +86,7 @@ def eigs_sorted(Q):
     eigvals, M = nplin.eig(Q)
     N = nplin.inv(M)
     k = N.shape[0]
-    A = np.zeros((k, k, k))
-    for i in range(k):
-        A[i] = np.dot(M[:, i].reshape(k, 1), N[i].reshape(1, k))
+    A = M.T[:, :, np.newaxis] * N[:, np.newaxis, :]
     sorted_indices = eigvals.real.argsort()
     eigvals = eigvals[sorted_indices]
     A = A[sorted_indices, : , : ]
@@ -164,9 +145,7 @@ def Qpow(M, n):
 
     k = M.shape[0]
     eig, A = eigs(M)
-    Mn = np.zeros((k, k))
-    for i in range(k):
-        Mn += A[i, :, :] * pow(eig[i], n)
+    Mn = np.sum(A * (eig ** n).reshape(k, 1, 1), axis=0)
     return Mn
 
 def pinf1(Q):
@@ -819,24 +798,29 @@ def Zxx(Q, eigen, A, kopen, QFF, QAF, QFA, expQFF, open):
         A1 = A[:, kopen:, :kopen]
     D = np.dot(np.dot(A1, expQFF), QFA)
 
-    C11 = np.empty((k, kA, kA))
-    #TODO: try to remove 'for' cycles
-    for i in range(k):
-        C11[i] = np.dot(D[i], C00[i])
+    # C11[i] = D[i] @ C00[i]  — batch matmul over leading dimension.
+    C11 = np.matmul(D, C00)
 
-    C10 = np.empty((k, kA, kA))
-    #TODO: try to remove 'for' cycles
-    for i in range(k):
-        S = np.zeros((kA, kA))
-        for j in range(k):
-            if j != i:
-                S += ((np.dot(D[i], C00[j]) + np.dot(D[j], C00[i])) /
-                    (eigen[j] - eigen[i]))
-        C10[i] = S
+    # C10[i] = sum_{j≠i} (D[i]@C00[j] + D[j]@C00[i]) / (eigen[j] - eigen[i])
+    #
+    # DC[i, j] = D[i] @ C00[j]  — shape (k, k, kA, kA)
+    DC = np.matmul(D[:, np.newaxis], C00[np.newaxis])   # (k, k, kA, kA)
+    numer = DC + DC.transpose(1, 0, 2, 3)               # DC[i,j] + DC[j,i]
+    # eigen[j] - eigen[i], shape (k, k); zero on diagonal (i==j)
+    eigdiff = eigen[np.newaxis, :] - eigen[:, np.newaxis]
+    # Avoid division by zero on diagonal; those terms are excluded by mask.
+    mask = ~np.eye(k, dtype=bool)                        # True where j≠i
+    safe_diff = np.where(mask, eigdiff, 1.0)
+    ratio = np.where(
+        mask[:, :, np.newaxis, np.newaxis],
+        numer / safe_diff[:, :, np.newaxis, np.newaxis],
+        0.0,
+    )
+    C10 = ratio.sum(axis=1)
 
     M = np.dot(QAF, expQFF)
-    Z00 = np.array([np.dot(C, M) for C in C00])
-    Z10 = np.array([np.dot(C, M) for C in C10])
-    Z11 = np.array([np.dot(C, M) for C in C11])
+    Z00 = np.matmul(C00, M)
+    Z10 = np.matmul(C10, M)
+    Z11 = np.matmul(C11, M)
 
     return eigen, Z00, Z10, Z11

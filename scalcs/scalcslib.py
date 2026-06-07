@@ -99,12 +99,14 @@ def ideal_dwell_time_pdf_components(QAA, phiA):
     """
 
     kA = QAA.shape[0]
-    w = np.zeros(kA)
     eigs, A = qml.eigs_sorted(-QAA)
     uA = np.ones((kA, 1))
-    #TODO: remove 'for'
-    for i in range(kA):
-        w[i] = np.dot(np.dot(np.dot(phiA, A[i]), (-QAA)), uA).item()
+    # w[i] = phiA @ A[i] @ (-QAA) @ uA  for each i.
+    # Vectorised: contract phiA over A's second axis, then matmul (-QAA) and uA.
+    # np.einsum('j,ijk->ik', phiA, A) has shape (kA, kA); @ (-QAA) → (kA, kA);
+    # @ uA → (kA, 1); squeeze to (kA,).
+    tmp = np.einsum('j,ijk->ik', phiA, A)   # (kA, kA)
+    w = (tmp @ (-QAA) @ uA).ravel()         # (kA,)
 
     return eigs, w
 
@@ -145,11 +147,11 @@ def ideal_subset_mean_life_time(Q, state1, state2):
     if pstot == 0:
         mean = 0.0
     else:
-        s = 0.0
-        for i in range(state1-1, state2):
-            for j in range(k):
-                if (j < state1-1) or (j > state2 - 1):
-                    s += Q[i, j] * p[i] / pstot
+        # Sum Q[i,j] * p[i] / pstot for rows i in subset, columns j outside subset.
+        rows = np.arange(state1 - 1, state2)
+        mask = np.ones(k, dtype=bool)
+        mask[state1 - 1:state2] = False          # True for columns outside subset
+        s = float(np.sum(Q[np.ix_(rows, mask)] * (p[rows] / pstot)[:, np.newaxis]))
 
         mean = 1 / s
     return mean
@@ -432,11 +434,13 @@ def asymptotic_areas(tres, roots, QAA, QFF, QAF, QFA, kA, kF, GAF, GFA):
     eGFA = qml.eGs(GFA, GAF, kF, kA, expQAA)
     phiA = qml.phiHJC(eGAF, eGFA, kA)
     R = qml.AR(roots, tres, QAA, QFF, QAF, QFA, kA, kF)
-    uF = np.ones((kF,1))
-    areas = np.zeros(kA)
-    for i in range(kA):
-        areas[i] = ((-1 / roots[i]) *
-            np.dot(phiA, np.dot(np.dot(R[i], np.dot(QAF, expQFF)), uF))).item()
+    uF = np.ones((kF, 1))
+    # areas[i] = (-1/roots[i]) * phiA @ R[i] @ QAF @ expQFF @ uF
+    # Let v = QAF @ expQFF @ uF  shape (kA, 1).
+    # R @ v via matmul: R shape (kA,kA,kA), v shape (kA,1) → (kA,kA,1).
+    # einsum 'j,ijk,k->i' over phiA, R, v.ravel() gives shape (kA,).
+    v = (QAF @ expQFF @ uF).ravel()                      # (kA,)
+    areas = (-1.0 / roots) * np.einsum('j,ijk,k->i', phiA, R, v)
 
 #    rowA = np.zeros((kA,kA))
 #    colA = np.zeros((kA,kA))
@@ -916,9 +920,9 @@ def corr_limit_A(phiA, QAA, AXAA, eigXAA, kA):
     invQAA = -nplin.inv(QAA)
     row = np.dot(phiA, invQAA)
     col = np.dot(invQAA, uA)
-    M = np.zeros((kA, kA))
-    for i in range(kA - 1):
-        M += AXAA[i,:,:] * eigXAA[i] / (1 - eigXAA[i])
+    # M = sum_{i=0}^{kA-2} AXAA[i] * eigXAA[i] / (1 - eigXAA[i])
+    coeff = eigXAA[:-1] / (1.0 - eigXAA[:-1])            # (kA-1,)
+    M = np.sum(AXAA[:-1] * coeff[:, np.newaxis, np.newaxis], axis=0)
     cor = np.dot(np.dot(row, M), col)[0,0]
     return cor
 
