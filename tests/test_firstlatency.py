@@ -21,7 +21,7 @@ asymptotic  HJC approximation (Colquhoun & Hawkes 1977, 1982).  Valid for
             det[ W_F(s) ] = 0.  Same roots as ordinary shut-time asymptotic
             pdf; only the area (= initial vector) changes.
 
-exact       HJC exact correction for tres ≤ t ≤ 3*tres, asymptotic beyond.
+exact       HJC exact correction for tres <= t <= 3*tres, asymptotic beyond.
 
 References
 ----------
@@ -33,12 +33,23 @@ CH82   : Colquhoun & Hawkes (1982)
 Test strategy
 -------------
 *CO (2-state)*  Analytical ground truth: f_L(t) = beta * exp(-beta * t)
-                Used for exact property tests and tres → 0 limit.
+                Used for exact property tests and tres -> 0 limit.
 *CH82*          5-state; c0 = 0, c1 = 0.1 mM, tres = 0.1 ms.
                 Regression values pinned from verified Phase-0 run 2026-06-07.
 *CHME97*        5-state with desensitisation; c0 = 0, c1 = 1 mM, tres = 0.7 ms.
                 Regression values pinned from verified Phase-0 run 2026-06-07.
                 CHME97 fixture requires scalcs.samples.samples.CHME97 to exist.
+
+Fixture design
+--------------
+Module-scoped fixtures are used throughout so that expensive derived quantities
+(asymptotic_roots, gamma_coefficients) are computed exactly once per test
+session rather than once per test method:
+
+    ch82_step / chme97_step   -- mechanism objects + phi_shut + tres
+    ch82_roots / chme97_roots -- asymptotic_roots(tres, mec)    [expensive]
+    ch82_areas / chme97_areas -- asymptotic_areas(...)           [fast]
+    ch82_gamma / chme97_gamma -- gamma_coefficients(...)         [expensive]
 
 All numerical regression values recorded from Phase-0 notebook execution and
 cross-checked against Fortran pdfLATs.for / HJCASYMP.FOR / F0HJC.FOR.
@@ -50,28 +61,29 @@ import numpy as np
 import pytest
 from scipy import integrate
 
+from scalcs import qmatlib as qm
 from scalcs import qmatlib as qml
 from scalcs import scalcslib as scl
-from scalcs import firstlatency as fl          # does not exist yet → RED
+from scalcs import firstlatency as fl          # does not exist yet -> RED
 from scalcs.mechanism import Mechanism, Rate, State
-from scalcs.samples.samples import CH82, CHME97   # CHME97 not in samples → RED
+from scalcs.samples.samples import CH82, CHME97   # CHME97 not in samples -> RED
 
 
 # ---------------------------------------------------------------------------
 # Module-level analytical constants for CO 2-state mechanism
 # ---------------------------------------------------------------------------
 
-BETA_CO  = 20.0    # s⁻¹  shut → open rate (concentration-independent)
-ALPHA_CO = 50.0    # s⁻¹  open → shut rate
+BETA_CO  = 20.0    # s^-1  shut -> open rate (concentration-independent)
+ALPHA_CO = 50.0    # s^-1  open -> shut rate
 
 
 # ---------------------------------------------------------------------------
-# Fixtures (module-scoped — setup is non-trivial)
+# Base fixtures (module-scoped — setup is non-trivial)
 # ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
 def co():
-    """2-state open↔shut mechanism (analytical ground truth).
+    """2-state open<->shut mechanism (analytical ground truth).
 
     At c = 0 the population is entirely in the shut state, so phi_shut = [1].
     Post-jump QFF = [-BETA_CO].  Ideal f_L(t) = BETA_CO * exp(-BETA_CO * t).
@@ -120,6 +132,52 @@ def chme97_step():
 
 
 # ---------------------------------------------------------------------------
+# Derived fixtures — expensive computations cached module-wide
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def ch82_roots(ch82_step):
+    """Asymptotic roots for CH82.  Computed once; reused by all test methods."""
+    mec1, phi_shut, tres = ch82_step
+    return fl.asymptotic_roots(tres, mec1)
+
+
+@pytest.fixture(scope="module")
+def ch82_areas(ch82_step, ch82_roots):
+    """Asymptotic areas for CH82."""
+    mec1, phi_shut, tres = ch82_step
+    return fl.asymptotic_areas(tres, ch82_roots, phi_shut, mec1)
+
+
+@pytest.fixture(scope="module")
+def ch82_gamma(ch82_step):
+    """Gamma coefficients (eigvals, g00, g10, g11) for CH82 exact pdf."""
+    mec1, phi_shut, tres = ch82_step
+    return fl.gamma_coefficients(tres, phi_shut, mec1)
+
+
+@pytest.fixture(scope="module")
+def chme97_roots(chme97_step):
+    """Asymptotic roots for CHME97.  Computed once; reused by all test methods."""
+    mec1, phi_shut, tres = chme97_step
+    return fl.asymptotic_roots(tres, mec1)
+
+
+@pytest.fixture(scope="module")
+def chme97_areas(chme97_step, chme97_roots):
+    """Asymptotic areas for CHME97."""
+    mec1, phi_shut, tres = chme97_step
+    return fl.asymptotic_areas(tres, chme97_roots, phi_shut, mec1)
+
+
+@pytest.fixture(scope="module")
+def chme97_gamma(chme97_step):
+    """Gamma coefficients (eigvals, g00, g10, g11) for CHME97 exact pdf."""
+    mec1, phi_shut, tres = chme97_step
+    return fl.gamma_coefficients(tres, phi_shut, mec1)
+
+
+# ---------------------------------------------------------------------------
 # TestSamples — CHME97 must exist in scalcs.samples
 # ---------------------------------------------------------------------------
 
@@ -153,14 +211,14 @@ class TestSamples:
 
 
 # ---------------------------------------------------------------------------
-# TestIdealComponents — fl.ideal_components(QFF, phi_shut) → (eigs, areas)
+# TestIdealComponents — fl.ideal_components(QFF, phi_shut) -> (eigs, areas)
 # ---------------------------------------------------------------------------
 
 class TestIdealComponents:
     """ideal_components returns eigenvalues and areas of the ideal first-latency pdf."""
 
     def test_co_single_component(self, co):
-        """CO has one shut state → one component; area = 1, eig = BETA."""
+        """CO has one shut state -> one component; area = 1, eig = BETA."""
         phi_shut = np.array([1.0])
         eigs, areas = fl.ideal_components(co.QFF, phi_shut)
         assert eigs.shape == (1,)
@@ -234,7 +292,7 @@ class TestIdealComponents:
 
 
 # ---------------------------------------------------------------------------
-# TestIdealPdf — fl.ideal_pdf(t, QFF, phi_shut) → float or ndarray
+# TestIdealPdf — fl.ideal_pdf(t, QFF, phi_shut) -> float or ndarray
 # ---------------------------------------------------------------------------
 
 class TestIdealPdf:
@@ -262,7 +320,7 @@ class TestIdealPdf:
         mec1, phi_shut, _ = ch82_step
         for t in [1e-4, 5e-4, 1e-3]:
             f = float(fl.ideal_pdf(t, mec1.QFF, phi_shut))
-            assert f > 0.0, f"ideal_pdf({t}) = {f} ≤ 0"
+            assert f > 0.0, f"ideal_pdf({t}) = {f} <= 0"
 
     # Regression against Phase-0 notebook output
     def test_ch82_pdf_value_regression(self, ch82_step):
@@ -277,39 +335,33 @@ class TestIdealPdf:
 
 
 # ---------------------------------------------------------------------------
-# TestAsymptoticRoots — fl.asymptotic_roots(tres, mec) → roots
+# TestAsymptoticRoots — fl.asymptotic_roots(tres, mec) -> roots
 # ---------------------------------------------------------------------------
 
 class TestAsymptoticRoots:
     """asymptotic_roots returns kF negative roots for the shut-state pdf."""
 
-    def test_ch82_returns_kF_negative_roots(self, ch82_step):
+    def test_ch82_returns_kF_negative_roots(self, ch82_step, ch82_roots):
         mec1, _, tres = ch82_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        assert len(roots) == mec1.kF == 3
-        assert np.all(roots < 0), "All roots must be negative"
+        assert len(ch82_roots) == mec1.kF == 3
+        assert np.all(ch82_roots < 0), "All roots must be negative"
 
-    def test_ch82_roots_regression(self, ch82_step):
+    def test_ch82_roots_regression(self, ch82_roots):
         """Roots pinned to Phase-0 values (sorted by magnitude)."""
-        mec1, _, tres = ch82_step
-        roots = fl.asymptotic_roots(tres, mec1)
         expected = np.array([-55346.36, -13091.32, -9013.82])
         np.testing.assert_allclose(
-            np.sort(roots), np.sort(expected), rtol=1e-4
+            np.sort(ch82_roots), np.sort(expected), rtol=1e-4
         )
 
-    def test_chme97_returns_kF_negative_roots(self, chme97_step):
+    def test_chme97_returns_kF_negative_roots(self, chme97_step, chme97_roots):
         mec1, _, tres = chme97_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        assert len(roots) == mec1.kF == 4
-        assert np.all(roots < 0)
+        assert len(chme97_roots) == mec1.kF == 4
+        assert np.all(chme97_roots < 0)
 
-    def test_chme97_roots_regression(self, chme97_step):
-        mec1, _, tres = chme97_step
-        roots = fl.asymptotic_roots(tres, mec1)
+    def test_chme97_roots_regression(self, chme97_roots):
         expected = np.array([-10009.40, -5004.49, -33.081, -1.3209])
         np.testing.assert_allclose(
-            np.sort(roots), np.sort(expected), rtol=1e-3
+            np.sort(chme97_roots), np.sort(expected), rtol=1e-3
         )
 
 
@@ -320,129 +372,99 @@ class TestAsymptoticRoots:
 class TestAsymptoticAreas:
     """asymptotic_areas returns the first-latency HJC component areas."""
 
-    def test_ch82_shape(self, ch82_step):
+    def test_ch82_shape(self, ch82_step, ch82_areas):
         mec1, phi_shut, tres = ch82_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
-        assert areas.shape == (mec1.kF,)
+        assert ch82_areas.shape == (mec1.kF,)
 
-    def test_ch82_areas_sum_near_one(self, ch82_step):
+    def test_ch82_areas_sum_near_one(self, ch82_areas):
         """Sum of asymptotic areas < 1 (HJC correction), but within 2%."""
-        mec1, phi_shut, tres = ch82_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
-        assert areas.sum() == pytest.approx(1.0, abs=0.02)
+        assert ch82_areas.sum() == pytest.approx(1.0, abs=0.02)
 
-    def test_ch82_areas_regression(self, ch82_step):
+    def test_ch82_areas_regression(self, ch82_roots, ch82_areas):
         """Areas pinned to Phase-0 values (matched by root order)."""
-        mec1, phi_shut, tres = ch82_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
         # Sort both roots and areas by root magnitude for stable comparison
-        idx = np.argsort(np.abs(roots))
-        areas_sorted = areas[idx]
+        idx = np.argsort(np.abs(ch82_roots))
+        areas_sorted = ch82_areas[idx]
         expected = np.array([3.74943, -2.79281, 0.035272])  # |roots| ascending
         np.testing.assert_allclose(areas_sorted, expected, rtol=1e-3)
 
-    def test_chme97_shape(self, chme97_step):
+    def test_chme97_shape(self, chme97_step, chme97_areas):
         mec1, phi_shut, tres = chme97_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
-        assert areas.shape == (mec1.kF,)
+        assert chme97_areas.shape == (mec1.kF,)
 
-    def test_chme97_areas_sum_near_one(self, chme97_step):
+    def test_chme97_areas_sum_near_one(self, chme97_areas):
         """CHME97 asymptotic areas sum to within 0.1% of 1."""
-        mec1, phi_shut, tres = chme97_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
-        assert areas.sum() == pytest.approx(1.0, abs=0.001)
+        assert chme97_areas.sum() == pytest.approx(1.0, abs=0.001)
 
-    def test_chme97_areas_regression(self, chme97_step):
-        mec1, phi_shut, tres = chme97_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
-        idx = np.argsort(np.abs(roots))
-        areas_sorted = areas[idx]
+    def test_chme97_areas_regression(self, chme97_roots, chme97_areas):
+        idx = np.argsort(np.abs(chme97_roots))
+        areas_sorted = chme97_areas[idx]
         expected = np.array([0.27736, 0.72993, -0.009545, 0.001928])
         np.testing.assert_allclose(areas_sorted, expected, rtol=1e-3)
 
-    def test_distinct_from_ideal_areas(self, ch82_step):
+    def test_distinct_from_ideal_areas(self, ch82_step, ch82_areas):
         """Asymptotic areas must differ from ideal areas (HJC correction exists)."""
         mec1, phi_shut, tres = ch82_step
         _, ideal_areas = fl.ideal_components(mec1.QFF, phi_shut)
-        roots = fl.asymptotic_roots(tres, mec1)
-        asym_areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
         # The HJC asymptotic pdf is NOT the same as the ideal pdf
-        assert not np.allclose(np.sort(asym_areas), np.sort(ideal_areas), atol=0.01)
+        assert not np.allclose(np.sort(ch82_areas), np.sort(ideal_areas), atol=0.01)
 
 
 # ---------------------------------------------------------------------------
-# TestAsymptoticPdf — fl.asymptotic_pdf(t, tres, tau, areas) → float/ndarray
+# TestAsymptoticPdf — fl.asymptotic_pdf(t, tres, tau, areas) -> float/ndarray
 # ---------------------------------------------------------------------------
 
 class TestAsymptoticPdf:
     """asymptotic_pdf is zero before tres, expPDF(t - tres) after."""
 
-    def test_zero_before_tres(self, ch82_step):
+    def test_zero_before_tres(self, ch82_step, ch82_roots, ch82_areas):
         """f_L(t) = 0 for t < tres (no events before dead time)."""
         mec1, phi_shut, tres = ch82_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
-        tau = -1.0 / roots
+        tau = -1.0 / ch82_roots
         for t in [0.0, tres * 0.1, tres * 0.5, tres * 0.9999]:
-            f = fl.asymptotic_pdf(t, tres, tau, areas)
+            f = fl.asymptotic_pdf(t, tres, tau, ch82_areas)
             assert float(f) == 0.0, f"asymptotic_pdf({t}) should be 0 before tres={tres}"
 
-    def test_nonzero_after_tres(self, ch82_step):
+    def test_nonzero_after_tres(self, ch82_step, ch82_roots, ch82_areas):
         """f_L(t) > 0 for t slightly above tres (positive overall amplitude)."""
         mec1, phi_shut, tres = ch82_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
-        tau = -1.0 / roots
+        tau = -1.0 / ch82_roots
         t = tres * 1.5
-        f = fl.asymptotic_pdf(t, tres, tau, areas)
+        f = fl.asymptotic_pdf(t, tres, tau, ch82_areas)
         assert float(f) > 0.0
 
-    def test_scalar_input(self, ch82_step):
+    def test_scalar_input(self, ch82_step, ch82_roots, ch82_areas):
         """scalar t must work without raising AttributeError."""
         mec1, phi_shut, tres = ch82_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
-        tau = -1.0 / roots
-        f = fl.asymptotic_pdf(2e-4, tres, tau, areas)
+        tau = -1.0 / ch82_roots
+        f = fl.asymptotic_pdf(2e-4, tres, tau, ch82_areas)
         assert isinstance(float(f), float)
 
-    def test_array_input(self, ch82_step):
+    def test_array_input(self, ch82_step, ch82_roots, ch82_areas):
         """Array t must return array of same shape."""
         mec1, phi_shut, tres = ch82_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
-        tau = -1.0 / roots
+        tau = -1.0 / ch82_roots
         t = np.array([0.5e-4, 1.0e-4, 2.0e-4, 5.0e-4])
-        f = fl.asymptotic_pdf(t, tres, tau, areas)
+        f = fl.asymptotic_pdf(t, tres, tau, ch82_areas)
         assert f.shape == t.shape
-        # t < tres → 0; t > tres → positive
+        # t < tres -> 0; t > tres -> positive
         assert f[0] == 0.0   # 0.5e-4 < 1e-4 = tres
-        assert f[1] == 0.0   # exactly tres — convention: f(tres) = 0
+        assert f[1] == 0.0   # exactly tres -- convention: f(tres) = 0
         assert f[2] > 0.0    # 2e-4 > tres
         assert f[3] > 0.0
 
-    def test_ch82_pdf_value_regression(self, ch82_step):
-        """f_L(t=0.0002) = 3855.8 s⁻¹ pinned to Phase-0 run."""
+    def test_ch82_pdf_value_regression(self, ch82_step, ch82_roots, ch82_areas):
+        """f_L(t=0.0002) = 3855.8 s^-1 pinned to Phase-0 run."""
         mec1, phi_shut, tres = ch82_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
-        tau = -1.0 / roots
-        f = fl.asymptotic_pdf(2e-4, tres, tau, areas)
+        tau = -1.0 / ch82_roots
+        f = fl.asymptotic_pdf(2e-4, tres, tau, ch82_areas)
         assert float(f) == pytest.approx(3855.84, rel=1e-3)
 
-    def test_chme97_pdf_value_regression(self, chme97_step):
+    def test_chme97_pdf_value_regression(self, chme97_step, chme97_roots, chme97_areas):
         """f_L(t=10 ms) pinned to Phase-0 run."""
         mec1, phi_shut, tres = chme97_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
-        tau = -1.0 / roots
-        f = fl.asymptotic_pdf(0.01, tres, tau, areas)
+        tau = -1.0 / chme97_roots
+        f = fl.asymptotic_pdf(0.01, tres, tau, chme97_areas)
         assert float(f) == pytest.approx(18.114, rel=1e-3)
 
 
@@ -453,33 +475,29 @@ class TestAsymptoticPdf:
 class TestGammaCoefficients:
     """gamma_coefficients returns eigenvalues and (g00, g10, g11) for exact pdf."""
 
-    def test_ch82_returns_four_arrays(self, ch82_step):
+    def test_ch82_returns_four_arrays(self, ch82_step, ch82_gamma):
         mec1, phi_shut, tres = ch82_step
-        result = fl.gamma_coefficients(tres, phi_shut, mec1)
-        assert len(result) == 4
-        eigvals, g00, g10, g11 = result
+        eigvals, g00, g10, g11 = ch82_gamma
         assert eigvals.shape == (mec1.k,)
         assert g00.shape == (mec1.k,)
         assert g10.shape == (mec1.k,)
         assert g11.shape == (mec1.k,)
 
-    def test_ch82_eigenvalues_regression(self, ch82_step):
+    def test_ch82_eigenvalues_regression(self, ch82_gamma):
         """Eigenvalues of -Q (full) pinned to Phase-0 run.
 
         There are k=5 eigenvalues; one is ~0 (stationary distribution).
         """
-        mec1, phi_shut, tres = ch82_step
-        eigvals, _, _, _ = fl.gamma_coefficients(tres, phi_shut, mec1)
-        # Eigenvalues of -Q sorted ascending; first ≈ 0
+        eigvals, _, _, _ = ch82_gamma
+        # Eigenvalues of -Q sorted ascending; first ~= 0
         ev = np.sort(eigvals)
         assert ev[0] == pytest.approx(0.0, abs=1e-6)
         # Remaining four should be positive
         assert np.all(ev[1:] > 0)
 
-    def test_ch82_g00_regression(self, ch82_step):
+    def test_ch82_g00_regression(self, ch82_gamma):
         """g00 coefficients pinned to Phase-0 run (tolerance 1%)."""
-        mec1, phi_shut, tres = ch82_step
-        eigvals, g00, _, _ = fl.gamma_coefficients(tres, phi_shut, mec1)
+        eigvals, g00, _, _ = ch82_gamma
         # Sort by eigenvalue for stable ordering
         idx = np.argsort(eigvals)
         g00_sorted = g00[idx]
@@ -488,15 +506,14 @@ class TestGammaCoefficients:
         expected = np.array([458.88, 25121.5, -28978.8, 7.709, 3390.7])
         np.testing.assert_allclose(g00_sorted, expected, rtol=0.01)
 
-    def test_chme97_returns_four_arrays(self, chme97_step):
+    def test_chme97_returns_four_arrays(self, chme97_step, chme97_gamma):
         mec1, phi_shut, tres = chme97_step
-        eigvals, g00, g10, g11 = fl.gamma_coefficients(tres, phi_shut, mec1)
+        eigvals, g00, g10, g11 = chme97_gamma
         assert eigvals.shape == (mec1.k,)
 
-    def test_chme97_eigenvalues_one_near_zero(self, chme97_step):
-        """k=5; one eigenvalue of -Q is ≈ 0 (equilibrium)."""
-        mec1, phi_shut, tres = chme97_step
-        eigvals, _, _, _ = fl.gamma_coefficients(tres, phi_shut, mec1)
+    def test_chme97_eigenvalues_one_near_zero(self, chme97_gamma):
+        """k=5; one eigenvalue of -Q is ~= 0 (equilibrium)."""
+        eigvals, _, _, _ = chme97_gamma
         assert np.min(np.abs(eigvals)) == pytest.approx(0.0, abs=1e-6)
 
 
@@ -511,91 +528,82 @@ class TestExactPdf:
     (The existing scl.exact_pdf requires array t — this is fixed here.)
     """
 
-    # -- setup helper (not a fixture; used within class methods) ------------
-    @staticmethod
-    def _ch82_exact_args(ch82_step):
-        mec1, phi_shut, tres = ch82_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
-        eigvals, g00, g10, g11 = fl.gamma_coefficients(tres, phi_shut, mec1)
-        return tres, roots, areas, eigvals, g00, g10, g11
-
-    @staticmethod
-    def _chme97_exact_args(chme97_step):
-        mec1, phi_shut, tres = chme97_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
-        eigvals, g00, g10, g11 = fl.gamma_coefficients(tres, phi_shut, mec1)
-        return tres, roots, areas, eigvals, g00, g10, g11
-
-    def test_scalar_input_no_error(self, ch82_step):
+    def test_scalar_input_no_error(self, ch82_step, ch82_roots, ch82_areas, ch82_gamma):
         """fl.exact_pdf must not raise AttributeError for scalar t."""
-        tres, roots, areas, eigvals, g00, g10, g11 = self._ch82_exact_args(ch82_step)
-        f = fl.exact_pdf(2e-4, tres, roots, areas, eigvals, g00, g10, g11)
+        mec1, phi_shut, tres = ch82_step
+        eigvals, g00, g10, g11 = ch82_gamma
+        f = fl.exact_pdf(2e-4, tres, ch82_roots, ch82_areas, eigvals, g00, g10, g11)
         assert isinstance(float(f), float)
 
-    def test_array_input(self, ch82_step):
+    def test_array_input(self, ch82_step, ch82_roots, ch82_areas, ch82_gamma):
         """Array t must return array of same shape."""
-        tres, roots, areas, eigvals, g00, g10, g11 = self._ch82_exact_args(ch82_step)
+        mec1, phi_shut, tres = ch82_step
+        eigvals, g00, g10, g11 = ch82_gamma
         t = np.array([2e-4, 5e-4, 1e-3])
-        f = fl.exact_pdf(t, tres, roots, areas, eigvals, g00, g10, g11)
+        f = fl.exact_pdf(t, tres, ch82_roots, ch82_areas, eigvals, g00, g10, g11)
         assert f.shape == t.shape
 
-    def test_zero_before_tres(self, ch82_step):
+    def test_zero_before_tres(self, ch82_step, ch82_roots, ch82_areas, ch82_gamma):
         """f = 0 for t < tres."""
-        tres, roots, areas, eigvals, g00, g10, g11 = self._ch82_exact_args(ch82_step)
+        mec1, phi_shut, tres = ch82_step
+        eigvals, g00, g10, g11 = ch82_gamma
         for t in [0.0, tres * 0.5, tres * 0.999]:
-            f = fl.exact_pdf(t, tres, roots, areas, eigvals, g00, g10, g11)
+            f = fl.exact_pdf(t, tres, ch82_roots, ch82_areas, eigvals, g00, g10, g11)
             assert float(f) == 0.0
 
-    def test_equals_asymptotic_for_large_t(self, ch82_step):
+    def test_equals_asymptotic_for_large_t(self, ch82_step, ch82_roots, ch82_areas, ch82_gamma):
         """For t >> 3*tres exact and asymptotic pdf must agree to 0.1%."""
         mec1, phi_shut, tres = ch82_step
-        tres, roots, areas, eigvals, g00, g10, g11 = self._ch82_exact_args(ch82_step)
-        tau = -1.0 / roots
+        eigvals, g00, g10, g11 = ch82_gamma
+        tau = -1.0 / ch82_roots
         for t in [0.002, 0.005, 0.01]:
-            f_exact = float(fl.exact_pdf(t, tres, roots, areas, eigvals, g00, g10, g11))
-            f_asym  = float(fl.asymptotic_pdf(t, tres, tau, areas))
+            f_exact = float(fl.exact_pdf(t, tres, ch82_roots, ch82_areas, eigvals, g00, g10, g11))
+            f_asym  = float(fl.asymptotic_pdf(t, tres, tau, ch82_areas))
             assert f_exact == pytest.approx(f_asym, rel=1e-3), (
-                f"exact ({f_exact:.6e}) ≠ asymptotic ({f_asym:.6e}) at t={t}"
+                f"exact ({f_exact:.6e}) != asymptotic ({f_asym:.6e}) at t={t}"
             )
 
-    def test_differs_from_asymptotic_near_tres(self, chme97_step):
+    def test_differs_from_asymptotic_near_tres(self, chme97_step, chme97_roots, chme97_areas, chme97_gamma):
         """Just above tres exact and asymptotic differ (exact correction matters)."""
-        tres, roots, areas, eigvals, g00, g10, g11 = self._chme97_exact_args(chme97_step)
-        tau = -1.0 / roots
+        mec1, phi_shut, tres = chme97_step
+        eigvals, g00, g10, g11 = chme97_gamma
+        tau = -1.0 / chme97_roots
         t_near = tres * 1.14   # t = 0.8 ms when tres = 0.7 ms
-        f_exact = float(fl.exact_pdf(t_near, tres, roots, areas, eigvals, g00, g10, g11))
-        f_asym  = float(fl.asymptotic_pdf(t_near, tres, tau, areas))
-        # Phase-0: exact=3.782, asymptotic=2.568 — differ by ~47%
+        f_exact = float(fl.exact_pdf(t_near, tres, chme97_roots, chme97_areas, eigvals, g00, g10, g11))
+        f_asym  = float(fl.asymptotic_pdf(t_near, tres, tau, chme97_areas))
+        # Phase-0: exact=3.782, asymptotic=2.568 -- differ by ~47%
         assert not math.isclose(f_exact, f_asym, rel_tol=0.1), (
             f"exact and asymptotic should differ near tres; got {f_exact:.4f} vs {f_asym:.4f}"
         )
 
     # -- Regression tests (Phase-0 values) ----------------------------------
 
-    def test_ch82_exact_value_at_200us(self, ch82_step):
-        """Phase-0: exact_pdf(t=0.2 ms) = 3855.84 s⁻¹  (= asymptotic at this t)."""
-        tres, roots, areas, eigvals, g00, g10, g11 = self._ch82_exact_args(ch82_step)
-        f = float(fl.exact_pdf(2e-4, tres, roots, areas, eigvals, g00, g10, g11))
+    def test_ch82_exact_value_at_200us(self, ch82_step, ch82_roots, ch82_areas, ch82_gamma):
+        """Phase-0: exact_pdf(t=0.2 ms) = 3855.84 s^-1  (= asymptotic at this t)."""
+        mec1, phi_shut, tres = ch82_step
+        eigvals, g00, g10, g11 = ch82_gamma
+        f = float(fl.exact_pdf(2e-4, tres, ch82_roots, ch82_areas, eigvals, g00, g10, g11))
         assert f == pytest.approx(3855.84, rel=1e-3)
 
-    def test_ch82_exact_value_at_1ms(self, ch82_step):
-        """Phase-0: exact_pdf(t=1 ms) = 9.8525 s⁻¹."""
-        tres, roots, areas, eigvals, g00, g10, g11 = self._ch82_exact_args(ch82_step)
-        f = float(fl.exact_pdf(1e-3, tres, roots, areas, eigvals, g00, g10, g11))
+    def test_ch82_exact_value_at_1ms(self, ch82_step, ch82_roots, ch82_areas, ch82_gamma):
+        """Phase-0: exact_pdf(t=1 ms) = 9.8525 s^-1."""
+        mec1, phi_shut, tres = ch82_step
+        eigvals, g00, g10, g11 = ch82_gamma
+        f = float(fl.exact_pdf(1e-3, tres, ch82_roots, ch82_areas, eigvals, g00, g10, g11))
         assert f == pytest.approx(9.8525, rel=1e-3)
 
-    def test_chme97_exact_value_at_1ms(self, chme97_step):
-        """Phase-0: exact_pdf(t=1 ms) = 14.659 s⁻¹  (differs from asymptotic 14.589)."""
-        tres, roots, areas, eigvals, g00, g10, g11 = self._chme97_exact_args(chme97_step)
-        f = float(fl.exact_pdf(1e-3, tres, roots, areas, eigvals, g00, g10, g11))
+    def test_chme97_exact_value_at_1ms(self, chme97_step, chme97_roots, chme97_areas, chme97_gamma):
+        """Phase-0: exact_pdf(t=1 ms) = 14.659 s^-1  (differs from asymptotic 14.589)."""
+        mec1, phi_shut, tres = chme97_step
+        eigvals, g00, g10, g11 = chme97_gamma
+        f = float(fl.exact_pdf(1e-3, tres, chme97_roots, chme97_areas, eigvals, g00, g10, g11))
         assert f == pytest.approx(14.659, rel=1e-2)
 
-    def test_chme97_exact_value_at_10ms(self, chme97_step):
-        """Phase-0: exact_pdf(t=10 ms) = 18.114 s⁻¹  (= asymptotic at this t)."""
-        tres, roots, areas, eigvals, g00, g10, g11 = self._chme97_exact_args(chme97_step)
-        f = float(fl.exact_pdf(0.01, tres, roots, areas, eigvals, g00, g10, g11))
+    def test_chme97_exact_value_at_10ms(self, chme97_step, chme97_roots, chme97_areas, chme97_gamma):
+        """Phase-0: exact_pdf(t=10 ms) = 18.114 s^-1  (= asymptotic at this t)."""
+        mec1, phi_shut, tres = chme97_step
+        eigvals, g00, g10, g11 = chme97_gamma
+        f = float(fl.exact_pdf(0.01, tres, chme97_roots, chme97_areas, eigvals, g00, g10, g11))
         assert f == pytest.approx(18.114, rel=1e-3)
 
 
@@ -630,24 +638,18 @@ class TestProperties:
         eigs, areas = fl.ideal_components(mec1.QFF, phi_shut)
         assert areas.sum() == pytest.approx(1.0, abs=1e-7)
 
-    def test_asymptotic_areas_near_one_ch82(self, ch82_step):
+    def test_asymptotic_areas_near_one_ch82(self, ch82_areas):
         """Asymptotic areas sum < 1 but within 2% (missed-events effect)."""
-        mec1, phi_shut, tres = ch82_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
-        s = areas.sum()
+        s = ch82_areas.sum()
         assert 0.98 < s <= 1.0, f"sum(asym_areas) = {s:.6f}; expected in (0.98, 1.0]"
 
-    def test_asymptotic_areas_near_one_chme97(self, chme97_step):
+    def test_asymptotic_areas_near_one_chme97(self, chme97_areas):
         """CHME97: asymptotic areas within 0.1% of 1."""
-        mec1, phi_shut, tres = chme97_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
-        s = areas.sum()
+        s = chme97_areas.sum()
         assert 0.999 < s <= 1.0, f"sum(asym_areas) = {s:.6f}; expected > 0.999"
 
     def test_tres_zero_limit_co(self, co):
-        """At tres ≈ 0 the asymptotic pdf reduces to the ideal pdf.
+        """At tres ~= 0 the asymptotic pdf reduces to the ideal pdf.
 
         For CO (single shut state), ideal f_L(t) = BETA_CO * exp(-BETA_CO * t).
         At tres = 0 the asymptotic areas must equal the ideal areas (= [1.0])
@@ -676,21 +678,21 @@ class TestProperties:
             f_exact = float(fl.exact_pdf(t, tres, roots, areas, eigvals, g00, g10, g11))
             f_ideal = float(fl.ideal_pdf(t, co.QFF, phi_shut))
             assert f_exact == pytest.approx(f_ideal, rel=1e-5), (
-                f"exact ({f_exact:.6e}) ≠ ideal ({f_ideal:.6e}) at t={t}, tres=0"
+                f"exact ({f_exact:.6e}) != ideal ({f_ideal:.6e}) at t={t}, tres=0"
             )
 
-    def test_exact_agrees_with_asymptotic_for_t_gg_3tres_ch82(self, ch82_step):
+    def test_exact_agrees_with_asymptotic_for_t_gg_3tres_ch82(
+        self, ch82_step, ch82_roots, ch82_areas, ch82_gamma
+    ):
         """For t >> 3*tres, exact == asymptotic to five significant figures."""
         mec1, phi_shut, tres = ch82_step
-        roots = fl.asymptotic_roots(tres, mec1)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
-        eigvals, g00, g10, g11 = fl.gamma_coefficients(tres, phi_shut, mec1)
-        tau = -1.0 / roots
+        eigvals, g00, g10, g11 = ch82_gamma
+        tau = -1.0 / ch82_roots
 
         # t = 0.005 s >> 3*tres = 0.3 ms
         for t in [5e-3, 1e-2]:
-            f_e = float(fl.exact_pdf(t, tres, roots, areas, eigvals, g00, g10, g11))
-            f_a = float(fl.asymptotic_pdf(t, tres, tau, areas))
+            f_e = float(fl.exact_pdf(t, tres, ch82_roots, ch82_areas, eigvals, g00, g10, g11))
+            f_a = float(fl.asymptotic_pdf(t, tres, tau, ch82_areas))
             assert f_e == pytest.approx(f_a, rel=1e-5)
 
     def test_ideal_decreasing_ch82(self, ch82_step):
