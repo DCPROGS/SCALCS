@@ -436,7 +436,7 @@ def asymptotic_areas(tres, roots, QAA, QFF, QAF, QFA, kA, kF, GAF, GFA):
     areas = np.zeros(kA)
     for i in range(kA):
         areas[i] = ((-1 / roots[i]) *
-            np.dot(phiA, np.dot(np.dot(R[i], np.dot(QAF, expQFF)), uF)))
+            np.dot(phiA, np.dot(np.dot(R[i], np.dot(QAF, expQFF)), uF))).item()
 
 #    rowA = np.zeros((kA,kA))
 #    colA = np.zeros((kA,kA))
