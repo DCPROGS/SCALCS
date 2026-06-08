@@ -341,16 +341,20 @@ def bisect_intervals(sa, sb, tres, Q11, Q22, Q12, Q21, k1, k2):
 
         # Check if either or both of the two subintervals output from
         # SPLIT contain only one root?
+        # Only push back onto todo if the subinterval actually contains
+        # roots (count difference > 0).  Pushing a zero-root interval
+        # back causes an infinite loop because it keeps splitting into
+        # two more zero-root halves.
         if (ngc - nga1) == 1:
             done.append([sa1, sc])
-#            if len(done) == k1:
-#                break
-        else:
+        elif (ngc - nga1) > 1:
             todo.append([sa1, sc, nga1, ngc])
+        # ngc - nga1 == 0: no roots in left half, discard silently
         if (ngb2 - ngc) == 1:
             done.append([sc, sb2])
-        else:
+        elif (ngb2 - ngc) > 1:
             todo.append([sc, sb2, ngc, ngb2])
+        # ngb2 - ngc == 0: no roots in right half, discard silently
 
     if len(done) < k1:
         sys.stderr.write(

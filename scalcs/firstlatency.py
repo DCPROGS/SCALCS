@@ -286,16 +286,21 @@ def exact_pdf(t, tres, roots, areas, eigvals, g00, g10, g11):
     f = np.zeros(len(t_arr))
     tau = -1.0 / roots
 
-    for idx, ti in enumerate(t_arr):
-        if ti < tres:
-            f[idx] = 0.0
-        elif ti < 2.0 * tres:
+    # Asymptotic branch (t >= 3*tres): fully vectorised — one expPDF call
+    # for all qualifying points rather than one per element.
+    asym_mask = t_arr >= 3.0 * tres
+    if np.any(asym_mask):
+        f[asym_mask] = pdfs.expPDF(t_arr[asym_mask] - tres, tau, areas)
+
+    # Exact correction branches (tres <= t < 3*tres): scalar loop, but
+    # there are at most a handful of points here in practice.
+    for idx in np.where((t_arr >= tres) & ~asym_mask)[0]:
+        ti = t_arr[idx]
+        if ti < 2.0 * tres:
             f[idx] = float(qml.f0(ti - tres, eigvals, g00))
-        elif ti < 3.0 * tres:
+        else:
             f[idx] = float(qml.f0(ti - tres, eigvals, g00) -
                            qml.f1(ti - 2.0 * tres, eigvals, g10, g11))
-        else:
-            f[idx] = float(pdfs.expPDF(np.array([ti - tres]), tau, areas)[0])
 
     if scalar_input:
         return float(f[0])

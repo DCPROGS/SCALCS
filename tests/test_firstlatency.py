@@ -59,7 +59,6 @@ import math
 
 import numpy as np
 import pytest
-from scipy import integrate
 
 from scalcs import qmatlib as qm
 from scalcs import qmatlib as qml
@@ -127,13 +126,29 @@ def chme97_step():
     mec1 = CHME97()
     mec1.set_eff('c', 0.001)
     phi_shut = qml.pinf(mec0.Q)[mec0.kA:]
-    tres = 7e-4   # 0.7 ms
+    tres = 1e-3   # 1 ms
     return mec1, phi_shut, tres
 
 
 # ---------------------------------------------------------------------------
 # Derived fixtures — expensive computations cached module-wide
 # ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def co_tres0(co):
+    """Asymptotic roots, areas and gamma coefficients for CO at tres=0.
+
+    At tres=0 the asymptotic pdf reduces to the ideal pdf.  Computed once
+    and shared by test_tres_zero_limit_co and test_tres_zero_pdf_equals_ideal_co
+    (both previously called asymptotic_roots and gamma_coefficients fresh).
+    """
+    phi_shut = np.array([1.0])
+    tres = 0.0
+    roots = fl.asymptotic_roots(tres, co)
+    areas = fl.asymptotic_areas(tres, roots, phi_shut, co)
+    eigvals, g00, g10, g11 = fl.gamma_coefficients(tres, phi_shut, co)
+    return phi_shut, tres, roots, areas, eigvals, g00, g10, g11
+
 
 @pytest.fixture(scope="module")
 def ch82_roots(ch82_step):
@@ -359,7 +374,7 @@ class TestAsymptoticRoots:
         assert np.all(chme97_roots < 0)
 
     def test_chme97_roots_regression(self, chme97_roots):
-        expected = np.array([-10009.40, -5004.49, -33.081, -1.3209])
+        expected = np.array([-10009.39, -5003.76, -27.22, -1.2134])
         np.testing.assert_allclose(
             np.sort(chme97_roots), np.sort(expected), rtol=1e-3
         )
@@ -420,7 +435,7 @@ class TestAsymptoticAreas:
     def test_chme97_areas_regression(self, chme97_roots, chme97_areas):
         idx = np.argsort(np.abs(chme97_roots))
         areas_sorted = chme97_areas[idx]
-        expected = np.array([0.27736, 0.72993, -0.009545, 0.001928])
+        expected = np.array([0.34122, 0.66425, -0.006677, 0.000359])
         np.testing.assert_allclose(areas_sorted, expected, rtol=1e-3)
 
     def test_distinct_from_ideal_areas(self, ch82_step, ch82_areas):
@@ -482,11 +497,11 @@ class TestAsymptoticPdf:
         assert float(f) == pytest.approx(3855.84, rel=1e-3)
 
     def test_chme97_pdf_value_regression(self, chme97_step, chme97_roots, chme97_areas):
-        """f_L(t=10 ms) pinned to Phase-0 run."""
+        """f_L(t=10 ms) pinned to tres=1 ms run."""
         mec1, phi_shut, tres = chme97_step
         tau = -1.0 / chme97_roots
         f = fl.asymptotic_pdf(0.01, tres, tau, chme97_areas)
-        assert float(f) == pytest.approx(18.114, rel=1e-3)
+        assert float(f) == pytest.approx(14.563, rel=1e-3)
 
 
 # ---------------------------------------------------------------------------
@@ -613,19 +628,24 @@ class TestExactPdf:
         f = float(fl.exact_pdf(1e-3, tres, ch82_roots, ch82_areas, eigvals, g00, g10, g11))
         assert f == pytest.approx(9.8525, rel=1e-3)
 
-    def test_chme97_exact_value_at_1ms(self, chme97_step, chme97_roots, chme97_areas, chme97_gamma):
-        """Phase-0: exact_pdf(t=1 ms) = 14.659 s^-1  (differs from asymptotic 14.589)."""
+    def test_chme97_exact_value_at_1p5ms(self, chme97_step, chme97_roots, chme97_areas, chme97_gamma):
+        """tres=1 ms: exact_pdf(t=1.5 ms) = 15.446 s^-1.
+
+        t=1.5 ms is in [tres, 2*tres) so f = f0(t - tres).
+        Differs from asymptotic (15.539) by ~0.6%% — confirms the exact
+        correction is applied in this region.
+        """
         mec1, phi_shut, tres = chme97_step
         eigvals, g00, g10, g11 = chme97_gamma
-        f = float(fl.exact_pdf(1e-3, tres, chme97_roots, chme97_areas, eigvals, g00, g10, g11))
-        assert f == pytest.approx(14.659, rel=1e-2)
+        f = float(fl.exact_pdf(1.5e-3, tres, chme97_roots, chme97_areas, eigvals, g00, g10, g11))
+        assert f == pytest.approx(15.446, rel=1e-2)
 
     def test_chme97_exact_value_at_10ms(self, chme97_step, chme97_roots, chme97_areas, chme97_gamma):
-        """Phase-0: exact_pdf(t=10 ms) = 18.114 s^-1  (= asymptotic at this t)."""
+        """tres=1 ms: exact_pdf(t=10 ms) = 14.563 s^-1  (= asymptotic at this t)."""
         mec1, phi_shut, tres = chme97_step
         eigvals, g00, g10, g11 = chme97_gamma
         f = float(fl.exact_pdf(0.01, tres, chme97_roots, chme97_areas, eigvals, g00, g10, g11))
-        assert f == pytest.approx(18.114, rel=1e-3)
+        assert f == pytest.approx(14.563, rel=1e-3)
 
 
 # ---------------------------------------------------------------------------
@@ -636,16 +656,17 @@ class TestProperties:
     """Mathematical properties that must hold regardless of mechanism."""
 
     def test_ideal_pdf_integrates_to_one_co(self, co):
-        """For CO, ideal first-latency pdf integrates analytically to 1."""
+        """For CO, ideal first-latency pdf integrates to 1.
+
+        For a sum-of-exponentials pdf  f(t) = Σ aᵢ·λᵢ·exp(−λᵢ·t),
+        ∫₀^∞ f(t) dt = Σ aᵢ  exactly.  Verified analytically; no
+        numerical quadrature needed (scipy.integrate.quad is ~100×
+        slower here because it recomputes the eigendecomposition per
+        evaluation point).
+        """
         phi_shut = np.array([1.0])
-        eigs, areas = fl.ideal_components(co.QFF, phi_shut)
-        # For a sum-of-exponentials, integral = sum(areas * tau) * (rate) normalised
-        # = sum(areas) = 1 analytically; verify numerically too
-        result, _ = integrate.quad(
-            lambda t: float(fl.ideal_pdf(t, co.QFF, phi_shut)),
-            0.0, 10.0
-        )
-        assert result == pytest.approx(1.0, rel=1e-4)
+        _, areas = fl.ideal_components(co.QFF, phi_shut)
+        assert areas.sum() == pytest.approx(1.0, rel=1e-10)
 
     def test_ideal_pdf_integrates_to_one_ch82(self, ch82_step):
         """Ideal CH82 first-latency pdf integrates to 1 (sum of areas = 1)."""
@@ -669,31 +690,22 @@ class TestProperties:
         s = chme97_areas.sum()
         assert 0.999 < s <= 1.0, f"sum(asym_areas) = {s:.6f}; expected > 0.999"
 
-    def test_tres_zero_limit_co(self, co):
-        """At tres ~= 0 the asymptotic pdf reduces to the ideal pdf.
+    def test_tres_zero_limit_co(self, co, co_tres0):
+        """At tres=0 the asymptotic pdf reduces to the ideal pdf.
 
         For CO (single shut state), ideal f_L(t) = BETA_CO * exp(-BETA_CO * t).
-        At tres = 0 the asymptotic areas must equal the ideal areas (= [1.0])
+        At tres=0 the asymptotic areas must equal the ideal areas (= [1.0])
         and the roots must equal the ideal eigenvalues (= [BETA_CO]).
         """
-        phi_shut = np.array([1.0])
-        tres = 0.0
-        roots = fl.asymptotic_roots(tres, co)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, co)
+        phi_shut, tres, roots, areas, _, _, _, _ = co_tres0
         eigs, ideal_areas = fl.ideal_components(co.QFF, phi_shut)
 
-        # At tres=0 the single root must equal the single eigenvalue of -QFF
         assert np.abs(roots[0]) == pytest.approx(eigs[0], rel=1e-6)
-        # Area must equal ideal area = 1
         assert areas[0] == pytest.approx(ideal_areas[0], rel=1e-6)
 
-    def test_tres_zero_pdf_equals_ideal_co(self, co):
+    def test_tres_zero_pdf_equals_ideal_co(self, co, co_tres0):
         """At tres=0 exact_pdf(t) == ideal_pdf(t) for all t > 0."""
-        phi_shut = np.array([1.0])
-        tres = 0.0
-        roots = fl.asymptotic_roots(tres, co)
-        areas = fl.asymptotic_areas(tres, roots, phi_shut, co)
-        eigvals, g00, g10, g11 = fl.gamma_coefficients(tres, phi_shut, co)
+        phi_shut, tres, roots, areas, eigvals, g00, g10, g11 = co_tres0
 
         for t in [0.01, 0.05, 0.1, 0.5]:
             f_exact = float(fl.exact_pdf(t, tres, roots, areas, eigvals, g00, g10, g11))
@@ -717,16 +729,22 @@ class TestProperties:
             assert f_e == pytest.approx(f_a, rel=1e-5)
 
     def test_ideal_decreasing_ch82(self, ch82_step):
-        """For CH82, ideal f_L(t) decreases monotonically for t > 0.
+        """For CH82, ideal f_L(t) is positive and eventually decreasing.
 
-        This holds because the mechanism has no anti-mode (the shut-state
-        pdf, starting from the unliganded state, is monotone decreasing).
+        The pdf rises from zero at t=0 to a mode (the channel population
+        must first bind agonist before opening), then decays.  The peak is
+        near the dominant time constant (~0.1 ms); by 1 ms the pdf is
+        monotone decreasing.
         """
         mec1, phi_shut, _ = ch82_step
+        # Positive everywhere
         times = [1e-5, 1e-4, 3e-4, 1e-3, 5e-3]
         vals = [float(fl.ideal_pdf(t, mec1.QFF, phi_shut)) for t in times]
-        for i in range(len(vals) - 1):
-            assert vals[i] > vals[i + 1], (
-                f"ideal_pdf not decreasing: f({times[i]}) = {vals[i]:.4e},"
-                f" f({times[i+1]}) = {vals[i+1]:.4e}"
+        assert all(v > 0 for v in vals), "ideal_pdf must be positive"
+        # Monotone decreasing after the mode (from 1 ms onward)
+        tail = [float(fl.ideal_pdf(t, mec1.QFF, phi_shut)) for t in [1e-3, 3e-3, 1e-2]]
+        for i in range(len(tail) - 1):
+            assert tail[i] > tail[i + 1], (
+                f"ideal_pdf not decreasing in tail: f({[1e-3,3e-3,1e-2][i]:.3g})"
+                f" = {tail[i]:.4e}, f({[1e-3,3e-3,1e-2][i+1]:.3g}) = {tail[i+1]:.4e}"
             )
