@@ -223,27 +223,47 @@ def asymptotic_pdf(t, tres, tau, area):
     return apdf
 
 def asymptotic_roots(tres, QAA, QFF, QAF, QFA, kA, kF):
-    """
-    Find roots for the asymptotic probability density function (Eqs. 52-58,
+    """Find roots for the asymptotic probability density function (Eqs. 52-58,
     HJC92).
+
+    Solves det[W(s)] = 0 for the kA roots that lie in the range
+    (−10⁶, −10⁻⁷).  Each root is refined with Brent's method.
 
     Parameters
     ----------
     tres : float
-        Time resolution (dead time).
+        Time resolution (dead time) in seconds.
     QAA : array_like, shape (kA, kA)
     QFF : array_like, shape (kF, kF)
     QAF : array_like, shape (kA, kF)
     QFA : array_like, shape (kF, kA)
-        QAA, QFF, QAF, QFA - submatrices of Q.
+        Submatrices of the full Q matrix.
     kA : int
-        A number of open states in kinetic scheme.
+        Number of open states in the kinetic scheme.
     kF : int
-        A number of shut states in kinetic scheme.
+        Number of shut states in the kinetic scheme.
 
     Returns
     -------
-    roots : array_like, shape (1, kA)
+    roots : ndarray, shape (kA,)
+        Negative real roots, one per open state.
+
+    Notes
+    -----
+    **Numerical stability** — The matrix exponential
+    ``exp((QFF − s·I)·tres)`` is evaluated during the root-count sweep.
+    When ``|s| × tres > ln(float64_max) ≈ 709`` this overflows.  The lower
+    search bound is therefore clamped adaptively::
+
+        sas = max(−1_000_000, −700 / tres)
+
+    This only tightens the bound when the default −10⁶ would cause overflow
+    (i.e. when ``tres > 0.7 ms``); otherwise the full range is used so that
+    bisection can correctly count and bracket all roots.
+
+    At ``tres = 0`` the matrix H(s) becomes constant, making the root-counting
+    function a step function.  ``bisect_intervals`` handles this correctly by
+    discarding zero-root sub-intervals rather than re-queuing them.
     """
 
     # The lower search bound must satisfy |sas| * tres < ln(float64_max) ≈ 709
@@ -298,29 +318,41 @@ def bisect_gFB(s, tres, Q11, Q22, Q12, Q21, k1, k2):
     return ng
 
 def bisect_intervals(sa, sb, tres, Q11, Q22, Q12, Q21, k1, k2):
-    """
-    Find, according to Frank Ball's method, suitable starting guesses for
-    each HJC root- the upper and lower limits for bisection. Exactly one root
-    should be between those limits.
+    """Find bracket intervals that each contain exactly one HJC root.
+
+    Uses Frank Ball's bisection method to partition the search range
+    [sa, sb] into sub-intervals, each of which contains exactly one root of
+    det[W(s)] = 0.
 
     Parameters
     ----------
     sa, sb : float
-        Laplace transform arguments.
+        Lower and upper Laplace-transform argument bounds.  ``sa`` must be
+        more negative than the most negative root; ``sb`` must be between
+        the smallest-magnitude root and zero.
     tres : float
-        Time resolution (dead time).
+        Time resolution (dead time) in seconds.
     Q11 : array_like, shape (k1, k1)
     Q22 : array_like, shape (k2, k2)
     Q21 : array_like, shape (k2, k1)
     Q12 : array_like, shape (k1, k2)
-        Q11, Q12, Q22, Q21 - submatrices of Q.
+        Submatrices of the full Q matrix.
     k1, k2 : int
-        Numbers of open/shut states in kinetic scheme.
+        Numbers of open / shut states in the kinetic scheme.
 
     Returns
     -------
-    sr : array_like, shape (k2, 2)
-        Limits of s value intervals containing exactly one root.
+    sr : ndarray, shape (k2, 2)
+        Each row is [s_low, s_high] bracketing exactly one root.
+
+    Notes
+    -----
+    **Infinite-loop guard** — Sub-intervals that contain zero roots are
+    discarded silently (not re-queued).  This is essential when
+    ``tres = 0``: H(s) is then constant (= Q11) and the root-counting
+    function ``bisect_gFB`` is a step function, so the left half of any
+    bisection step always has zero roots and would loop forever if
+    re-queued unconditionally.
     """
 
     nga = bisect_gFB(sa, tres, Q11, Q22, Q12, Q21, k1, k2)
