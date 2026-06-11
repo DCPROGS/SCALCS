@@ -748,3 +748,426 @@ class TestProperties:
                 f"ideal_pdf not decreasing in tail: f({[1e-3,3e-3,1e-2][i]:.3g})"
                 f" = {tail[i]:.4e}, f({[1e-3,3e-3,1e-2][i+1]:.3g}) = {tail[i+1]:.4e}"
             )
+
+
+# ===========================================================================
+# Phase 1 — IDEAL FIRST-LATENCY PDF OF A CONCENTRATION PULSE  (CHME97 §3(i))
+# ===========================================================================
+# Physical scenario: channel held at c = 0; concentration steps to c1 at t = 0,
+# held for a pulse of duration T, then returns to c = 0 at t = T.  The ideal
+# (no missed events) first-latency pdf of the time to the FIRST opening,
+# conditional on at least one opening occurring (R >= 1), is (CHME97 eqs 3.2-3.11):
+#
+#   t < T  (first opening during the pulse), eq (3.6):
+#       f_FL(t) = phi_F . exp(Q1_FF . t) . Q1_FA . u_A / P(R>=1)
+#       -> kF exponentials, rates = eigenvalues of -Q1_FF (concentration c1).
+#
+#   t > T  (first opening after the pulse), eq (3.8):
+#       f_FL(t) = [phi_F . exp(Q1_FF . T)]_B . exp(Q0_BB . (t-T)) . Q0_BA . u_A
+#                 / P(R>=1)
+#       -> kB exponentials, rates = eigenvalues of -Q0_BB (zero concentration);
+#          only the within-burst shut states B can still open once agonist is
+#          removed (C is absorbing at c = 0).
+#
+#   P(R>=1), eq (3.10):
+#       phi_F . { (-Q1_FF)^-1 [I - exp(Q1_FF.T)] Q1_FA
+#                 + [exp(Q1_FF.T)]_.B  G0_BA } . u_A,   G0_BA = (-Q0_BB)^-1 Q0_BA
+#
+# Limiting check: as T -> infinity the pulse becomes a simple step from zero
+# concentration; P(R>=1) -> 1 and f_FL reduces to the existing ideal_pdf.
+#
+# Reference values (pinned 2026-06-10): closed-form cross-checked to ~1e-12
+# against an independent scipy.odeint integration of the F-restricted survival
+# vector phi(t) (generator switched from Q1 to Q0 at t = T), and the pdf
+# verified to integrate to 1 over [0, inf) by adaptive quadrature.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def ch82_pulse():
+    """CH82 pulse: c = 0 -> 0.1 mM for T = 0.2 ms -> 0.
+
+    Returns (mec0, mec1, phi_shut, T).  Short pulse so that a substantial
+    fraction of first openings occur after the pulse (P(R>=1) ~ 0.758).
+    """
+    mec0 = CH82()
+    mec0.set_eff('c', 0.0)
+    mec1 = CH82()
+    mec1.set_eff('c', 0.0001)
+    phi_shut = qml.pinf(mec0.Q)[mec0.kA:]
+    T = 2e-4   # 0.2 ms
+    return mec0, mec1, phi_shut, T
+
+
+@pytest.fixture(scope="module")
+def chme97_pulse():
+    """CHME97 pulse: c = 0 -> 1 mM for T = 5 ms -> 0.
+
+    Returns (mec0, mec1, phi_shut, T).  Desensitisation means ~14% of channels
+    never open (P(R>=1) ~ 0.863), and the post-pulse tail is slow (tau ~ 0.64 s).
+    """
+    mec0 = CHME97()
+    mec0.set_eff('c', 0.0)
+    mec1 = CHME97()
+    mec1.set_eff('c', 0.001)
+    phi_shut = qml.pinf(mec0.Q)[mec0.kA:]
+    T = 5e-3   # 5 ms
+    return mec0, mec1, phi_shut, T
+
+
+class TestPulsePRgeOne:
+    """pulse_PR_ge_one returns P(R>=1): probability of at least one opening."""
+
+    def test_ch82_in_unit_interval(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        pr = fl.pulse_PR_ge_one(T, phi_shut, mec1, mec0)
+        assert 0.0 < pr <= 1.0
+
+    def test_ch82_regression(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        pr = fl.pulse_PR_ge_one(T, phi_shut, mec1, mec0)
+        assert pr == pytest.approx(0.758301, rel=1e-5)
+
+    def test_chme97_regression(self, chme97_pulse):
+        mec0, mec1, phi_shut, T = chme97_pulse
+        pr = fl.pulse_PR_ge_one(T, phi_shut, mec1, mec0)
+        assert pr == pytest.approx(0.862955, rel=1e-5)
+
+    def test_long_pulse_tends_to_one(self, ch82_pulse):
+        """As T -> infinity the pulse becomes a step from zero: P(R>=1) -> 1."""
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        pr = fl.pulse_PR_ge_one(0.05, phi_shut, mec1, mec0)   # 50 ms >> tau
+        assert pr == pytest.approx(1.0, abs=1e-6)
+
+
+class TestIdealPulsePdf:
+    """ideal_pulse_pdf evaluates the ideal first-latency pdf of a pulse."""
+
+    def test_scalar_input(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        f = fl.ideal_pulse_pdf(0.4e-3, T, phi_shut, mec1, mec0)
+        assert isinstance(float(f), float)
+
+    def test_array_input_shape(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        t = np.array([0.1e-3, 0.2e-3, 0.4e-3, 0.6e-3])
+        f = fl.ideal_pulse_pdf(t, T, phi_shut, mec1, mec0)
+        assert f.shape == t.shape
+
+    def test_positive_both_sides_of_T(self, ch82_pulse):
+        """pdf > 0 just before and just after the end of the pulse."""
+        mec0, mec1, phi_shut, T = ch82_pulse
+        assert float(fl.ideal_pulse_pdf(0.9 * T, T, phi_shut, mec1, mec0)) > 0
+        assert float(fl.ideal_pulse_pdf(1.1 * T, T, phi_shut, mec1, mec0)) > 0
+
+    def test_ch82_during_pulse_regression(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        f = float(fl.ideal_pulse_pdf(0.4e-3, T, phi_shut, mec1, mec0))
+        assert f == pytest.approx(87.0683, rel=1e-4)
+
+    def test_ch82_after_pulse_regression(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        f = float(fl.ideal_pulse_pdf(0.6e-3, T, phi_shut, mec1, mec0))
+        assert f == pytest.approx(2.77820, rel=1e-4)
+
+    def test_chme97_during_pulse_regression(self, chme97_pulse):
+        mec0, mec1, phi_shut, T = chme97_pulse
+        f = float(fl.ideal_pulse_pdf(2e-3, T, phi_shut, mec1, mec0))
+        assert f == pytest.approx(48.9978, rel=1e-4)
+
+    def test_chme97_after_pulse_regression(self, chme97_pulse):
+        mec0, mec1, phi_shut, T = chme97_pulse
+        f = float(fl.ideal_pulse_pdf(7.5e-3, T, phi_shut, mec1, mec0))
+        assert f == pytest.approx(35.4160, rel=1e-4)
+
+    def test_during_branch_equals_scaled_ideal_pdf(self, ch82_pulse):
+        """For t < T the pulse pdf = ideal_pdf(t) / P(R>=1) (Eq 3.6 vs 3(iv))."""
+        mec0, mec1, phi_shut, T = ch82_pulse
+        pr = fl.pulse_PR_ge_one(T, phi_shut, mec1, mec0)
+        for t in [0.05e-3, 0.1e-3, 0.15e-3]:
+            f_pulse = float(fl.ideal_pulse_pdf(t, T, phi_shut, mec1, mec0))
+            f_ideal = float(fl.ideal_pdf(t, mec1.QFF, phi_shut)) / pr
+            assert f_pulse == pytest.approx(f_ideal, rel=1e-8)
+
+    def test_long_pulse_reduces_to_ideal_pdf(self, ch82_pulse):
+        """As T -> infinity, ideal_pulse_pdf(t<T) -> existing ideal_pdf(t)."""
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        T = 0.05   # 50 ms >> all during-pulse time constants
+        for t in [1e-4, 2e-4, 5e-4]:
+            f_pulse = float(fl.ideal_pulse_pdf(t, T, phi_shut, mec1, mec0))
+            f_ideal = float(fl.ideal_pdf(t, mec1.QFF, phi_shut))
+            assert f_pulse == pytest.approx(f_ideal, rel=1e-6)
+
+    def test_integrates_to_one_ch82(self, ch82_pulse):
+        """The conditional pdf integrates to 1 over [0, inf) (CHME97 normalisation)."""
+        from scipy.integrate import quad
+        mec0, mec1, phi_shut, T = ch82_pulse
+        I_during, _ = quad(
+            lambda t: float(fl.ideal_pulse_pdf(t, T, phi_shut, mec1, mec0)),
+            0, T, limit=200)
+        I_after, _ = quad(
+            lambda t: float(fl.ideal_pulse_pdf(t, T, phi_shut, mec1, mec0)),
+            T, 0.05, limit=400)
+        assert I_during + I_after == pytest.approx(1.0, abs=1e-4)
+
+    def test_integrates_to_one_chme97(self, chme97_pulse):
+        from scipy.integrate import quad
+        mec0, mec1, phi_shut, T = chme97_pulse
+        I_during, _ = quad(
+            lambda t: float(fl.ideal_pulse_pdf(t, T, phi_shut, mec1, mec0)),
+            0, T, limit=200)
+        I_after, _ = quad(
+            lambda t: float(fl.ideal_pulse_pdf(t, T, phi_shut, mec1, mec0)),
+            T, 30.0, limit=400)
+        assert I_during + I_after == pytest.approx(1.0, abs=1e-3)
+
+
+# ===========================================================================
+# Phase 2b — APPARENT (missed-events) FIRST-LATENCY DENSITY OF A PULSE
+#            CHME97 §4(a), Eqs 4.1-4.3 (regimes 1 and 2 only)
+# ===========================================================================
+# With a finite dead time tres, the apparent first latency is the time to the
+# first *detectable* opening (an open sojourn lasting >= tres).  Following the
+# convention already used by the step module (asymptotic_pdf / exact_pdf), the
+# latency t is measured to the moment of detection (the opening transition plus
+# tres), so the density is zero for t <= tres.
+#
+# The density rests on the shut-time survivor matrix (Appendix A, CHME97)
+#
+#     TR(u) = P[X(u)=j and no detectable opening over (0,u) | X(0)=i],  i,j in F
+#
+# which is exact for u < 2*tres (built from the C-matrices via f0/f1) and
+# asymptotic beyond.  In the detection convention (tau = t - tres = transition
+# time) the density has two regimes for t < T + tres:
+#
+#   regime 1  (tres < t < T):  opening detected entirely within the pulse.
+#       density = phi . TR1(t-tres) . Q1_FA . exp(Q1_AA . tres) . u_A
+#       This is IDENTICAL to the step apparent first latency (exact_pdf).
+#
+#   regime 2  (T <= t < T+tres):  the confirming open sojourn straddles the end
+#       of the pulse (Eq 4.3):
+#       density = phi . TR1(tau) . Q1_FA . exp(Q1_AA.(T-tau)) . exp(Q0_AA.(tau+tres-T)) . u_A
+#
+# The after-pulse tail (t >= T+tres, Eq 4.4) needs the zero-concentration
+# reducible survivor TR0 and is deferred (Phase 2c); apparent_pulse_pdf raises
+# NotImplementedError there.  apparent_pulse_pdf returns the UNCONDITIONAL
+# density (not divided by P(R>=1)), so regime 1 equals exact_pdf exactly.
+#
+# Validation (no Merlushkin & Hawkes 1995a available):
+#   * TR(t) matches the existing exact/asymptotic density machinery to ~1e-12.
+#   * regime 1 == fl.exact_pdf  (already tested, MC-confirmed step module).
+#   * regime 1 / regime 2 are continuous at t = T.
+# ---------------------------------------------------------------------------
+
+
+class TestShutSurvivor:
+    """shut_survivor evaluates the HJC shut-time survivor matrix TR(t)."""
+
+    def test_TR_zero_is_identity(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        tres = 1e-4
+        comp = fl.shut_survivor_components(tres, mec1)
+        TR0 = fl.shut_survivor(0.0, tres, comp)
+        np.testing.assert_allclose(TR0, np.eye(mec1.kF), atol=1e-12)
+
+    def test_TR_shape(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        tres = 1e-4
+        comp = fl.shut_survivor_components(tres, mec1)
+        TR = fl.shut_survivor(0.5 * tres, tres, comp)
+        assert TR.shape == (mec1.kF, mec1.kF)
+
+    def test_TR_below_tres_equals_expQ_FF(self, ch82_pulse):
+        """For u < tres, TR(u) = [exp(Q.u)]_FF (all openings are missed)."""
+        import scipy.linalg as sla
+        mec0, mec1, phi_shut, T = ch82_pulse
+        tres = 1e-4
+        comp = fl.shut_survivor_components(tres, mec1)
+        for u in [0.2 * tres, 0.7 * tres]:
+            TR = fl.shut_survivor(u, tres, comp)
+            expQ_FF = sla.expm(mec1.Q * u)[mec1.kA:, mec1.kA:]
+            np.testing.assert_allclose(TR, expQ_FF, atol=1e-10)
+
+    def test_TR_density_matches_existing_machinery(self, chme97_pulse):
+        """phi . TR(t-tres) . QFA . exp(QAA.tres) . uA == fl.exact_pdf(t).
+
+        Cross-checks TR(t) across all three regimes (exact f0, f0-f1,
+        asymptotic) against the independently-implemented step pdf.
+        """
+        mec0, mec1, phi_shut, T = chme97_pulse
+        tres = 7e-4
+        comp = fl.shut_survivor_components(tres, mec1)
+        roots = fl.asymptotic_roots(tres, mec1)
+        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
+        eigvals, g00, g10, g11 = fl.gamma_coefficients(tres, phi_shut, mec1)
+        uA = np.ones((mec1.kA, 1))
+        expA = qml.expQt(mec1.QAA, tres)
+        for t in [1.2 * tres, 1.8 * tres, 2.5 * tres, 5 * tres]:
+            TR = fl.shut_survivor(t - tres, tres, comp)
+            mine = float((phi_shut @ TR @ mec1.QFA @ expA @ uA).ravel()[0])
+            exact = float(fl.exact_pdf(t, tres, roots, areas, eigvals, g00, g10, g11))
+            assert mine == pytest.approx(exact, rel=1e-6)
+
+
+class TestApparentPulsePdf:
+    """apparent_pulse_pdf: missed-events first-latency density of a pulse."""
+
+    def test_zero_at_and_before_tres(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        tres = 1e-4
+        for t in [0.0, 0.5 * tres, tres]:
+            f = fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0)
+            assert float(f) == 0.0
+
+    def test_scalar_and_array(self, ch82_pulse):
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        T = 1e-3
+        tres = 1e-4
+        f = fl.apparent_pulse_pdf(3e-4, T, tres, phi_shut, mec1, mec0)
+        assert isinstance(float(f), float)
+        t = np.array([2e-4, 5e-4, 9e-4])   # all within (tres, T+tres)
+        fa = fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0)
+        assert fa.shape == t.shape
+
+    def test_regime1_equals_exact_pdf(self, ch82_pulse):
+        """For tres < t < T the apparent pulse density equals the step pdf."""
+        mec0, mec1, phi_shut, T = ch82_pulse
+        T = 1e-3
+        tres = 1e-4
+        roots = fl.asymptotic_roots(tres, mec1)
+        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
+        eigvals, g00, g10, g11 = fl.gamma_coefficients(tres, phi_shut, mec1)
+        for t in [3e-4, 5.5e-4, 8e-4]:
+            f = float(fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0))
+            ex = float(fl.exact_pdf(t, tres, roots, areas, eigvals, g00, g10, g11))
+            assert f == pytest.approx(ex, rel=1e-6)
+
+    def test_continuous_at_T(self, ch82_pulse):
+        """regime 1 and regime 2 agree at the pulse end t = T."""
+        mec0, mec1, phi_shut, T = ch82_pulse
+        T = 1e-3
+        tres = 1e-4
+        left = float(fl.apparent_pulse_pdf(T - 1e-9, T, tres, phi_shut, mec1, mec0))
+        right = float(fl.apparent_pulse_pdf(T + 1e-9, T, tres, phi_shut, mec1, mec0))
+        assert right == pytest.approx(left, rel=1e-4)
+
+    def test_regime2_value_regression_ch82(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        T = 1e-3
+        tres = 1e-4
+        f = float(fl.apparent_pulse_pdf(T + 0.5 * tres, T, tres, phi_shut, mec1, mec0))
+        assert f == pytest.approx(6.310685, rel=1e-4)
+
+    def test_regime2_value_regression_chme97(self, chme97_pulse):
+        mec0, mec1, phi_shut, T = chme97_pulse
+        T = 5e-3
+        tres = 7e-4
+        f = float(fl.apparent_pulse_pdf(T + 0.5 * tres, T, tres, phi_shut, mec1, mec0))
+        assert f == pytest.approx(21.068117, rel=1e-4)
+
+    def test_requires_T_greater_than_tres(self, ch82_pulse):
+        """CHME97 §4 assumes the pulse is longer than the dead time."""
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        with pytest.raises(ValueError):
+            fl.apparent_pulse_pdf(1e-4, 5e-5, 1e-4, phi_shut, mec1, mec0)
+
+
+# ---------------------------------------------------------------------------
+# Phase 2c — after-pulse regime (CHME97 Eq 4.4) + normalisation
+# ---------------------------------------------------------------------------
+# The after-pulse tail (t >= T + tres) is built from the reduced zero-
+# concentration {A,B} survivor R_BB(t): at c = 0 the set C is absorbing and
+# cannot open, so only the B-block of TR0 survives the products of Eq 4.4, and
+# the reduced Q0_BB (carrying the B→C leak) is non-singular — avoiding the zero
+# eigenvalue that breaks the asymptotic root-finder on the full Q0_FF.
+#
+# Validation (no Merlushkin & Hawkes 1995a):
+#   * tres -> 0 : regime 3 -> Phase-1 ideal after-pulse density (validated to
+#     ~1e-12 against an ODE) — exercises Term A, the Eq-4.4 double integral and
+#     the reduced survivor together.
+#   * the conditional pdf integrates to 1 over [tres, inf).
+#   * continuity at t = T + tres when opening rates are concentration-
+#     independent (the usual case; Q1_BA == Q0_BA).
+# ---------------------------------------------------------------------------
+
+
+class TestApparentPulseAfter:
+    """Regime 3 (Eq 4.4): missed-events first latency after the pulse ends."""
+
+    def test_regime3_reduces_to_ideal_as_tres_zero(self, ch82_pulse):
+        """As tres -> 0 the apparent after-pulse density -> ideal_pulse_pdf·PR."""
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        T = 5e-4
+        PR_ideal = fl.pulse_PR_ge_one(T, phi_shut, mec1, mec0)
+        tres = 1e-8
+        for t in [T + 3e-4, T + 8e-4, T + 2e-3]:
+            app = fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0, nquad=8)
+            ide = fl.ideal_pulse_pdf(t - tres, T, phi_shut, mec1, mec0) * PR_ideal
+            assert app == pytest.approx(ide, rel=1e-3)
+
+    def test_regime3_reduces_to_ideal_chme97(self, chme97_pulse):
+        mec0, mec1, phi_shut, _ = chme97_pulse
+        T = 3e-3
+        PR_ideal = fl.pulse_PR_ge_one(T, phi_shut, mec1, mec0)
+        tres = 1e-8
+        for t in [T + 3e-4, T + 2e-3]:
+            app = fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0, nquad=8)
+            ide = fl.ideal_pulse_pdf(t - tres, T, phi_shut, mec1, mec0) * PR_ideal
+            assert app == pytest.approx(ide, rel=1e-3)
+
+    def test_regime3_positive(self, ch82_pulse):
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        T = 5e-4
+        tres = 1e-4
+        for t in [T + 1.5 * tres, T + 3 * tres, T + 10 * tres]:
+            f = fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0, nquad=24)
+            assert float(f) > 0.0
+
+    def test_nquad_converges(self, ch82_pulse):
+        """The trapezium double integral is stable in nquad."""
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        T = 5e-4
+        tres = 1e-4
+        t = T + 1.5 * tres
+        v16 = fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0, nquad=16)
+        v32 = fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0, nquad=32)
+        assert v32 == pytest.approx(v16, rel=2e-3)
+
+    def test_continuous_at_T_plus_tres(self, ch82_pulse):
+        """Conc-independent gating (Q1_BA == Q0_BA) ⇒ continuous at t = T+tres."""
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        T = 5e-4
+        tres = 1e-4
+        left = fl.apparent_pulse_pdf(T + tres - 1e-9, T, tres, phi_shut, mec1, mec0, nquad=24)
+        right = fl.apparent_pulse_pdf(T + tres + 1e-9, T, tres, phi_shut, mec1, mec0, nquad=24)
+        assert float(right) == pytest.approx(float(left), rel=1e-2)
+
+
+class TestApparentPulsePRgeOne:
+    """apparent_pulse_PR_ge_one: P(R>=1) by integrating the density."""
+
+    @pytest.mark.slow
+    def test_in_unit_interval(self, ch82_pulse):
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        T = 5e-4
+        tres = 1e-4
+        PR = fl.apparent_pulse_PR_ge_one(T, tres, phi_shut, mec1, mec0, nquad=8,
+                                         upper=1.2e-2)
+        assert 0.0 < PR <= 1.0
+
+    @pytest.mark.slow
+    def test_conditional_pdf_integrates_to_one(self, ch82_pulse):
+        """density / P(R>=1) integrates to 1 over [tres, inf)."""
+        from scipy.integrate import quad
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        T = 5e-4
+        tres = 1e-4
+        comp = fl.shut_survivor_components(tres, mec1)
+        PR = fl.apparent_pulse_PR_ge_one(T, tres, phi_shut, mec1, mec0, nquad=12,
+                                         upper=1.2e-2)
+        f = lambda t: fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0,
+                                            components=comp, nquad=12) / PR
+        I1, _ = quad(f, tres, T, limit=60)
+        I2, _ = quad(f, T, T + tres, limit=30)
+        I3, _ = quad(f, T + tres, 1.2e-2, limit=120)
+        assert I1 + I2 + I3 == pytest.approx(1.0, abs=1e-2)

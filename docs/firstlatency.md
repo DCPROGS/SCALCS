@@ -136,6 +136,95 @@ The asymptotic branch (`t ≥ 3·tres`) is fully vectorised — a single
 
 ---
 
+## Concentration-pulse first latency
+
+The functions above treat a *step* to `c₁` that stays on forever.  A finite
+**pulse** holds `c₁` for a duration `T` and then returns to zero (`c = 0 → c₁
+for 0 < t < T → 0`).  Recording starts at the beginning of the pulse, so
+openings during the pulse are included.  These functions implement CHME97 §3
+(ideal) and §4 (apparent, with missed events) for that scenario.
+
+Two mechanisms are passed: `mec1` at the pulse concentration `c₁` and `mec0`
+at zero concentration.  The shut set is ordered `[B, C]` where **B** are the
+within-burst shut states (can still open at `c = 0`) and **C** is absorbing at
+`c = 0` (cannot open without binding).
+
+### Ideal pulse (no missed events — CHME97 §3)
+
+The pdf splits at the end of the pulse `T`:
+
+```
+t < T :  f(t) = φ · exp(Q1_FF·t) · Q1_FA · u_A / P(R≥1)              (Eq 3.6)
+t ≥ T :  f(t) = [φ·exp(Q1_FF·T)]_B · exp(Q0_BB·(t−T)) · Q0_BA · u_A
+                / P(R≥1)                                              (Eq 3.8)
+```
+
+During the pulse the rates are the `kF` eigenvalues of `−Q1_FF`; after the
+pulse only the within-burst states B can still open, giving `kB` exponentials
+with rates `−Q0_BB`.  The pdf is conditional on at least one opening and so is
+divided by `P(R≥1)`.
+
+| Function | Returns |
+|----------|---------|
+| `pulse_PR_ge_one(T, phi_shut, mec1, mec0)` | `P(R≥1)`, the probability of at least one opening (Eq 3.10) |
+| `ideal_pulse_components(T, phi_shut, mec1, mec0, PR=None)` | `(eigs_during, areas_during, eigs_after, areas_after)` |
+| `ideal_pulse_pdf(t, T, phi_shut, mec1, mec0, PR=None)` | conditional pdf at time(s) `t` (scalar or array) |
+
+As `T → ∞` the pulse reduces to the simple step (`P(R≥1) → 1`, `ideal_pulse_pdf
+→ ideal_pdf`).  The pdf is discontinuous at `t = T` (the opening rate drops
+when agonist is removed).
+
+### Shut-time survivor matrix `ᶠR(t)`
+
+The missed-event calculations rest on the HJC shut-time survivor matrix
+(CHME97 Appendix A):
+
+```
+ᶠR(t)_ij = P[X(t)=j and no detectable opening over (0,t) | X(0)=i],  i,j ∈ F
+```
+
+exact for `t < 2·tres` (built from `qmatlib.Cxx` via `f0`/`f1`) and asymptotic
+beyond.  `ᶠR(0) = I`; for `t < tres` it equals `[exp(Q·t)]_FF`.
+
+| Function | Returns |
+|----------|---------|
+| `shut_survivor_components(tres, mec)` | dict of cached pieces (`eigvals`, `C00/C10/C11`, `roots`, `R`) |
+| `shut_survivor(t, tres, components)` | the `(kF, kF)` survivor matrix `ᶠR(t)` |
+
+### Apparent pulse (missed events — CHME97 §4)
+
+With a finite dead time `tres` an opening is detectable only if the channel
+stays open for at least `tres`.  Following the convention of the step module,
+the latency `t` is measured to the instant of **detection** (the opening
+transition plus `tres`), so the density is zero for `t ≤ tres`.  Three regimes
+(CHME97 Eqs 4.2–4.4):
+
+```
+tres < t < T        within the pulse  (≡ exact_pdf, the step apparent pdf)
+T ≤ t < T + tres     confirming sojourn straddles the end of the pulse
+t ≥ T + tres         opening transition after the pulse (double integral)
+```
+
+| Function | Returns |
+|----------|---------|
+| `apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0, components=None, nquad=24)` | **unconditional** density (scalar or array) |
+| `apparent_pulse_PR_ge_one(T, tres, phi_shut, mec1, mec0, nquad=24, upper=None)` | `P(R≥1)`, by quadrature of the density |
+
+`apparent_pulse_pdf` returns the *unconditional* density (so the within-pulse
+regime equals `exact_pdf` exactly); divide by `apparent_pulse_PR_ge_one` for the
+conditional pdf.  The after-pulse regime evaluates the Eq-4.4 double integral by
+the trapezium rule (`nquad` points per axis) and uses a reduced zero-concentration
+`{A, B}` survivor internally — see the module source for the derivation.  The
+pulse must be longer than the dead time (`T > tres`, as assumed in CHME97).
+
+```python
+T = 50e-3          # 50 ms pulse
+PR  = fl.apparent_pulse_PR_ge_one(T, tres, phi_shut, mec1, mec0)
+afl = fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0) / PR   # conditional
+```
+
+---
+
 ## Complete usage example
 
 ```python

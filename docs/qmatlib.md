@@ -175,6 +175,25 @@ eigen, Z00, Z10, Z11 = Zxx(
 Set `open=False` to use the shut-side (F) convention required by
 `firstlatency.gamma_coefficients`.
 
+### `Cxx(Q, eigen, A, kopen, QFF, QAF, QFA, expQFF, open)`
+
+Compute the bare C₀₀, C₁₀, C₁₁ matrices (HJC90 Eq. 3.18) — the same
+constants as `Zxx` *before* the final `QAF · exp(QFF·tres)` post-multiplication.
+`Zxx` is now a thin wrapper around `Cxx`.
+
+```python
+eigen, C00, C10, C11 = Cxx(
+    mec.Q, eigs, A, mec.kA,
+    mec.QAA, mec.QFA, mec.QAF, expQAA, False,
+)
+```
+
+These are the matrices that build the exact shut-time **survivor**
+`ᶠR(u)` (CHME97 Appendix A): for `0 ≤ u < tres` it equals
+`f0(u, eigen, C00)`, and for `tres ≤ u < 2·tres` it equals
+`f0(u, .) − f1(u−tres, ., C10, C11)`.  See
+[firstlatency.md](firstlatency.md#shut_survivor) for the survivor evaluator.
+
 ### `f0(u, eigvals, Z00)`
 
 First term of the exact pdf correction:

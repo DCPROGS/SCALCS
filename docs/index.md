@@ -10,7 +10,7 @@ kinetic analysis.
 | [mechanism](mechanism.md) | Kinetic scheme representation — states, rates, Q matrix |
 | [qmatlib](qmatlib.md) | Q-matrix algebra: eigendecomposition, matrix exponentials, HJC matrices |
 | [scalcslib](scalcslib.md) | Dwell-time pdfs (ideal / asymptotic / exact), correlations, simulation |
-| [firstlatency](firstlatency.md) | First-latency pdf after a concentration jump |
+| [firstlatency](firstlatency.md) | First-latency pdf after a concentration step or pulse (ideal + missed-events) |
 | [cjumps](cjumps.md) | Macroscopic open-probability time course for concentration jumps |
 | [pdfs](pdfs.md) | Exponential mixture pdf evaluation and tcrit utilities |
 | [popen](popen.md) | Equilibrium open probability, EC50, Hill slope |

@@ -758,38 +758,41 @@ def f1(u, eigvals, Z10, Z11):
         f = np.sum((Z10 + Z11 * u) * np.exp(-eigvals * u))
     return f
 
-def Zxx(Q, eigen, A, kopen, QFF, QAF, QFA, expQFF, open):
-    """
-    Calculate Z constants for the exact open time pdf (Eq. 3.22, HJC90).
-    Exchange A and F for shut time pdf.
+def Cxx(Q, eigen, A, kopen, QFF, QAF, QFA, expQFF, open):
+    r"""Calculate the C constants of the exact pdf / survivor (Eq. 3.18, HJC90).
+
+    These are the ``Z`` constants of :func:`Zxx` *before* the final
+    ``QAF · exp(QFF·tres)`` post-multiplication.  They are the matrices that
+    build the exact survivor function :math:`{^\cl{F}\!\bs{R}}(u)` (Appendix A,
+    CHME97): for ``0 <= u < tres`` it equals ``f0(u, eigen, C00)`` and for
+    ``tres <= u < 2·tres`` it equals ``f0(u, eigen, C00) − f1(u−tres, eigen,
+    C10, C11)``.  Exchange A and F (open=False) for the shut-time survivor.
 
     Parameters
     ----------
-    t : float
-        Time.
     Q : array_like, shape (k, k)
+    eigen : array_like, shape (k,)
+        Eigenvalues of -Q.
+    A : array_like, shape (k, k, k)
+        Spectral matrices of -Q.
     kopen : int
         Number of open states.
     QFF, QAF, QFA : array_like
         Submatrices of Q.
+    expQFF : array_like
+        exp(QFF · tres).
     open : bool
-        True for open time pdf, False for shut time pdf.
+        True for the open-time survivor, False for the shut-time survivor.
 
     Returns
     -------
     eigen : array_like, shape (k,)
-        Eigenvalues of -Q matrix.
-    Z00, Z10, Z11 : array_like, shape (k, kA, kF)
-        Z constants for the exact open time pdf.
+    C00, C10, C11 : array_like, shape (k, kF, kF)  (or (k, kA, kA) if open)
     """
 
     k = Q.shape[0]
-    kA = k - QFF.shape[0]
-#    eigen, A = eigs(-Q)
-    # Maybe needs check for equal eigenvalues.
 
     # Calculate Dj (Eq. 3.16, HJC90) and Cimr (Eq. 3.18, HJC90).
-    D = np.empty((k))
     if open:
         C00 = A[:, :kopen, :kopen]
         A1 = A[:, :kopen, kopen:]
@@ -817,6 +820,35 @@ def Zxx(Q, eigen, A, kopen, QFF, QAF, QFA, expQFF, open):
         0.0,
     )
     C10 = ratio.sum(axis=1)
+
+    return eigen, C00, C10, C11
+
+def Zxx(Q, eigen, A, kopen, QFF, QAF, QFA, expQFF, open):
+    """
+    Calculate Z constants for the exact open time pdf (Eq. 3.22, HJC90).
+    Exchange A and F for shut time pdf.
+
+    Parameters
+    ----------
+    t : float
+        Time.
+    Q : array_like, shape (k, k)
+    kopen : int
+        Number of open states.
+    QFF, QAF, QFA : array_like
+        Submatrices of Q.
+    open : bool
+        True for open time pdf, False for shut time pdf.
+
+    Returns
+    -------
+    eigen : array_like, shape (k,)
+        Eigenvalues of -Q matrix.
+    Z00, Z10, Z11 : array_like, shape (k, kA, kF)
+        Z constants for the exact open time pdf.
+    """
+
+    eigen, C00, C10, C11 = Cxx(Q, eigen, A, kopen, QFF, QAF, QFA, expQFF, open)
 
     M = np.dot(QAF, expQFF)
     Z00 = np.matmul(C00, M)
