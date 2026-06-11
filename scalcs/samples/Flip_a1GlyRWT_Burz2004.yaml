@@ -1,0 +1,989 @@
+!!python/object:scalcs.mechanism.Mechanism
+Cycles:
+- !!python/object:scalcs.mechanism.Cycle
+  mrconstr: &id001 []
+  states: [A3R, A3F, A2F, A2R]
+- !!python/object:scalcs.mechanism.Cycle
+  mrconstr: *id001
+  states: [AF, A2F, A2R, AR]
+Q: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - &id002 !!python/name:numpy.ndarray ''
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [10, 10]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AAAAAADaqsAAAAAAAAAAAAAAAAAAAAAAAAAAAADaqkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOD/daDAAAAAAAAAAAAAAAAAAAAAAAAA
+    AOD/daBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAKimwAAAAAAAAAAAAAAAAAAAAAAAAAAAAKimQAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAABvsEAAAAAAAAAAAAAAAAAAAAAAAACA+DXlscEAAABAsOSxQQAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgUt1AAAAAAAAAAAAAAAAAAAAAAAAAACAAcNtAAAAAAAAA
+    AAAAAAAAAGKjQAAAAvop5qHBAAAAQLDkoUEAAAAAAAAAAAAAACAAW9FAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAOH5QAAAAAAAAAAAAAAAAAATrUAAAICPTgD7wAAAAMBHW4tA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAOA/ZtRAAAAA4b9I1cAAAAAgAFCMQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAjLpAAAAAAAAAAAAAAADg/94hQQAAAODPGCLBAAAA
+    AADggkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOD//2ZAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAADjeMUEAAP//HeAxwQAAAAAA4HJAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABIzzpBAAAAAEjP
+    OsE=
+QAA: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id002
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [3, 3]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AAAAAADaqsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADg/3WgwAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAqKbA
+QAB: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id002
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [3, 6]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AAAAAADaqkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AADg/3WgQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAqKZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+QAC: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id002
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [3, 1]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+QAF: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id002
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [3, 7]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AAAAAADaqkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAOD/daBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAKimQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+QAI: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id002
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [3, 7]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AAAAAADaqkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAOD/daBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAKimQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+QBA: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id002
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [6, 3]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AAAAAABvsEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAHDbQAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAA4flAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+QBB: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id002
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [6, 6]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AACA+DXlscEAAABAsOSxQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgUt1AAAAAAABio0AA
+    AAL6KeahwQAAAECw5KFBAAAAAAAAAAAAAAAgAFvRQAAAAAAAAAAAAAAAAAAAAAAAAAAAABOtQAAA
+    gI9OAPvAAAAAwEdbi0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOA/ZtRAAAAA
+    4b9I1cAAAAAgAFCMQAAAAAAAAAAAAAAAAAAAAAAAAAAAAIy6QAAAAAAAAAAAAAAA4P/eIUEAAADg
+    zxgiwQAAAAAA4IJAAAAA4P//ZkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAON4xQQAA//8d
+    4DHB
+QBC: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id002
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [6, 1]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4HJA
+QCA: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id002
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [1, 3]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+QCB: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id002
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [1, 6]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABIzzpB
+QEE: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id002
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [9, 9]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AAAAAADaqsAAAAAAAAAAAAAAAAAAAAAAAAAAAADaqkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADg/3WgwAAAAAAAAAAAAAAAAAAAAAAAAADg/3WgQAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAqKbAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAqKZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABvsEAAAAAA
+    AAAAAAAAAAAAAAAAAACA+DXlscEAAABAsOSxQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABg
+    Ut1AAAAAAAAAAAAAAAAgAHDbQAAAAAAAAAAAAAAAAABio0AAAAL6KeahwQAAAECw5KFBAAAAAAAA
+    AAAAAAAgAFvRQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4flAAAAAAAAAAAAAAAAAABOt
+    QAAAgI9OAPvAAAAAwEdbi0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAOA/ZtRAAAAA4b9I1cAAAAAgAFCMQAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIy6QAAAAAAAAAAAAAAA4P/eIUEAAADgzxgiwQAA
+    AAAA4IJAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4P//ZkAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAON4xQQAA//8d4DHB
+QFA: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id002
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [7, 3]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AAAAAABvsEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAHDbQAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAA4flAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+QFF: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id002
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [7, 7]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AACA+DXlscEAAABAsOSxQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgUt1AAAAAAAAAAAAA
+    AAAAAGKjQAAAAvop5qHBAAAAQLDkoUEAAAAAAAAAAAAAACAAW9FAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAATrUAAAICPTgD7wAAAAMBHW4tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAOA/ZtRAAAAA4b9I1cAAAAAgAFCMQAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAjLpAAAAAAAAAAAAAAADg/94hQQAAAODPGCLBAAAAAADggkAAAAAAAAAAAAAAAOD/
+    /2ZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADjeMUEAAP//HeAxwQAAAAAA4HJAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABIzzpBAAAAAEjPOsE=
+QGG: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id002
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [10, 10]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AAAAAADaqsAAAAAAAAAAAAAAAAAAAAAAAAAAAADaqkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOD/daDAAAAAAAAAAAAAAAAAAAAAAAAA
+    AOD/daBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAKimwAAAAAAAAAAAAAAAAAAAAAAAAAAAAKimQAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAABvsEAAAAAAAAAAAAAAAAAAAAAAAACA+DXlscEAAABAsOSxQQAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgUt1AAAAAAAAAAAAAAAAAAAAAAAAAACAAcNtAAAAAAAAA
+    AAAAAAAAAGKjQAAAAvop5qHBAAAAQLDkoUEAAAAAAAAAAAAAACAAW9FAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAOH5QAAAAAAAAAAAAAAAAAATrUAAAICPTgD7wAAAAMBHW4tA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAOA/ZtRAAAAA4b9I1cAAAAAgAFCMQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAjLpAAAAAAAAAAAAAAADg/94hQQAAAODPGCLBAAAA
+    AADggkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOD//2ZAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAADjeMUEAAP//HeAxwQAAAAAA4HJAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABIzzpBAAAAAEjP
+    OsE=
+QIA: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id002
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [7, 3]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AAAAAABvsEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAHDbQAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAA4flAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+QII: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id002
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [7, 7]
+  - !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    AACA+DXlscEAAABAsOSxQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgUt1AAAAAAAAAAAAA
+    AAAAAGKjQAAAAvop5qHBAAAAQLDkoUEAAAAAAAAAAAAAACAAW9FAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAATrUAAAICPTgD7wAAAAMBHW4tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAOA/ZtRAAAAA4b9I1cAAAAAgAFCMQAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    AAAAAAAAAAAAjLpAAAAAAAAAAAAAAADg/94hQQAAAODPGCLBAAAAAADggkAAAAAAAAAAAAAAAOD/
+    /2ZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADjeMUEAAP//HeAxwQAAAAAA4HJAAAAAAAAA
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABIzzpBAAAAAEjPOsE=
+Rates:
+- !!python/object:scalcs.mechanism.Rate
+  State1: &id004 !!python/object:scalcs.mechanism.State {conductance: 4.0e-11, name: AF*,
+    'no': 0, statetype: A}
+  State2: &id003 !!python/object:scalcs.mechanism.State {conductance: 0, name: AF,
+    'no': 3, statetype: B}
+  _effectors: [null]
+  _func: &id005 !!python/name:scalcs.mechanism.identity ''
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: 'alpha1    '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAAAEsEA=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id003
+  State2: *id004
+  _effectors: [null]
+  _func: *id005
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: 'beta1     '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAABwl0A=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: &id007 !!python/object:scalcs.mechanism.State {conductance: 4.0e-11, name: A2F*,
+    'no': 1, statetype: A}
+  State2: &id006 !!python/object:scalcs.mechanism.State {conductance: 0, name: A2F,
+    'no': 4, statetype: B}
+  _effectors: [null]
+  _func: *id005
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: 'alpha2    '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAADglUA=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id006
+  State2: *id007
+  _effectors: [null]
+  _func: *id005
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: 'beta2     '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAACU0UA=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: &id009 !!python/object:scalcs.mechanism.State {conductance: 4.0e-11, name: A3F*,
+    'no': 2, statetype: A}
+  State2: &id008 !!python/object:scalcs.mechanism.State {conductance: 0, name: A3F,
+    'no': 5, statetype: B}
+  _effectors: [null]
+  _func: *id005
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: 'alpha3    '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAADghUA=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id008
+  State2: *id009
+  _effectors: [null]
+  _func: *id005
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: 'beta3     '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAABY20A=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id008
+  State2: &id010 !!python/object:scalcs.mechanism.State {conductance: 0, name: A3R,
+    'no': 6, statetype: B}
+  _effectors: [null]
+  _func: *id005
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: 'gama3     '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAAAAmUA=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id010
+  State2: *id008
+  _effectors: [null]
+  _func: *id005
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: 'delta3    '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAABkyUA=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id008
+  State2: *id006
+  _effectors: [null]
+  _func: *id005
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: '3kf(-3)   '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAACUsUA=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id006
+  State2: *id008
+  _effectors: c
+  _func: &id012 !!python/name:scalcs.mechanism.multiply ''
+  _limits:
+  - [1.0e-15, 1000000000.0]
+  _name: 'kf(+3)    '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAABj7ZEE=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id006
+  State2: &id011 !!python/object:scalcs.mechanism.State {conductance: 0, name: A2R,
+    'no': 7, statetype: B}
+  _effectors: [null]
+  _func: *id005
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: 'gama2     '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAAB2xkA=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id011
+  State2: *id006
+  _effectors: [null]
+  _func: *id005
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: 'delta2    '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAABGzkA=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id006
+  State2: *id003
+  _effectors: [null]
+  _func: *id005
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: '2kf(-2)   '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAABwp0A=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id003
+  State2: *id006
+  _effectors: c
+  _func: *id012
+  _limits:
+  - [1.0e-15, 1000000000.0]
+  _name: '2kf(+2)   '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAABj7dEE=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id003
+  State2: &id013 !!python/object:scalcs.mechanism.State {conductance: 0, name: AR,
+    'no': 8, statetype: B}
+  _effectors: [null]
+  _func: *id005
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: 'gama1     '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAABAf0A=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id013
+  State2: *id003
+  _effectors: [null]
+  _func: *id005
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: 'delta1    '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAAAAWUA=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id010
+  State2: *id011
+  _effectors: [null]
+  _func: *id005
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: '3k(-3)    '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAADAgkA=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id011
+  State2: *id010
+  _effectors: c
+  _func: *id012
+  _limits:
+  - [1.0e-15, 1000000000.0]
+  _name: 'k(+3)     '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAIATDEE=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id011
+  State2: *id013
+  _effectors: [null]
+  _func: *id005
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: '2k(-2)    '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAAAAeUA=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id013
+  State2: *id011
+  _effectors: c
+  _func: *id012
+  _limits:
+  - [1.0e-15, 1000000000.0]
+  _name: '2k(+2)    '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAIATHEE=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id013
+  State2: &id014 !!python/object:scalcs.mechanism.State {conductance: 0, name: R,
+    'no': 9, statetype: C}
+  _effectors: [null]
+  _func: *id005
+  _limits:
+  - [1.0e-15, 1000000.0]
+  _name: 'k(-1)     '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAADAgkA=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+- !!python/object:scalcs.mechanism.Rate
+  State1: *id014
+  State2: *id013
+  _effectors: c
+  _func: *id012
+  _limits:
+  - [1.0e-15, 1000000000.0]
+  _name: '3k(+1)    '
+  _rateconstants: !!python/object/apply:numpy.core.multiarray._reconstruct
+    args:
+    - *id002
+    - !!python/tuple [0]
+    - !!binary |
+      Yg==
+    state: !!python/tuple
+    - 1
+    - !!python/tuple [1]
+    - !!python/object/apply:numpy.dtype
+      args: [f8, 0, 1]
+      state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+    - false
+    - !!binary |
+      AAAAAKAOJUE=
+  constrain_args: null
+  constrain_func: null
+  fixed: false
+  is_constrained: false
+  mr: false
+States:
+- *id004
+- *id007
+- *id009
+- *id003
+- *id006
+- *id008
+- *id010
+- *id011
+- *id013
+- *id014
+_effdict: {c: 1.0}
+_fastKB: null
+_fastblock: false
+k: 10
+kA: 3
+kB: 6
+kC: 1
+kD: 0
+kE: 9
+kF: 7
+kG: 10
+kH: 1
+kI: 7
+mtitle: !!binary |
+  QnVyem9tYXRvIGV0IGFsIDIwMDQgJ2ZsaXAnICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+  ICAgICAgICAgICAgICAgICA=
+rtitle: !!binary |
+  QnVyem9tYXRvIGV0IGFsLiAyMDA0IGF2ZXJhZ2UgcmF0ZSBjb25zdGFudHMgICAgICAgICAgICAg
+  ICAgICAgICAgICAgICAgICA=
