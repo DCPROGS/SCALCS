@@ -11,6 +11,7 @@
 
 """
 
+import json
 import struct
 import time
 from array import array
@@ -78,6 +79,109 @@ def _mec_record_to_mechanism(rec):
         mtitle=rec.mec_title,
         rtitle=rec.rate_title,
     )
+
+
+# ---------------------------------------------------------------------------
+# Modern JSON mechanism format (written by dcio.formats.modern.write_mechanism)
+# ---------------------------------------------------------------------------
+
+# State subsets in Q-matrix order (open first, then within-burst shut,
+# between-burst shut, desensitised).
+_STATE_CLASSES = ("A", "B", "C", "D")
+
+
+def mechanism_from_dict(d):
+    """Build a :class:`scalcs.mechanism.Mechanism` from a dcio mechanism dict.
+
+    The dict is the structure produced by
+    :func:`dcio.formats.modern.mechanism_to_dict` (schema ``mechanism/x``),
+    covering both ``source_format='mec'`` (full Q-matrix mechanism, with a
+    ``value`` per rate) and ``source_format='hjcfit_prt'`` (fitted printout,
+    with ``initial``/``final`` per rate — the ``final`` value is used).
+
+    Parameters
+    ----------
+    d : dict
+        Parsed mechanism dictionary.
+
+    Returns
+    -------
+    scalcs.mechanism.Mechanism
+
+    Raises
+    ------
+    ValueError
+        If *d* is not a dcio mechanism dictionary.
+    """
+    if not isinstance(d, dict) or not str(
+        d.get("dcio_schema", "")
+    ).startswith("mechanism/"):
+        raise ValueError(
+            "scalcsio.mechanism_from_dict: not a dcio mechanism dict "
+            "(missing or wrong 'dcio_schema')"
+        )
+
+    states = d["states"]
+    subsets = states.get("subsets", {})
+    names = list(states.get("names", []))
+    conductances = list(states.get("conductances_S", []))
+
+    # Build the state list in A, B, C, D order so that the 1-based 'from'/'to'
+    # indices in the rate table line up with the Q-matrix numbering.
+    StateList = []
+    j = 0
+    for cls in _STATE_CLASSES:
+        for _ in range(int(subsets.get(cls, 0))):
+            name = names[j] if j < len(names) else f"{cls}{j + 1}"
+            gamma = (
+                conductances[j]
+                if cls == "A" and j < len(conductances)
+                else 0.0
+            )
+            StateList.append(mechanism.State(cls, name, gamma))
+            j += 1
+
+    RateList = []
+    for r in d.get("rates", []):
+        # 'value' for MEC mechanisms; fall back to 'final' fitted value (PRT).
+        value = r.get("value", r.get("final"))
+        eff = "c" if r.get("conc_dependent") else None
+        RateList.append(
+            mechanism.Rate(
+                value,
+                StateList[r["from"] - 1],
+                StateList[r["to"] - 1],
+                name=r.get("name", ""),
+                eff=eff,
+            )
+        )
+
+    CycleList = []
+    for cyc in d.get("cycles", []):
+        CycleList.append(mechanism.Cycle([names[idx - 1] for idx in cyc]))
+
+    return mechanism.Mechanism(
+        RateList, CycleList,
+        mtitle=d.get("title", ""),
+        rtitle=d.get("rate_set_title", ""),
+    )
+
+
+def mec_load_json(filename):
+    """Load a mechanism from a modern dcio JSON file into a Mechanism.
+
+    Parameters
+    ----------
+    filename : str or path-like
+        Path to a ``.json`` file written by
+        :func:`dcio.formats.modern.write_mechanism`.
+
+    Returns
+    -------
+    scalcs.mechanism.Mechanism
+    """
+    with open(filename, encoding="utf-8") as fh:
+        return mechanism_from_dict(json.load(fh))
 
 
 def mec_get_list(mecfile):
