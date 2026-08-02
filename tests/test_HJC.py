@@ -5,6 +5,21 @@ from samples import samples
 from scalcs.scalcslib import AsymptoticPDF
 from scalcs.hjclib import ExactPDFCalculator
 
+
+def assert_close(actual, expected, rtol=1e-6):
+    """assert_allclose with a tolerance floor scaled to the array magnitude.
+
+    One of the Q-matrix eigenvalues is mathematically zero and comes out as
+    about +-1e-14; its sign depends on the BLAS build, so a purely relative
+    comparison of it is not meaningful and fails on some machines. Anything
+    below 1e-9 of the largest element is treated as zero. The smallest genuine
+    eigenvalue here is ~1e2, so this floor cannot mask a real difference.
+    """
+    expected = np.asarray(expected)
+    np.testing.assert_allclose(actual, expected, rtol=rtol,
+                               atol=1e-9 * np.abs(expected).max())
+
+
 class TestExactPDFCalculator(unittest.TestCase):
     
     def setUp(self):
@@ -25,10 +40,10 @@ class TestExactPDFCalculator(unittest.TestCase):
         eigvals, gamma00, gamma10, gamma11 = self.calculator_exact.exact_GAMAxx(open=True)
 
         # Verify the calculated values against the expected ones
-        np.testing.assert_allclose(eigvals, expected_eigvals, rtol=1e-6)
-        np.testing.assert_allclose(gamma00, expected_gamma00, rtol=1e-6)
-        np.testing.assert_allclose(gamma10, expected_gamma10, rtol=1e-6)
-        np.testing.assert_allclose(gamma11, expected_gamma11, rtol=1e-6)
+        assert_close(eigvals, expected_eigvals, rtol=1e-6)
+        assert_close(gamma00, expected_gamma00, rtol=1e-6)
+        assert_close(gamma10, expected_gamma10, rtol=1e-6)
+        assert_close(gamma11, expected_gamma11, rtol=1e-6)
 
     def test_exact_shut_time_pdf(self):
         # Expected shut time results based on provided data
@@ -40,10 +55,10 @@ class TestExactPDFCalculator(unittest.TestCase):
         eigvals, gamma00, gamma10, gamma11 = self.calculator_exact.exact_GAMAxx(open=False)
 
         # Verify the calculated values against the expected ones       
-        np.testing.assert_allclose(eigvals, expected_eigvals, rtol=1e-6)
-        np.testing.assert_allclose(gamma00, expected_gamma00, rtol=1e-6)
-        np.testing.assert_allclose(gamma10, expected_gamma10, rtol=1e-6)
-        np.testing.assert_allclose(gamma11, expected_gamma11, rtol=1e-6)
+        assert_close(eigvals, expected_eigvals, rtol=1e-6)
+        assert_close(gamma00, expected_gamma00, rtol=1e-6)
+        assert_close(gamma10, expected_gamma10, rtol=1e-6)
+        assert_close(gamma11, expected_gamma11, rtol=1e-6)
 
     def test_asymptotic_open_time_pdf(self):
         # Expected open time results based on provided data
@@ -53,8 +68,8 @@ class TestExactPDFCalculator(unittest.TestCase):
         e, a = self.calculator_asymp.HJC_asymptotic_open_time_pdf_components()
 
         # Verify the calculated values against the expected ones
-        np.testing.assert_allclose(e, expected_roots, rtol=1e-6)
-        np.testing.assert_allclose(a, expected_areas, rtol=1e-6)
+        assert_close(e, expected_roots, rtol=1e-6)
+        assert_close(a, expected_areas, rtol=1e-6)
 
     def test_asymptotic_shut_time_pdf(self):
         # Expected open time results based on provided data
@@ -64,8 +79,8 @@ class TestExactPDFCalculator(unittest.TestCase):
         e, a = self.calculator_asymp.HJC_asymptotic_shut_time_pdf_components()
 
         # Verify the calculated values against the expected ones
-        np.testing.assert_allclose(e, expected_roots, rtol=1e-6)
-        np.testing.assert_allclose(a, expected_areas, rtol=1e-6)
+        assert_close(e, expected_roots, rtol=1e-6)
+        assert_close(a, expected_areas, rtol=1e-6)
 
     def test_HJC_vectors(self):
         # Expected open time results based on provided data
@@ -76,8 +91,8 @@ class TestExactPDFCalculator(unittest.TestCase):
         F = self.calculator_asymp.HJCphiF
 
         # Verify the calculated values against the expected ones
-        np.testing.assert_allclose(A, expected_phiA, rtol=1e-6)
-        np.testing.assert_allclose(F, expected_phiF, rtol=1e-6)
+        assert_close(A, expected_phiA, rtol=1e-6)
+        assert_close(F, expected_phiF, rtol=1e-6)
 
 
 if __name__ == '__main__':
