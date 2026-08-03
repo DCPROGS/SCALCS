@@ -28,7 +28,7 @@ class TestPopenCurve(unittest.TestCase):
         self.assertAlmostEqual(result['EC50']*1e6, self.expected_ideal_EC50, places=6)
         self.assertAlmostEqual(result['nH'], self.expected_ideal_nH, places=6)
 
-    def test_ideal_curve(self):
+    def test_HJC_curve(self):
         result = self.popen_analysis.analyse_curve(tres=self.tres)
         self.assertAlmostEqual(result['maxPopen'], self.expected_HJC_maxPopen, places=6)
         self.assertAlmostEqual(result['EC50']*1e6, self.expected_HJC_EC50, places=6)

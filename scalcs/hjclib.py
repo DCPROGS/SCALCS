@@ -136,7 +136,14 @@ class AsymptoticPDFCalculator(HJCMatrix):
         return -self._calculate_roots(open=open)
 
     def _calculate_roots(self, open):
+        # The lower search bound must satisfy |sas| * tres < ln(float64 max),
+        # about 709, or exp((QFF - s*I)*tres) overflows during the sweep and
+        # feeds inf/nan into W(s), raising LinAlgError. Only tighten the bound
+        # when the default -1e6 would overflow (that is, tres > ~0.7 ms), so
+        # that at ordinary resolutions the root counting keeps its full range.
         sas, sbs = -1e6, -1e-7
+        if self.tres > 0:
+            sas = max(sas, -700.0 / self.tres)
         intervals = self._bisect_intervals(sas, sbs, open=open)
         root_count = self.kA if open else self.kF
         roots = np.array([so.brentq(self.detW, intervals[i, 0], intervals[i, 1], args=(open))
@@ -168,16 +175,21 @@ class AsymptoticPDFCalculator(HJCMatrix):
         while todo:
             sa1, sc, sb2, nga1, ngc, ngb2 = self.__bisect_split(todo.pop(), open)
             
+            # A subinterval is only worth splitting again if it still holds
+            # more than one root. Re-queuing one that holds NO roots is what
+            # made this loop run for ever: it just splits into two more
+            # empty halves, endlessly. Discard those instead.
+
             # Left interval: [sa1, sc]
             if (ngc - nga1) == 1:
                 intervals.append([sa1, sc])
-            else:
+            elif (ngc - nga1) > 1:
                 todo.append([sa1, sc, nga1, ngc])
-            
+
             # Right interval: [sc, sb2]
             if (ngb2 - ngc) == 1:
                 intervals.append([sc, sb2])
-            else:
+            elif (ngb2 - ngc) > 1:
                 todo.append([sc, sb2, ngc, ngb2])
         
         # Check if all roots were located

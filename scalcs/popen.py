@@ -454,23 +454,27 @@ def maxPopen(mec, tres, eff='c'):
         niter += 1
 
     if not monot:    # find maxPopen and cmax more accurately
+        # Bisect on the sign of the slope: probe Popen just below and just
+        # above the midpoint of the bracket. If Popen is still rising there,
+        # the peak lies to the right; if falling, to the left.
         c1, c2 = conc / math.sqrt(10), conc # conc before and after max
-        epsc, epsy =  c1 / 1000, 1e-4 # accuracy in concentration and Popen
-        perr = 2 * epsy
-        fac = 1.01
+        epsc = c1 / 1000        # required accuracy in concentration
+        fac = 1.01              # probe +-1% around the midpoint
         maxnstep  = int(math.log10(math.fabs(c1 - c2) / epsc) / math.log10(2) + 0.5)
         nstep = 0
-        while nstep <= maxnstep and math.fabs(perr) > 0:
+        while nstep <= maxnstep and (c2 - c1) > epsc:
             conc = 0.5 * (c1 + c2)
-            conc1 = conc / fac
-            P1 = Popen(mec, tres, conc)
-            conc1 = conc * fac
-            P2 = Popen(mec, tres, conc)
-            perr = P2 - P1
-            if perr < 0:
-                c1 = conc1
-            else:
-                c2 = conc1
+            conc1 = conc / fac      # just below the midpoint
+            conc2 = conc * fac      # just above the midpoint
+            P1 = Popen(mec, tres, conc1)
+            P2 = Popen(mec, tres, conc2)
+            perr = P2 - P1          # slope across the midpoint
+            if perr > 0:            # still rising: peak is above conc
+                c1 = conc
+            else:                   # falling: peak is below conc
+                c2 = conc
+            nstep += 1
+        conc = 0.5 * (c1 + c2)      # midpoint of the final bracket
 
     return Popen(mec, tres, conc), conc
 
