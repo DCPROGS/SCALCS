@@ -41,6 +41,13 @@ Repository = "https://github.com/remislp/SCALCS"
 where = ["."]
 include = ["scalcs*"]
 
+# Non-Python files that belong in the distribution. Without this the wheel
+# contains the modules only, and the icon, the About-box animation and the
+# sample mechanism are missing from an installed copy.
+[tool.setuptools.package-data]
+"scalcs.gui" = ["*.ICO", "*.gif"]
+"scalcs.samples" = ["*.yaml"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v"

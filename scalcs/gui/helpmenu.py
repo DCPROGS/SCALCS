@@ -1,3 +1,5 @@
+from importlib import resources
+
 try:
     from PyQt5.QtWidgets import *
     from PyQt5.QtCore import *
@@ -6,6 +8,16 @@ except:
     raise ImportError("pyqt module is missing")
 
 from scalcs.gui import myqtcommon
+
+
+def _asset(name):
+    """Absolute path to a file shipped inside scalcs.gui.
+
+    The animation used to be opened as a bare relative path, which only worked
+    when the process happened to be running in the package directory. It is
+    resolved against the installed package instead.
+    """
+    return str(resources.files('scalcs.gui').joinpath(name))
 
 class HelpMenu(QMenu):
     """
@@ -57,7 +69,7 @@ class AboutDlg(QDialog):
         # Expand and center the label
         movie_screen.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         movie_screen.setAlignment(Qt.AlignCenter)
-        movie = QMovie("dca2.gif", QByteArray(), self)
+        movie = QMovie(_asset("dca2.gif"), QByteArray(), self)
         movie.setCacheMode(QMovie.CacheAll)
         movie.setSpeed(100)
         movie_screen.setMovie(movie)

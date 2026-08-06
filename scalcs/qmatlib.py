@@ -39,6 +39,31 @@ import math
 
 #import dcpypsrc
 
+
+def _drop_negligible_imag(a, rtol=1e-9):
+    """Return the real part of `a` if its imaginary part is only round-off.
+
+    numpy 2.5 changed linalg.eig: given a real matrix whose eigenvalues are all
+    real it returns complex128 arrays, where 2.4 and earlier returned float64.
+    Left alone that makes exp(Qt) complex - although the exponential of a real
+    generator is real by definition - and every quantity computed from it
+    follows, which shows up as complex values out of Popen and a stream of
+    ComplexWarnings where math.fabs is applied to them.
+
+    A genuinely complex spectrum is left alone; only an imaginary part that is
+    negligible against the real part is dropped.
+    """
+    if not np.iscomplexobj(a):
+        return a
+    arr = np.asarray(a)
+    scale = np.abs(arr.real).max() if arr.size else 0.0
+    if scale == 0.0:
+        scale = 1.0
+    if np.abs(arr.imag).max() <= rtol * scale:
+        return arr.real.copy()
+    return a
+
+
 def eigs(Q):
     """
     Calculate eigenvalues and spectral matrices of a matrix Q.
@@ -56,13 +81,14 @@ def eigs(Q):
     """
 
     eigvals, M = nplin.eig(Q)
+    eigvals = _drop_negligible_imag(eigvals)
     N = nplin.inv(M)
     k = N.shape[0]
     # A[i] = outer(M[:, i], N[i]) — batch outer product via broadcasting.
     # Shape: M.T is (k, k) so M.T[:, :, np.newaxis] is (k, k, 1),
     #         N[:, np.newaxis, :] is (k, 1, k); product is (k, k, k).
     # Element A[m, j, l] = M[j, m] * N[m, l] — correct spectral matrix.
-    A = M.T[:, :, np.newaxis] * N[:, np.newaxis, :]
+    A = _drop_negligible_imag(M.T[:, :, np.newaxis] * N[:, np.newaxis, :])
 
     return eigvals, A
 
@@ -84,9 +110,10 @@ def eigs_sorted(Q):
     """
 
     eigvals, M = nplin.eig(Q)
+    eigvals = _drop_negligible_imag(eigvals)
     N = nplin.inv(M)
     k = N.shape[0]
-    A = M.T[:, :, np.newaxis] * N[:, np.newaxis, :]
+    A = _drop_negligible_imag(M.T[:, :, np.newaxis] * N[:, np.newaxis, :])
     sorted_indices = eigvals.real.argsort()
     eigvals = eigvals[sorted_indices]
     A = A[sorted_indices, : , : ]
@@ -126,7 +153,8 @@ def expQt(M, t):
     # END DO NOT DELETE
 
     expM = np.sum(A * np.exp(eigvals * t).reshape(A.shape[0],1,1), axis=0)
-    return expM
+    # exp of a real generator is real; see _drop_negligible_imag
+    return _drop_negligible_imag(expM)
 
 def Qpow(M, n):
     """
