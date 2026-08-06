@@ -1,8 +1,8 @@
 import numpy as np
 
 try:
-    from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-    from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+    from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
     from matplotlib.figure import Figure
     from matplotlib import scale as mscale
     from matplotlib import transforms as mtransforms
@@ -47,7 +47,7 @@ class SquareRootScale(mscale.ScaleBase):
 
     name = 'sqrtscale'
     def __init__(self, axis, **kwargs):
-        mscale.ScaleBase.__init__(self)
+        mscale.ScaleBase.__init__(self, axis)
     def get_transform(self):
         """
         Set the actual transform for the axis coordinates.
