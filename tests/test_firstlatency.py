@@ -1,0 +1,1173 @@
+"""Tests for scalcs.firstlatency — pdf of first latency after a concentration step.
+
+Physical scenario
+-----------------
+The channel is held at zero agonist concentration, so at t = 0 the entire
+population occupies shut states with equilibrium probability
+
+    phi_shut = pinf(Q_at_c0)[kA:]
+
+At t = 0+ the concentration steps to c1.  The first-latency pdf f_L(t) is the
+pdf of the time to the first opening.
+
+Three levels of approximation
+------------------------------
+ideal       Ignores missed events:
+                f_L(t) = phi_shut * exp(QFF_c1 * t) * (-QFF_c1) * u_F
+            Gives kF exponential components with eigenvalues of -QFF_c1.
+
+asymptotic  HJC approximation (Colquhoun & Hawkes 1977, 1982).  Valid for
+            t >> tres.  kF components whose roots are solutions of
+            det[ W_F(s) ] = 0.  Same roots as ordinary shut-time asymptotic
+            pdf; only the area (= initial vector) changes.
+
+exact       HJC exact correction for tres <= t <= 3*tres, asymptotic beyond.
+
+References
+----------
+CHME97 : Colquhoun, Hawkes, Merlushkin & Edmonds (1997)
+         Phil Trans R Soc Lond A 355, 1743-1786.
+CH82   : Colquhoun & Hawkes (1982)
+         Phil Trans R Soc Lond B 300, 1-59.
+
+Test strategy
+-------------
+*CO (2-state)*  Analytical ground truth: f_L(t) = beta * exp(-beta * t)
+                Used for exact property tests and tres -> 0 limit.
+*CH82*          5-state; c0 = 0, c1 = 0.1 mM, tres = 0.1 ms.
+                Regression values pinned from verified Phase-0 run 2026-06-07.
+*CHME97*        5-state with desensitisation; c0 = 0, c1 = 1 mM, tres = 0.7 ms.
+                Regression values pinned from verified Phase-0 run 2026-06-07.
+                CHME97 fixture requires scalcs.samples.samples.CHME97 to exist.
+
+Fixture design
+--------------
+Module-scoped fixtures are used throughout so that expensive derived quantities
+(asymptotic_roots, gamma_coefficients) are computed exactly once per test
+session rather than once per test method:
+
+    ch82_step / chme97_step   -- mechanism objects + phi_shut + tres
+    ch82_roots / chme97_roots -- asymptotic_roots(tres, mec)    [expensive]
+    ch82_areas / chme97_areas -- asymptotic_areas(...)           [fast]
+    ch82_gamma / chme97_gamma -- gamma_coefficients(...)         [expensive]
+
+All numerical regression values recorded from Phase-0 notebook execution and
+cross-checked against Fortran pdfLATs.for / HJCASYMP.FOR / F0HJC.FOR.
+"""
+
+import math
+
+import numpy as np
+import pytest
+
+from scalcs import qmatlib as qm
+from scalcs import qmatlib as qml
+from scalcs import scalcslib as scl
+from scalcs import firstlatency as fl          # does not exist yet -> RED
+from scalcs.mechanism import Mechanism, Rate, State
+from scalcs.samples.samples import CH82, CHME97   # CHME97 not in samples -> RED
+
+
+# ---------------------------------------------------------------------------
+# Module-level analytical constants for CO 2-state mechanism
+# ---------------------------------------------------------------------------
+
+BETA_CO  = 20.0    # s^-1  shut -> open rate (concentration-independent)
+ALPHA_CO = 50.0    # s^-1  open -> shut rate
+
+
+# ---------------------------------------------------------------------------
+# Base fixtures (module-scoped — setup is non-trivial)
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def co():
+    """2-state open<->shut mechanism (analytical ground truth).
+
+    At c = 0 the population is entirely in the shut state, so phi_shut = [1].
+    Post-jump QFF = [-BETA_CO].  Ideal f_L(t) = BETA_CO * exp(-BETA_CO * t).
+    """
+    sO = State('A', 'O', 50e-12)
+    sC = State('C', 'C', 0.0)
+    rates = [
+        Rate(ALPHA_CO, sO, sC, name='alpha'),
+        Rate(BETA_CO,  sC, sO, name='beta'),
+    ]
+    return Mechanism(rates, mtitle='CO')
+
+
+@pytest.fixture(scope="module")
+def ch82_step():
+    """CH82 mechanism: pre-jump at c = 0, post-jump at c = 0.1 mM.
+
+    Returns (mec_post_jump, phi_shut, tres).
+    phi_shut = equilibrium shut occupancies at c = 0 = [0, 0, 1]
+    tres = 0.1 ms = 1e-4 s
+    """
+    mec0 = CH82()
+    mec0.set_eff('c', 0.0)
+    mec1 = CH82()
+    mec1.set_eff('c', 0.0001)
+    phi_shut = qml.pinf(mec0.Q)[mec0.kA:]
+    tres = 1e-4   # 0.1 ms
+    return mec1, phi_shut, tres
+
+
+@pytest.fixture(scope="module")
+def chme97_step():
+    """CHME97 mechanism: pre-jump at c = 0, post-jump at c = 1 mM.
+
+    Returns (mec_post_jump, phi_shut, tres).
+    phi_shut = [0, 0, 0, 1] — all probability in unliganded state R at c = 0.
+    tres = 0.7 ms = 7e-4 s
+    """
+    mec0 = CHME97()
+    mec0.set_eff('c', 0.0)
+    mec1 = CHME97()
+    mec1.set_eff('c', 0.001)
+    phi_shut = qml.pinf(mec0.Q)[mec0.kA:]
+    tres = 1e-3   # 1 ms
+    return mec1, phi_shut, tres
+
+
+# ---------------------------------------------------------------------------
+# Derived fixtures — expensive computations cached module-wide
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def co_tres0(co):
+    """Asymptotic roots, areas and gamma coefficients for CO at tres=0.
+
+    At tres=0 the asymptotic pdf reduces to the ideal pdf.  Computed once
+    and shared by test_tres_zero_limit_co and test_tres_zero_pdf_equals_ideal_co
+    (both previously called asymptotic_roots and gamma_coefficients fresh).
+    """
+    phi_shut = np.array([1.0])
+    tres = 0.0
+    roots = fl.asymptotic_roots(tres, co)
+    areas = fl.asymptotic_areas(tres, roots, phi_shut, co)
+    eigvals, g00, g10, g11 = fl.gamma_coefficients(tres, phi_shut, co)
+    return phi_shut, tres, roots, areas, eigvals, g00, g10, g11
+
+
+@pytest.fixture(scope="module")
+def ch82_roots(ch82_step):
+    """Asymptotic roots for CH82.  Computed once; reused by all test methods."""
+    mec1, phi_shut, tres = ch82_step
+    return fl.asymptotic_roots(tres, mec1)
+
+
+@pytest.fixture(scope="module")
+def ch82_areas(ch82_step, ch82_roots):
+    """Asymptotic areas for CH82."""
+    mec1, phi_shut, tres = ch82_step
+    return fl.asymptotic_areas(tres, ch82_roots, phi_shut, mec1)
+
+
+@pytest.fixture(scope="module")
+def ch82_gamma(ch82_step):
+    """Gamma coefficients (eigvals, g00, g10, g11) for CH82 exact pdf."""
+    mec1, phi_shut, tres = ch82_step
+    return fl.gamma_coefficients(tres, phi_shut, mec1)
+
+
+@pytest.fixture(scope="module")
+def chme97_roots(chme97_step):
+    """Asymptotic roots for CHME97.  Computed once; reused by all test methods."""
+    mec1, phi_shut, tres = chme97_step
+    return fl.asymptotic_roots(tres, mec1)
+
+
+@pytest.fixture(scope="module")
+def chme97_areas(chme97_step, chme97_roots):
+    """Asymptotic areas for CHME97."""
+    mec1, phi_shut, tres = chme97_step
+    return fl.asymptotic_areas(tres, chme97_roots, phi_shut, mec1)
+
+
+@pytest.fixture(scope="module")
+def chme97_gamma(chme97_step):
+    """Gamma coefficients (eigvals, g00, g10, g11) for CHME97 exact pdf."""
+    mec1, phi_shut, tres = chme97_step
+    return fl.gamma_coefficients(tres, phi_shut, mec1)
+
+
+# ---------------------------------------------------------------------------
+# TestSamples — CHME97 must exist in scalcs.samples
+# ---------------------------------------------------------------------------
+
+class TestSamples:
+    """CHME97 must be importable from scalcs.samples.samples."""
+
+    def test_chme97_callable(self):
+        mec = CHME97()
+        assert mec is not None
+
+    def test_chme97_state_counts(self):
+        """kA=1 (one open state), kF=4 (B=2 within-burst, C=2 long-lived shut)."""
+        mec = CHME97()
+        mec.set_eff('c', 0.001)
+        assert mec.kA == 1
+        assert mec.kF == 4
+        assert mec.k  == 5
+
+    def test_chme97_title(self):
+        mec = CHME97()
+        assert 'CHME97' in mec.mtitle or 'CHME' in mec.mtitle
+
+    def test_chme97_set_eff_changes_Q(self):
+        """Q matrix should differ between c = 0 and c = 1 mM."""
+        mec = CHME97()
+        mec.set_eff('c', 0.0)
+        Q0 = mec.Q.copy()
+        mec.set_eff('c', 0.001)
+        Q1 = mec.Q.copy()
+        assert not np.allclose(Q0, Q1), "Q should change with concentration"
+
+
+# ---------------------------------------------------------------------------
+# TestIdealComponents — fl.ideal_components(QFF, phi_shut) -> (eigs, areas)
+# ---------------------------------------------------------------------------
+
+class TestIdealComponents:
+    """ideal_components returns eigenvalues and areas of the ideal first-latency pdf."""
+
+    def test_co_single_component(self, co):
+        """CO has one shut state -> one component; area = 1, eig = BETA."""
+        phi_shut = np.array([1.0])
+        eigs, areas = fl.ideal_components(co.QFF, phi_shut)
+        assert eigs.shape == (1,)
+        assert areas.shape == (1,)
+        assert eigs[0] == pytest.approx(BETA_CO, rel=1e-10)
+        assert areas[0] == pytest.approx(1.0, rel=1e-10)
+
+    def test_co_areas_sum_to_one(self, co):
+        phi_shut = np.array([1.0])
+        eigs, areas = fl.ideal_components(co.QFF, phi_shut)
+        assert areas.sum() == pytest.approx(1.0, abs=1e-10)
+
+    def test_ch82_returns_kF_components(self, ch82_step):
+        mec1, phi_shut, _ = ch82_step
+        eigs, areas = fl.ideal_components(mec1.QFF, phi_shut)
+        assert len(eigs) == mec1.kF == 3
+        assert len(areas) == mec1.kF
+
+    def test_ch82_eigenvalues_positive(self, ch82_step):
+        """Eigenvalues of -QFF must be positive."""
+        mec1, phi_shut, _ = ch82_step
+        eigs, _ = fl.ideal_components(mec1.QFF, phi_shut)
+        assert np.all(eigs > 0)
+
+    def test_ch82_areas_sum_to_one(self, ch82_step):
+        mec1, phi_shut, _ = ch82_step
+        _, areas = fl.ideal_components(mec1.QFF, phi_shut)
+        assert areas.sum() == pytest.approx(1.0, abs=1e-7)
+
+    # Regression: eigenvalues (Phase-0, 2026-06-07)
+    def test_ch82_eigenvalues_regression(self, ch82_step):
+        """Eigenvalues of -QFF_c1 pinned to Phase-0 run."""
+        mec1, phi_shut, _ = ch82_step
+        eigs, _ = fl.ideal_components(mec1.QFF, phi_shut)
+        expected = np.array([9117.3892, 14283.1619, 57614.4489])
+        np.testing.assert_allclose(np.sort(eigs), np.sort(expected), rtol=1e-5)
+
+    def test_ch82_areas_regression(self, ch82_step):
+        """Component areas pinned to Phase-0 run."""
+        mec1, phi_shut, _ = ch82_step
+        eigs, areas = fl.ideal_components(mec1.QFF, phi_shut)
+        # Sort by eigenvalue to get stable ordering
+        idx = np.argsort(eigs)
+        areas_sorted = areas[idx]
+        expected = np.array([3.28417, -2.34607, 0.06190])
+        np.testing.assert_allclose(areas_sorted, expected, rtol=1e-4)
+
+    def test_chme97_returns_kF_components(self, chme97_step):
+        mec1, phi_shut, _ = chme97_step
+        eigs, areas = fl.ideal_components(mec1.QFF, phi_shut)
+        assert len(eigs) == mec1.kF == 4
+
+    def test_chme97_areas_sum_to_one(self, chme97_step):
+        mec1, phi_shut, _ = chme97_step
+        _, areas = fl.ideal_components(mec1.QFF, phi_shut)
+        assert areas.sum() == pytest.approx(1.0, abs=1e-7)
+
+    def test_chme97_eigenvalues_regression(self, chme97_step):
+        mec1, phi_shut, _ = chme97_step
+        eigs, _ = fl.ideal_components(mec1.QFF, phi_shut)
+        expected = np.array([1.5167, 55.079, 5004.80, 10009.40])
+        np.testing.assert_allclose(np.sort(eigs), np.sort(expected), rtol=1e-4)
+
+    def test_chme97_areas_regression(self, chme97_step):
+        mec1, phi_shut, _ = chme97_step
+        eigs, areas = fl.ideal_components(mec1.QFF, phi_shut)
+        idx = np.argsort(eigs)
+        areas_sorted = areas[idx]
+        expected = np.array([0.16189, 0.85220, -0.018753, 0.004663])
+        np.testing.assert_allclose(areas_sorted, expected, rtol=1e-3)
+
+
+# ---------------------------------------------------------------------------
+# TestIdealPdf — fl.ideal_pdf(t, QFF, phi_shut) -> float or ndarray
+# ---------------------------------------------------------------------------
+
+class TestIdealPdf:
+    """ideal_pdf evaluates the ideal first-latency pdf at given time(s)."""
+
+    def test_co_analytical_scalar(self, co):
+        """f_L(t) = BETA_CO * exp(-BETA_CO * t) for 2-state CO mechanism."""
+        phi_shut = np.array([1.0])
+        t = 0.05
+        expected = BETA_CO * math.exp(-BETA_CO * t)
+        result = fl.ideal_pdf(t, co.QFF, phi_shut)
+        assert float(result) == pytest.approx(expected, rel=1e-8)
+
+    def test_co_analytical_array(self, co):
+        """Array input returns array with correct shape."""
+        phi_shut = np.array([1.0])
+        t = np.array([0.01, 0.05, 0.1])
+        expected = BETA_CO * np.exp(-BETA_CO * t)
+        result = fl.ideal_pdf(t, co.QFF, phi_shut)
+        assert result.shape == t.shape
+        np.testing.assert_allclose(result, expected, rtol=1e-8)
+
+    def test_ch82_positive(self, ch82_step):
+        """Ideal pdf must be positive for t > 0."""
+        mec1, phi_shut, _ = ch82_step
+        for t in [1e-4, 5e-4, 1e-3]:
+            f = float(fl.ideal_pdf(t, mec1.QFF, phi_shut))
+            assert f > 0.0, f"ideal_pdf({t}) = {f} <= 0"
+
+    # Regression against Phase-0 notebook output
+    def test_ch82_pdf_value_regression(self, ch82_step):
+        mec1, phi_shut, _ = ch82_step
+        f = float(fl.ideal_pdf(2e-4, mec1.QFF, phi_shut))
+        assert f == pytest.approx(2909.231, rel=1e-4)
+
+    def test_chme97_pdf_value_regression(self, chme97_step):
+        mec1, phi_shut, _ = chme97_step
+        f = float(fl.ideal_pdf(0.01, mec1.QFF, phi_shut))
+        assert f == pytest.approx(27.3015, rel=1e-3)
+
+
+# ---------------------------------------------------------------------------
+# TestAsymptoticRoots — fl.asymptotic_roots(tres, mec) -> roots
+# ---------------------------------------------------------------------------
+
+class TestAsymptoticRoots:
+    """asymptotic_roots returns kF negative roots for the shut-state pdf."""
+
+    def test_ch82_returns_kF_negative_roots(self, ch82_step, ch82_roots):
+        mec1, _, tres = ch82_step
+        assert len(ch82_roots) == mec1.kF == 3
+        assert np.all(ch82_roots < 0), "All roots must be negative"
+
+    def test_ch82_roots_regression(self, ch82_roots):
+        """Roots pinned to Phase-0 values (sorted by magnitude)."""
+        expected = np.array([-55346.36, -13091.32, -9013.82])
+        np.testing.assert_allclose(
+            np.sort(ch82_roots), np.sort(expected), rtol=1e-4
+        )
+
+    def test_chme97_returns_kF_negative_roots(self, chme97_step, chme97_roots):
+        mec1, _, tres = chme97_step
+        assert len(chme97_roots) == mec1.kF == 4
+        assert np.all(chme97_roots < 0)
+
+    def test_chme97_roots_regression(self, chme97_roots):
+        expected = np.array([-10009.39, -5003.76, -27.22, -1.2134])
+        np.testing.assert_allclose(
+            np.sort(chme97_roots), np.sort(expected), rtol=1e-3
+        )
+
+    def test_chme97_roots_stable_at_1ms(self):
+        """asymptotic_roots must not overflow at tres = 1 ms.
+
+        With the legacy hardcoded sas = -1e6, the matrix exponential
+        exp((QFF - s·I)·tres) overflows float64 (exponent ≈ 1000 >> 709)
+        when s sweeps to -1e6 and tres = 1e-3 s.  The adaptive lower bound
+        fixes this by limiting |sas| to just below max|eig(QFF)|.
+        """
+        mec0 = CHME97()
+        mec0.set_eff('c', 0.0)
+        mec1 = CHME97()
+        mec1.set_eff('c', 0.001)
+        phi_shut = qml.pinf(mec0.Q)[mec0.kA:]
+        tres = 1e-3   # 1 ms — was unstable before fix
+
+        roots = fl.asymptotic_roots(tres, mec1)
+
+        assert len(roots) == mec1.kF
+        assert np.all(np.isfinite(roots)), f"roots contain non-finite values: {roots}"
+        assert np.all(roots < 0), f"all roots must be negative: {roots}"
+
+
+# ---------------------------------------------------------------------------
+# TestAsymptoticAreas — fl.asymptotic_areas(tres, roots, phi_shut, mec)
+# ---------------------------------------------------------------------------
+
+class TestAsymptoticAreas:
+    """asymptotic_areas returns the first-latency HJC component areas."""
+
+    def test_ch82_shape(self, ch82_step, ch82_areas):
+        mec1, phi_shut, tres = ch82_step
+        assert ch82_areas.shape == (mec1.kF,)
+
+    def test_ch82_areas_sum_near_one(self, ch82_areas):
+        """Sum of asymptotic areas < 1 (HJC correction), but within 2%."""
+        assert ch82_areas.sum() == pytest.approx(1.0, abs=0.02)
+
+    def test_ch82_areas_regression(self, ch82_roots, ch82_areas):
+        """Areas pinned to Phase-0 values (matched by root order)."""
+        # Sort both roots and areas by root magnitude for stable comparison
+        idx = np.argsort(np.abs(ch82_roots))
+        areas_sorted = ch82_areas[idx]
+        expected = np.array([3.74943, -2.79281, 0.035272])  # |roots| ascending
+        np.testing.assert_allclose(areas_sorted, expected, rtol=1e-3)
+
+    def test_chme97_shape(self, chme97_step, chme97_areas):
+        mec1, phi_shut, tres = chme97_step
+        assert chme97_areas.shape == (mec1.kF,)
+
+    def test_chme97_areas_sum_near_one(self, chme97_areas):
+        """CHME97 asymptotic areas sum to within 0.1% of 1."""
+        assert chme97_areas.sum() == pytest.approx(1.0, abs=0.001)
+
+    def test_chme97_areas_regression(self, chme97_roots, chme97_areas):
+        idx = np.argsort(np.abs(chme97_roots))
+        areas_sorted = chme97_areas[idx]
+        expected = np.array([0.34122, 0.66425, -0.006677, 0.000359])
+        np.testing.assert_allclose(areas_sorted, expected, rtol=1e-3)
+
+    def test_distinct_from_ideal_areas(self, ch82_step, ch82_areas):
+        """Asymptotic areas must differ from ideal areas (HJC correction exists)."""
+        mec1, phi_shut, tres = ch82_step
+        _, ideal_areas = fl.ideal_components(mec1.QFF, phi_shut)
+        # The HJC asymptotic pdf is NOT the same as the ideal pdf
+        assert not np.allclose(np.sort(ch82_areas), np.sort(ideal_areas), atol=0.01)
+
+
+# ---------------------------------------------------------------------------
+# TestAsymptoticPdf — fl.asymptotic_pdf(t, tres, tau, areas) -> float/ndarray
+# ---------------------------------------------------------------------------
+
+class TestAsymptoticPdf:
+    """asymptotic_pdf is zero before tres, expPDF(t - tres) after."""
+
+    def test_zero_before_tres(self, ch82_step, ch82_roots, ch82_areas):
+        """f_L(t) = 0 for t < tres (no events before dead time)."""
+        mec1, phi_shut, tres = ch82_step
+        tau = -1.0 / ch82_roots
+        for t in [0.0, tres * 0.1, tres * 0.5, tres * 0.9999]:
+            f = fl.asymptotic_pdf(t, tres, tau, ch82_areas)
+            assert float(f) == 0.0, f"asymptotic_pdf({t}) should be 0 before tres={tres}"
+
+    def test_nonzero_after_tres(self, ch82_step, ch82_roots, ch82_areas):
+        """f_L(t) > 0 for t slightly above tres (positive overall amplitude)."""
+        mec1, phi_shut, tres = ch82_step
+        tau = -1.0 / ch82_roots
+        t = tres * 1.5
+        f = fl.asymptotic_pdf(t, tres, tau, ch82_areas)
+        assert float(f) > 0.0
+
+    def test_scalar_input(self, ch82_step, ch82_roots, ch82_areas):
+        """scalar t must work without raising AttributeError."""
+        mec1, phi_shut, tres = ch82_step
+        tau = -1.0 / ch82_roots
+        f = fl.asymptotic_pdf(2e-4, tres, tau, ch82_areas)
+        assert isinstance(float(f), float)
+
+    def test_array_input(self, ch82_step, ch82_roots, ch82_areas):
+        """Array t must return array of same shape."""
+        mec1, phi_shut, tres = ch82_step
+        tau = -1.0 / ch82_roots
+        t = np.array([0.5e-4, 1.0e-4, 2.0e-4, 5.0e-4])
+        f = fl.asymptotic_pdf(t, tres, tau, ch82_areas)
+        assert f.shape == t.shape
+        # t < tres -> 0; t > tres -> positive
+        assert f[0] == 0.0   # 0.5e-4 < 1e-4 = tres
+        assert f[1] == 0.0   # exactly tres -- convention: f(tres) = 0
+        assert f[2] > 0.0    # 2e-4 > tres
+        assert f[3] > 0.0
+
+    def test_ch82_pdf_value_regression(self, ch82_step, ch82_roots, ch82_areas):
+        """f_L(t=0.0002) = 3855.8 s^-1 pinned to Phase-0 run."""
+        mec1, phi_shut, tres = ch82_step
+        tau = -1.0 / ch82_roots
+        f = fl.asymptotic_pdf(2e-4, tres, tau, ch82_areas)
+        assert float(f) == pytest.approx(3855.84, rel=1e-3)
+
+    def test_chme97_pdf_value_regression(self, chme97_step, chme97_roots, chme97_areas):
+        """f_L(t=10 ms) pinned to tres=1 ms run."""
+        mec1, phi_shut, tres = chme97_step
+        tau = -1.0 / chme97_roots
+        f = fl.asymptotic_pdf(0.01, tres, tau, chme97_areas)
+        assert float(f) == pytest.approx(14.563, rel=1e-3)
+
+
+# ---------------------------------------------------------------------------
+# TestGammaCoefficients — fl.gamma_coefficients(tres, phi_shut, mec)
+# ---------------------------------------------------------------------------
+
+class TestGammaCoefficients:
+    """gamma_coefficients returns eigenvalues and (g00, g10, g11) for exact pdf."""
+
+    def test_ch82_returns_four_arrays(self, ch82_step, ch82_gamma):
+        mec1, phi_shut, tres = ch82_step
+        eigvals, g00, g10, g11 = ch82_gamma
+        assert eigvals.shape == (mec1.k,)
+        assert g00.shape == (mec1.k,)
+        assert g10.shape == (mec1.k,)
+        assert g11.shape == (mec1.k,)
+
+    def test_ch82_eigenvalues_regression(self, ch82_gamma):
+        """Eigenvalues of -Q (full) pinned to Phase-0 run.
+
+        There are k=5 eigenvalues; one is ~0 (stationary distribution).
+        """
+        eigvals, _, _, _ = ch82_gamma
+        # Eigenvalues of -Q sorted ascending; first ~= 0
+        ev = np.sort(eigvals)
+        assert ev[0] == pytest.approx(0.0, abs=1e-6)
+        # Remaining four should be positive
+        assert np.all(ev[1:] > 0)
+
+    def test_ch82_g00_regression(self, ch82_gamma):
+        """g00 coefficients pinned to Phase-0 run (tolerance 1%)."""
+        eigvals, g00, _, _ = ch82_gamma
+        # Sort by eigenvalue for stable ordering
+        idx = np.argsort(eigvals)
+        g00_sorted = g00[idx]
+        # Phase-0 values (sorted by eigenvalue ascending):
+        #   [ 458.88, 25121.5, -28978.8,   7.709,  3390.7 ]
+        expected = np.array([458.88, 25121.5, -28978.8, 7.709, 3390.7])
+        np.testing.assert_allclose(g00_sorted, expected, rtol=0.01)
+
+    def test_chme97_returns_four_arrays(self, chme97_step, chme97_gamma):
+        mec1, phi_shut, tres = chme97_step
+        eigvals, g00, g10, g11 = chme97_gamma
+        assert eigvals.shape == (mec1.k,)
+
+    def test_chme97_eigenvalues_one_near_zero(self, chme97_gamma):
+        """k=5; one eigenvalue of -Q is ~= 0 (equilibrium)."""
+        eigvals, _, _, _ = chme97_gamma
+        assert np.min(np.abs(eigvals)) == pytest.approx(0.0, abs=1e-6)
+
+
+# ---------------------------------------------------------------------------
+# TestExactPdf — fl.exact_pdf(t, tres, roots, areas, eigvals, g00, g10, g11)
+# ---------------------------------------------------------------------------
+
+class TestExactPdf:
+    """exact_pdf evaluates the HJC-exact first-latency pdf.
+
+    Key requirement: must accept both scalar and array t.
+    (The existing scl.exact_pdf requires array t — this is fixed here.)
+    """
+
+    def test_scalar_input_no_error(self, ch82_step, ch82_roots, ch82_areas, ch82_gamma):
+        """fl.exact_pdf must not raise AttributeError for scalar t."""
+        mec1, phi_shut, tres = ch82_step
+        eigvals, g00, g10, g11 = ch82_gamma
+        f = fl.exact_pdf(2e-4, tres, ch82_roots, ch82_areas, eigvals, g00, g10, g11)
+        assert isinstance(float(f), float)
+
+    def test_array_input(self, ch82_step, ch82_roots, ch82_areas, ch82_gamma):
+        """Array t must return array of same shape."""
+        mec1, phi_shut, tres = ch82_step
+        eigvals, g00, g10, g11 = ch82_gamma
+        t = np.array([2e-4, 5e-4, 1e-3])
+        f = fl.exact_pdf(t, tres, ch82_roots, ch82_areas, eigvals, g00, g10, g11)
+        assert f.shape == t.shape
+
+    def test_zero_before_tres(self, ch82_step, ch82_roots, ch82_areas, ch82_gamma):
+        """f = 0 for t < tres."""
+        mec1, phi_shut, tres = ch82_step
+        eigvals, g00, g10, g11 = ch82_gamma
+        for t in [0.0, tres * 0.5, tres * 0.999]:
+            f = fl.exact_pdf(t, tres, ch82_roots, ch82_areas, eigvals, g00, g10, g11)
+            assert float(f) == 0.0
+
+    def test_equals_asymptotic_for_large_t(self, ch82_step, ch82_roots, ch82_areas, ch82_gamma):
+        """For t >> 3*tres exact and asymptotic pdf must agree to 0.1%."""
+        mec1, phi_shut, tres = ch82_step
+        eigvals, g00, g10, g11 = ch82_gamma
+        tau = -1.0 / ch82_roots
+        for t in [0.002, 0.005, 0.01]:
+            f_exact = float(fl.exact_pdf(t, tres, ch82_roots, ch82_areas, eigvals, g00, g10, g11))
+            f_asym  = float(fl.asymptotic_pdf(t, tres, tau, ch82_areas))
+            assert f_exact == pytest.approx(f_asym, rel=1e-3), (
+                f"exact ({f_exact:.6e}) != asymptotic ({f_asym:.6e}) at t={t}"
+            )
+
+    def test_differs_from_asymptotic_near_tres(self, chme97_step, chme97_roots, chme97_areas, chme97_gamma):
+        """Just above tres exact and asymptotic differ (exact correction matters)."""
+        mec1, phi_shut, tres = chme97_step
+        eigvals, g00, g10, g11 = chme97_gamma
+        tau = -1.0 / chme97_roots
+        t_near = tres * 1.14   # t = 0.8 ms when tres = 0.7 ms
+        f_exact = float(fl.exact_pdf(t_near, tres, chme97_roots, chme97_areas, eigvals, g00, g10, g11))
+        f_asym  = float(fl.asymptotic_pdf(t_near, tres, tau, chme97_areas))
+        # Phase-0: exact=3.782, asymptotic=2.568 -- differ by ~47%
+        assert not math.isclose(f_exact, f_asym, rel_tol=0.1), (
+            f"exact and asymptotic should differ near tres; got {f_exact:.4f} vs {f_asym:.4f}"
+        )
+
+    # -- Regression tests (Phase-0 values) ----------------------------------
+
+    def test_ch82_exact_value_at_200us(self, ch82_step, ch82_roots, ch82_areas, ch82_gamma):
+        """Phase-0: exact_pdf(t=0.2 ms) = 3855.84 s^-1  (= asymptotic at this t)."""
+        mec1, phi_shut, tres = ch82_step
+        eigvals, g00, g10, g11 = ch82_gamma
+        f = float(fl.exact_pdf(2e-4, tres, ch82_roots, ch82_areas, eigvals, g00, g10, g11))
+        assert f == pytest.approx(3855.84, rel=1e-3)
+
+    def test_ch82_exact_value_at_1ms(self, ch82_step, ch82_roots, ch82_areas, ch82_gamma):
+        """Phase-0: exact_pdf(t=1 ms) = 9.8525 s^-1."""
+        mec1, phi_shut, tres = ch82_step
+        eigvals, g00, g10, g11 = ch82_gamma
+        f = float(fl.exact_pdf(1e-3, tres, ch82_roots, ch82_areas, eigvals, g00, g10, g11))
+        assert f == pytest.approx(9.8525, rel=1e-3)
+
+    def test_chme97_exact_value_at_1p5ms(self, chme97_step, chme97_roots, chme97_areas, chme97_gamma):
+        """tres=1 ms: exact_pdf(t=1.5 ms) = 15.446 s^-1.
+
+        t=1.5 ms is in [tres, 2*tres) so f = f0(t - tres).
+        Differs from asymptotic (15.539) by ~0.6%% — confirms the exact
+        correction is applied in this region.
+        """
+        mec1, phi_shut, tres = chme97_step
+        eigvals, g00, g10, g11 = chme97_gamma
+        f = float(fl.exact_pdf(1.5e-3, tres, chme97_roots, chme97_areas, eigvals, g00, g10, g11))
+        assert f == pytest.approx(15.446, rel=1e-2)
+
+    def test_chme97_exact_value_at_10ms(self, chme97_step, chme97_roots, chme97_areas, chme97_gamma):
+        """tres=1 ms: exact_pdf(t=10 ms) = 14.563 s^-1  (= asymptotic at this t)."""
+        mec1, phi_shut, tres = chme97_step
+        eigvals, g00, g10, g11 = chme97_gamma
+        f = float(fl.exact_pdf(0.01, tres, chme97_roots, chme97_areas, eigvals, g00, g10, g11))
+        assert f == pytest.approx(14.563, rel=1e-3)
+
+
+# ---------------------------------------------------------------------------
+# TestProperties — mathematical properties of the first-latency pdf
+# ---------------------------------------------------------------------------
+
+class TestProperties:
+    """Mathematical properties that must hold regardless of mechanism."""
+
+    def test_ideal_pdf_integrates_to_one_co(self, co):
+        """For CO, ideal first-latency pdf integrates to 1.
+
+        For a sum-of-exponentials pdf  f(t) = Σ aᵢ·λᵢ·exp(−λᵢ·t),
+        ∫₀^∞ f(t) dt = Σ aᵢ  exactly.  Verified analytically; no
+        numerical quadrature needed (scipy.integrate.quad is ~100×
+        slower here because it recomputes the eigendecomposition per
+        evaluation point).
+        """
+        phi_shut = np.array([1.0])
+        _, areas = fl.ideal_components(co.QFF, phi_shut)
+        assert areas.sum() == pytest.approx(1.0, rel=1e-10)
+
+    def test_ideal_pdf_integrates_to_one_ch82(self, ch82_step):
+        """Ideal CH82 first-latency pdf integrates to 1 (sum of areas = 1)."""
+        mec1, phi_shut, _ = ch82_step
+        eigs, areas = fl.ideal_components(mec1.QFF, phi_shut)
+        assert areas.sum() == pytest.approx(1.0, abs=1e-7)
+
+    def test_ideal_pdf_integrates_to_one_chme97(self, chme97_step):
+        """Ideal CHME97 first-latency pdf integrates to 1."""
+        mec1, phi_shut, _ = chme97_step
+        eigs, areas = fl.ideal_components(mec1.QFF, phi_shut)
+        assert areas.sum() == pytest.approx(1.0, abs=1e-7)
+
+    def test_asymptotic_areas_near_one_ch82(self, ch82_areas):
+        """Asymptotic areas sum < 1 but within 2% (missed-events effect)."""
+        s = ch82_areas.sum()
+        assert 0.98 < s <= 1.0, f"sum(asym_areas) = {s:.6f}; expected in (0.98, 1.0]"
+
+    def test_asymptotic_areas_near_one_chme97(self, chme97_areas):
+        """CHME97: asymptotic areas within 0.1% of 1."""
+        s = chme97_areas.sum()
+        assert 0.999 < s <= 1.0, f"sum(asym_areas) = {s:.6f}; expected > 0.999"
+
+    def test_tres_zero_limit_co(self, co, co_tres0):
+        """At tres=0 the asymptotic pdf reduces to the ideal pdf.
+
+        For CO (single shut state), ideal f_L(t) = BETA_CO * exp(-BETA_CO * t).
+        At tres=0 the asymptotic areas must equal the ideal areas (= [1.0])
+        and the roots must equal the ideal eigenvalues (= [BETA_CO]).
+        """
+        phi_shut, tres, roots, areas, _, _, _, _ = co_tres0
+        eigs, ideal_areas = fl.ideal_components(co.QFF, phi_shut)
+
+        assert np.abs(roots[0]) == pytest.approx(eigs[0], rel=1e-6)
+        assert areas[0] == pytest.approx(ideal_areas[0], rel=1e-6)
+
+    def test_tres_zero_pdf_equals_ideal_co(self, co, co_tres0):
+        """At tres=0 exact_pdf(t) == ideal_pdf(t) for all t > 0."""
+        phi_shut, tres, roots, areas, eigvals, g00, g10, g11 = co_tres0
+
+        for t in [0.01, 0.05, 0.1, 0.5]:
+            f_exact = float(fl.exact_pdf(t, tres, roots, areas, eigvals, g00, g10, g11))
+            f_ideal = float(fl.ideal_pdf(t, co.QFF, phi_shut))
+            assert f_exact == pytest.approx(f_ideal, rel=1e-5), (
+                f"exact ({f_exact:.6e}) != ideal ({f_ideal:.6e}) at t={t}, tres=0"
+            )
+
+    def test_exact_agrees_with_asymptotic_for_t_gg_3tres_ch82(
+        self, ch82_step, ch82_roots, ch82_areas, ch82_gamma
+    ):
+        """For t >> 3*tres, exact == asymptotic to five significant figures."""
+        mec1, phi_shut, tres = ch82_step
+        eigvals, g00, g10, g11 = ch82_gamma
+        tau = -1.0 / ch82_roots
+
+        # t = 0.005 s >> 3*tres = 0.3 ms
+        for t in [5e-3, 1e-2]:
+            f_e = float(fl.exact_pdf(t, tres, ch82_roots, ch82_areas, eigvals, g00, g10, g11))
+            f_a = float(fl.asymptotic_pdf(t, tres, tau, ch82_areas))
+            assert f_e == pytest.approx(f_a, rel=1e-5)
+
+    def test_ideal_decreasing_ch82(self, ch82_step):
+        """For CH82, ideal f_L(t) is positive and eventually decreasing.
+
+        The pdf rises from zero at t=0 to a mode (the channel population
+        must first bind agonist before opening), then decays.  The peak is
+        near the dominant time constant (~0.1 ms); by 1 ms the pdf is
+        monotone decreasing.
+        """
+        mec1, phi_shut, _ = ch82_step
+        # Positive everywhere
+        times = [1e-5, 1e-4, 3e-4, 1e-3, 5e-3]
+        vals = [float(fl.ideal_pdf(t, mec1.QFF, phi_shut)) for t in times]
+        assert all(v > 0 for v in vals), "ideal_pdf must be positive"
+        # Monotone decreasing after the mode (from 1 ms onward)
+        tail = [float(fl.ideal_pdf(t, mec1.QFF, phi_shut)) for t in [1e-3, 3e-3, 1e-2]]
+        for i in range(len(tail) - 1):
+            assert tail[i] > tail[i + 1], (
+                f"ideal_pdf not decreasing in tail: f({[1e-3,3e-3,1e-2][i]:.3g})"
+                f" = {tail[i]:.4e}, f({[1e-3,3e-3,1e-2][i+1]:.3g}) = {tail[i+1]:.4e}"
+            )
+
+
+# ===========================================================================
+# Phase 1 — IDEAL FIRST-LATENCY PDF OF A CONCENTRATION PULSE  (CHME97 §3(i))
+# ===========================================================================
+# Physical scenario: channel held at c = 0; concentration steps to c1 at t = 0,
+# held for a pulse of duration T, then returns to c = 0 at t = T.  The ideal
+# (no missed events) first-latency pdf of the time to the FIRST opening,
+# conditional on at least one opening occurring (R >= 1), is (CHME97 eqs 3.2-3.11):
+#
+#   t < T  (first opening during the pulse), eq (3.6):
+#       f_FL(t) = phi_F . exp(Q1_FF . t) . Q1_FA . u_A / P(R>=1)
+#       -> kF exponentials, rates = eigenvalues of -Q1_FF (concentration c1).
+#
+#   t > T  (first opening after the pulse), eq (3.8):
+#       f_FL(t) = [phi_F . exp(Q1_FF . T)]_B . exp(Q0_BB . (t-T)) . Q0_BA . u_A
+#                 / P(R>=1)
+#       -> kB exponentials, rates = eigenvalues of -Q0_BB (zero concentration);
+#          only the within-burst shut states B can still open once agonist is
+#          removed (C is absorbing at c = 0).
+#
+#   P(R>=1), eq (3.10):
+#       phi_F . { (-Q1_FF)^-1 [I - exp(Q1_FF.T)] Q1_FA
+#                 + [exp(Q1_FF.T)]_.B  G0_BA } . u_A,   G0_BA = (-Q0_BB)^-1 Q0_BA
+#
+# Limiting check: as T -> infinity the pulse becomes a simple step from zero
+# concentration; P(R>=1) -> 1 and f_FL reduces to the existing ideal_pdf.
+#
+# Reference values (pinned 2026-06-10): closed-form cross-checked to ~1e-12
+# against an independent scipy.odeint integration of the F-restricted survival
+# vector phi(t) (generator switched from Q1 to Q0 at t = T), and the pdf
+# verified to integrate to 1 over [0, inf) by adaptive quadrature.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def ch82_pulse():
+    """CH82 pulse: c = 0 -> 0.1 mM for T = 0.2 ms -> 0.
+
+    Returns (mec0, mec1, phi_shut, T).  Short pulse so that a substantial
+    fraction of first openings occur after the pulse (P(R>=1) ~ 0.758).
+    """
+    mec0 = CH82()
+    mec0.set_eff('c', 0.0)
+    mec1 = CH82()
+    mec1.set_eff('c', 0.0001)
+    phi_shut = qml.pinf(mec0.Q)[mec0.kA:]
+    T = 2e-4   # 0.2 ms
+    return mec0, mec1, phi_shut, T
+
+
+@pytest.fixture(scope="module")
+def chme97_pulse():
+    """CHME97 pulse: c = 0 -> 1 mM for T = 5 ms -> 0.
+
+    Returns (mec0, mec1, phi_shut, T).  Desensitisation means ~14% of channels
+    never open (P(R>=1) ~ 0.863), and the post-pulse tail is slow (tau ~ 0.64 s).
+    """
+    mec0 = CHME97()
+    mec0.set_eff('c', 0.0)
+    mec1 = CHME97()
+    mec1.set_eff('c', 0.001)
+    phi_shut = qml.pinf(mec0.Q)[mec0.kA:]
+    T = 5e-3   # 5 ms
+    return mec0, mec1, phi_shut, T
+
+
+class TestPulsePRgeOne:
+    """pulse_PR_ge_one returns P(R>=1): probability of at least one opening."""
+
+    def test_ch82_in_unit_interval(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        pr = fl.pulse_PR_ge_one(T, phi_shut, mec1, mec0)
+        assert 0.0 < pr <= 1.0
+
+    def test_ch82_regression(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        pr = fl.pulse_PR_ge_one(T, phi_shut, mec1, mec0)
+        assert pr == pytest.approx(0.758301, rel=1e-5)
+
+    def test_chme97_regression(self, chme97_pulse):
+        mec0, mec1, phi_shut, T = chme97_pulse
+        pr = fl.pulse_PR_ge_one(T, phi_shut, mec1, mec0)
+        assert pr == pytest.approx(0.862955, rel=1e-5)
+
+    def test_long_pulse_tends_to_one(self, ch82_pulse):
+        """As T -> infinity the pulse becomes a step from zero: P(R>=1) -> 1."""
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        pr = fl.pulse_PR_ge_one(0.05, phi_shut, mec1, mec0)   # 50 ms >> tau
+        assert pr == pytest.approx(1.0, abs=1e-6)
+
+
+class TestIdealPulsePdf:
+    """ideal_pulse_pdf evaluates the ideal first-latency pdf of a pulse."""
+
+    def test_scalar_input(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        f = fl.ideal_pulse_pdf(0.4e-3, T, phi_shut, mec1, mec0)
+        assert isinstance(float(f), float)
+
+    def test_array_input_shape(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        t = np.array([0.1e-3, 0.2e-3, 0.4e-3, 0.6e-3])
+        f = fl.ideal_pulse_pdf(t, T, phi_shut, mec1, mec0)
+        assert f.shape == t.shape
+
+    def test_positive_both_sides_of_T(self, ch82_pulse):
+        """pdf > 0 just before and just after the end of the pulse."""
+        mec0, mec1, phi_shut, T = ch82_pulse
+        assert float(fl.ideal_pulse_pdf(0.9 * T, T, phi_shut, mec1, mec0)) > 0
+        assert float(fl.ideal_pulse_pdf(1.1 * T, T, phi_shut, mec1, mec0)) > 0
+
+    def test_ch82_during_pulse_regression(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        f = float(fl.ideal_pulse_pdf(0.4e-3, T, phi_shut, mec1, mec0))
+        assert f == pytest.approx(87.0683, rel=1e-4)
+
+    def test_ch82_after_pulse_regression(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        f = float(fl.ideal_pulse_pdf(0.6e-3, T, phi_shut, mec1, mec0))
+        assert f == pytest.approx(2.77820, rel=1e-4)
+
+    def test_chme97_during_pulse_regression(self, chme97_pulse):
+        mec0, mec1, phi_shut, T = chme97_pulse
+        f = float(fl.ideal_pulse_pdf(2e-3, T, phi_shut, mec1, mec0))
+        assert f == pytest.approx(48.9978, rel=1e-4)
+
+    def test_chme97_after_pulse_regression(self, chme97_pulse):
+        mec0, mec1, phi_shut, T = chme97_pulse
+        f = float(fl.ideal_pulse_pdf(7.5e-3, T, phi_shut, mec1, mec0))
+        assert f == pytest.approx(35.4160, rel=1e-4)
+
+    def test_during_branch_equals_scaled_ideal_pdf(self, ch82_pulse):
+        """For t < T the pulse pdf = ideal_pdf(t) / P(R>=1) (Eq 3.6 vs 3(iv))."""
+        mec0, mec1, phi_shut, T = ch82_pulse
+        pr = fl.pulse_PR_ge_one(T, phi_shut, mec1, mec0)
+        for t in [0.05e-3, 0.1e-3, 0.15e-3]:
+            f_pulse = float(fl.ideal_pulse_pdf(t, T, phi_shut, mec1, mec0))
+            f_ideal = float(fl.ideal_pdf(t, mec1.QFF, phi_shut)) / pr
+            assert f_pulse == pytest.approx(f_ideal, rel=1e-8)
+
+    def test_long_pulse_reduces_to_ideal_pdf(self, ch82_pulse):
+        """As T -> infinity, ideal_pulse_pdf(t<T) -> existing ideal_pdf(t)."""
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        T = 0.05   # 50 ms >> all during-pulse time constants
+        for t in [1e-4, 2e-4, 5e-4]:
+            f_pulse = float(fl.ideal_pulse_pdf(t, T, phi_shut, mec1, mec0))
+            f_ideal = float(fl.ideal_pdf(t, mec1.QFF, phi_shut))
+            assert f_pulse == pytest.approx(f_ideal, rel=1e-6)
+
+    def test_integrates_to_one_ch82(self, ch82_pulse):
+        """The conditional pdf integrates to 1 over [0, inf) (CHME97 normalisation)."""
+        from scipy.integrate import quad
+        mec0, mec1, phi_shut, T = ch82_pulse
+        I_during, _ = quad(
+            lambda t: float(fl.ideal_pulse_pdf(t, T, phi_shut, mec1, mec0)),
+            0, T, limit=200)
+        I_after, _ = quad(
+            lambda t: float(fl.ideal_pulse_pdf(t, T, phi_shut, mec1, mec0)),
+            T, 0.05, limit=400)
+        assert I_during + I_after == pytest.approx(1.0, abs=1e-4)
+
+    def test_integrates_to_one_chme97(self, chme97_pulse):
+        from scipy.integrate import quad
+        mec0, mec1, phi_shut, T = chme97_pulse
+        I_during, _ = quad(
+            lambda t: float(fl.ideal_pulse_pdf(t, T, phi_shut, mec1, mec0)),
+            0, T, limit=200)
+        I_after, _ = quad(
+            lambda t: float(fl.ideal_pulse_pdf(t, T, phi_shut, mec1, mec0)),
+            T, 30.0, limit=400)
+        assert I_during + I_after == pytest.approx(1.0, abs=1e-3)
+
+
+# ===========================================================================
+# Phase 2b — APPARENT (missed-events) FIRST-LATENCY DENSITY OF A PULSE
+#            CHME97 §4(a), Eqs 4.1-4.3 (regimes 1 and 2 only)
+# ===========================================================================
+# With a finite dead time tres, the apparent first latency is the time to the
+# first *detectable* opening (an open sojourn lasting >= tres).  Following the
+# convention already used by the step module (asymptotic_pdf / exact_pdf), the
+# latency t is measured to the moment of detection (the opening transition plus
+# tres), so the density is zero for t <= tres.
+#
+# The density rests on the shut-time survivor matrix (Appendix A, CHME97)
+#
+#     TR(u) = P[X(u)=j and no detectable opening over (0,u) | X(0)=i],  i,j in F
+#
+# which is exact for u < 2*tres (built from the C-matrices via f0/f1) and
+# asymptotic beyond.  In the detection convention (tau = t - tres = transition
+# time) the density has two regimes for t < T + tres:
+#
+#   regime 1  (tres < t < T):  opening detected entirely within the pulse.
+#       density = phi . TR1(t-tres) . Q1_FA . exp(Q1_AA . tres) . u_A
+#       This is IDENTICAL to the step apparent first latency (exact_pdf).
+#
+#   regime 2  (T <= t < T+tres):  the confirming open sojourn straddles the end
+#       of the pulse (Eq 4.3):
+#       density = phi . TR1(tau) . Q1_FA . exp(Q1_AA.(T-tau)) . exp(Q0_AA.(tau+tres-T)) . u_A
+#
+# The after-pulse tail (t >= T+tres, Eq 4.4) needs the zero-concentration
+# reducible survivor TR0 and is deferred (Phase 2c); apparent_pulse_pdf raises
+# NotImplementedError there.  apparent_pulse_pdf returns the UNCONDITIONAL
+# density (not divided by P(R>=1)), so regime 1 equals exact_pdf exactly.
+#
+# Validation (no Merlushkin & Hawkes 1995a available):
+#   * TR(t) matches the existing exact/asymptotic density machinery to ~1e-12.
+#   * regime 1 == fl.exact_pdf  (already tested, MC-confirmed step module).
+#   * regime 1 / regime 2 are continuous at t = T.
+# ---------------------------------------------------------------------------
+
+
+class TestShutSurvivor:
+    """shut_survivor evaluates the HJC shut-time survivor matrix TR(t)."""
+
+    def test_TR_zero_is_identity(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        tres = 1e-4
+        comp = fl.shut_survivor_components(tres, mec1)
+        TR0 = fl.shut_survivor(0.0, tres, comp)
+        np.testing.assert_allclose(TR0, np.eye(mec1.kF), atol=1e-12)
+
+    def test_TR_shape(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        tres = 1e-4
+        comp = fl.shut_survivor_components(tres, mec1)
+        TR = fl.shut_survivor(0.5 * tres, tres, comp)
+        assert TR.shape == (mec1.kF, mec1.kF)
+
+    def test_TR_below_tres_equals_expQ_FF(self, ch82_pulse):
+        """For u < tres, TR(u) = [exp(Q.u)]_FF (all openings are missed)."""
+        import scipy.linalg as sla
+        mec0, mec1, phi_shut, T = ch82_pulse
+        tres = 1e-4
+        comp = fl.shut_survivor_components(tres, mec1)
+        for u in [0.2 * tres, 0.7 * tres]:
+            TR = fl.shut_survivor(u, tres, comp)
+            expQ_FF = sla.expm(mec1.Q * u)[mec1.kA:, mec1.kA:]
+            np.testing.assert_allclose(TR, expQ_FF, atol=1e-10)
+
+    def test_TR_density_matches_existing_machinery(self, chme97_pulse):
+        """phi . TR(t-tres) . QFA . exp(QAA.tres) . uA == fl.exact_pdf(t).
+
+        Cross-checks TR(t) across all three regimes (exact f0, f0-f1,
+        asymptotic) against the independently-implemented step pdf.
+        """
+        mec0, mec1, phi_shut, T = chme97_pulse
+        tres = 7e-4
+        comp = fl.shut_survivor_components(tres, mec1)
+        roots = fl.asymptotic_roots(tres, mec1)
+        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
+        eigvals, g00, g10, g11 = fl.gamma_coefficients(tres, phi_shut, mec1)
+        uA = np.ones((mec1.kA, 1))
+        expA = qml.expQt(mec1.QAA, tres)
+        for t in [1.2 * tres, 1.8 * tres, 2.5 * tres, 5 * tres]:
+            TR = fl.shut_survivor(t - tres, tres, comp)
+            mine = float((phi_shut @ TR @ mec1.QFA @ expA @ uA).ravel()[0])
+            exact = float(fl.exact_pdf(t, tres, roots, areas, eigvals, g00, g10, g11))
+            assert mine == pytest.approx(exact, rel=1e-6)
+
+
+class TestApparentPulsePdf:
+    """apparent_pulse_pdf: missed-events first-latency density of a pulse."""
+
+    def test_zero_at_and_before_tres(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        tres = 1e-4
+        for t in [0.0, 0.5 * tres, tres]:
+            f = fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0)
+            assert float(f) == 0.0
+
+    def test_scalar_and_array(self, ch82_pulse):
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        T = 1e-3
+        tres = 1e-4
+        f = fl.apparent_pulse_pdf(3e-4, T, tres, phi_shut, mec1, mec0)
+        assert isinstance(float(f), float)
+        t = np.array([2e-4, 5e-4, 9e-4])   # all within (tres, T+tres)
+        fa = fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0)
+        assert fa.shape == t.shape
+
+    def test_regime1_equals_exact_pdf(self, ch82_pulse):
+        """For tres < t < T the apparent pulse density equals the step pdf."""
+        mec0, mec1, phi_shut, T = ch82_pulse
+        T = 1e-3
+        tres = 1e-4
+        roots = fl.asymptotic_roots(tres, mec1)
+        areas = fl.asymptotic_areas(tres, roots, phi_shut, mec1)
+        eigvals, g00, g10, g11 = fl.gamma_coefficients(tres, phi_shut, mec1)
+        for t in [3e-4, 5.5e-4, 8e-4]:
+            f = float(fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0))
+            ex = float(fl.exact_pdf(t, tres, roots, areas, eigvals, g00, g10, g11))
+            assert f == pytest.approx(ex, rel=1e-6)
+
+    def test_continuous_at_T(self, ch82_pulse):
+        """regime 1 and regime 2 agree at the pulse end t = T."""
+        mec0, mec1, phi_shut, T = ch82_pulse
+        T = 1e-3
+        tres = 1e-4
+        left = float(fl.apparent_pulse_pdf(T - 1e-9, T, tres, phi_shut, mec1, mec0))
+        right = float(fl.apparent_pulse_pdf(T + 1e-9, T, tres, phi_shut, mec1, mec0))
+        assert right == pytest.approx(left, rel=1e-4)
+
+    def test_regime2_value_regression_ch82(self, ch82_pulse):
+        mec0, mec1, phi_shut, T = ch82_pulse
+        T = 1e-3
+        tres = 1e-4
+        f = float(fl.apparent_pulse_pdf(T + 0.5 * tres, T, tres, phi_shut, mec1, mec0))
+        assert f == pytest.approx(6.310685, rel=1e-4)
+
+    def test_regime2_value_regression_chme97(self, chme97_pulse):
+        mec0, mec1, phi_shut, T = chme97_pulse
+        T = 5e-3
+        tres = 7e-4
+        f = float(fl.apparent_pulse_pdf(T + 0.5 * tres, T, tres, phi_shut, mec1, mec0))
+        assert f == pytest.approx(21.068117, rel=1e-4)
+
+    def test_requires_T_greater_than_tres(self, ch82_pulse):
+        """CHME97 §4 assumes the pulse is longer than the dead time."""
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        with pytest.raises(ValueError):
+            fl.apparent_pulse_pdf(1e-4, 5e-5, 1e-4, phi_shut, mec1, mec0)
+
+
+# ---------------------------------------------------------------------------
+# Phase 2c — after-pulse regime (CHME97 Eq 4.4) + normalisation
+# ---------------------------------------------------------------------------
+# The after-pulse tail (t >= T + tres) is built from the reduced zero-
+# concentration {A,B} survivor R_BB(t): at c = 0 the set C is absorbing and
+# cannot open, so only the B-block of TR0 survives the products of Eq 4.4, and
+# the reduced Q0_BB (carrying the B→C leak) is non-singular — avoiding the zero
+# eigenvalue that breaks the asymptotic root-finder on the full Q0_FF.
+#
+# Validation (no Merlushkin & Hawkes 1995a):
+#   * tres -> 0 : regime 3 -> Phase-1 ideal after-pulse density (validated to
+#     ~1e-12 against an ODE) — exercises Term A, the Eq-4.4 double integral and
+#     the reduced survivor together.
+#   * the conditional pdf integrates to 1 over [tres, inf).
+#   * continuity at t = T + tres when opening rates are concentration-
+#     independent (the usual case; Q1_BA == Q0_BA).
+# ---------------------------------------------------------------------------
+
+
+class TestApparentPulseAfter:
+    """Regime 3 (Eq 4.4): missed-events first latency after the pulse ends."""
+
+    def test_regime3_reduces_to_ideal_as_tres_zero(self, ch82_pulse):
+        """As tres -> 0 the apparent after-pulse density -> ideal_pulse_pdf·PR."""
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        T = 5e-4
+        PR_ideal = fl.pulse_PR_ge_one(T, phi_shut, mec1, mec0)
+        tres = 1e-8
+        for t in [T + 3e-4, T + 8e-4, T + 2e-3]:
+            app = fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0, nquad=8)
+            ide = fl.ideal_pulse_pdf(t - tres, T, phi_shut, mec1, mec0) * PR_ideal
+            assert app == pytest.approx(ide, rel=1e-3)
+
+    def test_regime3_reduces_to_ideal_chme97(self, chme97_pulse):
+        mec0, mec1, phi_shut, _ = chme97_pulse
+        T = 3e-3
+        PR_ideal = fl.pulse_PR_ge_one(T, phi_shut, mec1, mec0)
+        tres = 1e-8
+        for t in [T + 3e-4, T + 2e-3]:
+            app = fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0, nquad=8)
+            ide = fl.ideal_pulse_pdf(t - tres, T, phi_shut, mec1, mec0) * PR_ideal
+            assert app == pytest.approx(ide, rel=1e-3)
+
+    def test_regime3_positive(self, ch82_pulse):
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        T = 5e-4
+        tres = 1e-4
+        for t in [T + 1.5 * tres, T + 3 * tres, T + 10 * tres]:
+            f = fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0, nquad=24)
+            assert float(f) > 0.0
+
+    def test_nquad_converges(self, ch82_pulse):
+        """The trapezium double integral is stable in nquad."""
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        T = 5e-4
+        tres = 1e-4
+        t = T + 1.5 * tres
+        v16 = fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0, nquad=16)
+        v32 = fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0, nquad=32)
+        assert v32 == pytest.approx(v16, rel=2e-3)
+
+    def test_continuous_at_T_plus_tres(self, ch82_pulse):
+        """Conc-independent gating (Q1_BA == Q0_BA) ⇒ continuous at t = T+tres."""
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        T = 5e-4
+        tres = 1e-4
+        left = fl.apparent_pulse_pdf(T + tres - 1e-9, T, tres, phi_shut, mec1, mec0, nquad=24)
+        right = fl.apparent_pulse_pdf(T + tres + 1e-9, T, tres, phi_shut, mec1, mec0, nquad=24)
+        assert float(right) == pytest.approx(float(left), rel=1e-2)
+
+
+class TestApparentPulsePRgeOne:
+    """apparent_pulse_PR_ge_one: P(R>=1) by integrating the density."""
+
+    @pytest.mark.slow
+    def test_in_unit_interval(self, ch82_pulse):
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        T = 5e-4
+        tres = 1e-4
+        PR = fl.apparent_pulse_PR_ge_one(T, tres, phi_shut, mec1, mec0, nquad=8,
+                                         upper=1.2e-2)
+        assert 0.0 < PR <= 1.0
+
+    @pytest.mark.slow
+    def test_conditional_pdf_integrates_to_one(self, ch82_pulse):
+        """density / P(R>=1) integrates to 1 over [tres, inf)."""
+        from scipy.integrate import quad
+        mec0, mec1, phi_shut, _ = ch82_pulse
+        T = 5e-4
+        tres = 1e-4
+        comp = fl.shut_survivor_components(tres, mec1)
+        PR = fl.apparent_pulse_PR_ge_one(T, tres, phi_shut, mec1, mec0, nquad=12,
+                                         upper=1.2e-2)
+        f = lambda t: fl.apparent_pulse_pdf(t, T, tres, phi_shut, mec1, mec0,
+                                            components=comp, nquad=12) / PR
+        I1, _ = quad(f, tres, T, limit=60)
+        I2, _ = quad(f, T, T + tres, limit=30)
+        I3, _ = quad(f, T + tres, 1.2e-2, limit=120)
+        assert I1 + I2 + I3 == pytest.approx(1.0, abs=1e-2)

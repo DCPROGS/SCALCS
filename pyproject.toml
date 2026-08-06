@@ -1,65 +1,49 @@
 [build-system]
-requires = ["setuptools>=64", "wheel"]
+requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "scalcs"
-version = "0.5.1"
-description = "Q-matrix calculations of ion channel properties"
-readme = "README.md"
+version = "1.0.0"
+description = "Pure-Python Q-matrix formalism for ion channel kinetics"
+authors = [
+    { name = "Remigijus Lape", email = "r.lape@ucl.ac.uk" },
+    { name = "Christoph Schmidt-Hieber" },
+]
+license = { text = "GPL-2.0" }
+readme = "README.rst"
 requires-python = ">=3.10"
-# LICENSE.MD is the verbatim GNU GPL version 2 (June 1991). No source file
-# carries an "or (at your option) any later version" header, so this is
-# declared as v2 only.
-license = { text = "GPL-2.0-only" }
-authors = [{ name = "Remis Lape", email = "remis.lp@gmail.com" }]
-keywords = ["scalcs", "ion-channels", "q-matrix", "single-channel", "kinetics"]
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
-    "Topic :: Scientific/Engineering",
     "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-]
-
-# Runtime imports, verified against the source tree:
-#   numpy, scipy, matplotlib, pandas  - numerics and plotting
-#   Deprecated                        - scalcs/{qmatlib,pdfs,hjclib}.py
-#   tabulate                          - scalcs/{pdfs,scalcslib}.py
-#   pyyaml                            - mechanism serialisation
-# Deprecated and tabulate were imported but never declared, so a clean
-# `pip install` produced an import error on first use.
-dependencies = [
-    "numpy",
-    "scipy",
-    "matplotlib",
-    "pandas",
-    "Deprecated",
-    "tabulate",
-    "pyyaml",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Physics",
 ]
 
 [project.optional-dependencies]
-# The Qt front end (QtSCALCS.py, gui/) is not needed for the library itself.
-gui = ["PyQt5"]
-test = ["pytest"]
+gui = ["PyQt5>=5.12"]
+dev = ["pytest>=7", "pytest-cov"]
 
 [project.urls]
-Homepage = "https://github.com/DCPROGS/SCALCS"
-Repository = "https://github.com/DCPROGS/SCALCS"
+Homepage = "https://github.com/remislp/SCALCS"
+Repository = "https://github.com/remislp/SCALCS"
 
-# The previous setup.py used find_packages(where="src"), but there is no src/
-# directory in this repository, so it matched nothing and `pip install` shipped
-# an empty distribution. The importable packages actually live at the top level:
-# `scalcs` imports `from samples import samples`, and the Qt front end imports
-# `from gui import myqtcommon`, so all three must be installed.
-[tool.setuptools]
-packages = ["scalcs", "samples", "gui"]
-include-package-data = true
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["scalcs*"]
 
-[tool.setuptools.package-data]
-samples = ["*.yaml", "*.xlsx"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
