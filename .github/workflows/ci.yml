@@ -1,0 +1,119 @@
+# SCALCS has never had CI. Nothing but a local test run has ever gated a change,
+# and HJCFIT's documented entry point now imports this package
+# (scalcs.scsim.extract_burst_intervals), so a regression here reaches another
+# project.
+#
+# The suite is fast -- about 15 s for the 404 non-slow tests -- so the matrix
+# covers every supported Python rather than one representative version.
+
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # requires-python is >=3.10; every version in that range is tested.
+          - { name: linux-py310, os: ubuntu-24.04,  python: '3.10' }
+          - { name: linux-py311, os: ubuntu-24.04,  python: '3.11' }
+          - { name: linux-py312, os: ubuntu-24.04,  python: '3.12' }
+          - { name: linux-py313, os: ubuntu-24.04,  python: '3.13', slow: true }
+          - { name: macos,       os: macos-14,      python: '3.13' }
+          # The Qt tests need a Qt binding, and PyQt5 wheels on Windows are
+          # self-contained -- no system OpenGL or X libraries to install first.
+          # Without a binding they importorskip, which is a silent pass.
+          - { name: windows-gui, os: windows-2022,  python: '3.12', gui: true }
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          if [ "${{ matrix.gui }}" = "true" ]; then
+            pip install -e '.[dev,gui]' matplotlib
+          else
+            pip install -e '.[dev]'
+          fi
+          pip list
+
+      - name: Tests
+        shell: bash
+        run: pytest -m "not slow"
+
+      # Statistical convergence of the simulator against the analytic means in
+      # scburst. About a minute, and the seeds are fixed, so it is a real gate
+      # rather than a flaky one.
+      - name: Slow tests
+        if: matrix.slow
+        shell: bash
+        run: pytest -m "slow"
+
+  package:
+    name: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      # The wheel once shipped the modules without the icon, the About-box
+      # animation or the sample mechanism, because package-data was not
+      # declared. Installing the built wheel into a clean environment and
+      # looking for those files is the only way to catch that: an editable
+      # install reads them from the source tree and cannot fail.
+      - name: Install the wheel and check its contents
+        run: |
+          python -m venv /tmp/check
+          /tmp/check/bin/pip install --upgrade pip
+          /tmp/check/bin/pip install dist/*.whl
+          cd /tmp
+          /tmp/check/bin/python - <<'PY'
+          from importlib.resources import files
+          import scalcs
+
+          expected = [
+              ('scalcs.gui',     'SCALCS.ICO'),
+              ('scalcs.gui',     'dca2.gif'),
+              ('scalcs.samples', 'Flip_a1GlyRWT_Burz2004.yaml'),
+          ]
+          missing = [f'{p}/{n}' for p, n in expected if not files(p).joinpath(n).is_file()]
+          if missing:
+              raise SystemExit('missing from the installed wheel: ' + ', '.join(missing))
+
+          from scalcs import scsim, scburst, qmatlib, mechanism, scalcsio
+          print('installed wheel imports and carries its data files')
+          PY

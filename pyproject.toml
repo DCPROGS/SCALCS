@@ -25,6 +25,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Topic :: Scientific/Engineering :: Physics",
 ]
@@ -34,8 +35,9 @@ gui = ["PyQt5>=5.12"]
 dev = ["pytest>=7", "pytest-cov"]
 
 [project.urls]
-Homepage = "https://github.com/remislp/SCALCS"
-Repository = "https://github.com/remislp/SCALCS"
+Homepage = "https://github.com/DCPROGS/SCALCS"
+Repository = "https://github.com/DCPROGS/SCALCS"
+Issues = "https://github.com/DCPROGS/SCALCS/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
