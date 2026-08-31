@@ -207,3 +207,63 @@ class TestBurstPDFComponents:
         """Shut times inside burst PDF has kB components."""
         eigs, w = scburst.shut_times_inside_burst_pdf_components(ch82)
         assert len(eigs) == ch82.kB
+
+
+# ---------------------------------------------------------------------------
+# length_prob_above  (ideal survivor S(t) = P(burst length > t))
+# length_cond_pdf_tres  (conditional density f(t | t > tres))
+# ---------------------------------------------------------------------------
+
+class TestConditionalLengthPdf:
+
+    def test_survivor_at_zero_is_one(self, ch82):
+        """S(0) = P(length > 0) = 1 (the ideal pdf is normalised over (0, inf))."""
+        assert scburst.length_prob_above(ch82, 0.0) == pytest.approx(1.0, abs=1e-9)
+
+    def test_survivor_in_unit_interval(self, ch82):
+        S = scburst.length_prob_above(ch82, 50e-6)
+        assert 0.0 < S < 1.0
+
+    def test_survivor_decreasing(self, ch82):
+        """S(t) is monotone decreasing in t."""
+        ts = [0.0, 25e-6, 50e-6, 100e-6, 1e-3]
+        S = [scburst.length_prob_above(ch82, t) for t in ts]
+        assert all(S[i] > S[i + 1] for i in range(len(S) - 1))
+
+    def test_survivor_array_input(self, ch82):
+        ts = np.array([25e-6, 50e-6, 100e-6])
+        S = scburst.length_prob_above(ch82, ts)
+        assert S.shape == ts.shape
+
+    def test_cond_pdf_zero_below_tres(self, ch82):
+        """The conditional density is zero for t < tres."""
+        tres = 50e-6
+        assert scburst.length_cond_pdf_tres(ch82, 0.5 * tres, tres) == 0.0
+
+    def test_cond_pdf_equals_pdf_over_survivor(self, ch82):
+        """For t >= tres, f(t|t>tres) = f(t) / S(tres)."""
+        tres, t = 50e-6, 2e-3
+        S = scburst.length_prob_above(ch82, tres)
+        f = float(np.ravel(scburst.length_pdf(ch82, t))[0])
+        fc = scburst.length_cond_pdf_tres(ch82, t, tres)
+        assert fc == pytest.approx(f / S, rel=1e-9)
+
+    def test_cond_pdf_integrates_to_one(self, ch82):
+        """The conditional density integrates to 1 over [tres, inf)."""
+        tres = 50e-6
+        t = np.logspace(np.log10(tres), np.log10(0.5), 20000)
+        fc = scburst.length_cond_pdf_tres(ch82, t, tres)
+        assert np.trapezoid(fc, t) == pytest.approx(1.0, abs=1e-3)
+
+    def test_cond_pdf_array_input(self, ch82):
+        tres = 50e-6
+        t = np.array([60e-6, 1e-3, 5e-3])
+        fc = scburst.length_cond_pdf_tres(ch82, t, tres)
+        assert fc.shape == t.shape
+
+    def test_cond_pdf_reduces_to_ideal_as_tres_to_zero(self, ch82):
+        """As tres -> 0, S(tres) -> 1 so f(t|t>tres) -> f(t)."""
+        t = 2e-3
+        f = float(np.ravel(scburst.length_pdf(ch82, t))[0])
+        fc = scburst.length_cond_pdf_tres(ch82, t, 1e-12)
+        assert fc == pytest.approx(f, rel=1e-6)

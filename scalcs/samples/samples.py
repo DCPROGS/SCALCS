@@ -32,6 +32,32 @@ def CH82():
 
     return  mechanism.Mechanism(RateList, CycleList, mtitle=mectitle, rtitle=ratetitle) #, fastblk, KBlk)
 
+def CH82_reduced():
+    
+    mectitle = 'CH82-reduced'
+    ratetitle = 'CH82 numerical example'
+
+    A2RS = mechanism.State('A', 'A2R*', 60e-12)
+    ARS  = mechanism.State('A', 'AR*', 60e-12)
+    A2R  = mechanism.State('B', 'A2R', 0.0)
+    AR   = mechanism.State('B', 'AR', 0.0)
+    R    = mechanism.State('C', 'R', 0.0)
+
+    RateList = [
+         mechanism.Rate(15.0, AR, ARS, name='beta1', limits=[1e-15,1e+7]),
+         mechanism.Rate(15000.0, A2R, A2RS, name='beta2', limits=[1e-15,1e+7]),
+         mechanism.Rate(3000.0, ARS, AR, name='alpha1', limits=[1e-15,1e+7]),
+         mechanism.Rate(500.0, A2RS, A2R, name='alpha2', limits=[1e-15,1e+7]),
+         mechanism.Rate(2000.0, AR, R, name='k(-1)', limits=[1e-15,1e+7]),
+         mechanism.Rate(2 * 2000.0, A2R, AR, name='2k(-2)', limits=[1e-15,1e+7]),
+         mechanism.Rate(2 * 5.0e07, R, AR, name='2k(+1)', eff='c', limits=[1e-15,1e+10]),  
+         mechanism.Rate(5.0e08, AR, A2R, name='k(+2)', eff='c', limits=[1e-15,1e+10]),
+         ]
+
+    CycleList = []
+    return  mechanism.Mechanism(RateList, CycleList, mtitle=mectitle, rtitle=ratetitle) #, fastblk, KBlk)
+
+
 def AChR_diamond():
     
     mectitle = 'diamond'
@@ -62,6 +88,56 @@ def AChR_diamond():
          mechanism.Rate(2.0e08, R, ARa, name='k(+1a)', eff='c', limits=[1e-2,1e+10]),
          mechanism.Rate(10000.0, ARb, R, name='k(-1b)', limits=[1e-2,1e+6]),
          mechanism.Rate(4.0e08, R, ARb, name='k(+1b)', eff='c', limits=[1e-2,1e+10])         
+         ]
+
+    CycleList = [mechanism.Cycle(['A2R', 'ARa', 'R', 'ARb'])]
+
+    return  mechanism.Mechanism(RateList, CycleList, mtitle=mectitle, rtitle=ratetitle)
+
+def AChR_diamond_short_mono():
+    """AChR_diamond variant tuned so the ideal and apparent (missed-events) burst-length
+    pdfs diverge strongly.
+
+    The monoliganded openings are made **short and fast**: both closing rates are
+    raised to alpha1a = alpha1b = 50000 s^-1 (mean open ~20 us, well below a
+    typical dead time of 50-100 us), and both opening rates to beta1a = beta1b =
+    2000 s^-1. The di-liganded gating (beta2, alpha2 -> A2R* open ~500 us) and all
+    binding/unbinding rates are left at the published AChR_diamond values.
+
+    At low agonist concentration bursts then initiate with a short monoliganded
+    opening that finite resolution misses, so the apparent (missed-events) burst-length pdf
+    departs markedly from the ideal one -- unlike the published mechanism, where
+    they nearly overlap. See the notebooks for the Monte-Carlo demonstration.
+    """
+
+    mectitle = 'diamond (short mono)'
+    ratetitle = 'AChR_diamond, fast short monoliganded openings (missed-events divergent)'
+
+    A2RS = mechanism.State('A', 'A2R*', 60e-12)
+    ARSa  = mechanism.State('A', 'AR*a', 60e-12)
+    ARSb  = mechanism.State('A', 'AR*b', 60e-12)
+    A2R  = mechanism.State('B', 'A2R', 0.0)
+    ARa   = mechanism.State('B', 'ARa', 0.0)
+    ARb   = mechanism.State('B', 'ARb', 0.0)
+    R    = mechanism.State('C', 'R', 0.0)
+
+    RateList = [
+         mechanism.Rate(2000.0, ARa, ARSa, name='beta1a', limits=[1e-2,1e+6]),
+         mechanism.Rate(50000.0, ARSa, ARa, name='alpha1a', limits=[1e-2,1e+6]),
+         mechanism.Rate(2000.0, ARb, ARSb, name='beta1b', limits=[1e-2,1e+6]),
+         mechanism.Rate(50000.0, ARSb, ARb, name='alpha1b', limits=[1e-2,1e+6]),
+         mechanism.Rate(52000.0, A2R, A2RS, name='beta2', limits=[1e-2,1e+6]),
+         mechanism.Rate(2000.0, A2RS, A2R, name='alpha2', limits=[1e-2,1e+6]),
+
+         mechanism.Rate(1500.0, A2R, ARb, name='k(-2a)', limits=[1e-2,1e+6]),
+         mechanism.Rate(2.0e08, ARb, A2R, name='k(+2a)', eff='c', limits=[1e-2,1e+10]),
+         mechanism.Rate(10000.0, A2R, ARa, name='k(-2b)', limits=[1e-2,1e+6]),
+         mechanism.Rate(4.0e08, ARa, A2R, name='k(+2b)', eff='c', limits=[1e-2,1e+10]),
+
+         mechanism.Rate(1500.0, ARa, R, name='k(-1a)', limits=[1e-2,1e+6]),
+         mechanism.Rate(2.0e08, R, ARa, name='k(+1a)', eff='c', limits=[1e-2,1e+10]),
+         mechanism.Rate(10000.0, ARb, R, name='k(-1b)', limits=[1e-2,1e+6]),
+         mechanism.Rate(4.0e08, R, ARb, name='k(+1b)', eff='c', limits=[1e-2,1e+10])
          ]
 
     CycleList = [mechanism.Cycle(['A2R', 'ARa', 'R', 'ARb'])]
