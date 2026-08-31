@@ -154,6 +154,68 @@ def length_cond_pdf(mec, t):
     vec = vec.transpose()
     return vec
 
+def length_prob_above(mec, t):
+    """
+    Ideal burst-length survivor S(t) = P(burst length > t).
+
+    Computed from the burst-length pdf components: with
+    f(t) = sum_i w_i exp(-eigs_i t), the survivor is
+    S(t) = sum_i (w_i / eigs_i) exp(-eigs_i t), so S(0) = 1.
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    t : float or array_like
+        Burst length(s).
+
+    Returns
+    -------
+    S : float or ndarray
+        P(burst length > t).
+    """
+
+    eigs, w = length_pdf_components(mec)
+    eigs, w = np.real(eigs), np.real(w)
+    t = np.asarray(t, dtype=float)
+    S = (w / eigs * np.exp(-eigs * np.atleast_1d(t)[:, np.newaxis])).sum(axis=1)
+    return S.reshape(t.shape) if t.ndim else float(S[0])
+
+def length_cond_pdf_tres(mec, t, tres):
+    """
+    Burst-length pdf conditional on the burst being resolvable, f(t | t > tres).
+
+    The ordinary ideal pdf renormalised over [tres, inf): f(t) / S(tres) for
+    t >= tres, and 0 for t < tres, where S(tres) = P(length > tres) (see
+    :func:`length_prob_above`). It integrates to 1 over [tres, inf) and so is
+    directly comparable with the apparent (missed-events) burst-length pdf, which is also
+    zero below tres. As tres -> 0, S(tres) -> 1 and this reduces to the ordinary
+    :func:`length_pdf`.
+
+    Parameters
+    ----------
+    mec : dcpyps.Mechanism
+        The mechanism to be analysed.
+    t : float or array_like
+        Burst length(s).
+    tres : float
+        Resolution (dead time) tres.
+
+    Returns
+    -------
+    f : float or ndarray
+        Conditional density f(t | t > tres); 0 for t < tres.
+    """
+
+    eigs, w = length_pdf_components(mec)
+    eigs, w = np.real(eigs), np.real(w)
+    S = float((w / eigs * np.exp(-eigs * tres)).sum())
+    t = np.asarray(t, dtype=float)
+    flat = np.atleast_1d(t)
+    f = (w * np.exp(-eigs * flat[:, np.newaxis])).sum(axis=1) / S
+    f = np.where(flat >= tres, f, 0.0)
+    return f.reshape(t.shape) if t.ndim else float(f[0])
+
 def length_no_single_openings_pdf_components(mec):
     """
     Calculate time constants and amplitudes for an ideal (no missed events)

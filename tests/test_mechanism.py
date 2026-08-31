@@ -21,7 +21,40 @@ from scalcs.mechanism import (
     identity,
     multiply,
 )
-from scalcs.samples.samples import CH82, CCO
+from scalcs.samples.samples import CH82, CCO, AChR_diamond, AChR_diamond_short_mono
+
+
+# ---------------------------------------------------------------------------
+# AChR_diamond_short_mono — missed-events-divergent variant (short, fast mono openings)
+# ---------------------------------------------------------------------------
+
+def _rate(mec, name):
+    return next(r._rateconstants[0] for r in mec.Rates if r._name == name)
+
+
+class TestAChRDiamondShortMono:
+
+    def test_builds_with_diamond_topology(self):
+        mec = AChR_diamond_short_mono()
+        assert (mec.kA, mec.kB, mec.kC) == (3, 3, 1)
+
+    def test_mono_openings_are_short_and_fast(self):
+        """Both monoliganded closing rates raised to 50000/s (open ~20 us)."""
+        mec = AChR_diamond_short_mono()
+        assert _rate(mec, 'alpha1a') == pytest.approx(50000.0)
+        assert _rate(mec, 'alpha1b') == pytest.approx(50000.0)
+        assert _rate(mec, 'beta1a') == pytest.approx(2000.0)
+        assert _rate(mec, 'beta1b') == pytest.approx(2000.0)
+
+    def test_differs_from_published_diamond(self):
+        """The variant changes the mono limb relative to the published set."""
+        assert _rate(AChR_diamond_short_mono(), 'alpha1a') != _rate(AChR_diamond(), 'alpha1a')
+
+    def test_diliganded_opening_unchanged(self):
+        """Di-liganded gating (the long, resolvable openings) is left as published."""
+        mec, pub = AChR_diamond_short_mono(), AChR_diamond()
+        assert _rate(mec, 'alpha2') == _rate(pub, 'alpha2')
+        assert _rate(mec, 'beta2') == _rate(pub, 'beta2')
 
 
 # ---------------------------------------------------------------------------

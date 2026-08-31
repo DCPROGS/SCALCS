@@ -367,6 +367,21 @@ def bisect_intervals(sa, sb, tres, Q11, Q22, Q12, Q21, k1, k2):
 #    while (len(done) < k1) and (nsplit < 1000):
     while todo:
         svv = todo.pop()
+
+        # An interval known to contain exactly one root cannot be split any
+        # further: bisect_split terminates only when the mid-point count is a
+        # *third* value strictly between the two endpoint counts, which never
+        # occurs once a single root is isolated.  Handing such an interval to
+        # bisect_split makes it spin the full ntrymax loop and emit a spurious
+        # "unable to split intervals" warning.  This is the k1 == 1 case
+        # (single-state partition: e.g. the del Castillo-Katz / CCO open and
+        # within-burst-gap survivors, or any monoliganded kB == 1 gap), where
+        # the top-level interval holds the lone root from the outset.  Bracket
+        # it directly instead.
+        if (svv[3] - svv[2]) == 1:
+            done.append([svv[0], svv[1]])
+            continue
+
         sa1, sc, sb2, nga1, ngc, ngb2 = bisect_split(svv[0], svv[1], svv[2], svv[3],
             tres, Q11, Q22, Q12, Q21, k1, k2)
 #        nsplit += 1
