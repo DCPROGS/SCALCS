@@ -33,6 +33,10 @@ import random
 
 import numpy as np
 
+#: SCN property flag marking an interval of unknown length
+#: (``dcio.formats.scn.FLAG_UNUSABLE``).
+FLAG_UNUSABLE = 8
+
 
 def transition_probability(Q):
     r"""Embedded-chain (jump) probability matrix of a Q matrix.
@@ -186,11 +190,25 @@ def impose_resolution(tints, ampls, tres):
     return np.array(out_t), np.array(out_a)
 
 
-def _burst_segments(tints, ampls, tcrit):
-    r"""Split a record at shut intervals >= ``tcrit`` and return the bursts.
+def _burst_segments(tints, ampls, tcrit, flags=None):
+    r"""Split a record into bursts and return them.
 
     Shared by :func:`extract_bursts` and :func:`extract_burst_intervals`, which
     differ only in what they report about one and the same segmentation.
+
+    The convention is the one EKDIST states in ``Bursts.slice_bursts`` and
+    dcpyps followed:
+
+      1. no gap longer than ``tcrit`` is required before the first burst of a
+         record -- the first defined opening is a valid burst start;
+      2. an unusable interval is a valid end of burst.
+
+    Both matter. Time-course fitting in SCAN leaves the last interval of a
+    record with no defined length, flagged unusable; it still ends the burst
+    before it. A leading interval may likewise be bad, and is discarded, but
+    the first defined opening after it starts a real burst. Dropping the runs
+    at both ends -- as this once did -- loses two bursts from every record,
+    which at 30 uM in the Burzomato 2004 set is a third of the data.
 
     Parameters
     ----------
@@ -198,32 +216,44 @@ def _burst_segments(tints, ampls, tcrit):
         Alternating interval record (ideal or apparent).
     tcrit : float
         Critical shut time separating within- from between-burst gaps [s].
-
-    A run at either end of the record is discarded only when it is genuinely
-    incomplete -- that is, when the record does not begin, or end, with a shut
-    interval at least ``tcrit`` long. A record that starts with a long shut
-    yields a first burst whose start was observed, and dropping it throws away
-    data. Discarding both ends unconditionally, as this once did, loses two
-    bursts from every record.
+    flags : array_like of int, optional
+        Per-interval SCN property flags. An interval is unusable when
+        ``flags & 8`` is set (``dcio.formats.scn.FLAG_UNUSABLE``). Without
+        them no interval is treated as unusable, which is right for a
+        simulated record and wrong for an experimental one.
 
     Returns
     -------
     list of list of (float, float)
-        One list of ``(interval, amplitude)`` pairs per burst, trimmed to start
-        and end on an opening. Runs at the ends of the record are included
-        when a separator bounds them and dropped when one does not.
+        One list of ``(interval, amplitude)`` pairs per burst, each starting
+        and ending on an opening.
     """
     tints = np.asarray(tints, float)
     ampls = np.asarray(ampls, float)
-
     if tints.size == 0:
         return []
 
-    separator = (ampls == 0.0) & (tints >= tcrit)
+    if flags is None:
+        unusable = np.zeros(tints.shape, dtype=bool)
+    else:
+        unusable = (np.asarray(flags, int) & FLAG_UNUSABLE) != 0
+
+    # A burst ends at a between-burst gap or at an interval of unknown length.
+    # An unusable interval has no measured duration, so it is never compared
+    # with tcrit.
+    separator = ((ampls == 0.0) & (tints >= tcrit) & ~unusable) | unusable
+
+    # Trim to the first and last defined opening, so the record begins and
+    # ends on one. What lies outside is a shut interval or an unusable one,
+    # and neither belongs to a burst.
+    opening = (ampls != 0.0) & ~unusable
+    if not opening.any():
+        return []
+    lo, hi = int(np.argmax(opening)), int(len(opening) - np.argmax(opening[::-1]))
 
     raw, seg = [], []
-    for t, a, sep in zip(tints, ampls, separator):
-        if sep:                                      # between-burst separator
+    for t, a, sep in zip(tints[lo:hi], ampls[lo:hi], separator[lo:hi]):
+        if sep:
             if seg:
                 raw.append(seg)
             seg = []
@@ -232,14 +262,8 @@ def _burst_segments(tints, ampls, tcrit):
     if seg:
         raw.append(seg)
 
-    # A run is complete only if a separator bounds it. Anything between two
-    # separators is; the runs at the ends are only if the record itself starts
-    # or ends with one.
-    first = 0 if separator[0] else 1
-    last = len(raw) if separator[-1] else len(raw) - 1
-
     bursts = []
-    for seg in raw[first:max(first, last)]:
+    for seg in raw:
         while seg and seg[0][1] == 0.0:             # trim leading shut
             seg = seg[1:]
         while seg and seg[-1][1] == 0.0:            # trim trailing shut
@@ -249,7 +273,7 @@ def _burst_segments(tints, ampls, tcrit):
     return bursts
 
 
-def extract_bursts(tints, ampls, tcrit):
+def extract_bursts(tints, ampls, tcrit, flags=None):
     r"""Split a record into bursts at shut intervals >= ``tcrit``.
 
     A burst is a run of intervals delimited by shut (closed) intervals at least
@@ -274,13 +298,13 @@ def extract_bursts(tints, ampls, tcrit):
     --------
     extract_burst_intervals : the same bursts, as interval sequences.
     """
-    bursts = _burst_segments(tints, ampls, tcrit)
+    bursts = _burst_segments(tints, ampls, tcrit, flags)
     lengths = [sum(t for t, _ in seg) for seg in bursts]
     nops = [sum(1 for _, a in seg if a != 0.0) for seg in bursts]
     return np.array(lengths), np.array(nops, dtype=int)
 
 
-def extract_burst_intervals(tints, ampls, tcrit):
+def extract_burst_intervals(tints, ampls, tcrit, flags=None):
     r"""Split a record into bursts and return the intervals of each.
 
     The segmentation is that of :func:`extract_bursts`, which reduces each
@@ -308,7 +332,7 @@ def extract_burst_intervals(tints, ampls, tcrit):
     extract_bursts : the same bursts, as lengths and opening counts.
     """
     return [np.array([t for t, _ in seg], dtype=float)
-            for seg in _burst_segments(tints, ampls, tcrit)]
+            for seg in _burst_segments(tints, ampls, tcrit, flags)]
 
 
 def extract_subresolution_bursts(tints, ampls, tres, tcrit=None):

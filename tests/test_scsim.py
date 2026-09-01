@@ -228,21 +228,45 @@ class TestExtractBursts:
         lengths, nops = scsim.extract_bursts(t, a, tcrit=0.5)
         assert len(lengths) == 2
 
-    def test_drops_genuinely_partial_ends(self):
-        """A record that begins and ends on an opening did not show the start
-        of its first burst or the end of its last, so both are dropped."""
+    def test_first_opening_starts_a_burst(self):
+        """No gap is required before the first burst: a record beginning on a
+        defined opening begins on a burst. EKDIST states this convention in
+        Bursts.slice_bursts and dcpyps followed it."""
         t = np.array([0.1, 1.0, 0.2, 1.0, 0.3])
         a = np.array([5.0, 0.0, 5.0, 0.0, 5.0])
         lengths, nops = scsim.extract_bursts(t, a, tcrit=0.5)
-        assert len(lengths) == 1
-        assert lengths[0] == pytest.approx(0.2)
+        assert len(lengths) == 3
+        assert lengths == pytest.approx([0.1, 0.2, 0.3])
 
     def test_no_separators_at_all(self):
-        """With nothing to cut on, the whole record is one partial burst."""
+        """With nothing to cut on, the record is a single burst."""
         t = np.array([0.1, 0.01, 0.1])
         a = np.array([5.0, 0.0, 5.0])
         lengths, nops = scsim.extract_bursts(t, a, tcrit=0.5)
-        assert len(lengths) == 0
+        assert len(lengths) == 1
+        assert lengths[0] == pytest.approx(0.21)
+
+    def test_unusable_interval_ends_a_burst(self):
+        """Time-course fitting leaves the last interval with no defined
+        length, flagged unusable. It still ends the burst before it, and its
+        meaningless duration is never compared with tcrit."""
+        #                     o    s     o    unusable shut
+        t = np.array([0.1, 0.01, 0.1, 0.00005])
+        a = np.array([5.0, 0.0,  5.0, 0.0])
+        flags = np.array([0, 0, 0, scsim.FLAG_UNUSABLE])
+        lengths, nops = scsim.extract_bursts(t, a, tcrit=0.5, flags=flags)
+        assert len(lengths) == 1
+        assert lengths[0] == pytest.approx(0.21)
+
+    def test_unusable_shut_cuts_mid_record(self):
+        """An unusable interval in the middle ends one burst and the next
+        begins after it, however short its nominal duration."""
+        t = np.array([0.1, 0.00004, 0.2])
+        a = np.array([5.0, 0.0, 5.0])
+        flags = np.array([0, scsim.FLAG_UNUSABLE, 0])
+        lengths, _ = scsim.extract_bursts(t, a, tcrit=0.5, flags=flags)
+        assert len(lengths) == 2
+        assert lengths == pytest.approx([0.1, 0.2])
 
     @pytest.mark.slow
     def test_ch82_mean_openings_per_burst(self, ch82):
@@ -281,13 +305,15 @@ class TestExtractBurstIntervals:
         assert bursts[1] == pytest.approx([0.2, 0.02, 0.3, 0.01, 0.1])
         assert bursts[2] == pytest.approx([0.5])
 
-    def test_drops_genuinely_partial_ends(self):
-        """Begins and ends on an opening: neither end burst was seen whole."""
+    def test_first_opening_starts_a_burst(self):
+        """A record beginning on a defined opening begins on a burst."""
         t = np.array([0.1, 1.0, 0.2, 1.0, 0.3])
         a = np.array([5.0, 0.0, 5.0, 0.0, 5.0])
         bursts = scsim.extract_burst_intervals(t, a, tcrit=0.5)
-        assert len(bursts) == 1
-        assert bursts[0] == pytest.approx([0.2])
+        assert len(bursts) == 3
+        assert [b.tolist() for b in bursts] == [pytest.approx([0.1]),
+                                               pytest.approx([0.2]),
+                                               pytest.approx([0.3])]
 
     def test_odd_length(self, co):
         """A burst starts and ends on an opening, so it has an odd number of
