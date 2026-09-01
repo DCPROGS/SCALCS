@@ -583,7 +583,7 @@ def relaxation_taus(mec, pulse: SquarePulse) -> RelaxationResult:
     Notes
     -----
     This replaces the old ``weighted_taus()`` which returned only 2 scalars,
-    breaking the ``scplotlib`` call that expected 4 return values.
+    breaking the ``sccurves`` call that expected 4 return values.
     """
     if not isinstance(pulse, SquarePulse):
         raise TypeError(

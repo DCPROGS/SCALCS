@@ -16,7 +16,7 @@ from scalcs import scalcsio
 from scalcs.samples import samples
 from scalcs import version
 from scalcs import scalcslib as scl
-from scalcs import scplotlib as scpl
+from scalcs import sccurves as scpl
 from scalcs import popen
 from scalcs import scburst
 
