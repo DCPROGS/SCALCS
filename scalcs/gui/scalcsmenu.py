@@ -8,7 +8,7 @@ try:
 except:
     raise ImportError("pyqt module is missing")
 
-from scalcs import scplotlib as scpl
+from scalcs import sccurves as scpl
 from scalcs import scalcslib as scl
 from scalcs import popen
 from scalcs.gui import myqtcommon

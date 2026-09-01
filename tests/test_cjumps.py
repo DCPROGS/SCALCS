@@ -42,7 +42,7 @@ Test strategy
 * Pulse profile tests: shape, scalar input, boundary values.
 * Solver tests: shapes, Popen in [0,1], occupancy sum, initial condition,
   ODE vs matrix agreement, JumpResult tuple unpacking.
-* RelaxationResult tests: signs, component count, fix for scplotlib bug.
+* RelaxationResult tests: signs, component count, fix for sccurves bug.
 * jump_summary tests: key presence, current scaling, tau consistency.
 * printout tests: smoke test and configurable biophysics.
 
@@ -396,7 +396,7 @@ class TestRelaxationTaus:
     """relaxation_taus() returns a RelaxationResult for a SquarePulse.
 
     This replaces the broken weighted_taus() which claimed to return 4 values
-    but actually returned 2, breaking scplotlib.conc_jump_on_off_taus_versus_conc_plot.
+    but actually returned 2, breaking sccurves.conc_jump_on_off_taus_versus_conc_plot.
     """
 
     @pytest.fixture(scope="class")
@@ -441,10 +441,10 @@ class TestRelaxationTaus:
     def test_ampl_off_length(self, mec, result):
         assert len(result.ampl_off) == mec.k - 1
 
-    # ---- scplotlib compatibility: can unpack all four arrays ----
+    # ---- sccurves compatibility: can unpack all four arrays ----
 
     def test_four_array_unpack(self, mec, square_pulse):
-        """Simulate scplotlib usage: unpack tau_on_weighted, tau_on,
+        """Simulate sccurves usage: unpack tau_on_weighted, tau_on,
         tau_off_weighted, tau_off — this must NOT crash and all must be valid."""
         result = cjumps.relaxation_taus(mec, square_pulse)
         wton  = result.tau_on_weighted
