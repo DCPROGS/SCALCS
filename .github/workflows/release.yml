@@ -1,0 +1,109 @@
+# Publishing SCALCS to PyPI.
+#
+# The repository holds no API token. PyPI verifies this workflow's OIDC
+# identity instead (Trusted Publishing), so there is no secret to leak,
+# rotate, or hand to anyone.
+#
+# A version number cannot be reused once uploaded, so publishing runs only on
+# a v* tag, never on an ordinary push. Every push still builds and checks the
+# artifacts, so a tag is only ever cut from something already known to build.
+
+name: Release
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build sdist and wheel
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Build
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+
+      # twine check --strict is what catches the metadata that makes a PyPI
+      # page useless. pyproject pointed `readme` at a README.rst that does not
+      # exist; the build succeeded anyway and produced no long_description, so
+      # the project page would have rendered as a bare title. Nothing before
+      # this ran twine at all.
+      - name: Check metadata
+        run: |
+          twine check --strict dist/*
+          ls -la dist/
+
+      # SCALCS is pure Python, so exactly one wheel serves every platform.
+      - name: One universal wheel
+        run: |
+          n=$(ls dist/*.whl | wc -l)
+          test "$n" -eq 1 || { echo "expected 1 wheel, got $n"; exit 1; }
+          ls dist/*-py3-none-any.whl >/dev/null || {
+            echo "wheel is not py3-none-any:"; ls dist/*.whl; exit 1; }
+
+      # The icon, the About-box animation and the sample mechanism have been
+      # left out of a build before, because package data was not declared.
+      # An sdist that cannot rebuild the wheel has the same shape of problem.
+      - name: Wheel carries its data files, and builds from the sdist alone
+        run: |
+          python - <<'PY'
+          import glob, zipfile
+          names = zipfile.ZipFile(glob.glob('dist/*.whl')[0]).namelist()
+          expected = ['scalcs/gui/SCALCS.ICO', 'scalcs/gui/dca2.gif',
+                      'scalcs/samples/Flip_a1GlyRWT_Burz2004.yaml']
+          missing = [e for e in expected if e not in names]
+          raise SystemExit('missing from the wheel: ' + ', '.join(missing) if missing else 0)
+          PY
+          mkdir -p /tmp/fromsdist && tar -xzf dist/*.tar.gz -C /tmp/fromsdist
+          cd /tmp/fromsdist/*/
+          python -m build --wheel --outdir /tmp/sdist-wheel
+          ls -la /tmp/sdist-wheel
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: publish to PyPI
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build]
+    runs-on: ubuntu-24.04
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/scalcs
+
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+
+      - name: What is about to be published
+        run: ls -la dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
