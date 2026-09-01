@@ -87,3 +87,35 @@ class TestReturnsArraysNotFigures:
         sccurves.burst_length_pdf(ch82)
         sccurves.open_time_pdf(ch82, tres=8e-5)
         assert len(plt.get_fignums()) == before
+
+
+class TestImportableWithoutMatplotlib:
+    """The module calculates curves and returns arrays; matplotlib is not a
+    SCALCS dependency. It used to import pylab at module level, so every
+    consumer needed matplotlib to get at functions that never draw -- and CI
+    never noticed, because nothing imported the module outside the GUI tests.
+    """
+
+    def test_imports_with_matplotlib_unavailable(self):
+        import importlib
+        import sys
+
+        blocked = ["matplotlib", "matplotlib.pyplot", "pylab"]
+        saved = {k: sys.modules.get(k) for k in blocked}
+        saved["scalcs.sccurves"] = sys.modules.pop("scalcs.sccurves", None)
+        try:
+            for k in blocked:
+                sys.modules[k] = None          # makes `import k` raise ImportError
+            module = importlib.import_module("scalcs.sccurves")
+            assert hasattr(module, "burst_length_pdf")
+        finally:
+            for k, v in saved.items():
+                if v is None:
+                    sys.modules.pop(k, None)
+                else:
+                    sys.modules[k] = v
+            importlib.import_module("scalcs.sccurves")
+
+    def test_png_save_pdf_fig_still_exists(self):
+        """It is allowed to need matplotlib -- it is the one that draws."""
+        assert callable(sccurves.png_save_pdf_fig)

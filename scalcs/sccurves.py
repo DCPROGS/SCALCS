@@ -17,7 +17,6 @@ __date__ ="$07-Dec-2010 23:01:09$"
 
 import math
 import numpy as np
-from pylab import figure, semilogx, savefig
 
 from scalcs import qmatlib as qml
 from scalcs import scalcslib as scl
@@ -573,6 +572,15 @@ def subset_time_pdf(mec, tres, state1, state2,
     return t, ipdf, spdf
 
 def png_save_pdf_fig(outfile, ints, mec, conc, tres, type):
+    """Save a dwell-time histogram with fitted pdfs to *outfile*.
+
+    The only function in this module that draws anything, and so the only one
+    that needs matplotlib -- which is not a SCALCS dependency. Importing it
+    here rather than at module level keeps the rest of the module, which just
+    returns arrays, importable without it.
+    """
+    from matplotlib.pyplot import figure, savefig, semilogx
+
     x, y, dx = prepare_hist(ints, tres)
     mec.set_eff('c', conc)
     if type == 'open':
