@@ -246,6 +246,21 @@ class TestExtractBursts:
         assert len(lengths) == 1
         assert lengths[0] == pytest.approx(0.21)
 
+    def test_shut_exactly_tcrit_is_within_burst(self):
+        """tcrit is the time such that gaps *longer* than it end a burst, so a
+        shut interval exactly equal to it does not. No real record exercises
+        this -- none of the four Burzomato 2004 files contains a shut time
+        equal to its tcrit -- so the convention is pinned here instead. EKDIST
+        makes the same choice."""
+        t = np.array([0.1, 0.5, 0.2])          # middle shut is exactly tcrit
+        a = np.array([5.0, 0.0, 5.0])
+        lengths, _ = scsim.extract_bursts(t, a, tcrit=0.5)
+        assert len(lengths) == 1               # one burst, not two
+        assert lengths[0] == pytest.approx(0.8)
+
+        lengths, _ = scsim.extract_bursts(t, a, tcrit=0.4999)
+        assert len(lengths) == 2               # just above, and it cuts
+
     def test_unusable_interval_ends_a_burst(self):
         """Time-course fitting leaves the last interval with no defined
         length, flagged unusable. It still ends the burst before it, and its

@@ -241,7 +241,10 @@ def _burst_segments(tints, ampls, tcrit, flags=None):
     # A burst ends at a between-burst gap or at an interval of unknown length.
     # An unusable interval has no measured duration, so it is never compared
     # with tcrit.
-    separator = ((ampls == 0.0) & (tints >= tcrit) & ~unusable) | unusable
+    # Strictly greater: tcrit is the time such that gaps *longer* than it are
+    # between-burst. EKDIST's Bursts.slice_bursts uses the same test, and a
+    # shut interval exactly equal to tcrit is within-burst by that reading.
+    separator = ((ampls == 0.0) & (tints > tcrit) & ~unusable) | unusable
 
     # Trim to the first and last defined opening, so the record begins and
     # ends on one. What lies outside is a shut interval or an unusable one,
@@ -274,7 +277,7 @@ def _burst_segments(tints, ampls, tcrit, flags=None):
 
 
 def extract_bursts(tints, ampls, tcrit, flags=None):
-    r"""Split a record into bursts at shut intervals >= ``tcrit``.
+    r"""Split a record into bursts at shut intervals longer than ``tcrit``.
 
     A burst is a run of intervals delimited by shut (closed) intervals at least
     ``tcrit`` long. Each burst is trimmed to start and end on an opening; the
@@ -348,7 +351,7 @@ def extract_subresolution_bursts(tints, ampls, tres, tcrit=None):
 
     This function scans the **ideal** (full-resolution) record -- e.g. straight
     from :func:`simulate_intervals`, *before* :func:`impose_resolution`. It
-    segments the record at between-burst gaps (shut intervals ``>= tcrit``) and
+    segments the record at between-burst gaps (shut intervals ``> tcrit``) and
     returns each segment that is
 
     * bracketed by gaps on both sides (a complete burst, not a record end);
@@ -397,14 +400,14 @@ def extract_subresolution_bursts(tints, ampls, tres, tcrit=None):
     i = 0
     while i < n:
         # find a between-burst gap (long shut); the burst starts right after it
-        if not (not is_open[i] and tints[i] >= tcrit):
+        if not (not is_open[i] and tints[i] > tcrit):
             i += 1
             continue
         j = i + 1
         # accumulate the segment up to the next between-burst gap
         k = j
         has_resolved_open = False
-        while k < n and not (not is_open[k] and tints[k] >= tcrit):
+        while k < n and not (not is_open[k] and tints[k] > tcrit):
             if is_open[k] and tints[k] >= tres:
                 has_resolved_open = True
             k += 1
