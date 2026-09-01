@@ -12,7 +12,7 @@ authors = [
 ]
 license = "GPL-2.0-only"
 license-files = ["LICENSE.MD"]
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.24",
