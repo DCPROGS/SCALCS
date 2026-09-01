@@ -199,19 +199,31 @@ def _burst_segments(tints, ampls, tcrit):
     tcrit : float
         Critical shut time separating within- from between-burst gaps [s].
 
+    A run at either end of the record is discarded only when it is genuinely
+    incomplete -- that is, when the record does not begin, or end, with a shut
+    interval at least ``tcrit`` long. A record that starts with a long shut
+    yields a first burst whose start was observed, and dropping it throws away
+    data. Discarding both ends unconditionally, as this once did, loses two
+    bursts from every record.
+
     Returns
     -------
     list of list of (float, float)
         One list of ``(interval, amplitude)`` pairs per burst, trimmed to start
-        and end on an opening. The first and last (necessarily partial) bursts
-        are discarded.
+        and end on an opening. Runs at the ends of the record are included
+        when a separator bounds them and dropped when one does not.
     """
     tints = np.asarray(tints, float)
     ampls = np.asarray(ampls, float)
 
+    if tints.size == 0:
+        return []
+
+    separator = (ampls == 0.0) & (tints >= tcrit)
+
     raw, seg = [], []
-    for t, a in zip(tints, ampls):
-        if a == 0.0 and t >= tcrit:                 # between-burst separator
+    for t, a, sep in zip(tints, ampls, separator):
+        if sep:                                      # between-burst separator
             if seg:
                 raw.append(seg)
             seg = []
@@ -220,8 +232,14 @@ def _burst_segments(tints, ampls, tcrit):
     if seg:
         raw.append(seg)
 
+    # A run is complete only if a separator bounds it. Anything between two
+    # separators is; the runs at the ends are only if the record itself starts
+    # or ends with one.
+    first = 0 if separator[0] else 1
+    last = len(raw) if separator[-1] else len(raw) - 1
+
     bursts = []
-    for seg in raw[1:-1]:                            # drop partial first/last
+    for seg in raw[first:max(first, last)]:
         while seg and seg[0][1] == 0.0:             # trim leading shut
             seg = seg[1:]
         while seg and seg[-1][1] == 0.0:            # trim trailing shut
