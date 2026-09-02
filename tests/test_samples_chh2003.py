@@ -122,12 +122,17 @@ def test_loader_accepts_a_name():
 
 # ------------------------------------------------------------------- EC50
 
-@pytest.mark.parametrize('setname, expected', [('true1', 3.2932e-6),
-                                               ('true2', 9.6858e-6)])
+@pytest.mark.parametrize('setname, expected', [('true1', 3.2993e-6),
+                                               ('true2', 9.6961e-6)])
 def test_EC50(setname, expected):
     """The paper prints 3.3 uM for true 1 (p. 713) and 9.697 uM for true 2
-    (p. 716). True 1 agrees; true 2 comes out 0.11 % low, which is recorded
-    as an open question of the reproduction rather than fixed here."""
+    (p. 716); both agree.
+
+    These values changed on 2026-09-02, when popen.EC50 was made to converge on
+    the concentration rather than stopping once Popen was within 0.001 of half
+    maximal. The old, less accurate values were 3.2932 and 9.6858 uM, and the
+    0.11 % gap to the paper's 9.697 was for a while thought to be a
+    discrepancy in the paper."""
     mec = samples.AChR_diamond(setname)
     npt.assert_allclose(popen.EC50(mec, 0), expected, rtol=1e-4)
 

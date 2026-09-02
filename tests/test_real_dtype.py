@@ -96,11 +96,17 @@ def test_maxPopen_with_dead_time_is_real_and_silent():
     assert float(maxP) == pytest.approx(0.953453875851444, rel=1e-9)
 
 
+# The two EC50 reference values below changed on 2026-09-02, when popen.EC50
+# was made to converge on the concentration instead of stopping as soon as
+# Popen was within 0.001 of half maximal. The old values, 2.3560804576936233e-06
+# and 2.4032020668474956e-06, sit at responses of 0.4994 and 0.4999 rather than
+# 0.5. Nothing about the real-dtype cast these tests guard has changed.
+
 def test_EC50_with_dead_time_is_real():
     m = samples.CH82()
     ec50 = popenlib.EC50(m, TRES)
     assert not np.iscomplexobj(ec50)
-    assert float(ec50) == pytest.approx(2.3560804576936233e-06, rel=1e-9)
+    assert float(ec50) == pytest.approx(2.3588952204118414e-06, rel=1e-9)
 
 
 def test_dead_time_results_are_unchanged_by_the_real_cast():
@@ -108,5 +114,5 @@ def test_dead_time_results_are_unchanged_by_the_real_cast():
     m = samples.CH82()
     assert float(popenlib.maxPopen(m, 0)[0]) == pytest.approx(0.9677411458194296,
                                                               rel=1e-9)
-    assert float(popenlib.EC50(m, 0)) == pytest.approx(2.4032020668474956e-06,
+    assert float(popenlib.EC50(m, 0)) == pytest.approx(2.4038117781533595e-06,
                                                        rel=1e-9)
