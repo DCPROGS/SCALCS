@@ -1,5 +1,91 @@
 from scalcs import mechanism
 
+#: The two sets of "true" rate constants of Table 1 in Colquhoun, Hatton &
+#: Hawkes (2003) *J Physiol* 547:699-728 -- the ones used there to simulate
+#: experiments. ``'true1'`` has two binding sites that differ from each other
+#: but are independent, and is what :func:`AChR_diamond` is built with;
+#: ``'true2'`` has sites that interact, with negative cooperativity in the
+#: binding of agonist to the shut channel (K1a = 20 uM but K2a = 240 uM;
+#: K1b = 0.33 uM but K2b = 4 uM).
+#:
+#: The four columns of *initial guesses* in the same table are not here. They
+#: are starting points for one particular fitting exercise rather than
+#: properties of the mechanism.
+CHH2003_RATES = {
+    'true1': {
+        'beta1a': 50.0, 'alpha1a': 6000.0,
+        'beta1b': 150.0, 'alpha1b': 50000.0,
+        'beta2': 52000.0, 'alpha2': 2000.0,
+        'k(-2a)': 1500.0, 'k(+2a)': 2.0e08,
+        'k(-2b)': 10000.0, 'k(+2b)': 4.0e08,
+        'k(-1a)': 1500.0, 'k(+1a)': 2.0e08,
+        'k(-1b)': 10000.0, 'k(+1b)': 4.0e08,
+    },
+    'true2': {
+        'beta1a': 80.0, 'alpha1a': 4000.0,
+        'beta1b': 10.0, 'alpha1b': 40000.0,
+        'beta2': 50000.0, 'alpha2': 2000.0,
+        'k(-2a)': 12000.0, 'k(+2a)': 0.5e08,
+        'k(-2b)': 2000.0, 'k(+2b)': 5.0e08,
+        'k(-1a)': 400.0, 'k(+1a)': 0.2e08,
+        'k(-1b)': 100.0, 'k(+1b)': 3.0e08,
+    },
+}
+
+
+def apply_rates(mec, rates):
+    """Set rate constants on ``mec``, given by name, by dict, or in order.
+
+    Parameters
+    ----------
+    mec : Mechanism
+    rates : str, dict, sequence or None
+        A key of :data:`CHH2003_RATES` such as ``'true2'``; a dict keyed by
+        rate name; a sequence in the mechanism's own rate order; or ``None``,
+        which leaves the mechanism as built.
+
+        A dict (or named set) may cover only some of the rates, which is what
+        lets a scheme 1 rate set be applied to :func:`AChR_diamond_desens`
+        without saying anything about its two desensitisation rates. A
+        *sequence* must have one entry per rate, since it carries no names.
+
+    Returns
+    -------
+    Mechanism
+        ``mec``, modified in place, for chaining.
+    """
+    if rates is None:
+        return mec
+
+    if isinstance(rates, str):
+        try:
+            rates = CHH2003_RATES[rates]
+        except KeyError:
+            raise ValueError(
+                "unknown rate set {0!r}; known sets are {1}".format(
+                    rates, ', '.join(sorted(CHH2003_RATES)))) from None
+
+    if isinstance(rates, dict):
+        names = [rate.name for rate in mec.Rates]
+        unknown = set(rates) - set(names)
+        if unknown:
+            raise ValueError("not rates of this mechanism: {0}".format(
+                ', '.join(sorted(unknown))))
+        for rate in mec.Rates:
+            if rate.name in rates:
+                rate.rateconstants = rates[rate.name]
+        mec.update_submat()
+        return mec
+
+    if len(rates) != len(mec.Rates):
+        raise ValueError(
+            "expected {0} rate constants, got {1}; pass a dict to set only "
+            "some of them".format(len(mec.Rates), len(rates)))
+    mec.set_rateconstants(rates)
+    mec.update_submat()
+    return mec
+
+
 def CH82():
     
     mectitle = 'CH82'
@@ -58,8 +144,26 @@ def CH82_reduced():
     return  mechanism.Mechanism(RateList, CycleList, mtitle=mectitle, rtitle=ratetitle) #, fastblk, KBlk)
 
 
-def AChR_diamond():
-    
+def AChR_diamond(rates=None):
+    """Scheme 1 of Colquhoun, Hatton & Hawkes (2003), *J Physiol* 547:699-728.
+
+    A nicotinic receptor with two binding sites that differ from each other,
+    denoted a and b. Seven states: three open (`AR*a`, `AR*b`, `A2R*`) and four
+    shut (`R`, `ARa`, `ARb`, `A2R`), arranged as a diamond with one cycle, so
+    one rate constant is fixed by microscopic reversibility.
+
+    Parameters
+    ----------
+    rates : str, dict, sequence or None
+        Rate constants, as taken by :func:`apply_rates`. The default leaves the
+        mechanism with the "true 1" rates of the paper's Table 1, which is what
+        this function has always returned.
+
+    See Also
+    --------
+    AChR_diamond_desens : the same mechanism plus a desensitised state.
+    load_AChR_diamond_independent_binding : with eqns (9) and (10) imposed.
+    """
     mectitle = 'diamond'
     ratetitle = 'from CHH 2003'
 
@@ -92,7 +196,94 @@ def AChR_diamond():
 
     CycleList = [mechanism.Cycle(['A2R', 'ARa', 'R', 'ARb'])]
 
-    return  mechanism.Mechanism(RateList, CycleList, mtitle=mectitle, rtitle=ratetitle)
+    mec = mechanism.Mechanism(RateList, CycleList, mtitle=mectitle, rtitle=ratetitle)
+    return apply_rates(mec, rates)
+
+
+def AChR_diamond_desens(rates=None, betaD=5.0, alphaD=1.4):
+    """Scheme 2 of Colquhoun, Hatton & Hawkes (2003), *J Physiol* 547:699-728.
+
+    :func:`AChR_diamond` with a single desensitised state, A2D, entered from
+    and left by the diliganded **open** state A2R*, as drawn in the paper's
+    Fig. 1B::
+
+        A2R  <-- beta2 / alpha2 -->  A2R*  <-- betaD / alphaD -->  A2D
+
+    Eight states: three open, four shut (statetypes B and C, as in scheme 1)
+    and A2D, which is statetype ``'D'``.
+
+    Used to *simulate* records at agonist concentrations high enough to
+    desensitise. The paper never fits scheme 2: high-concentration records are
+    simulated with it and then fitted with scheme 1, the desensitised periods
+    having been excised by dividing the record into clusters at a critical shut
+    time. With the default rates, the sojourns in A2D last 1/alphaD = 714 ms on
+    average and, at 10 uM, the clusters between them last about 240 ms and
+    contain about 400 openings -- roughly what is seen experimentally.
+
+    Parameters
+    ----------
+    rates : str, dict, sequence or None
+        Rate constants for the scheme 1 part, as taken by :func:`apply_rates`.
+        A named set or dict may leave ``betaD`` and ``alphaD`` untouched; a
+        bare sequence must supply all sixteen.
+    betaD, alphaD : float
+        Rate constants into and out of the desensitised state [s^-1]. The
+        defaults are the paper's. A much shorter-lived state (1/alphaD of about
+        1 ms) makes this the "extra shut state" of Salamone et al. (1999).
+
+    Notes
+    -----
+    Because A2D is statetype ``'D'``, it is **outside** the shut-state block
+    that the Q-matrix machinery uses: ``kF`` counts the B and C states only.
+    Anything in :mod:`scalcs.scalcslib`, :mod:`scalcs.popen` or
+    :mod:`scalcs.sccurves` that works from ``QFF``, ``QAF`` and ``QFA`` will
+    therefore describe this mechanism as though A2D did not exist. That is
+    correct for the burst and cluster calculations it is meant for, and wrong
+    for anything that ought to include desensitisation -- an equilibrium Popen
+    curve among them. Simulation is unaffected: :mod:`scalcs.scsim` walks the
+    full Q matrix.
+    """
+    mectitle = 'diamond + desensitised'
+    ratetitle = 'from CHH 2003 (scheme 2)'
+
+    A2RS = mechanism.State('A', 'A2R*', 60e-12)
+    ARSa = mechanism.State('A', 'AR*a', 60e-12)
+    ARSb = mechanism.State('A', 'AR*b', 60e-12)
+    A2R  = mechanism.State('B', 'A2R', 0.0)
+    ARa  = mechanism.State('B', 'ARa', 0.0)
+    ARb  = mechanism.State('B', 'ARb', 0.0)
+    R    = mechanism.State('C', 'R', 0.0)
+    A2D  = mechanism.State('D', 'A2D', 0.0)
+
+    RateList = [
+         mechanism.Rate(50.0, ARa, ARSa, name='beta1a', limits=[1e-2,1e+6]),
+         mechanism.Rate(6000.0, ARSa, ARa, name='alpha1a', limits=[1e-2,1e+6]),
+         mechanism.Rate(150.0, ARb, ARSb, name='beta1b', limits=[1e-2,1e+6]),
+         mechanism.Rate(50000.0, ARSb, ARb, name='alpha1b', limits=[1e-2,1e+6]),
+         mechanism.Rate(52000.0, A2R, A2RS, name='beta2', limits=[1e-2,1e+6]),
+         mechanism.Rate(2000.0, A2RS, A2R, name='alpha2', limits=[1e-2,1e+6]),
+
+         mechanism.Rate(1500.0, A2R, ARb, name='k(-2a)', limits=[1e-2,1e+6]),
+         mechanism.Rate(2.0e08, ARb, A2R, name='k(+2a)', eff='c', limits=[1e-2,1e+10]),
+         mechanism.Rate(10000.0, A2R, ARa, name='k(-2b)', limits=[1e-2,1e+6]),
+         mechanism.Rate(4.0e08, ARa, A2R, name='k(+2b)', eff='c', limits=[1e-2,1e+10]),
+
+         mechanism.Rate(1500.0, ARa, R, name='k(-1a)', limits=[1e-2,1e+6]),
+         mechanism.Rate(2.0e08, R, ARa, name='k(+1a)', eff='c', limits=[1e-2,1e+10]),
+         mechanism.Rate(10000.0, ARb, R, name='k(-1b)', limits=[1e-2,1e+6]),
+         mechanism.Rate(4.0e08, R, ARb, name='k(+1b)', eff='c', limits=[1e-2,1e+10]),
+
+         # appended last, so the scheme 1 rates keep the indices they have in
+         # AChR_diamond and the constrained loaders below go on working
+         mechanism.Rate(betaD, A2RS, A2D, name='betaD', limits=[1e-2,1e+6]),
+         mechanism.Rate(alphaD, A2D, A2RS, name='alphaD', limits=[1e-2,1e+6]),
+         ]
+
+    CycleList = [mechanism.Cycle(['A2R', 'ARa', 'R', 'ARb'])]
+
+    mec = mechanism.Mechanism(RateList, CycleList, mtitle=mectitle, rtitle=ratetitle)
+    return apply_rates(mec, rates)
+
 
 def AChR_diamond_short_mono():
     """AChR_diamond variant tuned so the ideal and apparent (missed-events) burst-length
@@ -145,10 +336,18 @@ def AChR_diamond_short_mono():
     return  mechanism.Mechanism(RateList, CycleList, mtitle=mectitle, rtitle=ratetitle)
 
 def load_AChR_diamond_independent_binding(rates=None):
+    """:func:`AChR_diamond` with the two binding sites constrained independent.
+
+    Imposes eqn (9) of Colquhoun, Hatton & Hawkes (2003) -- k(-2a) = k(-1a),
+    k(-2b) = k(-1b), k(+2b) = k(+1b) -- which with microscopic reversibility
+    also gives their eqn (10), k(+2a) = k(+1a). Ten free parameters remain.
+
+    ``rates`` is anything :func:`apply_rates` accepts, so a named set or a dict
+    now works as well as the ordered sequence this used to require.
+    """
     mec = AChR_diamond()
     # PREPARE RATE CONSTANTS.
-    if rates is not None:
-        mec.set_rateconstants(rates)
+    apply_rates(mec, rates)
     mec.Rates[11].is_constrained = True
     mec.Rates[11].constrain_func = mechanism.constrain_rate_multiple
     mec.Rates[11].constrain_args = [7, 1]             
