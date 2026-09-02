@@ -279,13 +279,81 @@ def asymptotic_roots(tres, QAA, QFF, QAF, QFA, kA, kF):
 
     roots = np.zeros(kA)
     for i in range(kA):
-        roots[i] = so.brentq(qml.detW, sro[i, 0], sro[i, 1],
-            args=(tres, QAA, QFF, QAF, QFA, kA, kF))
+        roots[i] = _refine_root(sro[i, 0], sro[i, 1], tres,
+                                QAA, QFF, QAF, QFA, kA, kF)
 
-#        roots[i] = so.bisect(qml.detW, sro[i,0], sro[i,1],
-#            args=(tres, QAA, QFF, QAF, QFA, kA, kF))
+    # A root of det[W(s)] = 0 is an s that is its own eigenvalue of H(s).
+    # Checking that is cheap next to the bisection that found it, and it is
+    # the only thing standing between a caller and a plausible-looking number
+    # produced in a regime where H(s) could not be evaluated at all.
+    #
+    # That regime is reachable by ordinary means: a mechanism whose
+    # concentration has never been set keeps its association rates
+    # unscaled, so CH82 straight from scalcs.samples has Q eigenvalues near
+    # -5e8 rather than -3e3. H(s) evaluates exp((QFF - s*I)*tres), so at
+    # tres = 10 us that asks for exp(5000). The old code returned whatever
+    # came back; this says what went wrong.
+    for i, root in enumerate(roots):
+        h = qml.H(root, tres, QAA, QFF, QAF, QFA, kF)
+        residual = np.min(np.abs(nplin.eigvals(h).real - root))
+        if residual > 1e-6 * max(abs(root), 1.0):
+            raise RuntimeError(
+                "asymptotic_roots: root {0} of {1} did not converge "
+                "(s = {2:.6g}, |eig(H(s)) - s| = {3:.3g}, |s|*tres = {4:.3g}). "
+                "The search reached a range where H(s) cannot be evaluated "
+                "usefully. Check that the mechanism's rates are set: an unset "
+                "concentration leaves association rates unscaled, which pushes "
+                "the Q eigenvalues orders of magnitude too fast and the roots "
+                "with them. Above |s|*tres of about 700 the matrix exponential "
+                "in H(s) overflows outright."
+                .format(i + 1, kA, root, residual, abs(root) * tres))
 
     return roots
+
+
+def _refine_root(sa, sb, tres, QAA, QFF, QAF, QFA, kA, kF):
+    """Locate the single root of det[W(s)] = 0 bracketed by [sa, sb].
+
+    Brent's method on det[W(s)] where that is trustworthy, and bisection on
+    the root count where it is not.
+
+    det[W(s)] is not usable at large |s|. It carries a factor
+    exp((QFF - s*I)*tres), so at s = -1.5e6 with tres = 60 us the determinant
+    is of order 1e53 -- far outside the range where its sign means anything.
+    Sampled across such a bracket it changes sign hundreds of times, all of it
+    noise, and at other resolutions it changes sign not at all while a root
+    provably sits inside. Handing either case to brentq gives "f(a) and f(b)
+    must have different signs", which is what CH82 did at most resolutions,
+    with the set of failing ones depending on the scipy version.
+
+    bisect_gFB is well behaved wherever detW is not: it counts eigenvalues of
+    H(s) that do not exceed s, and increments by one exactly at the root. That
+    count is what bracketed the root in the first place, so bisecting on it
+    cannot disagree with the bracket.
+    """
+
+    fa = qml.detW(sa, tres, QAA, QFF, QAF, QFA, kA, kF)
+    fb = qml.detW(sb, tres, QAA, QFF, QAF, QFA, kA, kF)
+
+    if np.isfinite(fa) and np.isfinite(fb) and fa * fb < 0:
+        return so.brentq(qml.detW, sa, sb,
+                         args=(tres, QAA, QFF, QAF, QFA, kA, kF))
+
+    # Bisect on the root count. The count at sa is some n; inside the bracket
+    # it becomes n + 1. Converge on the step.
+    nga = bisect_gFB(sa, tres, QAA, QFF, QAF, QFA, kA, kF)
+    lo, hi = sa, sb
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        if mid <= lo or mid >= hi:          # exhausted double precision
+            break
+        if bisect_gFB(mid, tres, QAA, QFF, QAF, QFA, kA, kF) > nga:
+            hi = mid
+        else:
+            lo = mid
+        if abs(hi - lo) <= 1e-12 * max(abs(lo), abs(hi)):
+            break
+    return 0.5 * (lo + hi)
 
 def bisect_gFB(s, tres, Q11, Q22, Q12, Q21, k1, k2):
     """
@@ -355,10 +423,35 @@ def bisect_intervals(sa, sb, tres, Q11, Q22, Q12, Q21, k1, k2):
     re-queued unconditionally.
     """
 
+    # The whole algorithm depends on nga and ngb being the root counts *at the
+    # current endpoints*. Widening a bound without recounting leaves a stale
+    # number behind, and the top-level interval is then entered claiming fewer
+    # roots than it holds -- which is how CH82 at its default concentration
+    # produced one bracket for two roots, and an IndexError several frames
+    # later in asymptotic_roots.
+    #
+    # Widening also has to repeat. A single multiplication by four is not
+    # enough whenever the outermost root lies more than four times below the
+    # starting bound, and nothing guaranteed that it did not.
+    #
+    # The lower bound is capped: H(s) evaluates exp((Q22 - s*I)*tres), so
+    # |s|*tres must stay under ln(float64 max) ~ 709.
+    floor = -700.0 / max(tres, 1e-20)
+
     nga = bisect_gFB(sa, tres, Q11, Q22, Q12, Q21, k1, k2)
-    if nga > 0: sa = sa * 4
+    while nga > 0 and sa > floor:
+        sa = max(sa * 4.0, floor)
+        nga = bisect_gFB(sa, tres, Q11, Q22, Q12, Q21, k1, k2)
+
+    # k1, not k2: the number of roots of det[W(s)] = 0 is the size of the
+    # partition being solved for, which is k1. Comparing against k2 made the
+    # test vacuously true whenever k2 > k1 -- for CH82, ngb < 3 always holds
+    # when there are only 2 roots -- so sb was moved on every call for no
+    # reason, again without recounting.
     ngb = bisect_gFB(sb, tres, Q11, Q22, Q12, Q21, k1, k2)
-    if ngb < k2: sb = sb / 4
+    while ngb < k1 and sb < -1e-30:
+        sb = sb / 4.0
+        ngb = bisect_gFB(sb, tres, Q11, Q22, Q12, Q21, k1, k2)
 
     done = []
     todo = [[sa, sb, nga, ngb]]
@@ -404,9 +497,15 @@ def bisect_intervals(sa, sb, tres, Q11, Q22, Q12, Q21, k1, k2):
         # ngb2 - ngc == 0: no roots in right half, discard silently
 
     if len(done) < k1:
-        sys.stderr.write(
-            "bisectHJC: Warning: Only {0:d} roots out of {1:d} were located.".
-            format(len(done), k1))
+        # This used to warn to stderr and return a short array, leaving the
+        # caller to fail with an IndexError several frames away, or to hand
+        # brentq an interval with no sign change. Neither message named the
+        # problem. Fail here, where the cause is known.
+        raise RuntimeError(
+            "bisectHJC: bracketed {0:d} of {1:d} roots of det[W(s)] = 0 in "
+            "[{2:.6g}, {3:.6g}] at tres = {4:g} s. The search range does not "
+            "contain them all, or roots are too close together to separate."
+            .format(len(done), k1, sa, sb, tres))
     return np.array(done)
 
 def bisect_split(sa, sb, nga, ngb, tres, Q11, Q22, Q12, Q21, k1, k2):
