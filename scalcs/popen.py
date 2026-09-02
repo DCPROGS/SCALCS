@@ -4,6 +4,7 @@ curve calculations.
 
 import math
 import numpy as np
+import scipy.optimize as so
 
 from scalcs import qmatlib as qml
 from scalcs import scalcslib as scl
@@ -139,41 +140,54 @@ def decline(mec, tres, eff='c'):
     """
     return (Popen(mec, tres, conc=1) < Popen0(mec, tres))
 
-def EC50(mec, tres, eff='c'):
+def EC50(mec, tres, eff='c', xtol=1e-15, rtol=1e-12):
     """
-    Estimate numerically the equilibrium EC50 for a specified mechanism.
-    If monotonic this is unambiguous. If not monotonic then returned is
-    a concentration for 50% of  the peak response to the left of the peak.
+    Find the equilibrium EC50 for a specified mechanism.
+
+    The concentration at which the response, measured from Popen at zero
+    concentration, is half of its maximum. If Popen is monotonic this is
+    unambiguous; if it is not, the value returned is on the rising side, to the
+    left of the peak, because the search is bracketed by the peak.
 
     Parameters
     ----------
     mec : instance of type Mechanism
     tres : float
         Time resolution (dead time).
+    xtol, rtol : float
+        Tolerances for the root finder, in concentration.
 
     Returns
     -------
     EC50 : float
-        Concentration at which Popen is 50% of its maximal value.
-    """
+        Concentration at which the response is 50% of its maximum.
 
+    Notes
+    -----
+    Until 2026-09 this bisected until Popen was within 0.001 of half maximal
+    and then stopped, which left the concentration wrong by a few tenths of a
+    percent -- 3.2932 uM instead of 3.2993 uM for the AChR mechanism of
+    Colquhoun, Hatton & Hawkes (2003), whose Table 1 gives 3.3. The tolerance
+    is now on the concentration rather than on Popen, and the root is found by
+    Brent's method rather than by bisection, so the answer is exact to about a
+    part in 10^12. Anything that used the old value will shift by ~0.2%.
+    """
     P0 = Popen0(mec, tres)
-    maxP, c2 = maxPopen(mec, tres)
-    c1 = 0
-    epsy = 0.001    # accuracy in Popen
-    perr = 2 * epsy
-    epsc = 0.1e-9    # accuracy in concentration 0.1 nM
-    nstepmax = int(math.log10(math.fabs(c1 - c2) / epsc) / math.log10(2) + 0.5)
-    nstep = 0
-    while math.fabs(perr) > epsy and nstep <= nstepmax:
-        conc = (c1 + c2) / 2
-        perr = math.fabs((Popen(mec, tres, conc) - P0) / (maxP - P0)) - 0.5
-        if perr < 0:
-            c1 = conc
-        elif perr > 0:
-            c2 = conc
-        nstep += 1
-    return conc
+    maxP, cmax = maxPopen(mec, tres)
+    if maxP == P0:
+        return float('nan')         # flat: there is no half-maximal response
+
+    def response(conc):
+        # P0 is by definition Popen at zero concentration, so the response
+        # there is zero without computing anything -- which also avoids the
+        # singular matrix that the finite-resolution Popen hits at conc = 0
+        if conc <= 0.0:
+            return -0.5
+        return math.fabs((Popen(mec, tres, conc) - P0) / (maxP - P0)) - 0.5
+
+    # bracketed by zero concentration (no response) and the peak (full
+    # response), which is what makes the root the one left of the peak
+    return so.brentq(response, 0.0, cmax, xtol=xtol, rtol=rtol)
 
 def nH(mec, tres, eff='c'):
     """

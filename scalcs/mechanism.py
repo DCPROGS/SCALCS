@@ -16,11 +16,13 @@ from __future__ import annotations
 # TODO: Check state numbers for consistency
 # TODO: Update docstrings
 
+import math
 import sys
 from collections.abc import Callable
 from typing import Any
 
 import numpy as np
+import scipy.optimize as so
 
 __all__ = [
     "identity",
@@ -228,6 +230,20 @@ class Rate:
         self.is_constrained = is_constrained
         self.constrain_func = constrain_func
         self.constrain_args = constrain_args
+        # set by Mechanism.set_EC50_constraint(): this rate is computed from a
+        # specified equilibrium EC50 together with all the other rates
+        self.ec50_constrained = False
+
+    @property
+    def is_free(self):
+        """True if this rate is a free parameter of a fit.
+
+        A rate is free unless it is held fixed, is a multiple of another rate,
+        is set by microscopic reversibility, or is computed from a specified
+        EC50.
+        """
+        return not (self.fixed or self.is_constrained or self.mr
+                    or self.ec50_constrained)
 
     def _set_name(self, name):
         self._name = name
@@ -594,6 +610,9 @@ class Mechanism:
         if Cycles is None:
             Cycles = []
 
+        # set by set_EC50_constraint(); read by update_constrains()
+        self._ec50_constraint = None
+
         self.Rates = Rates
 
         # TODO: construct cycles from Rates list
@@ -779,28 +798,19 @@ class Mechanism:
 
     def theta(self):
 
-        theta = []
-        for rate in self.Rates:
-            if not rate.fixed and not rate.is_constrained and not rate.mr:
-                theta.append(rate.unit_rate())
-        return np.array(theta)
+        return np.array([rate.unit_rate() for rate in self.Rates
+                         if rate.is_free])
 
     def get_free_parameter_names(self):
 
-        names = []
-        for rate in self.Rates:
-            if not rate.fixed and not rate.is_constrained and not rate.mr:
-                names.append(rate.name)
-        return names
+        return [rate.name for rate in self.Rates if rate.is_free]
 
 
     def theta_unsqueeze(self, theta):
 
         iter = 0
         for i in range(len(self.Rates)):
-            if ((not self.Rates[i].fixed) and
-              (not self.Rates[i].is_constrained) and
-              (not self.Rates[i].mr)):
+            if self.Rates[i].is_free:
                 self.Rates[i].rateconstants = theta[iter]
                 iter += 1
         self.update_constrains()
@@ -823,15 +833,177 @@ class Mechanism:
         self.update_constrains()
         self.update_mr()
 
-    def update_constrains(self):
+    def _apply_rate_constraints(self):
+        """Rates that are multiples of other rates, then microscopic reversibility.
 
+        Split out of :meth:`update_constrains` so that the EC50 constraint can
+        re-apply it for each trial value it tries, without recursing.
+        """
         for i in range(len(self.Rates)):
             if self.Rates[i].is_constrained:
                 args = self.Rates[i].constrain_args
                 func = self.Rates[i].constrain_func
                 self.Rates[i].rateconstants = func(self.Rates[args[0]].rateconstants, args[1])
         self.update_mr()
-                
+
+    def update_constrains(self):
+
+        self._apply_rate_constraints()
+        if self._ec50_constraint is not None:
+            self._solve_EC50_constraint()
+
+    def set_EC50_constraint(self, nrate, ec50, tres=0.0, eff='c', solver=None,
+                            on_unreachable='clamp'):
+        """Compute one rate constant from a specified equilibrium EC50.
+
+        The option described by Colquhoun, Hatton & Hawkes (2003), p. 702: an
+        EC50 measured independently is supplied, and the value of one rate
+        constant is then calculated at each stage of a fit from that EC50 and
+        the values of all the other rates. This reduces the number of free
+        parameters by one, and is an alternative to fixing a rate at a guessed
+        value.
+
+        The constrained rate is excluded from :meth:`theta` and from
+        :meth:`get_free_parameter_names`, and is recomputed by
+        :meth:`update_constrains` -- which means on every call to
+        :meth:`theta_unsqueeze`, i.e. at every iteration of a fit.
+
+        Parameters
+        ----------
+        nrate : int
+            Index of the rate to be computed.
+        ec50 : float
+            The equilibrium EC50 to impose [M].
+        tres : float
+            Resolution at which the EC50 is defined. Zero, the default, is the
+            ideal equilibrium EC50.
+        eff : str
+            Effector whose EC50 this is.
+        solver : callable, optional
+            ``solver(mec) -> float``, returning the value the rate should take,
+            or raising ``ArithmeticError`` if the EC50 cannot be reached. The
+            default solves numerically, which costs one call to ``popen.EC50``
+            per iteration and is therefore not cheap; a mechanism whose EC50
+            can be inverted in closed form can supply one here instead.
+        on_unreachable : {'clamp', 'raise'}
+            What to do when no value of the rate gives the specified EC50 --
+            which happens more readily than one might expect, because the EC50
+            reachable by raising an association rate constant does not fall to
+            zero but to a floor set by the other rates. ``'clamp'``, the
+            default, puts the rate at whichever of its limits is nearest to
+            satisfying the constraint and counts the event in
+            :attr:`ec50_clamped`, so that the fit continues and the likelihood
+            can move the other rates until the EC50 becomes reachable. This is
+            how the paper treats a rate that runs into a limit (p. 702).
+            ``'raise'`` raises ``ArithmeticError`` instead.
+
+        Notes
+        -----
+        The numerical default assumes the EC50 falls as the rate rises, which
+        holds for an association rate constant, and brackets the root by
+        expanding from the rate's current value.
+        """
+        if not 0 <= nrate < len(self.Rates):
+            raise IndexError(f"no rate with index {nrate}")
+        if not ec50 > 0:
+            raise ValueError("EC50 must be positive")
+        if on_unreachable not in ('clamp', 'raise'):
+            raise ValueError("on_unreachable must be 'clamp' or 'raise'")
+        self.Rates[nrate].ec50_constrained = True
+        self._ec50_constraint = dict(nrate=nrate, ec50=float(ec50),
+                                     tres=float(tres), eff=eff, solver=solver,
+                                     on_unreachable=on_unreachable, clamped=0)
+        self.update_constrains()
+
+    @property
+    def ec50_clamped(self):
+        """How often the EC50 constraint has been unreachable and clamped."""
+        if self._ec50_constraint is None:
+            return 0
+        return self._ec50_constraint['clamped']
+
+    def clear_EC50_constraint(self):
+        """Remove an EC50 constraint, making the rate free again."""
+        if self._ec50_constraint is not None:
+            self.Rates[self._ec50_constraint['nrate']].ec50_constrained = False
+            self._ec50_constraint = None
+
+    def _solve_EC50_constraint(self):
+        from scalcs import popen      # local: popen imports scalcslib
+
+        c = self._ec50_constraint
+        nrate, target, tres = c['nrate'], c['ec50'], c['tres']
+        rate = self.Rates[nrate]
+        # limits are normalised to [[lower, upper]] by Rate._check_limits
+        low, high = rate.limits[0] if rate.limits else (1e-4, 1e14)
+
+        def settle(value):
+            rate.rateconstants = float(value)
+            self._apply_rate_constraints()
+
+        def unreachable(nearest):
+            """The EC50 cannot be had at any allowed value of this rate."""
+            if c['on_unreachable'] == 'raise':
+                raise ArithmeticError(
+                    "cannot reach an EC50 of {0:g} M by changing {1} within "
+                    "[{2:g}, {3:g}]".format(target, rate.name, low, high))
+            c['clamped'] += 1
+            settle(nearest)
+
+        if c['solver'] is not None:
+            try:
+                value = float(c['solver'](self))
+            except ArithmeticError:
+                # a closed-form solver signals "no positive root" this way;
+                # more affinity is always the direction that lowers the EC50
+                unreachable(high)
+                return
+            if low <= value <= high:
+                settle(value)
+            else:
+                unreachable(high if value > high else low)
+            return
+
+        # popen.EC50 moves the effector; put it back when we are done
+        saved = self._effdict.get(c['eff'])
+
+        def mismatch(logk):
+            settle(math.exp(logk))
+            found = popen.EC50(self, tres, eff=c['eff'])
+            if not (found > 0) or not math.isfinite(found):
+                raise ArithmeticError(
+                    "no EC50 for this mechanism at rate {0:g}".format(
+                        math.exp(logk)))
+            return math.log(found) - math.log(target)
+
+        def restore():
+            if saved is not None:
+                self._effdict[c['eff']] = saved
+                self.update_submat()
+
+        loglow, loghigh = math.log(low), math.log(high)
+        x0 = min(max(math.log(float(np.ravel(rate.rateconstants)[0])),
+                     loglow), loghigh)
+        xlo = xhi = x0
+        flo = fhi = mismatch(x0)
+        # the EC50 falls as an association rate rises, so raising the rate
+        # lowers the mismatch; expand whichever end has not yet crossed zero
+        while flo > 0 and fhi > 0 and xhi < loghigh:
+            xhi = min(xhi + math.log(10.0), loghigh)
+            fhi = mismatch(xhi)
+        while flo < 0 and fhi < 0 and xlo > loglow:
+            xlo = max(xlo - math.log(10.0), loglow)
+            flo = mismatch(xlo)
+
+        if flo * fhi > 0:
+            unreachable(high if fhi > 0 else low)
+            restore()
+            return
+
+        root = so.brentq(mismatch, xlo, xhi, xtol=1e-12, rtol=1e-14)
+        settle(math.exp(root))
+        restore()
+
     def set_mr(self, mr, nrate, ncycle=0):
         """
         """
