@@ -93,20 +93,29 @@ def test_maxPopen_with_dead_time_is_real_and_silent():
                         if issubclass(w.category, np.exceptions.ComplexWarning)]
     assert not np.iscomplexobj(maxP), 'maxPopen returned %r' % (maxP,)
     assert not complex_warnings, '%d ComplexWarning(s)' % len(complex_warnings)
-    assert float(maxP) == pytest.approx(0.953453875851444, rel=1e-9)
+    assert float(maxP) == pytest.approx(0.970082292957507, rel=1e-9)
 
 
-# The two EC50 reference values below changed on 2026-09-02, when popen.EC50
-# was made to converge on the concentration instead of stopping as soon as
-# Popen was within 0.001 of half maximal. The old values, 2.3560804576936233e-06
-# and 2.4032020668474956e-06, sit at responses of 0.4994 and 0.4999 rather than
-# 0.5. Nothing about the real-dtype cast these tests guard has changed.
+# Every finite-dead-time reference value in this file changed on 2026-09-02,
+# for two reasons, neither of them to do with the real-dtype cast these tests
+# guard.
+#
+# First, popen.EC50 was made to converge on the concentration instead of
+# stopping as soon as Popen was within 0.001 of half maximal; the old values,
+# 2.3560804576936233e-06 and 2.4032020668474956e-06, sat at responses of 0.4994
+# and 0.4999 rather than 0.5.
+#
+# Second, and larger, scalcslib.exact_mean_open_shut_time was found to be too
+# big by twice the dead time, which fed straight into Popen at finite
+# resolution. maxPopen at a 30 us dead time was 0.9534, BELOW its value of
+# 0.9677 with no dead time -- the wrong way round, since missing brief
+# shuttings lengthens apparent openings. It is now 0.9701.
 
 def test_EC50_with_dead_time_is_real():
     m = samples.CH82()
     ec50 = popenlib.EC50(m, TRES)
     assert not np.iscomplexobj(ec50)
-    assert float(ec50) == pytest.approx(2.3588952204118414e-06, rel=1e-9)
+    assert float(ec50) == pytest.approx(2.4042844021469254e-06, rel=1e-9)
 
 
 def test_dead_time_results_are_unchanged_by_the_real_cast():

@@ -701,9 +701,15 @@ def exact_mean_open_shut_time(mec, tres):
     DARS = qml.dARSdS(tres, mec.QAA, mec.QFF, GAF, GFA, expQFF, mec.kA, mec.kF)
     DFRS = qml.dARSdS(tres, mec.QFF, mec.QAA, GFA, GAF, expQAA, mec.kF, mec.kA)
     uF, uA = np.ones((mec.kF, 1)), np.ones((mec.kA, 1))
-    # meanOpenTime = tres + phiA * DARS * QexpQF * uF
-    meanA = tres + np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))[0]
-    meanF = tres + np.dot(phiF, np.dot(np.dot(DFRS, QexpQA), uA))[0]
+    # The density is written in u = t - tres and integrates to 1, so a mean
+    # apparent duration is the DARS term PLUS tres. See the derivation in
+    # qmatlib.dARSdS: its dead-time term had the wrong sign until 2026-09-03,
+    # and while it did, this line had to subtract tres to cancel an error of
+    # 2*tres. Checked against eqns (121) and (122) of Colquhoun & Hawkes
+    # (1995b) and against the mean of the asymptotic HJC pdf; see
+    # tests/test_apparent_means.py.
+    meanA = np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))[0] + tres
+    meanF = np.dot(phiF, np.dot(np.dot(DFRS, QexpQA), uA))[0] + tres
 
     return meanA, meanF
 
@@ -745,8 +751,8 @@ def exact_mean_time(tres, QAA, QFF, QAF, kA, kF, GAF, GFA):
     DARS = qml.dARSdS(tres, QAA, QFF,
         GAF, GFA, expQFF, kA, kF)
     uF = np.ones((kF, 1))
-    # meanOpenTime = tres + phiA * DARS * QexpQF * uF
-    mean = tres + np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))[0]
+    # see exact_mean_open_shut_time for why this adds tres
+    mean = np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))[0] + tres
 
     return mean
 
@@ -1217,10 +1223,121 @@ def HJC_adjacent_mean_open_to_shut_time_pdf(sht, tres, Q, QAA, QAF, QFF, QFA):
         denom = np.dot(np.dot(phiF, eGFAt), uA)[0]
         nom1 = np.dot(np.dot(phiF, eGFAt), col1)[0]
         nom2 = np.dot(np.dot(row1, eGFAt), uA)[0]
-        mp.append(nom1 / denom)
-        mn.append(nom2 / denom)
+        # the same tres offset as in exact_mean_open_shut_time: these are
+        # conditional means of the apparent open time, so the DARS term is
+        # short by tres
+        mp.append(nom1 / denom + tres)
+        mn.append(nom2 / denom + tres)
     
     return np.array(mp), np.array(mn)
+
+#: numpy renamed trapz to trapezoid in 2.0; keep working on both
+_trapezoid = getattr(np, 'trapezoid', None) or np.trapz
+
+
+def HJC_adjacent_mean_open_to_shut_range_mean(ranges, tres, Q, QAA, QAF,
+                                              QFF, QFA, points=64,
+                                              side='next'):
+    """
+    Mean apparent open time for openings whose adjacent apparent shut time
+    falls in each of a series of ranges, allowing for missed events.
+
+    This is what is superimposed on the observed conditional means of a
+    record -- the filled circles of Fig. 6D in Colquhoun, Hatton & Hawkes
+    (2003) J Physiol 547:699-728. It is not the same thing as the continuous
+    relationship of
+    :func:`HJC_adjacent_mean_open_to_shut_time_pdf`, which cannot be compared
+    with data directly because the data have to be binned into ranges wide
+    enough to hold enough observations.
+
+    The average over a range is
+
+        E[open | u1 < shut < u2] = Int m(t) f(t) dt / Int f(t) dt,
+
+    where ``f(t)`` is the apparent shut time density and ``m(t)`` the
+    conditional mean at ``t``. Both integrands come from
+    :func:`HJC_adjacent_mean_open_to_shut_time_pdf`, whose ratio is ``m(t)``,
+    so the numerator and denominator are integrated separately by Simpson's
+    rule over a log-spaced grid.
+
+    Parameters
+    ----------
+    ranges : sequence of (float, float)
+        Shut time ranges [s]. An infinite upper limit is replaced by a
+        concentration of the density: 100 times the slowest shut time
+        constant.
+    tres : float
+        Time resolution (dead time).
+    Q, QAA, QAF, QFF, QFA : array_like
+        The Q matrix and its submatrices.
+    points : int
+        Grid points per range for the quadrature.
+    side : {'next', 'previous'}
+        Whether the shut time follows the opening ('next', the usual case) or
+        precedes it.
+
+    Returns
+    -------
+    means : ndarray
+        One mean open time [s] per range; ``nan`` for a range holding no
+        probability.
+    """
+    if side not in ('next', 'previous'):
+        raise ValueError("side must be 'next' or 'previous'")
+
+    Froots = asymptotic_roots(tres, QFF, QAA, QFA, QAF,
+                              QFF.shape[0], QAA.shape[0])
+    slowest = -1.0 / Froots.max()
+
+    means = np.zeros(len(ranges))
+    for i, (u1, u2) in enumerate(ranges):
+        hi = u2 if np.isfinite(u2) else max(u1 * 10.0, slowest * 100.0)
+        lo = max(u1, tres)
+        if not hi > lo:
+            means[i] = np.nan
+            continue
+        t = np.logspace(np.log10(lo), np.log10(hi), points)
+        mp, mn = HJC_adjacent_mean_open_to_shut_time_pdf(t, tres, Q, QAA,
+                                                         QAF, QFF, QFA)
+        m = mn if side == 'next' else mp
+        # the denominator of m(t) is the apparent shut time density itself,
+        # so weighting by it and dividing recovers the range average
+        density = HJC_shut_time_pdf(t, tres, Q, QAA, QAF, QFF, QFA)
+        num = _trapezoid(m * density, t)
+        den = _trapezoid(density, t)
+        means[i] = num / den if den > 0 else np.nan
+    return means
+
+
+def HJC_shut_time_pdf(t, tres, Q, QAA, QAF, QFF, QFA):
+    """
+    Apparent (missed events) shut time probability density at times ``t``.
+
+    The same quantity that appears as the denominator of
+    :func:`HJC_adjacent_mean_open_to_shut_time_pdf`, exposed on its own
+    because the range averages need it as a weight.
+    """
+    kA, kF = QAA.shape[0], QFF.shape[0]
+    uA = np.ones((kA))[:, np.newaxis]
+    expQFF = qml.expQt(QFF, tres)
+    expQAA = qml.expQt(QAA, tres)
+    GAF, GFA = qml.iGs(Q, kA, kF)
+    eGAF = qml.eGs(GAF, GFA, kA, kF, expQFF)
+    eGFA = qml.eGs(GFA, GAF, kF, kA, expQAA)
+    phiF = qml.phiHJC(eGFA, eGAF, kF)
+    eigs, A = qml.eigs(-Q)
+    Feigvals, FZ00, FZ10, FZ11 = qml.Zxx(Q, eigs, A, kA, QAA, QFA, QAF,
+                                         expQAA, False)
+    Froots = asymptotic_roots(tres, QFF, QAA, QFA, QAF, kF, kA)
+    FR = qml.AR(Froots, tres, QFF, QAA, QFA, QAF, kF, kA)
+
+    out = np.zeros(len(np.atleast_1d(t)))
+    for i, ti in enumerate(np.atleast_1d(t)):
+        eGFAt = qml.eGAF(ti, tres, Feigvals, FZ00, FZ10, FZ11, Froots,
+                         FR, QFA, expQAA)
+        out[i] = np.dot(np.dot(phiF, eGFAt), uA)[0]
+    return out
+
 
 def adjacent_open_to_shut_range_pdf_components(u1, u2, QAA, QAF, QFF, QFA, phiA):
     """
