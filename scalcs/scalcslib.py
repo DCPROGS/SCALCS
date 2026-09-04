@@ -701,17 +701,15 @@ def exact_mean_open_shut_time(mec, tres):
     DARS = qml.dARSdS(tres, mec.QAA, mec.QFF, GAF, GFA, expQFF, mec.kA, mec.kF)
     DFRS = qml.dARSdS(tres, mec.QFF, mec.QAA, GFA, GAF, expQAA, mec.kF, mec.kA)
     uF, uA = np.ones((mec.kF, 1)), np.ones((mec.kA, 1))
-    # The DARS term below evaluates to the mean apparent duration PLUS tres, not
-    # minus it, so the mean is recovered by subtracting tres rather than adding it.
-    # Corrected 2026-09-02, having been wrong by 2*tres. Checked two ways: for a
-    # two-state channel it now reproduces eqns (121) and (122) of Colquhoun &
-    # Hawkes (1995b) exactly, and for CH82 and the AChR mechanism it agrees with
-    # the mean of the asymptotic HJC pdf, tres + sum(area * tau), to six figures.
-    # The root cause is the convention of qmatlib.dARSdS, which has not been
-    # re-derived against CHS96 eqn (3.6); the correction is applied at each call
-    # site instead, where what is wanted is unambiguous.
-    meanA = np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))[0] - tres
-    meanF = np.dot(phiF, np.dot(np.dot(DFRS, QexpQA), uA))[0] - tres
+    # The density is written in u = t - tres and integrates to 1, so a mean
+    # apparent duration is the DARS term PLUS tres. See the derivation in
+    # qmatlib.dARSdS: its dead-time term had the wrong sign until 2026-09-03,
+    # and while it did, this line had to subtract tres to cancel an error of
+    # 2*tres. Checked against eqns (121) and (122) of Colquhoun & Hawkes
+    # (1995b) and against the mean of the asymptotic HJC pdf; see
+    # tests/test_apparent_means.py.
+    meanA = np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))[0] + tres
+    meanF = np.dot(phiF, np.dot(np.dot(DFRS, QexpQA), uA))[0] + tres
 
     return meanA, meanF
 
@@ -753,8 +751,8 @@ def exact_mean_time(tres, QAA, QFF, QAF, kA, kF, GAF, GFA):
     DARS = qml.dARSdS(tres, QAA, QFF,
         GAF, GFA, expQFF, kA, kF)
     uF = np.ones((kF, 1))
-    # see exact_mean_open_shut_time for why this subtracts tres
-    mean = np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))[0] - tres
+    # see exact_mean_open_shut_time for why this adds tres
+    mean = np.dot(phiA, np.dot(np.dot(DARS, QexpQF), uF))[0] + tres
 
     return mean
 
@@ -1226,10 +1224,10 @@ def HJC_adjacent_mean_open_to_shut_time_pdf(sht, tres, Q, QAA, QAF, QFF, QFA):
         nom1 = np.dot(np.dot(phiF, eGFAt), col1)[0]
         nom2 = np.dot(np.dot(row1, eGFAt), uA)[0]
         # the same tres offset as in exact_mean_open_shut_time: these are
-        # conditional means of the apparent open time, and the DARS term
-        # carries an extra tres
-        mp.append(nom1 / denom - tres)
-        mn.append(nom2 / denom - tres)
+        # conditional means of the apparent open time, so the DARS term is
+        # short by tres
+        mp.append(nom1 / denom + tres)
+        mn.append(nom2 / denom + tres)
     
     return np.array(mp), np.array(mn)
 

@@ -110,3 +110,79 @@ def test_zero_dead_time_gives_the_ideal_means(name, conc):
     ideal_open = float(np.sum(qml.phiA(mec) @ (-np.linalg.inv(mec.QAA))))
     mean_open, _ = scl.exact_mean_open_shut_time(mec, 1e-12)
     npt.assert_allclose(mean_open, ideal_open, rtol=1e-6)
+
+
+# ---------------------------------------------------------------------------
+# dARSdS itself, added 2026-09-03 when the root cause was finally re-derived.
+#
+# The offset was traced to one sign in `qmatlib.dARSdS`: the dead-time term of
+# dVAds is -tres*GAF*expQFF*GFA and had been coded positive, which made the
+# function too large by 2*tres and left every caller to cancel it. Fixing it
+# means callers now ADD tres, as the theory says, and it also means anyone
+# calling dARSdS directly gets a correct answer -- which the tests above,
+# working only through the callers, could never have shown.
+#
+# The check here owes nothing to the rest of the library: it differentiates
+# the Laplace transform numerically, straight from its definition.
+
+def _AR_star(s, tres, QAA, QFF, QAF, QFA):
+    """AR*(s) from its definition, for numerical differentiation.
+
+    AR*(s) = [sI - QAA - QAF M(s) QFA]^-1,
+    M(s)   = (I - exp(-(sI - QFF) tres)) (sI - QFF)^-1
+    """
+    from scipy.linalg import expm
+    kA, kF = QAA.shape[0], QFF.shape[0]
+    N = s * np.eye(kF) - QFF
+    M = (np.eye(kF) - expm(-N * tres)) @ np.linalg.inv(N)
+    return np.linalg.inv(s * np.eye(kA) - QAA - QAF @ M @ QFA)
+
+
+@pytest.mark.parametrize("tres", [10e-6, 25e-6, 100e-6])
+def test_dARSdS_is_minus_the_derivative_of_the_transform(tres):
+    """dARSdS must equal [-d AR*(s)/ds] at s = 0, by finite differences."""
+    mec = samples.CH82()
+    mec.set_eff('c', 100e-9)
+    expQFF = qml.expQt(mec.QFF, tres)
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+
+    got = qml.dARSdS(tres, mec.QAA, mec.QFF, GAF, GFA, expQFF,
+                     mec.kA, mec.kF)
+
+    # central difference on s, in units set by the slowest rate
+    h = 1e-4 * abs(np.diag(mec.QAA)).min()
+    plus = _AR_star(h, tres, mec.QAA, mec.QFF, mec.QAF, mec.QFA)
+    minus = _AR_star(-h, tres, mec.QAA, mec.QFF, mec.QAF, mec.QFA)
+    expected = -(plus - minus) / (2 * h)
+
+    npt.assert_allclose(got, expected, rtol=1e-5, atol=0)
+
+
+def test_mean_is_the_dARSdS_term_plus_tres():
+    """The documented relationship between dARSdS and the apparent mean.
+
+    Callers add tres because the density is written in u = t - tres and
+    integrates to 1. Check both halves: the norm, and the mean.
+    """
+    tres = 25e-6
+    mec = samples.AChR_diamond()
+    mec.set_eff('c', 100e-9)
+
+    expQFF = qml.expQt(mec.QFF, tres)
+    expQAA = qml.expQt(mec.QAA, tres)
+    GAF, GFA = qml.iGs(mec.Q, mec.kA, mec.kF)
+    eGAF = qml.eGs(GAF, GFA, mec.kA, mec.kF, expQFF)
+    eGFA = qml.eGs(GFA, GAF, mec.kF, mec.kA, expQAA)
+    phiA = qml.phiHJC(eGAF, eGFA, mec.kA)
+    uF = np.ones((mec.kF, 1))
+
+    SFF = np.eye(mec.kF) - expQFF
+    VA = np.eye(mec.kA) - GAF @ SFF @ GFA
+    norm = float((phiA @ np.linalg.inv(VA) @ GAF @ expQFF @ uF)[0])
+    npt.assert_allclose(norm, 1.0, rtol=1e-12)
+
+    DARS = qml.dARSdS(tres, mec.QAA, mec.QFF, GAF, GFA, expQFF,
+                      mec.kA, mec.kF)
+    term = float((phiA @ (DARS @ (mec.QAF @ expQFF)) @ uF)[0])
+    meanA, _ = scl.exact_mean_open_shut_time(mec, tres)
+    npt.assert_allclose(term + tres, meanA, rtol=1e-12)

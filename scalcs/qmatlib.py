@@ -524,14 +524,45 @@ def dARSdS(tres, QAA, QFF, GAF, GFA, expQFF, kA, kF):
 
     For same evaluation for shut states exhange A by F and F by A in function call.
 
-    SFF = I - exp(QFF * tres)
-    First evaluate [dVA(s) / ds] * s = 0.
-    dVAds = -inv(QAA) * GAF * SFF * GFA - GAF * SFF * inv(QFF) * GFA +
-    + tres * GAF * expQFF * GFA
+    The derivation, since a sign in it was wrong for a long time.
 
-    Then: DARS = inv(VA) * QAA^(-2) - inv(VA) * dVAds * inv(VA) * inv(QAA) =
-    = inv(VA) * [inv(QAA) - dVAds * inv(VA)] * inv(QAA)
-    where VA = I - GAF * SFF * GFA
+    HJC give the transform as
+
+        AR*(s) = [sI - QAA - QAF M(s) QFA]^-1,
+        M(s)   = (I - exp(-(sI - QFF) tres)) (sI - QFF)^-1.
+
+    Factorise as CHS96 eqn (3.6) does, pulling out (sI - QAA):
+
+        AR*(s) = VA(s)^-1 U(s)^-1,  U(s) = sI - QAA,
+        VA(s)  = I - U(s)^-1 QAF M(s) QFA.
+
+    At s = 0, U = -QAA, U^-1 QAF = -GAF and M(0) QFA = SFF GFA, so
+    VA(0) = I - GAF SFF GFA, the VA below. Differentiating the product of
+    two inverses, with U' = I,
+
+        DARS = [-d AR*/ds]_0 = inv(VA) QAA^-2 - inv(VA) dVAds inv(VA) inv(QAA)
+             = inv(VA) [inv(QAA) - dVAds inv(VA)] inv(QAA).
+
+    For dVAds, with N(s) = sI - QFF and M = (I - exp(-N tres)) N^-1,
+
+        M'(s) = tres exp(-N tres) N^-1 - (I - exp(-N tres)) N^-2,
+        M'(0) = -tres expQFF inv(QFF) - SFF inv(QFF)^2,
+
+    and, using QAF = -QAA GAF and inv(QFF) QFA = -GFA,
+
+        dVAds = -inv(QAA) GAF SFF GFA        (from U^-2 QAF M(0) QFA)
+                - tres GAF expQFF GFA        (from -U^-1 QAF M'(0) QFA)
+                - GAF SFF inv(QFF) GFA.
+
+    **The middle term is negative.** It was coded positive, which made dVAds
+    too large by 2 tres GAF expQFF GFA and every apparent mean duration built
+    on it too long by 2 tres. Checked against eqns (121) and (122) of
+    Colquhoun & Hawkes (1995b) and against the mean of the asymptotic HJC pdf;
+    see tests/test_apparent_means.py.
+
+    A caller wanting a mean apparent duration **adds** tres to
+    phi AR-term, because the density is written in u = t - tres and
+    phi inv(VA) GAF expQFF u = 1.
 
     Parameters
     ----------
@@ -565,8 +596,14 @@ def dARSdS(tres, QAA, QFF, GAF, GFA, expQFF, kA, kF):
     I = np.eye(kF)
     SFF = I - expQFF
 
-    #Q1 = tres * GAF * exp(QFF*tres) * GFA
-    Q1 = tres * np.dot(GAF, np.dot(expQFF, GFA))
+    # Q1 = -tres * GAF * exp(QFF*tres) * GFA
+    #
+    # The sign of this term was wrong until the derivation in the docstring
+    # was carried out. M'(0) = -tres*expQFF*QFF^-1 - SFF*QFF^-2, so the
+    # contribution -GAF M'(0) QFA is -tres*GAF*expQFF*GFA and is negative.
+    # With it positive, dVAds was too large by 2*tres*GAF*expQFF*GFA, and
+    # every caller inherited an apparent mean duration 2*tres too long.
+    Q1 = -tres * np.dot(GAF, np.dot(expQFF, GFA))
     #Q2 = GAF * SFF * inv(QFF) * GFA
     Q2 = np.dot(GAF, np.dot(SFF, np.dot(invQFF, GFA)))
     #Q3 = -inv(QAA) * GAF * SFF * GFA
