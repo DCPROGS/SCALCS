@@ -408,12 +408,62 @@ def H(s, tres, QAA, QFF, QAF, QFA, kF):
     H : ndarray, shape (kA, kA)
     """
 
+    # X^-1 (I - exp(-X tres)), with X = sI - QFF, is the integral computed by
+    # integral_expQt. Written that way it stays finite when X is singular --
+    # which happens whenever s reaches an eigenvalue of QFF, and the root
+    # search that calls this walks s across exactly that range. See
+    # integral_expQt for why the singularity is removable.
     IF = np.eye(kF)
-    XFF = s * IF - QFF
-    invXFF = nplin.inv(XFF)
-    expXFF = expQt(-XFF, tres)
-    H = QAA + np.dot(np.dot(np.dot(QAF, invXFF), IF - expXFF), QFA)
+    H = QAA + np.dot(np.dot(QAF, integral_expQt(QFF - s * IF, tres)), QFA)
     return H
+
+def integral_expQt(M, t):
+    r"""
+    Integral of a matrix exponential over a finite interval.
+
+    .. math::
+
+       \int_0^t \exp(\bs{M}u) \, \text{d}u
+
+    Equal to :math:`\bs{M}^{-1}(\exp(\bs{M}t) - \bs{I})` whenever ``M`` is
+    invertible, **and finite when it is not**, which is the reason for
+    computing it this way.
+
+    The integral is needed by :func:`H`, where ``M = QFF - sI`` and the root
+    search sweeps ``s`` across the eigenvalues of ``QFF``. At each of those,
+    ``M`` is singular and the factored form ``inv(M) (exp(Mt) - I)`` fails --
+    raising ``LinAlgError`` when the eigenvalue is exactly representable, and
+    otherwise returning a quietly wrong answer from a matrix whose condition
+    number has blown up. The quantity it stands for is perfectly well behaved
+    either way: the offending eigenvalue's contribution is
+    :math:`(e^{\mu t} - 1)/\mu`, whose limit as :math:`\mu \to 0` is simply
+    ``t``. The singularity is removable, and taking it spectrally removes it.
+
+    This is not a hypothetical. Fits in which a rate constant has reached its
+    upper limit give ``QAA`` an eigenvalue at that limit, and the shut-time
+    root search then walks straight into the pole; two of the first twelve
+    fits of one published scenario failed this way before the change.
+
+    Parameters
+    ----------
+    M : array_like, shape (k, k)
+        Assumed diagonalisable, as everywhere else in this module.
+    t : float
+
+    Returns
+    -------
+    integral : ndarray, shape (k, k)
+    """
+
+    eigvals, A = eigs(M)
+    z = np.asarray(eigvals, dtype=complex) * t
+    # (exp(z) - 1) / z, with the limit 1 at z = 0. expm1 keeps the small-|z|
+    # case accurate, where exp(z) - 1 would cancel to nothing.
+    small = np.abs(z) < 1e-12
+    factor = np.where(small, 1.0 + z / 2.0,
+                      np.expm1(np.where(small, 0.0, z)) / np.where(small, 1.0, z))
+    integral = np.sum(A * (t * factor)[:, np.newaxis, np.newaxis], axis=0)
+    return _drop_negligible_imag(integral)
 
 def W(s, tres, QAA, QFF, QAF, QFA, kA, kF):
     """
