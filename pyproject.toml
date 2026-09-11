@@ -10,7 +10,7 @@ authors = [
     { name = "Remigijus Lape", email = "r.lape@ucl.ac.uk" },
     { name = "Christoph Schmidt-Hieber" },
 ]
-license = "GPL-2.0-only"
+license = "GPL-2.0-or-later"
 license-files = ["LICENSE.MD"]
 readme = "README.md"
 requires-python = ">=3.10"
