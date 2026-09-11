@@ -83,3 +83,19 @@ CHS96: Colquhoun D, Hawkes AG, Srodzinski K (1996)
 Joint distributions of apparent open and shut times of single-ion channels
 and maximum likelihood fitting of mechanisms.
 Phil Trans R Soc Lond A 354, 2555-2590.
+
+## Licence
+
+GPL-2.0-or-later. `LICENSE.MD` is the GNU General Public License version 2; as
+the program specifies no version number in its own source files, section 9 of
+that licence already permits choosing any later version, and the package
+metadata now says so rather than claiming `GPL-2.0-only`.
+
+That matters because HJCFIT is GPL-3.0-or-later and now depends on SCALCS for
+mechanism handling: `GPL-2.0-only` and GPL-3.0 are mutually incompatible, and
+the combination could not have been distributed.
+
+Some of this code is re-implemented from the DCPROGS Fortran, which is GPL
+(`popen.py` says so of `HJC_HILL.FOR`), so a permissive licence is not
+available without settling that and without the agreement of the other
+copyright holders.
