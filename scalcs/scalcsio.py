@@ -650,7 +650,16 @@ def mec_load(mecfile, start):
     statenames = []
     for i in range(0, kstat):
         statename = f.read(10).decode("utf-8")
-        statenames.append(statename.split()[0])
+        # The 10-byte field is padded, but not always with the same byte:
+        # some writers pad with spaces and others with NULs. Older files may
+        # leave it blank altogether, having never stored the names. Treat NUL
+        # as padding too, and fall back to a positional name, so that a
+        # mechanism whose names were never written still loads and still has
+        # distinguishable states. Previously a blank field either raised
+        # IndexError (space padding, nothing for split to return) or yielded a
+        # name made of NULs (NUL padding, which split does not strip).
+        tokens = statename.replace('\x00', ' ').split()
+        statenames.append(tokens[0] if tokens else 'S{0:d}'.format(i + 1))
         #print "State name:", statename
     #print ("\n")
 
