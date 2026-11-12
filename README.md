@@ -18,6 +18,7 @@ Modules
 | `popen`           | Equilibrium open probability                                  |
 | `mechanism`       | Ion channel mechanism (state/rate) representation             |
 | `scalcsio`        | HJCFIT / DC_PyPs file I/O                                     |
+| `schemes`         | Draw a mechanism as a reaction scheme (needs `scalcs[plot]`)  |
 
 ### First-latency pdf (`firstlatency`)
 
@@ -52,6 +53,28 @@ eigvals, g00, g10, g11 = fl.gamma_coefficients(tres, phi_shut, mec)
 f_exact = fl.exact_pdf(t, tres, roots, areas, eigvals, g00, g10, g11)
 ```
 
+### Reaction schemes (`schemes`)
+
+Draws a mechanism in the style of Colquhoun & Lape (2012), Figs. 3, 7 and 8:
+states on a grid, each reversible step a close pair of harpoon arrows, with a
+rate constant, transition probability or equilibrium transition frequency
+written against each direction.
+
+```python
+from scalcs import schemes
+from scalcs.samples.samples import GlyR_flip
+
+schemes.draw(GlyR_flip(), values='probability', conc=10e-6, numbers=True)
+```
+
+The arrows drawn are the rates of the mechanism, never inferred from where the
+states are placed. The placement comes from `layout=` if given, otherwise from
+the drawing stored with a mechanism read from a .mec file, otherwise from a
+ready-made layout covering every mechanism in `scalcs.samples`.
+
+Drawing needs matplotlib, which is optional: `pip install scalcs[plot]`.
+`schemes.geometry()` computes every position without it.
+
 References
 ----------
 
@@ -78,6 +101,10 @@ CH95b: Colquhoun D, Hawkes AG (1995b)
 A Q-Matrix Cookbook.
 In: Single-channel recording. 2nd ed. (Eds: Sakmann B, Neher E)
 Plenum Press, New York, pp. 589-633.
+
+CL2012: Colquhoun D, Lape R (2012)
+Allosteric coupling in ligand-gated ion channels.
+J Gen Physiol 140, 599-612.
 
 CHS96: Colquhoun D, Hawkes AG, Srodzinski K (1996)
 Joint distributions of apparent open and shut times of single-ion channels
