@@ -471,3 +471,70 @@ class TestStateLookup:
     def test_permutation_rejects_an_unknown_state(self, ch82):
         with pytest.raises(KeyError, match='A3R'):
             ch82.permutation(['R', 'AR', 'A2R', 'AR*', 'A3R'])
+
+
+# ---------------------------------------------------------------------------
+# Checking microscopic reversibility rather than imposing it
+# ---------------------------------------------------------------------------
+
+class TestMicroscopicReversibility:
+    """Whether the rate constants a mechanism actually holds satisfy
+    microscopic reversibility.
+
+    update_mr() imposes the constraint; these report whether it holds. That
+    is a different question, and a useful one: a set of rate constants that
+    has been averaged, or transcribed, or read from a file written by some
+    other program, can fail it, and the size of the failure says how much to
+    trust the set.
+    """
+
+    def test_ch82_is_reversible(self, ch82):
+        """Not exactly, though. CH82's MR-constrained rate is stored rounded
+        to 0.66667 rather than 2/3, which is a relative error of 5e-6, and
+        that is what comes back. The point is the order of magnitude: a set
+        that genuinely violates reversibility is out by percents.
+        """
+        assert ch82.reversibility_error() < 1e-4
+
+    def test_a_mechanism_with_no_cycles_cannot_violate_it(self, cco):
+        """CCO is a chain. With no cycle there is nothing to close."""
+        assert cco.Cycles == []
+        assert cco.reversibility_error() == 0.0
+
+    def test_cycle_ratios_reports_one_ratio_per_cycle(self, ch82):
+        ratios = ch82.cycle_ratios()
+        assert len(ratios) == len(ch82.Cycles)
+        states, ratio = ratios[0]
+        assert set(states) == set(ch82.Cycles[0].states)
+        assert ratio == pytest.approx(1.0, abs=1e-4)
+
+    def test_it_agrees_with_check_mr(self, ch82):
+        """check_mr is the existing, lower-level way to ask. The two must
+        not drift apart."""
+        for cycle, (_, ratio) in zip(ch82.Cycles, ch82.cycle_ratios()):
+            fprod, bprod = ch82.check_mr(cycle)
+            assert ratio == pytest.approx(fprod / bprod)
+
+    def test_a_broken_rate_constant_is_detected(self):
+        """Double one rate in the cycle and the cycle stops closing.
+
+        Built fresh rather than from the fixture, which is module-scoped and
+        shared with every other test here.
+        """
+        mec = CH82()
+        before = mec.reversibility_error()
+        rate = mec.rate('A2R*', 'AR*')
+        rate.rateconstants = rate.rateconstants * 2.0
+
+        assert before < 1e-4
+        assert mec.reversibility_error() > 0.1
+
+    def test_a_cycle_naming_a_transition_that_does_not_exist_raises(self):
+        """A cycle must be made of real transitions. Silently treating a
+        missing step as a factor of 1 would report a broken mechanism as
+        perfectly reversible.
+        """
+        mec = CH82()
+        mec.Cycles = [Cycle(['R', 'A2R*', 'AR', 'A2R'])]   # R -> A2R* is not a step
+        with pytest.raises(KeyError):
+            mec.reversibility_error()

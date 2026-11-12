@@ -840,6 +840,51 @@ class Mechanism:
                 % (len(order), self.k, ', '.join(self.state_names)))
         return [self.state_index(name) for name in order]
 
+    # -----------------------------------------------------------------
+    # Checking microscopic reversibility, as opposed to imposing it
+    # -----------------------------------------------------------------
+
+    def cycle_ratios(self):
+        """Forward/backward rate-constant product for each cycle.
+
+        Returns a list of ``(states, ratio)``, one per cycle. Microscopic
+        reversibility requires every ratio to be 1.
+
+        Unlike :meth:`check_mr`, a cycle that names a transition the
+        mechanism does not have raises rather than quietly contributing a
+        factor of 1, which would report a broken mechanism as reversible.
+
+        The rate constants are taken at unit effector, so the concentration
+        cancels: a cycle crosses equally many association and dissociation
+        steps.
+        """
+        out = []
+        for cycle in self.Cycles:
+            states = list(cycle.states)
+            following = states[1:] + states[:1]
+            forward = backward = 1.0
+            for a, b in zip(states, following):
+                forward *= self.rate(a, b).unit_rate()
+                backward *= self.rate(b, a).unit_rate()
+            out.append((tuple(states), float(forward / backward)))
+        return out
+
+    def reversibility_error(self):
+        """How far the rate constants are from microscopic reversibility.
+
+        ``max |forward/backward - 1|`` over all cycles; 0.0 for a mechanism
+        with no cycles, which cannot violate it.
+
+        Expect roughly 1e-7 from a set of rate constants that was fitted
+        under the constraint and stored as 32-bit floats. Percents mean the
+        constraint was not applied - averaging several fitted sets, for
+        instance, does not preserve it.
+        """
+        ratios = self.cycle_ratios()
+        if not ratios:
+            return 0.0
+        return max(abs(ratio - 1.0) for _, ratio in ratios)
+
     def set_eff(self, eff, val):
         self.set_effdict({eff:val})
 
