@@ -7,8 +7,7 @@ name = "scalcs"
 version = "1.2.0"
 description = "Pure-Python Q-matrix formalism for ion channel kinetics"
 authors = [
-    { name = "Remigijus Lape", email = "r.lape@ucl.ac.uk" },
-    { name = "Christoph Schmidt-Hieber" },
+    { name = "Remigijus Lape", email = "remis.lp@gmail.com" },
 ]
 license = "GPL-2.0-or-later"
 license-files = ["LICENSE.MD"]
