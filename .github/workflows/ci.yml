@@ -55,9 +55,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ "${{ matrix.gui }}" = "true" ]; then
-            pip install -e '.[dev,gui]' matplotlib
+            pip install -e '.[dev,gui,plot]'
           else
-            pip install -e '.[dev]'
+            # plot as well, or the scheme-drawing tests importorskip and
+            # pass without drawing anything
+            pip install -e '.[dev,plot]'
           fi
           pip list
 
@@ -114,6 +116,8 @@ jobs:
           if missing:
               raise SystemExit('missing from the installed wheel: ' + ', '.join(missing))
 
-          from scalcs import scsim, scburst, qmatlib, mechanism, scalcsio
+          # schemes too: it must import without matplotlib, which this
+          # environment does not have
+          from scalcs import scsim, scburst, qmatlib, mechanism, scalcsio, schemes
           print('installed wheel imports and carries its data files')
           PY

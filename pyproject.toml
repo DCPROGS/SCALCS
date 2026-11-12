@@ -32,7 +32,11 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-gui = ["PyQt5>=5.12"]
+# scalcs.schemes.draw and the one plotting function in sccurves; the rest
+# of the package only returns arrays and does not need it
+plot = ["matplotlib>=3.5"]
+# the GUI draws with matplotlib too, which it imported without declaring
+gui = ["PyQt5>=5.12", "matplotlib>=3.5"]
 dev = ["pytest>=7", "pytest-cov"]
 
 [project.urls]
