@@ -74,11 +74,74 @@ def _mec_record_to_mechanism(rec):
                            for idx in rec.cycle_state_indices[ci]]
         CycleList.append(mechanism.Cycle(states_in_cycle))
 
-    return mechanism.Mechanism(
+    mec = mechanism.Mechanism(
         RateList, CycleList,
         mtitle=rec.mec_title,
         rtitle=rec.rate_title,
     )
+    # a record that carries the stored drawing passes it straight through
+    mec.layout = getattr(rec, 'layout', None)
+    return mec
+
+
+# ---------------------------------------------------------------------------
+# The mechanism drawing a .mec file carries
+# ---------------------------------------------------------------------------
+
+def _layout_from_board(board, statenames):
+    """Positions of the states on the "chess board" stored with a mechanism.
+
+    The DOS programs drew a mechanism on a grid of two-character cells and
+    saved the grid in the .mec file. A cell holds a state - its number,
+    usually after a C or an O for shut or open: ``C9``, ``O1``, ``10``,
+    ``03`` - or a piece of the line drawing, or nothing.
+
+    Parameters
+    ----------
+    board : list of rows, each a list of two-byte cells
+    statenames : list of str
+        Names of the states in the file's own order, so that the state
+        numbered *n* on the board is ``statenames[n - 1]``.
+
+    Returns
+    -------
+    dict or None
+        ``{name: (column, row)}`` in cell units, row 0 at the top and shifted
+        so the left-most and top-most states are at 0. None unless the board
+        places every state: many files store no drawing at all, and the cube
+        mechanisms are drawn in an oblique projection that overwrites some of
+        the state cells. Part of a layout is no use to anything that draws.
+        None, too, when states share a name - some older files store no
+        state names, and positions keyed by name cannot tell them apart.
+
+    Only positions are read. The lines are deliberately not parsed: which
+    states are connected is given by the rates, and boards in circulation
+    draw their connections with corner pieces, long runs and that oblique
+    projection, none of which can be read back reliably.
+    A number with no corresponding state is skipped rather than raised on;
+    a drawing is not worth failing to load a mechanism over.
+    """
+    placed = {}
+    for row, cells in enumerate(board):
+        for column, cell in enumerate(cells):
+            text = bytes(cell).strip(b'\x00 ')
+            lettered = text[:1].isalpha()
+            if lettered:
+                text = text[1:]
+            if not text.isdigit():
+                continue
+            number = int(text)
+            if lettered and number == 0:
+                number = 10            # one digit after the letter: C0 is 10
+            if 1 <= number <= len(statenames):
+                placed.setdefault(statenames[number - 1], (column, row))
+
+    if len(placed) != len(statenames) or not placed:
+        return None
+    left = min(column for column, _ in placed.values())
+    top = min(row for _, row in placed.values())
+    return {name: (column - left, row - top)
+            for name, (column, row) in placed.items()}
 
 
 # ---------------------------------------------------------------------------
@@ -430,8 +493,10 @@ def mec_load(mecfile, start):
     ints.fromfile(f,1)
     kstat = ints.pop()
 
-    # Output of mechanism in characters
-    # TODO clean characters
+    # The "chess board" the DOS programs drew the mechanism on: a grid of
+    # two-character cells, stored column by column. Kept, row by row, so the
+    # positions of the states can be recovered once their names are known;
+    # see _layout_from_board.
     Jch = []
     for j in range(0, jlast):
         Ich = []
@@ -439,11 +504,12 @@ def mec_load(mecfile, start):
              charmod = f.read(2)#.decode("utf-8")
              Ich.append(charmod)
         Jch.append(Ich)
+    board = []
     for i in range(0,ilast):
         IIch = []
         for j in range(0, jlast):
             IIch.append(Jch[j][i])
-        #print (''.join(IIch))
+        board.append(IIch)
 
     # Read rate constants.
     irate = []
@@ -639,8 +705,12 @@ def mec_load(mecfile, start):
             CycleStates.append(statenames[im[i, j]-1])
         CycleList.append(mechanism.Cycle(CycleStates))
 
-    return mechanism.Mechanism(RateList, CycleList,
+    mec = mechanism.Mechanism(RateList, CycleList,
         mtitle=mectitle, rtitle=ratetitle)
+    # the file can list more names than the mechanism has states (kstat > k);
+    # only the first k are states, and only they have to be on the board
+    mec.layout = _layout_from_board(board, statenames[:len(StateList)])
+    return mec
 
 def load_mec_from_prt(filename, verbose=False):    
     f = open(filename, 'r')

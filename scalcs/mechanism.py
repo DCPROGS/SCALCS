@@ -623,6 +623,13 @@ class Mechanism:
         self.rtitle = rtitle
         self.verbose = verbose
 
+        # Where each state sits when the mechanism is drawn:
+        # {state name: (column, row)}, row 0 at the top. Filled in by
+        # scalcsio.mec_load from the drawing a .mec file carries; None for a
+        # mechanism that has none, such as one defined in Python. It says
+        # nothing about which states are connected - that is the Rates.
+        self.layout = None
+
         self._set_fastKB(fastKB)
 
         # construct States end effectors from Rates:
