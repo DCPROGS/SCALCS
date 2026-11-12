@@ -410,3 +410,131 @@ class TestLimits:
         assert cco.Rates[0].unit_rate() <= cco.Rates[0].limits[0][1]
         # restore
         cco.Rates[0].rateconstants = original
+
+
+# ---------------------------------------------------------------------------
+# Looking states and rates up by name
+# ---------------------------------------------------------------------------
+
+class TestStateLookup:
+    """Indexing a mechanism by state NAME rather than by position.
+
+    The order SCALCS stores states in is its own - it sorts them by state type
+    - and is not the order a paper tabulates them in. CH82 is stored as
+    ['AR*', 'A2R*', 'AR', 'A2R', 'R']. Reading a Q matrix by position against a
+    published table is therefore a standing invitation to silent error; these
+    helpers exist so that it can be read by name instead.
+    """
+
+    def test_state_names_are_in_q_matrix_order(self, ch82):
+        assert ch82.state_names == ['AR*', 'A2R*', 'AR', 'A2R', 'R']
+
+    def test_state_index_agrees_with_the_q_matrix(self, ch82):
+        for i, name in enumerate(ch82.state_names):
+            assert ch82.state_index(name) == i
+
+    def test_state_index_names_the_state_it_could_not_find(self, ch82):
+        with pytest.raises(KeyError, match='A3R'):
+            ch82.state_index('A3R')
+
+    def test_rates_by_edge_has_one_entry_per_rate(self, ch82):
+        edges = ch82.rates_by_edge()
+        assert len(edges) == len(ch82.Rates)
+        assert ('R', 'AR') in edges and ('AR', 'R') in edges
+
+    def test_rate_returns_the_transition_asked_for(self, ch82):
+        assert ch82.rate('R', 'AR').name.strip() == '2k(+1)'
+        assert ch82.rate('AR', 'R').name.strip() == 'k(-1)'
+
+    def test_rate_refuses_a_transition_the_mechanism_does_not_have(self, ch82):
+        """R -> A2R is not a step of CH82: binding is one molecule at a time."""
+        with pytest.raises(KeyError):
+            ch82.rate('R', 'A2R')
+
+    def test_permutation_reindexes_q_into_the_given_order(self, ch82):
+        order = ['R', 'AR', 'A2R', 'AR*', 'A2R*']
+        perm = ch82.permutation(order)
+
+        Q = np.asarray(ch82.Q, dtype=float)
+        reordered = Q[np.ix_(perm, perm)]
+
+        # element [0, 1] of the reordered matrix must now be R -> AR
+        assert reordered[0, 1] == pytest.approx(
+            Q[ch82.state_index('R'), ch82.state_index('AR')])
+        # and the diagonal must still be the same set of exit rates
+        assert sorted(np.diag(reordered)) == pytest.approx(sorted(np.diag(Q)))
+
+    def test_permutation_rejects_an_incomplete_order(self, ch82):
+        with pytest.raises(ValueError):
+            ch82.permutation(['R', 'AR'])
+
+    def test_permutation_rejects_an_unknown_state(self, ch82):
+        with pytest.raises(KeyError, match='A3R'):
+            ch82.permutation(['R', 'AR', 'A2R', 'AR*', 'A3R'])
+
+
+# ---------------------------------------------------------------------------
+# Checking microscopic reversibility rather than imposing it
+# ---------------------------------------------------------------------------
+
+class TestMicroscopicReversibility:
+    """Whether the rate constants a mechanism actually holds satisfy
+    microscopic reversibility.
+
+    update_mr() imposes the constraint; these report whether it holds. That
+    is a different question, and a useful one: a set of rate constants that
+    has been averaged, or transcribed, or read from a file written by some
+    other program, can fail it, and the size of the failure says how much to
+    trust the set.
+    """
+
+    def test_ch82_is_reversible(self, ch82):
+        """Not exactly, though. CH82's MR-constrained rate is stored rounded
+        to 0.66667 rather than 2/3, which is a relative error of 5e-6, and
+        that is what comes back. The point is the order of magnitude: a set
+        that genuinely violates reversibility is out by percents.
+        """
+        assert ch82.reversibility_error() < 1e-4
+
+    def test_a_mechanism_with_no_cycles_cannot_violate_it(self, cco):
+        """CCO is a chain. With no cycle there is nothing to close."""
+        assert cco.Cycles == []
+        assert cco.reversibility_error() == 0.0
+
+    def test_cycle_ratios_reports_one_ratio_per_cycle(self, ch82):
+        ratios = ch82.cycle_ratios()
+        assert len(ratios) == len(ch82.Cycles)
+        states, ratio = ratios[0]
+        assert set(states) == set(ch82.Cycles[0].states)
+        assert ratio == pytest.approx(1.0, abs=1e-4)
+
+    def test_it_agrees_with_check_mr(self, ch82):
+        """check_mr is the existing, lower-level way to ask. The two must
+        not drift apart."""
+        for cycle, (_, ratio) in zip(ch82.Cycles, ch82.cycle_ratios()):
+            fprod, bprod = ch82.check_mr(cycle)
+            assert ratio == pytest.approx(fprod / bprod)
+
+    def test_a_broken_rate_constant_is_detected(self):
+        """Double one rate in the cycle and the cycle stops closing.
+
+        Built fresh rather than from the fixture, which is module-scoped and
+        shared with every other test here.
+        """
+        mec = CH82()
+        before = mec.reversibility_error()
+        rate = mec.rate('A2R*', 'AR*')
+        rate.rateconstants = rate.rateconstants * 2.0
+
+        assert before < 1e-4
+        assert mec.reversibility_error() > 0.1
+
+    def test_a_cycle_naming_a_transition_that_does_not_exist_raises(self):
+        """A cycle must be made of real transitions. Silently treating a
+        missing step as a factor of 1 would report a broken mechanism as
+        perfectly reversible.
+        """
+        mec = CH82()
+        mec.Cycles = [Cycle(['R', 'A2R*', 'AR', 'A2R'])]   # R -> A2R* is not a step
+        with pytest.raises(KeyError):
+            mec.reversibility_error()
