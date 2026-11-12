@@ -1,17 +1,15 @@
 """Reading MEC, SCN, SSD, ABF files and kinetic mechanisms from DCPROGS files.
 
-.. deprecated::
-   MEC reading is now provided by :mod:`dcio.formats.mec`.
-   The functions :func:`mec_get_list` and :func:`mec_load` below are thin
-   wrappers that delegate to ``dcio`` and convert the result to
-   :class:`scalcs.mechanism.Mechanism`.  Import directly from ``dcio`` for
-   new code::
-
-       from dcio.formats.mec import read_list, read
-
+The .mec reader is the one in this module, :func:`mec_get_list` and
+:func:`mec_load`. They used to hand over to ``dcio.formats.mec`` whenever that
+could be imported, but no such module exists in dcio, so they never did. The
+hand-over was removed rather than left waiting: had such a module appeared,
+every .mec file would have been read by it instead, silently, and without the
+checks below.
 """
 
 import json
+import os
 import struct
 import time
 from array import array
@@ -20,68 +18,112 @@ import numpy as np
 from scalcs import mechanism
 
 # ---------------------------------------------------------------------------
-# MEC reading — delegates to dcio.formats.mec, converts to Mechanism
+# Checking a .mec file before trusting it
+#
+# Without these the reader trusted every count it read, so a damaged file or
+# a file that is not a .mec file at all failed with an IndexError deep in the
+# reader, or - when a count came out in the billions - read empty bytes past
+# the end of the file indefinitely. Each check says what is wrong instead.
 # ---------------------------------------------------------------------------
 
-try:
-    from dcio.formats.mec import (
-        read_list as _dcio_mec_read_list,
-        read as _dcio_mec_read,
-        MECEntry as _MECEntry,
-    )
-    _DCIO_AVAILABLE = True
-except ImportError:
-    _DCIO_AVAILABLE = False
+# DC's programs give their files and records three-digit version numbers -
+# 102 and 200 in every file seen. Anything else is not a .mec header.
+_MEC_VERSIONS = range(100, 1000)
+
+# Far more states than any mechanism these programs could hold; a count above
+# it comes from bytes that are not a header.
+_MAX_STATES = 1000
 
 
-def _mec_record_to_mechanism(rec):
-    """Convert a dcio MECRecord to a scalcs Mechanism."""
-    StateList = []
-    j = 0
-    for _ in range(rec.kA):
-        gamma = rec.conductances[j] if j < len(rec.conductances) else 0.0
-        StateList.append(mechanism.State('A', rec.state_names[j], gamma))
-        j += 1
-    for _ in range(rec.kB):
-        StateList.append(mechanism.State('B', rec.state_names[j], 0))
-        j += 1
-    for _ in range(rec.kC):
-        StateList.append(mechanism.State('C', rec.state_names[j], 0))
-        j += 1
-    for _ in range(rec.kD):
-        StateList.append(mechanism.State('D', rec.state_names[j], 0))
-        j += 1
+def _looks_like_text(head):
+    printable = sum(32 <= byte < 127 or byte in (9, 10, 13) for byte in head)
+    return len(head) > 0 and printable >= 0.95 * len(head)
 
-    RateList = []
-    for n in range(len(rec.irate)):
-        bound = None
-        for m in range(len(rec.cdep_from)):
-            if rec.cdep_from[m] == rec.irate[n] and rec.cdep_to[m] == rec.jrate[n]:
-                bound = 'c'
-                break
-        name = rec.rate_names[n] if n < len(rec.rate_names) else ''
-        RateList.append(mechanism.Rate(
-            rec.rate_values[n],
-            StateList[rec.irate[n] - 1],
-            StateList[rec.jrate[n] - 1],
-            name=name,
-            eff=bound,
-        ))
 
-    CycleList = []
-    for ci in range(rec.n_cycles):
-        states_in_cycle = [rec.state_names[idx - 1]
-                           for idx in rec.cycle_state_indices[ci]]
-        CycleList.append(mechanism.Cycle(states_in_cycle))
+def _mec_file_problem(data):
+    """What makes `data`, the bytes of a whole file, unreadable as a .mec
+    file - or None if nothing does.
 
-    mec = mechanism.Mechanism(
-        RateList, CycleList,
-        mtitle=rec.mec_title,
-        rtitle=rec.rate_title,
-    )
-    # a record that carries the stored drawing passes it straight through
-    mec.layout = getattr(rec, 'layout', None)
-    return mec
+    The file begins with its version, the number of records, two words the
+    reader does not use, and then the byte at which each record starts.
+    """
+    if len(data) < 16:
+        return 'it is not a .mec file: it is only %d bytes long' % len(data)
+    version, nrecs = struct.unpack_from('<ii', data, 0)
+    if version not in _MEC_VERSIONS or not 1 <= nrecs <= (len(data) - 16) // 4:
+        head = data[:60]
+        if _looks_like_text(head):
+            text = ' '.join(head.decode('ascii', 'replace').split())
+            return ('it is not a .mec file: it begins with the text %r - '
+                    'perhaps a printout saved under a .mec name' % text[:50])
+        return ('it is not a .mec file: its header gives version %d and %d '
+                'records' % (version, nrecs))
+    starts = struct.unpack_from('<%di' % nrecs, data, 16)
+    outside = [start for start in starts if not 1 <= start <= len(data)]
+    if outside:
+        return ('its index puts a record at byte %s, but the file ends at '
+                'byte %d' % (', '.join(map(str, outside)), len(data)))
+    return None
+
+
+def _record_header_problem(version, mecnum, k, kA, kB, kC, kD):
+    """What is wrong with the header at the start of one record, or None.
+
+    `k` is the number of states; kA to kD count the open, short-lived shut,
+    long-lived shut and desensitised states, and must add up to it.
+    """
+    if version not in _MEC_VERSIONS or mecnum < 1 or not 1 <= k <= _MAX_STATES:
+        return ('there is no valid record here: the header gives version %d, '
+                'mechanism %d and %d states - the index of the file may be '
+                'wrong' % (version, mecnum, k))
+    if min(kA, kB, kC, kD) < 0 or kA + kB + kC + kD != k:
+        return ('the header contradicts itself: it gives %d states, but %d '
+                'open, %d short-lived shut, %d long-lived shut and %d '
+                'desensitised, which make %d'
+                % (k, kA, kB, kC, kD, kA + kB + kC + kD))
+    return None
+
+
+def _names_for_states(stored, k):
+    """A name for each of the `k` states.
+
+    The stored names are used only when there is one for every state. Files
+    that store none (kstat 0) and independent-subunit models, which store the
+    names of their subunits' states - 8 for a 16-state mechanism, say - give
+    positional names to every state instead: S1, S2, ..., numbered as the
+    file and its stored drawing number them. Putting subunit names on the
+    first few states would load the mechanism labelled wrongly, which is
+    worse than not naming it.
+    """
+    if len(stored) >= k:
+        return list(stored[:k])
+    return ['S{0:d}'.format(n) for n in range(1, k + 1)]
+
+
+def _names_for_rates(stored, irate, jrate):
+    """A name for each rate, given its from- and to-states.
+
+    As with states, the stored names are used only when there is one for
+    every rate. An independent-subunit model stores names for its basic rate
+    constants only - npar of them, fewer than its rates - with the rest tied
+    to those by constraints, and which rates the names belong to is not
+    recorded plainly enough to rely on. Every rate is then named by its
+    transition instead: q(13,9) is the rate from state 13 to state 9.
+    """
+    if len(stored) >= len(irate):
+        return list(stored[:len(irate)])
+    return ['q(%d,%d)' % (i, j) for i, j in zip(irate, jrate)]
+
+
+def _rates_problem(irate, jrate, k):
+    """None if every rate joins two of the `k` declared states."""
+    used = list(irate) + list(jrate)
+    bad = [state for state in used if not 1 <= state <= k]
+    if bad:
+        state = max(bad) if max(bad) > k else min(bad)
+        return ('its rates connect state %d, but the header declares %d '
+                'states' % (state, k))
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -288,15 +330,11 @@ def mec_get_list(mecfile):
         Number of different mechanisms in mec file.
     """
 
-    if _DCIO_AVAILABLE:
-        version, entries, max_mecnum = _dcio_mec_read_list(mecfile)
-        meclist = [
-            [e.start_byte, e.mec_num, e.mec_title, e.rate_title]
-            for e in entries
-        ]
-        return version, meclist, max_mecnum
+    with open(mecfile, 'rb') as whole:
+        problem = _mec_file_problem(whole.read())
+    if problem:
+        raise ValueError('%s: %s' % (mecfile, problem))
 
-    # --- legacy fallback (dcio not installed) ---
     f = open(mecfile, 'rb')
     ints = array('i')
 
@@ -407,18 +445,35 @@ def mec_load(mecfile, start):
     Returns
     -------
     mec.Mechanism(RateList, StateList, ncyc) : instance of Mechanism class.
+
+    Raises
+    ------
+    ValueError
+        If there is no valid record at `start`, if the record contradicts
+        itself, or if its stored drawing is larger than the file. The message
+        names the file, the record and what is wrong.
+
+    Notes
+    -----
+    States and rates take their stored names only when the file stores one
+    for each; otherwise every state is named S1, S2, ... and every rate by
+    its transition, q(i,j). See _names_for_states and _names_for_rates.
+
+    Rate constants are taken exactly as stored. An independent-subunit model
+    also stores constraints (ieq, jeq, ifq, jfq, efacq) tying its rates to
+    its basic rate constants; they are read but not applied. Read as "rate =
+    factor x rate", they hold in some records but contradict the stored
+    rates, by factors of up to a million, in others, so their meaning is not
+    certain enough to fill in rates from. A record that stores only its
+    basic constants therefore loads with its other rates at zero.
     """
 
-    if _DCIO_AVAILABLE:
-        # start may be an MECEntry or a raw int (back-compat)
-        rec = _dcio_mec_read(mecfile, start)
-        return _mec_record_to_mechanism(rec)
-
-    # --- legacy fallback (dcio not installed) ---
     doubles = array('d')
     floats = array ('f')
     ints = array('i')
 
+    filesize = os.path.getsize(mecfile)
+    where = '%s, record at byte %d' % (mecfile, start)
     f=open(mecfile, 'rb')	# open the .mec file as read only
     f.seek(start - 1);
     ints.fromfile(f, 1)
@@ -438,6 +493,11 @@ def mec_load(mecfile, start):
     kC = ints.pop()
     ints.fromfile(f,1)
     kD = ints.pop()
+
+    problem = _record_header_problem(version1, mecnum, k, kA, kB, kC, kD)
+    if problem:
+        f.close()
+        raise ValueError('%s: %s' % (where, problem))
 
     # In mec files version=103 all shut states are of type 'C'.
     # Check and leave just one in state 'C', others go as 'B'.
@@ -517,6 +577,16 @@ def mec_load(mecfile, start):
     # two-character cells, stored column by column. Kept, row by row, so the
     # positions of the states can be recovered once their names are known;
     # see _layout_from_board.
+    #
+    # Its size is checked against what is left of the file first. f.read()
+    # past the end returns empty bytes rather than failing, so a size read
+    # from damaged bytes - over a billion cells, in one file - made this loop
+    # run, in effect, for ever.
+    if ilast < 0 or jlast < 0 or f.tell() + 2 * ilast * jlast > filesize:
+        f.close()
+        raise ValueError(
+            '%s: the stored drawing of the mechanism would be %d x %d cells, '
+            'more than is left of the file' % (where, ilast, jlast))
     Jch = []
     for j in range(0, jlast):
         Ich = []
@@ -540,6 +610,10 @@ def mec_load(mecfile, start):
     for i in range(nrateq):
         ints.fromfile(f,1)
         jrate.append(ints.pop())
+    problem = _rates_problem(irate, jrate, k)
+    if problem:
+        f.close()
+        raise ValueError('%s: %s' % (where, problem))
     QT = np.zeros((k, k), 'float64')
     for i in range(nrateq):
         doubles.fromfile(f, 1)
@@ -673,34 +747,32 @@ def mec_load(mecfile, start):
         #print "State name:", statename
     #print ("\n")
 
-    ints.fromfile(f,1)
-    nsub = ints.pop()
-    ints.fromfile(f,1)
-    kstat0 = ints.pop()
-    ints.fromfile(f,1)
-    npar0 = ints.pop()
-    ints.fromfile(f,1)
-    kcon = ints.pop()
-    ints.fromfile(f,1)
-    npar1 = ints.pop()
-    ints.fromfile(f,1)
-    ncyc0 = ints.pop()
+    # Some records go on with six more integers - nsub, kstat0, npar0, kcon,
+    # npar1 and ncyc0 - which nothing here uses. Not every record has them:
+    # in demo.mec each record ends right after its state names, so reading
+    # them took 24 bytes of the next record, and ran off the end of the file
+    # on the last one. They are no longer read.
 
     f.close()
+
+    # one name per state and per rate; see _names_for_states and
+    # _names_for_rates for when the stored ones cannot be used
+    names = _names_for_states(statenames, k)
+    ratename = _names_for_rates(ratename, irate, jrate)
 
     StateList = []
     j = 0
     for i in range(kA):
-        StateList.append(mechanism.State('A', statenames[j], dgamma[j]))
+        StateList.append(mechanism.State('A', names[j], dgamma[j]))
         j += 1
     for i in range(kB):
-        StateList.append(mechanism.State('B', statenames[j], 0))
+        StateList.append(mechanism.State('B', names[j], 0))
         j += 1
     for i in range(kC):
-        StateList.append(mechanism.State('C', statenames[j], 0))
+        StateList.append(mechanism.State('C', names[j], 0))
         j += 1
     for i in range(kD):
-        StateList.append(mechanism.State('D', statenames[j], 0))
+        StateList.append(mechanism.State('D', names[j], 0))
         j += 1
 
     RateList = []
@@ -721,14 +793,13 @@ def mec_load(mecfile, start):
 #        mrconstrained = False
         CycleStates = []
         for j in range(nsc[i]):
-            CycleStates.append(statenames[im[i, j]-1])
+            CycleStates.append(names[im[i, j]-1])
         CycleList.append(mechanism.Cycle(CycleStates))
 
     mec = mechanism.Mechanism(RateList, CycleList,
         mtitle=mectitle, rtitle=ratetitle)
-    # the file can list more names than the mechanism has states (kstat > k);
-    # only the first k are states, and only they have to be on the board
-    mec.layout = _layout_from_board(board, statenames[:len(StateList)])
+    # names holds exactly one name per state, numbered as the drawing is
+    mec.layout = _layout_from_board(board, names)
     return mec
 
 def load_mec_from_prt(filename, verbose=False):    
