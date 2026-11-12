@@ -410,3 +410,64 @@ class TestLimits:
         assert cco.Rates[0].unit_rate() <= cco.Rates[0].limits[0][1]
         # restore
         cco.Rates[0].rateconstants = original
+
+
+# ---------------------------------------------------------------------------
+# Looking states and rates up by name
+# ---------------------------------------------------------------------------
+
+class TestStateLookup:
+    """Indexing a mechanism by state NAME rather than by position.
+
+    The order SCALCS stores states in is its own - it sorts them by state type
+    - and is not the order a paper tabulates them in. CH82 is stored as
+    ['AR*', 'A2R*', 'AR', 'A2R', 'R']. Reading a Q matrix by position against a
+    published table is therefore a standing invitation to silent error; these
+    helpers exist so that it can be read by name instead.
+    """
+
+    def test_state_names_are_in_q_matrix_order(self, ch82):
+        assert ch82.state_names == ['AR*', 'A2R*', 'AR', 'A2R', 'R']
+
+    def test_state_index_agrees_with_the_q_matrix(self, ch82):
+        for i, name in enumerate(ch82.state_names):
+            assert ch82.state_index(name) == i
+
+    def test_state_index_names_the_state_it_could_not_find(self, ch82):
+        with pytest.raises(KeyError, match='A3R'):
+            ch82.state_index('A3R')
+
+    def test_rates_by_edge_has_one_entry_per_rate(self, ch82):
+        edges = ch82.rates_by_edge()
+        assert len(edges) == len(ch82.Rates)
+        assert ('R', 'AR') in edges and ('AR', 'R') in edges
+
+    def test_rate_returns_the_transition_asked_for(self, ch82):
+        assert ch82.rate('R', 'AR').name.strip() == '2k(+1)'
+        assert ch82.rate('AR', 'R').name.strip() == 'k(-1)'
+
+    def test_rate_refuses_a_transition_the_mechanism_does_not_have(self, ch82):
+        """R -> A2R is not a step of CH82: binding is one molecule at a time."""
+        with pytest.raises(KeyError):
+            ch82.rate('R', 'A2R')
+
+    def test_permutation_reindexes_q_into_the_given_order(self, ch82):
+        order = ['R', 'AR', 'A2R', 'AR*', 'A2R*']
+        perm = ch82.permutation(order)
+
+        Q = np.asarray(ch82.Q, dtype=float)
+        reordered = Q[np.ix_(perm, perm)]
+
+        # element [0, 1] of the reordered matrix must now be R -> AR
+        assert reordered[0, 1] == pytest.approx(
+            Q[ch82.state_index('R'), ch82.state_index('AR')])
+        # and the diagonal must still be the same set of exit rates
+        assert sorted(np.diag(reordered)) == pytest.approx(sorted(np.diag(Q)))
+
+    def test_permutation_rejects_an_incomplete_order(self, ch82):
+        with pytest.raises(ValueError):
+            ch82.permutation(['R', 'AR'])
+
+    def test_permutation_rejects_an_unknown_state(self, ch82):
+        with pytest.raises(KeyError, match='A3R'):
+            ch82.permutation(['R', 'AR', 'A2R', 'AR*', 'A3R'])

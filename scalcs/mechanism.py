@@ -780,6 +780,66 @@ class Mechanism:
         self.QAI = self.Q[:self.kA, self.kA:self.k]
         self.QGG = self.Q[:self.kG, :self.kG]
 
+    # -----------------------------------------------------------------
+    # Looking states and rates up by name
+    #
+    # States are stored in the order this class sorts them into, by state
+    # type: open states first, then short-lived shut, then long-lived shut.
+    # That is rarely the order a paper tabulates them in - CH82 is stored
+    # as AR*, A2R*, AR, A2R, R - so reading a Q matrix by position against
+    # a published table invites silent error. These let it be read by name.
+    # -----------------------------------------------------------------
+
+    @property
+    def state_names(self):
+        """Names of the states, in Q-matrix order."""
+        return [state.name for state in self.States]
+
+    def state_index(self, name):
+        """Row and column of `name` in the Q matrix."""
+        for i, state in enumerate(self.States):
+            if state.name == name:
+                return i
+        raise KeyError('no state %r in this mechanism; it has %s'
+                       % (name, ', '.join(self.state_names)))
+
+    def rates_by_edge(self):
+        """{(from_name, to_name): Rate} for every transition.
+
+        Built fresh on each call: a Rate's value can be changed in place, and
+        a stale cache of these would be worse than no cache at all.
+        """
+        return {(rate.State1.name, rate.State2.name): rate
+                for rate in self.Rates}
+
+    def rate(self, from_name, to_name):
+        """The Rate for one transition.
+
+        Raises KeyError if the mechanism has no such transition, rather than
+        returning something for a step that does not exist.
+        """
+        for rate in self.Rates:
+            if (rate.State1.name == from_name
+                    and rate.State2.name == to_name):
+                return rate
+        # name an unknown state specifically; it is the likelier mistake
+        for name in (from_name, to_name):
+            self.state_index(name)
+        raise KeyError('%r -> %r is not a transition of this mechanism'
+                       % (from_name, to_name))
+
+    def permutation(self, order):
+        """Index array that reorders the Q matrix into `order`.
+
+        Use it as ``Q[np.ix_(perm, perm)]`` to put a Q matrix, or any matrix
+        indexed the same way, into the order a paper uses.
+        """
+        if len(order) != self.k:
+            raise ValueError(
+                'order lists %d states, but this mechanism has %d: %s'
+                % (len(order), self.k, ', '.join(self.state_names)))
+        return [self.state_index(name) for name in order]
+
     def set_eff(self, eff, val):
         self.set_effdict({eff:val})
 
