@@ -36,24 +36,16 @@ import numpy as np
 from dcio.analysis import bursts as _bursts
 from dcio.formats import scn as _scn
 
+from scalcs import qmatlib as _qml
+
 #: SCN property flag marking an interval of unknown length. Re-exported from
 #: dcio, which is where it is defined.
 FLAG_UNUSABLE = _scn.FLAG_UNUSABLE
 
 
-def transition_probability(Q):
-    r"""Embedded-chain (jump) probability matrix of a Q matrix.
-
-    ``pi_ij = q_ij / -q_ii`` for ``i != j`` and ``pi_ii = 0``: given that the
-    channel leaves state ``i``, ``pi_ij`` is the probability the jump is to
-    ``j``. Each off-diagonal row therefore sums to 1.
-    """
-    k = Q.shape[0]
-    pi = Q.copy().astype(float)
-    for i in range(k):
-        pi[i] = pi[i] / -Q[i, i]
-        pi[i, i] = 0.0
-    return pi
+# Defined in qmatlib with the rest of the Q-matrix algebra; re-exported here,
+# where the simulation reaches for it, and where it was a second copy.
+transition_probability = _qml.transition_probability
 
 
 def next_state(present, picum, tmean, kA, opamp):

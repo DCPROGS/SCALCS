@@ -215,6 +215,61 @@ def pinf(Q):
     pinf = np.append(pinf, 1 - np.sum(pinf))
     return pinf
 
+def transition_probability(Q):
+    r"""
+    Embedded-chain (jump) probability matrix of a Q matrix.
+
+    .. math:: \pi_{ij} = \frac{q_{ij}}{-q_{ii}}, \quad \pi_{ii} = 0
+
+    Given that the channel leaves state *i*, :math:`\pi_{ij}` is the
+    probability that the jump is to *j*, so each row sums to 1.
+
+    Parameters
+    ----------
+    Q : array_like, shape (k, k)
+
+    Returns
+    -------
+    pi : ndarray, shape (k, k)
+    """
+    Q = np.asarray(Q, dtype=float)
+    pi = Q / -np.diag(Q)[:, None]
+    np.fill_diagonal(pi, 0.0)
+    return pi
+
+def transition_frequency(Q, p=None):
+    r"""
+    Frequency of each transition: how many occur per second.
+
+    .. math:: f_{ij} = p_i q_{ij}, \quad f_{ii} = 0
+
+    Parameters
+    ----------
+    Q : array_like, shape (k, k)
+    p : array_like, shape (k,), optional
+        State occupancies. Defaults to the equilibrium occupancies,
+        :func:`pinf`. Pass the occupancies explicitly to get the frequencies
+        at some instant during a concentration jump, when the system is not
+        at equilibrium.
+
+    Returns
+    -------
+    f : ndarray, shape (k, k)
+
+    Notes
+    -----
+    At equilibrium a mechanism obeying microscopic reversibility satisfies
+    detailed balance, :math:`f_{ij} = f_{ji}` for every pair of states, so
+    the returned matrix is symmetric to within the precision in which the
+    constrained rate constants are stored.
+    """
+    Q = np.asarray(Q, dtype=float)
+    if p is None:
+        p = pinf(Q)
+    f = np.asarray(p, dtype=float)[:, None] * Q
+    np.fill_diagonal(f, 0.0)
+    return f
+
 def iGs(Q, kA, kB):
     r"""
     Calculate GBA and GAB matrices (Eq. 1.25, CH82).

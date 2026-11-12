@@ -1590,26 +1590,15 @@ def printout_distributions(mec, tres, eff='c'):
         
     return str
 
-def transition_probability(Q):
-    """
-    """
-    k = Q.shape[0]
-    pi = Q.copy()
-    for i in range(k):
-        pi[i] = pi[i] / -Q[i,i]
-        pi[i,i] = 0
-    return pi
-
-def transition_frequency(Q):
-    """
-    """
-    k = Q.shape[0]
-    pinf = qml.pinf(Q)
-    f = Q.copy().transpose()
-    for i in range(k):
-        f[i] = f[i] * pinf
-        f[i,i] = 0
-    return f.transpose()
+# Both of these now live in qmatlib, which is where the rest of the plain
+# Q-matrix algebra is. They are re-exported here, undocumented duplicates
+# having drifted apart: this one's transition_probability did not cast to
+# float, so an integer Q divided integer-wise, and transition_frequency could
+# only ever give equilibrium frequencies. qmatlib.transition_frequency takes
+# the occupancies as an optional argument; called with one argument, as it
+# always was here, it still uses pinf.
+transition_probability = qml.transition_probability
+transition_frequency = qml.transition_frequency
 
 def correlation_coefficient(cov, var1, var2):
     """
