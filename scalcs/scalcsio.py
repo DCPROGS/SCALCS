@@ -88,6 +88,26 @@ def _mec_record_to_mechanism(rec):
 # The mechanism drawing a .mec file carries
 # ---------------------------------------------------------------------------
 
+def _state_name(field, number):
+    """The name in one 10-byte state-name field of a .mec file.
+
+    The field is padded, but not always with the same byte: some writers pad
+    with spaces and others with NULs, and older files leave it blank, never
+    having stored the names. NUL counts as padding here too, and a field
+    blank after that gets a positional name, ``S<number>``, so a mechanism
+    whose names were never written still loads with distinguishable states.
+    `number` is the state's number in the file - from 1, as the drawing
+    stored in the file numbers it - so S4 is the state drawn as 4.
+
+    Previously a blank field either raised IndexError (space padding, nothing
+    for split() to return) or gave a name made of NULs (NUL padding, which
+    split() does not strip), the second silently: every state of the
+    mechanism got the same unprintable name.
+    """
+    tokens = field.decode('utf-8').replace('\x00', ' ').split()
+    return tokens[0] if tokens else 'S{0:d}'.format(number)
+
+
 def _layout_from_board(board, statenames):
     """Positions of the states on the "chess board" stored with a mechanism.
 
@@ -649,8 +669,7 @@ def mec_load(mecfile, start):
 
     statenames = []
     for i in range(0, kstat):
-        statename = f.read(10).decode("utf-8")
-        statenames.append(statename.split()[0])
+        statenames.append(_state_name(f.read(10), i + 1))
         #print "State name:", statename
     #print ("\n")
 
