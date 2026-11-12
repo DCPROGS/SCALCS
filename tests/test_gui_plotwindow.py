@@ -19,8 +19,12 @@ import pytest
 matplotlib = pytest.importorskip('matplotlib')
 matplotlib.use('Agg')
 
+# Without a Qt binding the backend module exists but raises a plain ImportError
+# rather than ModuleNotFoundError, which importorskip no longer treats as a
+# skip from pytest 9.1 unless told to. Linux CI legs have matplotlib but no Qt.
 pytest.importorskip('matplotlib.backends.backend_qtagg',
-                    reason='no Qt binding available for matplotlib')
+                    reason='no Qt binding available for matplotlib',
+                    exc_type=ImportError)
 
 from matplotlib import scale as mscale                       # noqa: E402
 
